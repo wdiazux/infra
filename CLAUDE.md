@@ -401,7 +401,10 @@ Follow this sequence for development:
 
 2. **Packer Templates**
    - **Talos**: Build custom image from Talos Factory with NVIDIA extensions
-   - **Traditional OS**: Create templates for each OS
+   - **Traditional OS** (Debian, Ubuntu, Arch, NixOS, Windows):
+     - Create templates for each OS
+     - Configure base OS settings
+     - Install required packages
    - Test builds individually
    - Optimize for size and build time
 
@@ -409,17 +412,26 @@ Follow this sequence for development:
    - Set up initial provisioning
    - Configure networking
    - Create initial users
+   - SSH key injection
+   - Basic package installation
    - Note: Talos uses machine configuration API instead
 
 4. **Ansible Playbooks**
    - **Talos**: Day 0/1/2 operations (prerequisites, deployment, updates)
-   - **Traditional OS**: Define baseline packages, apply configurations
-   - Set default credentials (username/password for traditional OS)
+   - **Traditional OS** (Debian, Ubuntu, Arch, NixOS, Windows):
+     - Define baseline package sets
+     - Apply OS-specific configurations
+     - Set default credentials (username/password)
+     - Configure services
+     - Apply security hardening
 
 5. **Terraform Integration**
    - **Talos**: Use Proxmox + Talos providers for cluster deployment
-   - **Traditional OS**: Orchestrate image building and VM deployment
-   - Configure GPU passthrough for Talos VMs
+   - **Traditional OS**:
+     - Orchestrate image building
+     - Manage VM deployment
+     - Configure VM resources (CPU, RAM, storage)
+   - Configure GPU passthrough (Talos and traditional VMs as needed)
    - Handle provider configuration
 
 6. **Testing & Validation**
@@ -995,16 +1007,17 @@ talosctl get members                       # List cluster members
 
 ## Version History
 
-- **2025-11-18**: Talos Linux as primary platform
+- **2025-11-18**: Talos Linux as primary platform with multi-OS support
   - Designated Talos Linux as primary and most-used VM
+  - Clarified support for traditional OS (Debian, Ubuntu, Arch, NixOS, Windows)
   - Added comprehensive Talos Linux Implementation Guide
   - Documented Kubernetes use cases (multimedia, AI/ML, production workloads)
-  - Added GPU passthrough configuration for Talos
-  - Included Packer, Terraform, and Ansible strategies for Talos deployment
+  - Added GPU passthrough configuration for Talos and traditional VMs
+  - Included Packer, Terraform, and Ansible strategies for both Talos and traditional OS
+  - Expanded implementation order with complete workflows for both OS types
   - Added Talos-specific official documentation and reference links
   - Expanded reference repositories with 6 Talos-specific examples
   - Added 5 current blog posts (2025) for Talos on Proxmox
-  - Updated implementation order to distinguish Talos vs traditional OS workflows
   - Added talosctl command reference
 
 - **2025-11-18**: Hardware platform specification
