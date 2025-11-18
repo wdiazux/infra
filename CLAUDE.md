@@ -81,6 +81,122 @@ infra/
    - Purpose: Encryption tool for SOPS
    - Official docs: https://github.com/FiloSottile/age
 
+### Complementary Tools
+
+These tools enhance the core workflow and follow industry best practices:
+
+#### Terraform Ecosystem
+
+1. **TFLint** (latest version)
+   - Purpose: Terraform linter for catching errors and enforcing best practices
+   - Official docs: https://github.com/terraform-linters/tflint
+   - Use: Detect invalid instance types, deprecated syntax, naming issues
+
+2. **terraform-docs** (latest version)
+   - Purpose: Auto-generate documentation from Terraform modules
+   - Official docs: https://terraform-docs.io/
+   - Use: Maintain up-to-date module documentation
+
+3. **Trivy** (latest version, successor to tfsec)
+   - Purpose: Security scanner for IaC misconfigurations and vulnerabilities
+   - Official docs: https://aquasecurity.github.io/trivy/
+   - Use: Scan Terraform code for security issues and compliance violations
+
+4. **Checkov** (latest version)
+   - Purpose: Static code analysis for IaC with 750+ pre-defined checks
+   - Official docs: https://www.checkov.io/
+   - Use: Security scanning across multiple cloud providers and compliance frameworks
+
+5. **Terrascan** (latest version)
+   - Purpose: IaC security scanner with OPA policy support
+   - Official docs: https://runterrascan.io/
+   - Use: Custom policy enforcement with 500+ built-in policies
+
+6. **Infracost** (latest version)
+   - Purpose: Cloud cost estimation from Terraform code
+   - Official docs: https://www.infracost.io/
+   - Use: Show cost impact in pull requests before deployment
+
+7. **tfenv** (latest version)
+   - Purpose: Terraform version manager
+   - Official docs: https://github.com/tfutils/tfenv
+   - Use: Switch between multiple Terraform versions per project
+
+8. **Terragrunt** (optional)
+   - Purpose: Terraform wrapper for DRY configurations and remote state management
+   - Official docs: https://terragrunt.gruntwork.io/
+   - Use: Keep Terraform code DRY, manage dependencies
+
+9. **Atlantis** (optional)
+   - Purpose: Terraform automation for pull requests (GitOps)
+   - Official docs: https://www.runatlantis.io/
+   - Use: Automate terraform plan/apply in PR workflows
+
+#### Ansible Ecosystem
+
+1. **ansible-lint** (latest version)
+   - Purpose: Linter for Ansible playbooks, roles, and collections
+   - Official docs: https://ansible-lint.readthedocs.io/
+   - Use: Enforce best practices, catch syntax errors, security misconfigurations
+
+2. **Molecule** (latest version)
+   - Purpose: Testing framework for Ansible roles
+   - Official docs: https://molecule.readthedocs.io/
+   - Use: Test roles in isolated environments before production deployment
+
+3. **yamllint** (latest version)
+   - Purpose: YAML linter
+   - Official docs: https://yamllint.readthedocs.io/
+   - Use: Ensure YAML files follow consistent style
+
+4. **Ansible Semaphore** (optional)
+   - Purpose: Modern lightweight UI for Ansible
+   - Official docs: https://semaphoreui.com/
+   - Use: Web UI for running playbooks, managing inventories, scheduling jobs
+   - Note: Also supports Terraform, OpenTofu, Terragrunt, PowerShell
+
+5. **AWX** (optional, enterprise)
+   - Purpose: Upstream open-source version of Ansible Tower
+   - Official docs: https://github.com/ansible/awx
+   - Use: Enterprise-grade automation platform with RBAC and workflows
+   - Note: More complex than Semaphore, suitable for large teams
+
+#### Cross-cutting Tools
+
+1. **pre-commit** (latest version)
+   - Purpose: Git hook framework for automated code checks
+   - Official docs: https://pre-commit.com/
+   - Use: Run formatting, linting, security scanning before commits
+   - Integration: Works with terraform fmt, ansible-lint, tflint, checkov, trivy
+
+2. **pre-commit-terraform** (latest version)
+   - Purpose: Pre-configured hooks for Terraform
+   - Official docs: https://github.com/antonbabenko/pre-commit-terraform
+   - Use: Format, validate, lint, document, and secure Terraform code automatically
+
+### Tool Selection Guidelines
+
+**Mandatory Tools:**
+- TFLint, terraform-docs, Trivy/Checkov (one security scanner minimum)
+- ansible-lint, Molecule, yamllint
+- pre-commit (with appropriate hooks)
+
+**Optional But Recommended:**
+- Infracost (for cost awareness)
+- tfenv (for version management)
+- Ansible Semaphore (for UI-based management)
+
+**Enterprise/Advanced:**
+- Terragrunt (for large multi-environment setups)
+- Atlantis (for GitOps workflows)
+- AWX (for enterprise automation needs)
+
+**Selection Criteria:**
+- Start with mandatory tools
+- Add optional tools as team size and complexity grow
+- Prioritize tools that integrate into CI/CD pipelines
+- Always use official/maintained tools over deprecated alternatives
+
 ### Target Platform
 
 - **Proxmox VE 9.0**
@@ -113,6 +229,41 @@ Before implementing ANY feature:
 3. **Check Proxmox 9.0 compatibility** for all configurations
 4. **Review reference examples** for patterns (but don't copy directly)
 5. **Validate best practices** for current versions
+6. **Follow industry-standard best practices** from official sources
+
+### Best Practices Mandate
+
+**CRITICAL**: All implementations MUST follow industry-standard best practices.
+
+**Sources for Best Practices:**
+- Official tool documentation (Terraform, Ansible, Packer, etc.)
+- HashiCorp's Terraform Style Guide and Best Practices
+- Ansible Best Practices documentation
+- Cloud provider security frameworks (CIS Benchmarks, etc.)
+- Current year (2025) recommendations from tool maintainers
+
+**Best Practices Requirements:**
+- Use consistent naming conventions across all tools
+- Implement security scanning in all pipelines
+- Follow the principle of least privilege
+- Document all non-obvious decisions
+- Use version pinning for reproducibility
+- Implement proper error handling and validation
+- Use remote state backends for Terraform (never local)
+- Separate environments (dev/staging/prod)
+- Use modules/roles for reusability
+- Implement idempotency in all automation
+- Use pre-commit hooks for code quality
+- Never commit secrets (always use SOPS + Age)
+- Tag and label all cloud resources appropriately
+- Implement cost controls and monitoring
+- Use GitOps workflows where applicable
+
+**Verification:**
+- Before committing, verify implementation follows best practices
+- Run all linters and security scanners
+- Review against official style guides
+- Ensure code is maintainable and documented
 
 ### Implementation Order
 
@@ -315,6 +466,7 @@ source "proxmox-iso" "d12" {
 
 ### Primary Sources (Use These First)
 
+**Core Infrastructure Tools:**
 1. **Terraform Documentation**: https://www.terraform.io/docs
 2. **Packer Documentation**: https://www.packer.io/docs
 3. **Ansible Documentation**: https://docs.ansible.com/
@@ -322,6 +474,33 @@ source "proxmox-iso" "d12" {
 5. **Cloud-init Documentation**: https://cloud-init.io/
 6. **SOPS Documentation**: https://github.com/getsops/sops
 7. **Age Documentation**: https://github.com/FiloSottile/age
+
+**Terraform Complementary Tools:**
+8. **TFLint**: https://github.com/terraform-linters/tflint
+9. **terraform-docs**: https://terraform-docs.io/
+10. **Trivy**: https://aquasecurity.github.io/trivy/
+11. **Checkov**: https://www.checkov.io/
+12. **Terrascan**: https://runterrascan.io/
+13. **Infracost**: https://www.infracost.io/
+14. **tfenv**: https://github.com/tfutils/tfenv
+15. **Terragrunt**: https://terragrunt.gruntwork.io/
+16. **Atlantis**: https://www.runatlantis.io/
+
+**Ansible Complementary Tools:**
+17. **ansible-lint**: https://ansible-lint.readthedocs.io/
+18. **Molecule**: https://molecule.readthedocs.io/
+19. **yamllint**: https://yamllint.readthedocs.io/
+20. **Ansible Semaphore**: https://semaphoreui.com/
+21. **AWX**: https://github.com/ansible/awx
+
+**Cross-cutting Tools:**
+22. **pre-commit**: https://pre-commit.com/
+23. **pre-commit-terraform**: https://github.com/antonbabenko/pre-commit-terraform
+
+**Best Practices Guides:**
+24. **Terraform Best Practices**: https://www.terraform-best-practices.com/
+25. **HashiCorp Terraform Style Guide**: https://developer.hashicorp.com/terraform/language/style
+26. **Ansible Best Practices**: https://docs.ansible.com/ansible/latest/tips_tricks/ansible_tips_tricks.html
 
 ### Reference Repositories (Inspiration Only)
 
@@ -350,16 +529,20 @@ These repositories are for pattern reference, NOT for copying:
    - Check official docs for latest syntax
    - Verify Proxmox 9.0 compatibility
    - Look for version-specific changes
+   - Review current best practices from official sources
 
 2. **Propose before implementing**
    - Explain the approach
    - Mention trade-offs
    - Ask for clarification if needed
+   - Reference best practices being followed
 
 3. **Write production-ready code**
    - Include error handling
    - Add validation
    - Document assumptions
+   - Follow industry-standard best practices
+   - Use complementary tools (linters, security scanners)
 
 4. **Clean up old code when replacing features**
    - Identify and remove ALL old implementation code
@@ -367,10 +550,17 @@ These repositories are for pattern reference, NOT for copying:
    - Update documentation to reflect current implementation only
    - Verify no duplicate or dead code remains
 
-5. **Test and validate**
+5. **Integrate quality tools**
+   - Run linters (TFLint, ansible-lint, yamllint)
+   - Run security scanners (Trivy, Checkov, or Terrascan)
+   - Generate documentation (terraform-docs)
+   - Set up pre-commit hooks for automated checks
+
+6. **Test and validate**
    - Provide testing instructions
    - Document expected outcomes
    - Include troubleshooting tips
+   - Use Molecule for Ansible role testing where applicable
 
 ### When Asked Questions
 
@@ -401,6 +591,11 @@ These repositories are for pattern reference, NOT for copying:
 8. **Leaving old code when updating**: Remove obsolete implementations completely
 9. **Accumulating duplicate code**: Consolidate and clean up redundant logic
 10. **Keeping unused variables/functions**: Delete what isn't being used
+11. **Skipping linters and security scanners**: Always run TFLint, ansible-lint, and security tools
+12. **Ignoring best practices**: Follow official style guides and recommendations
+13. **Not using pre-commit hooks**: Automate quality checks before commits
+14. **Skipping cost estimation**: Use Infracost to understand infrastructure costs
+15. **Not testing Ansible roles**: Use Molecule to validate roles before deployment
 
 ## Git Workflow
 
@@ -499,13 +694,34 @@ export SOPS_AGE_KEY_FILE="$HOME/.config/sops/age/keys.txt"
 
 ### Prerequisites
 
-List any tools that need to be installed:
+**Core Tools (Required):**
 - Terraform (latest)
 - Packer (latest)
 - Ansible (latest)
 - SOPS (latest)
 - Age (latest)
 - Git
+
+**Mandatory Complementary Tools:**
+- TFLint
+- terraform-docs
+- Trivy or Checkov (at least one security scanner)
+- ansible-lint
+- Molecule
+- yamllint
+- pre-commit
+- pre-commit-terraform
+
+**Optional But Recommended:**
+- Infracost (cost estimation)
+- tfenv (version management)
+- Terrascan (additional security scanning)
+- Ansible Semaphore (UI management)
+
+**Enterprise/Advanced (as needed):**
+- Terragrunt (multi-environment management)
+- Atlantis (GitOps automation)
+- AWX (enterprise automation platform)
 
 ## Troubleshooting
 
@@ -578,10 +794,25 @@ packer build template.pkr.hcl
 terraform init
 terraform plan
 terraform apply
+terraform fmt -recursive      # Format code
+terraform validate            # Validate syntax
+
+# Terraform Complementary Tools
+tflint                        # Lint Terraform code
+tflint --init                 # Initialize TFLint plugins
+terraform-docs markdown .     # Generate documentation
+trivy config .                # Security scan with Trivy
+checkov -d .                  # Security scan with Checkov
+terrascan scan                # Security scan with Terrascan
+infracost breakdown --path .  # Show cost estimate
 
 # Ansible
 ansible-playbook -i inventory playbook.yml
-ansible-playbook --check playbook.yml  # Dry run
+ansible-playbook --check playbook.yml      # Dry run
+ansible-lint playbook.yml                  # Lint playbook
+molecule init role my-role                 # Initialize Molecule
+molecule test                              # Test role
+yamllint playbook.yml                      # Lint YAML
 
 # SOPS + Age
 age-keygen -o ~/.config/sops/age/keys.txt  # Generate key
@@ -589,9 +820,30 @@ age-keygen -y ~/.config/sops/age/keys.txt  # Extract public key
 sops -e file.yaml > file.enc.yaml          # Encrypt file
 sops -d file.enc.yaml                      # Decrypt file
 sops file.enc.yaml                         # Edit encrypted file
+
+# Pre-commit
+pre-commit install                         # Install hooks
+pre-commit run --all-files                 # Run on all files
+pre-commit autoupdate                      # Update hook versions
+
+# Version Management
+tfenv list                                 # List Terraform versions
+tfenv install latest                       # Install latest Terraform
+tfenv use 1.x.x                           # Use specific version
 ```
 
 ## Version History
+
+- **2025-11-18**: Complementary tools and best practices mandate
+  - Added comprehensive complementary tools section for Terraform and Ansible
+  - Documented mandatory, optional, and enterprise tools
+  - Added tool selection guidelines and integration patterns
+  - Added "Best Practices Mandate" section with requirements and verification
+  - Updated Prerequisites with categorized tool list
+  - Expanded Reference Materials with all complementary tool documentation
+  - Added commands for linters, security scanners, and testing tools
+  - Updated AI Assistant Guidelines to emphasize best practices and tool usage
+  - Added new pitfalls related to skipping quality tools
 
 - **2025-11-18**: SOPS + Age integration and code cleanup guidelines
   - Added SOPS + Age for secrets management
