@@ -1,0 +1,51 @@
+# Windows Server 2022 Packer Variables Example
+#
+# Copy this file to windows.auto.pkrvars.hcl and fill in your values
+# cp windows.auto.pkrvars.hcl.example windows.auto.pkrvars.hcl
+
+# Proxmox Connection
+proxmox_url      = "https://proxmox.local:8006/api2/json"
+proxmox_username = "root@pam"
+proxmox_token    = "PVEAPIToken=terraform@pam!terraform-token=xxxxxxxx"
+proxmox_node     = "pve"
+proxmox_skip_tls_verify = true
+
+# Windows ISO (upload to Proxmox first)
+# Download from: https://www.microsoft.com/en-us/evalcenter/evaluate-windows-server-2022
+windows_iso_url = "https://software-download.microsoft.com/download/sg/20348.169.210806-2348.fe_release_svc_refresh_SERVER_EVAL_x64FRE_en-us.iso"
+windows_iso_checksum = "sha256:3e4fa6d8507b554856fc9ca6079cc402df11a8b79344871669f0251535255e31"
+
+# VirtIO drivers ISO (upload to Proxmox first)
+# Download from: https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/
+virtio_iso_url = "https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/latest-virtio/virtio-win.iso"
+virtio_iso_checksum = "none"  # Can use "none" or actual checksum
+
+# Template Configuration
+template_name        = "windows-server-2022-golden-template"
+template_description = "Windows Server 2022 Datacenter Evaluation golden image with Cloudbase-Init"
+vm_id                = 9005
+
+# VM Hardware (Windows requires more resources)
+vm_cpu_type = "host"
+vm_cores    = 4
+vm_memory   = 4096
+vm_disk_size    = "60G"
+vm_disk_storage = "local-zfs"
+
+# Network
+vm_network_bridge = "vmbr0"
+
+# WinRM (for Packer provisioning only)
+winrm_username = "Administrator"
+winrm_password = "P@ssw0rd!"
+winrm_timeout  = "60m"
+
+# Notes:
+# - Download Windows Server 2022 ISO from Microsoft Evaluation Center
+# - Download VirtIO drivers from Fedora Project
+# - Upload both ISOs to Proxmox: Datacenter → Storage → ISO Images → Upload
+# - winrm_username/password are temporary, only used during build
+# - Final VMs will use Cloudbase-Init for user creation
+# - Template will have Cloudbase-Init and QEMU guest agent installed
+# - Windows builds take 30-90 minutes depending on updates
+# - Evaluation version is valid for 180 days (can be converted to licensed)

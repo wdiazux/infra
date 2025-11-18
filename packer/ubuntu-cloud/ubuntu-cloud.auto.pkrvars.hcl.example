@@ -1,0 +1,41 @@
+# Ubuntu Cloud Image Packer Variables Example
+# PREFERRED METHOD - Uses official cloud image (5-10 min build time)
+#
+# Copy this file to ubuntu-cloud.auto.pkrvars.hcl and fill in your values
+# cp ubuntu-cloud.auto.pkrvars.hcl.example ubuntu-cloud.auto.pkrvars.hcl
+
+# Proxmox Connection
+proxmox_url      = "https://proxmox.local:8006/api2/json"
+proxmox_username = "root@pam"
+proxmox_token    = "PVEAPIToken=terraform@pam!terraform-token=xxxxxxxx"
+proxmox_node     = "pve"
+proxmox_skip_tls_verify = true
+
+# Ubuntu Version
+ubuntu_version = "24.04"
+
+# Cloud Image Base VM (created by import-cloud-image.sh)
+cloud_image_vm_id = 9100
+
+# Template Configuration
+template_name        = "ubuntu-2404-cloud-template"
+template_description = "Ubuntu 24.04 LTS from official cloud image with customizations"
+vm_id                = 9102
+
+# VM Hardware
+vm_cores    = 2
+vm_memory   = 2048
+vm_disk_storage = "local-zfs"
+
+# Network
+vm_network_bridge = "vmbr0"
+
+# SSH (default from cloud image)
+ssh_password = "ubuntu"
+
+# Notes:
+# - Run import-cloud-image.sh FIRST to create base VM (one-time setup)
+# - This template clones and customizes the base cloud image
+# - Much faster than ISO-based build (5-10 min vs 20-30 min)
+# - Cloud image already includes cloud-init and qemu-guest-agent
+# - Use this method for production templates

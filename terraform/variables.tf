@@ -194,9 +194,9 @@ variable "gpu_pcie" {
 }
 
 variable "gpu_rombar" {
-  description = "Enable GPU ROM bar (set to 0 if using vBIOS)"
-  type        = number
-  default     = 0
+  description = "Enable GPU ROM bar (false recommended for GPU passthrough)"
+  type        = bool
+  default     = false
 }
 
 # ============================================================================

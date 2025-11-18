@@ -1,0 +1,43 @@
+# Arch Linux Packer Variables Example
+#
+# Copy this file to arch.auto.pkrvars.hcl and fill in your values
+# cp arch.auto.pkrvars.hcl.example arch.auto.pkrvars.hcl
+
+# Proxmox Connection
+proxmox_url      = "https://proxmox.local:8006/api2/json"
+proxmox_username = "root@pam"
+proxmox_token    = "PVEAPIToken=terraform@pam!terraform-token=xxxxxxxx"
+proxmox_node     = "pve"
+proxmox_skip_tls_verify = true
+
+# Arch Linux ISO
+arch_iso_url = "https://mirror.rackspace.com/archlinux/iso/latest/archlinux-x86_64.iso"
+arch_iso_checksum = "file:https://mirror.rackspace.com/archlinux/iso/latest/sha256sums.txt"
+
+# Template Configuration
+template_name        = "arch-linux-golden-template"
+template_description = "Arch Linux rolling release golden image with cloud-init and qemu-guest-agent"
+vm_id                = 9003
+
+# VM Hardware
+vm_cpu_type = "host"
+vm_cores    = 2
+vm_memory   = 2048
+vm_disk_size    = "20G"
+vm_disk_storage = "local-zfs"
+
+# Network
+vm_network_bridge = "vmbr0"
+
+# SSH (for Packer provisioning only)
+ssh_username = "root"
+ssh_password = "arch"
+ssh_timeout  = "20m"
+
+# Notes:
+# - Arch uses latest ISO automatically (rolling release)
+# - Checksum is verified from official sha256sums.txt
+# - ssh_username/password are temporary, only used during build
+# - Final VMs will use cloud-init for user creation
+# - Template will have cloud-init and qemu-guest-agent installed
+# - Rebuild template regularly (monthly) to keep up with Arch updates
