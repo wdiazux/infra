@@ -1,0 +1,164 @@
+# Terraform Variables Example for Talos Linux on Proxmox
+#
+# Copy this file to terraform.tfvars and fill in your actual values
+# cp terraform.tfvars.example terraform.tfvars
+#
+# NOTE: terraform.tfvars is in .gitignore to prevent committing credentials
+
+# ============================================================================
+# Proxmox Connection (Required)
+# ============================================================================
+
+proxmox_url      = "https://proxmox.local:8006/api2/json"
+proxmox_username = "root@pam"
+proxmox_node     = "pve"
+
+# Use API token (recommended)
+proxmox_api_token = "PVEAPIToken=terraform@pam!terraform-token=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+
+# Or use password (less secure)
+# proxmox_password = "your-password-here"
+
+# Skip TLS verification for self-signed certs (homelab)
+proxmox_insecure = true
+
+# ============================================================================
+# Talos Template (Required - created by Packer)
+# ============================================================================
+
+talos_template_name = "talos-1.11.4-nvidia-template"
+talos_version       = "v1.11.4"
+kubernetes_version  = "v1.31.0"
+
+# ============================================================================
+# Cluster Configuration
+# ============================================================================
+
+cluster_name = "homelab-k8s"
+
+# Cluster endpoint will be set to node_ip if not specified
+# cluster_endpoint = "https://192.168.1.100:6443"
+
+# ============================================================================
+# Node Configuration (Required)
+# ============================================================================
+
+node_name = "talos-node"
+node_vm_id = 100
+
+# Static IP configuration (MUST match your network)
+node_ip      = "192.168.1.100"  # Change to your desired IP
+node_gateway = "192.168.1.1"    # Your router/gateway
+node_netmask = 24               # Usually 24 for 255.255.255.0
+
+# ============================================================================
+# Hardware Resources
+# ============================================================================
+
+# CPU configuration
+node_cpu_cores   = 8        # Adjust based on your needs
+node_cpu_sockets = 1
+node_cpu_type    = "host"   # MUST be 'host' for Talos
+
+# Memory configuration
+node_memory = 32768  # 32GB (32768 MB) - adjust as needed
+
+# Disk configuration
+node_disk_size    = 200          # 200GB for OS + containers + ephemeral
+node_disk_storage = "local-zfs"  # Your Proxmox storage pool name
+
+# ============================================================================
+# GPU Passthrough
+# ============================================================================
+
+# Enable NVIDIA GPU passthrough
+enable_gpu_passthrough = true
+
+# Find your GPU PCI ID with: lspci | grep -i nvidia
+# Example output: 01:00.0 VGA compatible controller: NVIDIA Corporation ...
+# Use "01:00" as the PCI ID
+gpu_pci_id = "01:00"
+
+# PCIe passthrough mode (recommended)
+gpu_pcie = true
+
+# GPU ROM bar (0 if using vBIOS, 1 if using physical ROM)
+gpu_rombar = 0
+
+# ============================================================================
+# Network Configuration
+# ============================================================================
+
+network_bridge = "vmbr0"  # Proxmox bridge name
+network_vlan   = 0        # 0 for no VLAN, or your VLAN ID
+network_model  = "virtio"
+
+# DNS servers
+dns_servers = ["8.8.8.8", "8.8.4.4"]  # Google DNS, or use your own
+
+# NTP servers
+ntp_servers = ["time.cloudflare.com"]
+
+# ============================================================================
+# External Storage (NFS)
+# ============================================================================
+
+# External NAS for persistent storage
+nfs_server = "192.168.1.200"       # Your NAS IP address
+nfs_path   = "/mnt/tank/k8s-storage"  # NFS export path
+
+# ============================================================================
+# Feature Flags
+# ============================================================================
+
+# Automatically bootstrap the cluster after creation
+auto_bootstrap = true
+
+# Generate kubeconfig file
+generate_kubeconfig = true
+
+# Allow pod scheduling on control plane (required for single-node)
+allow_scheduling_on_control_plane = true
+
+# Enable QEMU guest agent (should match template)
+enable_qemu_agent = true
+
+# Install Cilium CNI (requires manual installation after bootstrap)
+install_cilium = true
+cilium_version = "1.18.0"
+
+# ============================================================================
+# Tags and Metadata
+# ============================================================================
+
+tags = ["talos", "kubernetes", "nvidia-gpu", "homelab"]
+
+description = "Talos Linux single-node Kubernetes cluster with NVIDIA GPU support"
+
+# ============================================================================
+# Advanced Configuration
+# ============================================================================
+
+# Additional Talos configuration patches (advanced users)
+# talos_config_patches = [
+#   yamlencode({
+#     machine = {
+#       sysctls = {
+#         "vm.swappiness" = "10"
+#       }
+#     }
+#   })
+# ]
+
+# Install disk (usually /dev/sda for first disk)
+install_disk = "/dev/sda"
+
+# Notes:
+# - Update node_ip, node_gateway, node_netmask to match your network
+# - Update nfs_server and nfs_path to match your NAS configuration
+# - Update gpu_pci_id based on `lspci` output on your Proxmox host
+# - Verify talos_template_name matches the template created by Packer
+# - Check node_disk_storage matches your Proxmox storage pool name
+# - For multiple nodes, create separate .tfvars files (e.g., node1.tfvars, node2.tfvars)
+# - GPU passthrough requires IOMMU enabled in BIOS and GRUB configuration
+# - Single-node cluster requires allow_scheduling_on_control_plane = true
