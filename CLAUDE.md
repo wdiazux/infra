@@ -6,11 +6,43 @@ This repository contains Infrastructure-as-Code (IaC) automation for building go
 
 ### Project Goals
 
-- Automate golden image creation for enterprise-grade VM templates
+- Automate golden image creation for reliable, reproducible VM templates
 - Support multiple operating systems with consistent baseline configurations
 - Maintain simple, optimized, and maintainable code
 - Prioritize functionality and reliability over complexity
 - Use industry best practices from official documentation
+
+### Homelab vs Enterprise Considerations
+
+**This is a HOMELAB setup** - some enterprise best practices are optional:
+
+**Essential (Keep for Quality):**
+- ✅ Linting and security scanning (TFLint, Trivy, ansible-lint)
+- ✅ Version control (Git)
+- ✅ Documentation
+- ✅ Secrets encryption (SOPS + Age)
+- ✅ Infrastructure as Code
+
+**Optional (Adds Complexity, Use if Learning or Scaling):**
+- ⚠️ Remote Terraform state (local state is fine for solo homelab)
+- ⚠️ Dev/staging/prod environments (single environment is fine)
+- ⚠️ PR reviews and approvals (you're one person)
+- ⚠️ VLANs (unless you have managed switches already)
+- ⚠️ Manual deployment approvals (automate for convenience)
+
+**Not Applicable to Homelab:**
+- ❌ Cloud cost controls (no per-hour costs on self-hosted)
+- ❌ Team RBAC and permissions
+- ❌ Multi-region deployments
+- ❌ Enterprise compliance frameworks
+
+**Use Enterprise Practices If:**
+- You're learning for career/work
+- You're practicing team workflows
+- You plan to scale to multi-person team
+- You want production-grade resilience
+
+**Homelab Philosophy:** Start simple, add complexity only when needed. It's okay to push directly to main, use local state, and skip manual approvals when you're the only operator.
 
 ## Repository Structure
 
@@ -215,7 +247,7 @@ These tools enhance the core workflow and follow industry best practices:
 - CPU: AMD Ryzen AI 9 HX 370 (formerly 9955HX)
 - RAM: 96GB
 - GPU: NVIDIA Ada Lovelace RTX 4000
-- Use case: Enterprise-grade mini PC for homelab/production virtualization with GPU acceleration
+- Use case: High-performance mini PC for homelab virtualization with GPU acceleration
 
 ### Storage Configuration
 
@@ -278,7 +310,7 @@ Before implementing ZFS, determine:
 4. **Storage Allocation**:
    - Proxmox system: ~100GB
    - VM templates/images: ~50-100GB per OS
-   - Talos Kubernetes persistent volumes (Longhorn): varies by workload
+   - Talos Kubernetes: varies by workload (persistent data on NAS, ephemeral data local)
    - Traditional VMs: varies by VM count and size
    - Backup space: 20-30% of total for snapshots/backups
 
@@ -422,9 +454,11 @@ Before implementing ZFS, determine:
    - Talos, traditional VMs, and NAS can communicate directly
    - Suitable for homelab without strict security requirements
 
-   **Option B: VLANs (More Secure)**
+   **Option B: VLANs (More Secure - Advanced/Optional)**
+   - **Note**: VLANs require managed switch with VLAN support - likely overkill for most homelabs
+   - **Best for**: Learning enterprise networking, already have managed switch, or strict security requirements
    - Separate VLANs for management, VM traffic, storage
-   - Requires VLAN-capable switch
+   - Requires VLAN-capable managed switch
    - Example:
      - VLAN 10: Proxmox management
      - VLAN 20: VM traffic (Talos, traditional VMs)
@@ -537,7 +571,7 @@ Talos Linux is a modern, immutable Linux distribution designed specifically for 
 
 **Kubernetes Integration:**
 - Cilium for networking and L2 load balancing
-- Longhorn for distributed persistent storage
+- NFS CSI driver for persistent storage (external NAS) + local-path-provisioner for ephemeral data
 - NVIDIA GPU Operator for GPU workload scheduling
 - System extensions for GPU support
 
@@ -968,8 +1002,8 @@ This section provides a comprehensive list of tools specifically for Talos Linux
 
 **Mandatory for Production:**
 - Cilium (networking)
-- Longhorn or Ceph (storage)
-- FluxCD or ArgoCD (GitOps)
+- NFS CSI driver + local-path-provisioner (storage for single-node)
+- FluxCD (GitOps)
 - kube-prometheus-stack (monitoring)
 - Loki (logging)
 
@@ -1049,14 +1083,14 @@ Before implementing ANY feature:
 - Document all non-obvious decisions
 - Use version pinning for reproducibility
 - Implement proper error handling and validation
-- Use remote state backends for Terraform (never local)
-- Separate environments (dev/staging/prod)
+- Use remote state backends for Terraform in team environments (local state acceptable for solo homelab)
+- Separate environments optional for homelab (dev/staging/prod more relevant for teams)
 - Use modules/roles for reusability
 - Implement idempotency in all automation
 - Use pre-commit hooks for code quality
 - Never commit secrets (always use SOPS + Age)
-- Tag and label all cloud resources appropriately
-- Implement cost controls and monitoring
+- Tag and label all resources appropriately (for organization and filtering)
+- Monitor resource usage (CPU, RAM, storage) on Proxmox
 - Use GitOps workflows where applicable
 
 **Verification:**
@@ -1323,15 +1357,15 @@ The CI/CD workflows will be compatible with both GitHub Actions and Forgejo Acti
 - Plan stage (PRs only)
 - Apply stage (main branch only)
 
-**3. Set up Remote State:**
-- Use remote backend for Terraform state (S3, GitLab, Terraform Cloud)
-- Enable state locking
-- NEVER commit state files to Git
+**3. Terraform State Management:**
+- **Homelab**: Local state is acceptable (add `terraform.tfstate` to `.gitignore`)
+- **Team environments**: Use remote backend (S3, GitLab, Terraform Cloud) with state locking
+- **NEVER** commit state files to Git (always in `.gitignore`)
 
-**4. Configure Branch Protection:**
-- Require PR reviews
-- Require CI/CD checks to pass
-- Prevent direct pushes to main
+**4. Configure Branch Protection (Optional for Homelab):**
+- **Solo homelab**: Optional, can push directly to main for speed and flexibility
+- **Team environments**: Require PR reviews and CI/CD checks to pass
+- **For learning GitOps**: Enable to practice enterprise team workflows
 
 **5. Set up Notifications:**
 - Slack/Discord/Email notifications for failures
@@ -1446,8 +1480,8 @@ If you want PR-based Terraform automation, use Atlantis:
 ### Best Practices for CI/CD
 
 1. **Always run plan before apply**
-2. **Require manual approval for production**
-3. **Use separate environments** (dev, staging, prod)
+2. **Require manual approval for production** (optional for homelab)
+3. **Use separate environments** (dev, staging, prod) - optional for solo homelab
 4. **Version control everything**
 5. **Test infrastructure changes in dev first**
 6. **Implement rollback procedures**
@@ -1647,10 +1681,10 @@ source "proxmox-iso" "d12" {
 
 **Kubernetes Tools for Talos:**
 20. **Cilium Documentation**: https://docs.cilium.io/
-21. **Longhorn Documentation**: https://longhorn.io/
-22. **NVIDIA GPU Operator**: https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/
-23. **FluxCD Documentation**: https://fluxcd.io/
-24. **ArgoCD Documentation**: https://argo-cd.readthedocs.io/
+21. **NFS CSI Driver**: https://github.com/kubernetes-csi/csi-driver-nfs
+22. **local-path-provisioner**: https://github.com/rancher/local-path-provisioner
+23. **NVIDIA GPU Operator**: https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/
+24. **FluxCD Documentation**: https://fluxcd.io/
 25. **kube-prometheus-stack**: https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack
 26. **Loki Documentation**: https://grafana.com/oss/loki/
 27. **k9s**: https://k9scli.io/
@@ -2079,7 +2113,7 @@ atlantis unlock                            # Unlock state (via PR comment)
   - **CI/CD**: GitHub Actions (current) → Forgejo Actions (future)
   - **Terraform Providers**: siderolabs/talos + bpg/proxmox (chosen and emphasized)
   - **Talos Networking**: Cilium (chosen, eBPF-based CNI)
-  - **Talos Storage**: Longhorn (chosen for Talos Kubernetes only)
+  - **Talos Storage**: NFS CSI driver + local-path-provisioner (hybrid storage for single-node)
   - **GitOps**: FluxCD (chosen for better Helm integration)
   - Updated all tool sections to clearly mark chosen vs alternative options
   - Added rationale for each tool selection (Forgejo: community-driven fork of Gitea)
@@ -2095,7 +2129,7 @@ atlantis unlock                            # Unlock state (via PR comment)
   - Documented Proxmox integration tools (QEMU Guest Agent extension)
   - Listed all NVIDIA GPU system extensions (nonfree-kmod-nvidia, nvidia-container-toolkit, nvidia-open-gpu-kernel-modules)
   - Added Kubernetes networking options (Cilium recommended, Flannel, Calico alternatives)
-  - Documented storage solutions (Longhorn recommended, Ceph alternative)
+  - Documented storage solutions (NFS CSI driver + local-path-provisioner for single-node, Longhorn/Ceph for multi-node)
   - Added GPU workload management (NVIDIA GPU Operator, Device Plugin)
   - Documented GitOps tools (FluxCD recommended for Talos, ArgoCD alternative)
   - Added complete monitoring stack (kube-prometheus-stack, Prometheus, Grafana, Loki, Kubernetes Metrics Server)
