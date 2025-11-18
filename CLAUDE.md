@@ -98,24 +98,28 @@ These tools enhance the core workflow and follow industry best practices:
    - Use: Maintain up-to-date module documentation
 
 3. **Trivy** (latest version, successor to tfsec)
-   - Purpose: Security scanner for IaC misconfigurations and vulnerabilities
+   - Purpose: Comprehensive security scanner for IaC, containers, and OS vulnerabilities
    - Official docs: https://aquasecurity.github.io/trivy/
    - Use: Scan Terraform code for security issues and compliance violations
+   - Note: Most comprehensive tool, combines features of tfsec, Checkov, and container scanning
 
-4. **Checkov** (latest version)
+4. **Checkov** (latest version) - **OPTIONAL, NOT USED IN THIS PROJECT**
    - Purpose: Static code analysis for IaC with 750+ pre-defined checks
    - Official docs: https://www.checkov.io/
-   - Use: Security scanning across multiple cloud providers and compliance frameworks
+   - Use: Additional policy-as-code scanning if Trivy is insufficient
+   - Note: Redundant with Trivy for most use cases
 
-5. **Terrascan** (latest version)
+5. **Terrascan** (latest version) - **OPTIONAL, NOT USED IN THIS PROJECT**
    - Purpose: IaC security scanner with OPA policy support
    - Official docs: https://runterrascan.io/
    - Use: Custom policy enforcement with 500+ built-in policies
+   - Note: Redundant with Trivy for most use cases
 
-6. **Infracost** (latest version)
+6. **Infracost** (latest version) - **NOT APPLICABLE FOR PROXMOX**
    - Purpose: Cloud cost estimation from Terraform code
    - Official docs: https://www.infracost.io/
    - Use: Show cost impact in pull requests before deployment
+   - **Why not applicable**: Designed for cloud providers (AWS, Azure, GCP) with per-hour costs. Self-hosted Proxmox has fixed infrastructure costs, making Infracost irrelevant.
 
 7. **tfenv** (latest version)
    - Purpose: Terraform version manager
@@ -177,13 +181,16 @@ These tools enhance the core workflow and follow industry best practices:
 ### Tool Selection Guidelines
 
 **Mandatory Tools:**
-- TFLint, terraform-docs, Trivy/Checkov (one security scanner minimum)
-- ansible-lint, Molecule, yamllint
-- pre-commit (with appropriate hooks)
+- TFLint, terraform-docs, Trivy (security scanning)
+- ansible-lint, yamllint
 
-**Optional But Recommended:**
-- Infracost (for cost awareness)
+**Recommended Tools:**
+- pre-commit (with appropriate hooks) - adds automation but can slow early development
 - tfenv (for version management)
+
+**Optional Tools:**
+- Molecule (for complex reusable Ansible roles)
+- Checkov/Terrascan (additional security scanning if needed)
 - Ansible Semaphore (for UI-based management)
 
 **Enterprise/Advanced:**
@@ -259,6 +266,110 @@ This infrastructure uses ZFS as the primary storage backend for Proxmox VE, prov
 - Data deduplication (optional, RAM-intensive)
 - Built-in compression saves disk space
 - Checksums prevent silent data corruption
+
+### Storage Capacity Planning
+
+**Planning Questions to Answer:**
+
+Before implementing ZFS, determine:
+1. **Physical Disks**: How many drives? What capacity (e.g., 2x 2TB NVMe)?
+2. **RAID Layout**: Mirror (RAID1/10) recommended for VM workloads
+3. **Usable Capacity**: With mirror, usable capacity = total capacity / 2
+4. **Storage Allocation**:
+   - Proxmox system: ~100GB
+   - VM templates/images: ~50-100GB per OS
+   - Talos Kubernetes persistent volumes (Longhorn): varies by workload
+   - Traditional VMs: varies by VM count and size
+   - Backup space: 20-30% of total for snapshots/backups
+
+**Example for 2x 2TB NVMe (Mirror Configuration):**
+- Total capacity: 4TB
+- Usable capacity: ~2TB (after mirror)
+- Proxmox system: 100GB
+- VM templates: 200GB (4-5 OS templates)
+- Talos cluster VMs: 500GB (3 nodes, storage for containers)
+- Traditional VMs: 800GB (flexible allocation)
+- Backup/snapshot reserve: 400GB
+
+**Recommendations:**
+- Leave 20% free space for ZFS performance
+- Monitor usage with `zpool list` and `zfs list`
+- Plan for growth - easier to start small and add later
+- Consider separate dataset for each major use case
+- Use ZFS quotas to prevent single VM consuming all space
+
+**Future Expansion:**
+- Add vdevs (additional mirror pairs) to expand pool
+- Cannot add single disks to existing mirror vdevs
+- Cannot change vdev type (e.g., mirror to raidz) after creation
+
+### Resource Allocation Guidance
+
+**System Resources: 96GB RAM, 12-core CPU (AMD Ryzen AI 9 HX 370)**
+
+**Resource Allocation Strategy:**
+
+1. **Proxmox Host Overhead:**
+   - RAM: ~4-8GB (including ZFS ARC: 16GB max)
+   - CPU: 1-2 cores reserved
+   - **Effective available**: ~72-76GB RAM, 10-11 cores
+
+2. **Talos Kubernetes Cluster (Primary Workload):**
+   - **3-node cluster recommended for HA**
+   - Control plane + worker nodes (combined architecture for homelab)
+   - RAM per node: 16-24GB (total: 48-72GB for cluster)
+   - CPU per node: 4-6 cores (total: 12-18 virtual cores)
+   - Storage per node: 100-200GB (thin provisioned)
+   - **GPU assignment**: 1 RTX 4000 passed through to ONE node for GPU workloads
+
+3. **Traditional VMs (Secondary Workload):**
+   - Remaining resources after Talos allocation
+   - Typical VM: 4-8GB RAM, 2-4 cores
+   - Example: 2-3 traditional VMs possible with remaining resources
+   - Storage: varies by use case
+
+**Example Allocation for 96GB System:**
+
+**Scenario A: Talos-Heavy (Recommended)**
+- Proxmox host: 8GB RAM (includes 16GB ARC counted separately)
+- Talos node 1 (control+worker): 24GB RAM, 6 cores, 200GB storage, **GPU passthrough**
+- Talos node 2 (control+worker): 24GB RAM, 6 cores, 200GB storage
+- Talos node 3 (control+worker): 24GB RAM, 6 cores, 200GB storage
+- Debian VM: 8GB RAM, 4 cores, 100GB storage
+- Total: 88GB RAM (8GB free for overhead)
+
+**Scenario B: Balanced**
+- Proxmox host: 8GB RAM (includes 16GB ARC)
+- Talos node 1 (control+worker): 20GB RAM, 4 cores, 150GB storage, **GPU passthrough**
+- Talos node 2 (control+worker): 20GB RAM, 4 cores, 150GB storage
+- Talos node 3 (control+worker): 20GB RAM, 4 cores, 150GB storage
+- Debian VM: 8GB RAM, 4 cores, 100GB storage
+- Ubuntu VM: 8GB RAM, 4 cores, 100GB storage
+- Windows VM: 8GB RAM, 4 cores, 150GB storage
+- Total: 92GB RAM (4GB free for overhead)
+
+**Important Considerations:**
+
+- **Memory overcommit**: Avoid for production workloads, acceptable for testing/development VMs
+- **CPU overcommit**: More acceptable than RAM, but monitor performance
+- **Thin provisioning**: Use for storage to avoid wasting space
+- **Balloon driver**: Enable in VMs for dynamic memory management
+- **GPU limitation**: Remember only ONE VM can use the GPU at a time
+- **Longhorn storage**: Requires additional disk space across Talos nodes for replicas
+
+**Monitoring and Adjustment:**
+- Use Proxmox dashboard to monitor resource usage
+- Adjust VM allocations based on actual usage patterns
+- Start conservative, scale up as needed
+- Use Kubernetes resource requests/limits for containerized workloads
+- Monitor ZFS ARC hit ratio to optimize memory allocation
+
+**Best Practices:**
+- Leave 5-10% RAM free for system overhead
+- Don't allocate all CPU cores to VMs (leave 1-2 for host)
+- Use CPU pinning for performance-critical VMs
+- Enable NUMA if running large VMs (16GB+ RAM)
+- Regular monitoring of resource utilization
 
 ## Supported Operating Systems
 
@@ -355,6 +466,18 @@ Talos Linux is a modern, immutable Linux distribution designed specifically for 
 
 ### GPU Passthrough Configuration
 
+**⚠️ CRITICAL LIMITATION: Single GPU Constraint**
+
+The NVIDIA Ada Lovelace RTX 4000 in this system **can only be passed through to ONE VM at a time**. Consumer and gaming GPUs do not support:
+- **vGPU (NVIDIA GRID)**: Only available on Quadro/Tesla datacenter GPUs
+- **SR-IOV**: Not supported on consumer GeForce/RTX cards
+
+**You must choose ONE of the following:**
+1. **Talos Kubernetes cluster** - GPU available for AI/ML containerized workloads
+2. **Single traditional VM** - GPU available for non-Kubernetes workloads
+
+**Recommendation for this setup**: Assign GPU to Talos Kubernetes cluster, as it provides maximum flexibility for running multiple GPU workloads via Kubernetes scheduling.
+
 **Proxmox Host Setup:**
 1. Enable IOMMU in BIOS
 2. Edit `/etc/default/grub`:
@@ -402,12 +525,16 @@ This section provides a comprehensive list of tools specifically for Talos Linux
 - **Storage**: Longhorn (distributed block storage, Talos only)
 - **GitOps**: FluxCD (Kubernetes continuous delivery)
 
+**Container Runtime:**
+- **Podman** (preferred over Docker for local development and CI/CD)
+
 **Rationale:**
 - **Forgejo**: Self-hosted, community-driven fork of Gitea, lightweight, full control over infrastructure
 - **FluxCD**: Better Helm integration with hooks, more popular with Talos community
 - **Cilium**: Modern eBPF-based networking with advanced features
 - **Longhorn**: Cloud-native storage, simpler than Ceph, sufficient for homelab scale
 - **siderolabs/talos + bpg/proxmox**: Official providers with best support
+- **Podman**: Daemonless, rootless containers, drop-in Docker replacement, better security model
 
 **Note**: Traditional VMs (Debian, Ubuntu, Arch, NixOS, Windows) may use different storage solutions as appropriate.
 
@@ -611,7 +738,7 @@ This section provides a comprehensive list of tools specifically for Talos Linux
    - Official docs: https://argo-cd.readthedocs.io/
    - Use: UI-based application delivery
    - Why: Better for developer-facing deployments
-   - Note: Can combine both FluxCD (infra) + ArgoCD (apps)
+   - Note: Not used in this project - FluxCD is sufficient for homelab scale
 
 **Supporting Tools:**
 
@@ -706,8 +833,7 @@ This section provides a comprehensive list of tools specifically for Talos Linux
 - Start with mandatory tools
 - Add production tools before going live
 - GPU extensions only if using NVIDIA hardware
-- Choose FluxCD for Helm chart support, ArgoCD for UI
-- Consider both for large deployments (FluxCD for infra, ArgoCD for apps)
+- FluxCD is sufficient for homelab scale - no need for ArgoCD
 
 ### Version Compatibility Matrix (2025)
 
@@ -945,7 +1071,6 @@ The CI/CD workflows will be compatible with both GitHub Actions and Forgejo Acti
 ├─────────────────────────────────────────────────────────┤
 │ 2. Security Scan                                        │
 │    - trivy config (IaC security)                        │
-│    - checkov (policy as code)                           │
 ├─────────────────────────────────────────────────────────┤
 │ 3. Validate                                             │
 │    - terraform validate                                 │
@@ -954,10 +1079,6 @@ The CI/CD workflows will be compatible with both GitHub Actions and Forgejo Acti
 ├─────────────────────────────────────────────────────────┤
 │ 4. Plan                                                 │
 │    - terraform plan                                     │
-│    - Show cost estimate (infracost)                     │
-├─────────────────────────────────────────────────────────┤
-│ 5. Test (if applicable)                                 │
-│    - molecule test (Ansible roles)                      │
 └─────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────┐
@@ -982,17 +1103,16 @@ The CI/CD workflows will be compatible with both GitHub Actions and Forgejo Acti
 - Syntax validation: `terraform validate`, `packer validate`
 
 **Stage 2: Security Scanning (runs on every commit)**
-- IaC security: `trivy config .` or `checkov -d .`
-- Secrets detection: pre-commit hooks with detect-secrets
-- Compliance checks: Policy as Code validation
+- IaC security: `trivy config .`
+- Secrets detection: pre-commit hooks with detect-secrets (optional)
+- Compliance checks: Trivy built-in policies
 
-**Stage 3: Plan & Cost Estimation (runs on PRs)**
+**Stage 3: Plan (runs on PRs)**
 - Terraform plan with output
-- Cost estimation: `infracost breakdown --path .`
 - Post plan as PR comment for review
 
-**Stage 4: Test (runs on PRs, if applicable)**
-- Ansible role testing: `molecule test`
+**Stage 4: Test (runs on PRs, optional)**
+- Ansible role testing: `molecule test` (only if using complex reusable roles)
 - Integration tests for custom modules
 
 **Stage 5: Build Golden Images (runs on main branch)**
@@ -1019,12 +1139,22 @@ The CI/CD workflows will be compatible with both GitHub Actions and Forgejo Acti
 - Reduces configuration drift
 - Faster VM provisioning
 
-**Infrastructure Updates:**
-1. Update Packer template
+**Infrastructure Update Approaches:**
+
+**For Talos Linux (Truly Immutable):**
+1. Update Packer template or Talos Factory image
 2. CI/CD builds new golden image
 3. Terraform creates VMs from new image
 4. Old VMs are destroyed (or blue/green deployment)
 5. No in-place VM updates
+
+**For Traditional OS VMs (Homelab Mutable Approach):**
+- **Initial provisioning**: Packer golden images provide consistent baseline
+- **Ongoing management**: Ansible playbooks for configuration updates, package management, and service changes
+- **Reasoning**: For homelab scale, rebuilding entire VMs for minor changes is overkill. Ansible provides flexibility for iterative development and learning.
+- **Hybrid approach**: Use Packer for major OS updates, Ansible for day-to-day configuration management
+
+**Note**: True immutable infrastructure (destroy/rebuild for all changes) is enterprise best practice but may be excessive for homelab environments where experimentation and rapid iteration are priorities.
 
 ### Implementation Steps
 
@@ -1112,9 +1242,6 @@ jobs:
       - uses: actions/checkout@v4
       - name: Terraform Plan
         run: terraform plan -out=tfplan
-      - name: Infracost
-        uses: infracost/actions/setup@v2
-        run: infracost breakdown --path .
 
   apply:
     if: github.ref == 'refs/heads/main'
@@ -1506,11 +1633,9 @@ These repositories are for pattern reference, NOT for copying:
 8. **Leaving old code when updating**: Remove obsolete implementations completely
 9. **Accumulating duplicate code**: Consolidate and clean up redundant logic
 10. **Keeping unused variables/functions**: Delete what isn't being used
-11. **Skipping linters and security scanners**: Always run TFLint, ansible-lint, and security tools
+11. **Skipping linters and security scanners**: Always run TFLint, ansible-lint, and Trivy
 12. **Ignoring best practices**: Follow official style guides and recommendations
-13. **Not using pre-commit hooks**: Automate quality checks before commits
-14. **Skipping cost estimation**: Use Infracost to understand infrastructure costs
-15. **Not testing Ansible roles**: Use Molecule to validate roles before deployment
+13. **Not using quality tools**: Use pre-commit hooks (when ready) and complementary tools
 
 ## Git Workflow
 
@@ -1620,17 +1745,18 @@ export SOPS_AGE_KEY_FILE="$HOME/.config/sops/age/keys.txt"
 **Mandatory Complementary Tools:**
 - TFLint
 - terraform-docs
-- Trivy or Checkov (at least one security scanner)
+- Trivy (security scanning)
 - ansible-lint
-- Molecule
 - yamllint
-- pre-commit
-- pre-commit-terraform
 
-**Optional But Recommended:**
-- Infracost (cost estimation)
+**Recommended Tools:**
+- pre-commit (automation, but can slow early development)
+- pre-commit-terraform
 - tfenv (version management)
-- Terrascan (additional security scanning)
+
+**Optional Tools:**
+- Molecule (only for complex reusable Ansible roles)
+- Checkov/Terrascan (additional security scanning if needed)
 - Ansible Semaphore (UI management)
 
 **Enterprise/Advanced (as needed):**
@@ -1717,9 +1843,6 @@ tflint                        # Lint Terraform code
 tflint --init                 # Initialize TFLint plugins
 terraform-docs markdown .     # Generate documentation
 trivy config .                # Security scan with Trivy
-checkov -d .                  # Security scan with Checkov
-terrascan scan                # Security scan with Terrascan
-infracost breakdown --path .  # Show cost estimate
 
 # Ansible
 ansible-playbook -i inventory playbook.yml
