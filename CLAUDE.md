@@ -210,6 +210,56 @@ These tools enhance the core workflow and follow industry best practices:
 - GPU: NVIDIA Ada Lovelace RTX 4000
 - Use case: Enterprise-grade mini PC for homelab/production virtualization with GPU acceleration
 
+### Storage Configuration
+
+**ZFS on Proxmox:**
+
+This infrastructure uses ZFS as the primary storage backend for Proxmox VE, providing enterprise-grade features like snapshots, checksums, compression, and data integrity.
+
+**ZFS Memory (ARC) Configuration:**
+- **Recommended ARC Size**: 10% of total system RAM
+- **Maximum ARC Size**: 16GB (for this 96GB system)
+- **Calculation**: 2GB base + 1GB per TiB of storage
+- **Configuration**: Set in `/etc/modprobe.d/zfs.conf`:
+  ```bash
+  options zfs zfs_arc_max=17179869184  # 16GB in bytes
+  ```
+
+**RAID Configuration:**
+- **Recommended**: Mirror vdevs (RAID1 or RAID10)
+- **Reasoning**: Best for VM workloads requiring consistent performance
+- **Trade-offs**: More redundancy vs. storage efficiency
+- **Avoid**: RAIDZ for VM storage (inconsistent performance)
+
+**Performance Optimization:**
+- **Extended Attributes**: `xattr=sa` (store metadata in inode)
+- **Compression**: LZ4 (default, minimal CPU overhead, ~2:1 ratio)
+- **Block Size**:
+  - NVMe SSDs: 16KB recordsize
+  - HDDs: 128KB recordsize
+  - VMs: Match guest filesystem block size
+- **ARC Efficiency**: Monitor with `arc_summary` command
+
+**ZFS Setup Best Practices:**
+1. Use single large partition for ZFS (not multiple small ones)
+2. Let ZFS handle disk management directly
+3. Avoid `ashift=9` (use `ashift=12` for 4K sectors, `ashift=13` for 8K)
+4. Enable compression at pool creation (can't change later)
+5. Regular scrubs (weekly/monthly) for data integrity
+6. Monitor pool health with `zpool status`
+
+**Proxmox-Specific Configuration:**
+- Create ZFS pool during Proxmox installation, or
+- Create manually: `zpool create -o ashift=12 -O compression=lz4 -O xattr=sa <pool-name> <devices>`
+- Add to Proxmox: Datacenter → Storage → Add → ZFS
+
+**Benefits for This Setup:**
+- Snapshots for VM backup/restore
+- Copy-on-write for instant clones
+- Data deduplication (optional, RAM-intensive)
+- Built-in compression saves disk space
+- Checksums prevent silent data corruption
+
 ## Supported Operating Systems
 
 ### Primary Focus: Talos Linux
@@ -452,6 +502,321 @@ Follow this sequence for development:
 - Update syntax to match current version
 - Avoid deprecated features
 - Document version requirements in code
+
+## CI/CD Implementation
+
+### Overview
+
+This project implements Infrastructure as Code (IaC) with automated CI/CD pipelines for testing, validating, and deploying infrastructure changes. The CI/CD strategy focuses on immutable infrastructure using golden images built with Packer.
+
+### CI/CD Platform Options
+
+**Recommended for This Setup: GitHub Actions or GitLab CI**
+
+#### GitHub Actions
+- **Pros**:
+  - Native GitHub integration
+  - Free for public repos, generous free tier for private
+  - Extensive marketplace with pre-built actions
+  - Simple YAML configuration
+  - Good for small to medium teams
+- **Cons**:
+  - Requires GitHub repository
+  - Less control over runner infrastructure
+- **Best for**: Projects already using GitHub, teams wanting simplicity
+
+#### GitLab CI
+- **Pros**:
+  - Built-in CI/CD (no external service needed)
+  - Integrated security scanning (SAST, DAST, dependency scanning)
+  - Self-hosted runners supported
+  - Excellent for GitOps workflows
+  - Built-in container registry
+- **Cons**:
+  - Requires GitLab (self-hosted or SaaS)
+  - Steeper learning curve than GitHub Actions
+- **Best for**: Teams wanting all-in-one DevOps platform, advanced security features
+
+#### Atlantis (Optional)
+- **Pros**:
+  - Purpose-built for Terraform GitOps
+  - Self-hosted, lightweight
+  - Terraform plan/apply via pull request comments
+  - Works with GitHub, GitLab, Bitbucket
+  - Prevents concurrent runs
+- **Cons**:
+  - Terraform-only (doesn't handle Packer, Ansible)
+  - Requires separate server to run
+  - Additional infrastructure to maintain
+- **Best for**: Pure Terraform workflows, teams wanting PR-based infrastructure changes
+
+#### Jenkins (Not Recommended for This Setup)
+- **Pros**:
+  - Most flexible and customizable
+  - Extensive plugin ecosystem
+- **Cons**:
+  - Heavy operational burden
+  - Manual Terraform integration
+  - Complex setup and maintenance
+  - Overkill for homelab/small teams
+- **Best for**: Large enterprises with dedicated DevOps teams
+
+### Recommended CI/CD Strategy
+
+**For this project, use GitHub Actions or GitLab CI** depending on your Git platform preference.
+
+**Pipeline Architecture:**
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                     Pull Request                        │
+├─────────────────────────────────────────────────────────┤
+│ 1. Lint & Format                                        │
+│    - terraform fmt -check                               │
+│    - tflint                                             │
+│    - ansible-lint                                       │
+│    - yamllint                                           │
+├─────────────────────────────────────────────────────────┤
+│ 2. Security Scan                                        │
+│    - trivy config (IaC security)                        │
+│    - checkov (policy as code)                           │
+├─────────────────────────────────────────────────────────┤
+│ 3. Validate                                             │
+│    - terraform validate                                 │
+│    - packer validate                                    │
+│    - ansible-playbook --syntax-check                    │
+├─────────────────────────────────────────────────────────┤
+│ 4. Plan                                                 │
+│    - terraform plan                                     │
+│    - Show cost estimate (infracost)                     │
+├─────────────────────────────────────────────────────────┤
+│ 5. Test (if applicable)                                 │
+│    - molecule test (Ansible roles)                      │
+└─────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────┐
+│                     Main Branch                         │
+├─────────────────────────────────────────────────────────┤
+│ 1. Build Images                                         │
+│    - packer build (golden images)                       │
+├─────────────────────────────────────────────────────────┤
+│ 2. Deploy Infrastructure                                │
+│    - terraform apply -auto-approve                      │
+├─────────────────────────────────────────────────────────┤
+│ 3. Configure VMs                                        │
+│    - ansible-playbook (post-deployment config)          │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Pipeline Stages
+
+**Stage 1: Code Quality (runs on every commit)**
+- Format checking: `terraform fmt -check`, `yamllint`
+- Linting: `tflint`, `ansible-lint`
+- Syntax validation: `terraform validate`, `packer validate`
+
+**Stage 2: Security Scanning (runs on every commit)**
+- IaC security: `trivy config .` or `checkov -d .`
+- Secrets detection: pre-commit hooks with detect-secrets
+- Compliance checks: Policy as Code validation
+
+**Stage 3: Plan & Cost Estimation (runs on PRs)**
+- Terraform plan with output
+- Cost estimation: `infracost breakdown --path .`
+- Post plan as PR comment for review
+
+**Stage 4: Test (runs on PRs, if applicable)**
+- Ansible role testing: `molecule test`
+- Integration tests for custom modules
+
+**Stage 5: Build Golden Images (runs on main branch)**
+- Packer builds for each OS template
+- Image validation and tagging
+- Store in Proxmox template library
+
+**Stage 6: Deploy Infrastructure (runs on main branch)**
+- Terraform apply with state locking
+- Capture apply output
+- Notify on success/failure
+
+**Stage 7: Post-Deployment Configuration (runs after deploy)**
+- Ansible playbooks for baseline configuration
+- Validation checks
+- Smoke tests
+
+### Immutable Infrastructure Pattern (2025 Best Practice)
+
+**Golden Images with Packer:**
+- Build VM images with Packer containing all base configuration
+- Images are versioned and immutable
+- Changes require rebuilding images, not modifying running VMs
+- Reduces configuration drift
+- Faster VM provisioning
+
+**Infrastructure Updates:**
+1. Update Packer template
+2. CI/CD builds new golden image
+3. Terraform creates VMs from new image
+4. Old VMs are destroyed (or blue/green deployment)
+5. No in-place VM updates
+
+### Implementation Steps
+
+**1. Set up CI/CD Platform:**
+- Create `.github/workflows/` (GitHub Actions) or `.gitlab-ci.yml` (GitLab CI)
+- Configure runners (use hosted runners or self-hosted)
+- Set up secrets (Proxmox credentials, SOPS Age keys)
+
+**2. Configure Pipeline Stages:**
+- Lint and format stage
+- Security scanning stage
+- Plan stage (PRs only)
+- Apply stage (main branch only)
+
+**3. Set up Remote State:**
+- Use remote backend for Terraform state (S3, GitLab, Terraform Cloud)
+- Enable state locking
+- NEVER commit state files to Git
+
+**4. Configure Branch Protection:**
+- Require PR reviews
+- Require CI/CD checks to pass
+- Prevent direct pushes to main
+
+**5. Set up Notifications:**
+- Slack/Discord/Email notifications for failures
+- PR comments with plan output and cost estimates
+
+### Security Considerations
+
+**Secrets Management:**
+- Use CI/CD platform's secret management (GitHub Secrets, GitLab CI/CD variables)
+- Store SOPS Age private key in CI/CD secrets
+- Never log sensitive values
+- Encrypt Proxmox credentials with SOPS
+
+**Access Control:**
+- Use service accounts with minimum required permissions
+- Rotate credentials regularly
+- Audit CI/CD logs for suspicious activity
+
+**State File Security:**
+- Encrypt Terraform state at rest
+- Use backend authentication
+- Restrict access to state storage
+
+### Example GitHub Actions Workflow
+
+```yaml
+name: Infrastructure CI/CD
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+      - name: TFLint
+        uses: terraform-linters/setup-tflint@v3
+        run: tflint --init && tflint
+      - name: Ansible Lint
+        run: ansible-lint
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'config'
+          scan-ref: '.'
+
+  plan:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
+      - name: Infracost
+        uses: infracost/actions/setup@v2
+        run: infracost breakdown --path .
+
+  apply:
+    if: github.ref == 'refs/heads/main'
+    needs: [lint, security]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Packer Build
+        run: packer build templates/
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
+      - name: Ansible Configure
+        run: ansible-playbook playbooks/baseline.yml
+```
+
+### GitOps Workflow with Atlantis (Optional)
+
+If you want PR-based Terraform automation, use Atlantis:
+
+1. **Install Atlantis** on a server (can be a VM in Proxmox)
+2. **Configure webhook** in GitHub/GitLab to notify Atlantis
+3. **Create atlantis.yaml** in repo root:
+   ```yaml
+   version: 3
+   projects:
+   - dir: terraform/
+     workflow: default
+     autoplan:
+       when_modified: ["*.tf", "*.tfvars"]
+   ```
+4. **Use PR comments** to control Terraform:
+   - `atlantis plan` - Run terraform plan
+   - `atlantis apply` - Run terraform apply
+   - `atlantis unlock` - Unlock state if needed
+
+### Monitoring and Observability
+
+**Pipeline Metrics:**
+- Track build success/failure rates
+- Monitor build duration
+- Alert on failed deployments
+
+**Infrastructure Metrics:**
+- Monitor VM resource usage
+- Track image build times
+- Alert on Terraform state drift
+
+### Best Practices for CI/CD
+
+1. **Always run plan before apply**
+2. **Require manual approval for production**
+3. **Use separate environments** (dev, staging, prod)
+4. **Version control everything**
+5. **Test infrastructure changes in dev first**
+6. **Implement rollback procedures**
+7. **Keep pipelines fast** (parallelize where possible)
+8. **Use caching** for dependencies (Terraform providers, Ansible collections)
+9. **Log everything** but sanitize secrets
+10. **Regular pipeline maintenance** (update actions/images)
+
+### Troubleshooting CI/CD Issues
+
+**Common Issues:**
+1. **State locking errors**: Ensure proper backend configuration
+2. **Authentication failures**: Check secret configuration
+3. **Timeout errors**: Increase timeouts or optimize builds
+4. **Concurrent runs**: Use proper locking mechanisms
+5. **Runner resource constraints**: Monitor runner capacity
 
 ## Code Quality Standards
 
@@ -1003,9 +1368,53 @@ talosctl bootstrap                         # Bootstrap Kubernetes
 talosctl kubeconfig                        # Get kubeconfig
 talosctl dashboard                         # Launch Talos dashboard
 talosctl get members                       # List cluster members
+
+# ZFS Storage
+zpool status                               # Check pool health
+zpool list                                 # List all pools
+zfs list                                   # List all datasets
+zfs get all poolname                       # Get all properties
+arc_summary                                # View ARC statistics
+zpool scrub poolname                       # Start scrub (data integrity check)
+zpool create -o ashift=12 \
+  -O compression=lz4 \
+  -O xattr=sa poolname mirror disk1 disk2  # Create mirrored pool
+
+# CI/CD (GitHub Actions)
+gh workflow list                           # List workflows
+gh workflow run workflow.yml               # Trigger workflow
+gh run list                                # List workflow runs
+gh run view RUN_ID                         # View run details
+
+# CI/CD (GitLab)
+gitlab-runner list                         # List registered runners
+gitlab-runner verify                       # Verify runner can connect
+gitlab-runner exec                         # Execute job locally
+
+# CI/CD (Atlantis)
+atlantis plan                              # Run plan (via PR comment)
+atlantis apply                             # Run apply (via PR comment)
+atlantis unlock                            # Unlock state (via PR comment)
 ```
 
 ## Version History
+
+- **2025-11-18**: ZFS storage and CI/CD implementation
+  - Added comprehensive ZFS storage configuration section
+  - Documented ZFS ARC memory configuration (16GB max for 96GB system)
+  - Added RAID configuration recommendations (mirror vdevs for VMs)
+  - Included performance optimization settings (xattr=sa, LZ4 compression, block sizes)
+  - Added ZFS setup best practices and Proxmox-specific configuration
+  - Added comprehensive CI/CD implementation section
+  - Compared CI/CD platforms (GitHub Actions, GitLab CI, Atlantis, Jenkins)
+  - Recommended GitHub Actions or GitLab CI for this setup
+  - Documented complete pipeline architecture (lint, security, plan, apply stages)
+  - Added immutable infrastructure pattern with Packer golden images
+  - Included example GitHub Actions workflow
+  - Added Atlantis GitOps workflow documentation
+  - Added security considerations for CI/CD (secrets, access control, state files)
+  - Added monitoring and troubleshooting guidance
+  - Added ZFS and CI/CD commands to Quick Reference section
 
 - **2025-11-18**: Talos Linux as primary platform with multi-OS support
   - Designated Talos Linux as primary and most-used VM
