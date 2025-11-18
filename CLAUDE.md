@@ -383,6 +383,34 @@ Talos Linux is a modern, immutable Linux distribution designed specifically for 
 
 This section provides a comprehensive list of tools specifically for Talos Linux deployment and management on Proxmox using Terraform and Ansible.
 
+### Project-Specific Tool Decisions
+
+**This project uses the following specific tools (decided choices, not just recommendations):**
+
+**Version Control & CI/CD:**
+- **Current**: GitHub (temporary)
+- **Future**: Gitea (self-hosted Git platform)
+- **CI/CD**: GitHub Actions (current), will migrate to Gitea Actions when switching
+
+**Terraform Stack:**
+- **Providers**:
+  - `siderolabs/talos` (~> 0.7.1) - Talos configuration and bootstrapping
+  - `bpg/proxmox` (~> 0.75.0) - Proxmox VM provisioning
+
+**Talos Kubernetes Stack:**
+- **Networking**: Cilium (eBPF-based CNI with L2 load balancing)
+- **Storage**: Longhorn (distributed block storage, Talos only)
+- **GitOps**: FluxCD (Kubernetes continuous delivery)
+
+**Rationale:**
+- **Gitea**: Self-hosted, lightweight, full control over infrastructure
+- **FluxCD**: Better Helm integration with hooks, more popular with Talos community
+- **Cilium**: Modern eBPF-based networking with advanced features
+- **Longhorn**: Cloud-native storage, simpler than Ceph, sufficient for homelab scale
+- **siderolabs/talos + bpg/proxmox**: Official providers with best support
+
+**Note**: Traditional VMs (Debian, Ubuntu, Arch, NixOS, Windows) may use different storage solutions as appropriate.
+
 ### Core Talos Tools (Required)
 
 1. **talosctl** (latest version)
@@ -405,19 +433,21 @@ This section provides a comprehensive list of tools specifically for Talos Linux
 
 ### Terraform Providers & Modules
 
-**Required Providers:**
+**Selected for This Project:**
 
-1. **siderolabs/talos** (latest version)
+1. **siderolabs/talos** (latest version) - **CHOSEN**
    - Purpose: Official HashiCorp-verified Terraform provider for Talos
    - Registry: https://registry.terraform.io/providers/siderolabs/talos/latest
    - Use: Configure nodes, apply patches, install Kubernetes, bootstrap etcd
    - Version: ~> 0.7.1 (as of 2025)
+   - **Why chosen**: Official provider with best support and features
 
-2. **bpg/proxmox** (latest version)
+2. **bpg/proxmox** (latest version) - **CHOSEN**
    - Purpose: Proxmox VE provider for Terraform
    - Registry: https://registry.terraform.io/providers/bpg/proxmox/latest
    - Use: Provision VMs, manage templates, configure hardware
    - Version: ~> 0.75.0 (as of 2025)
+   - **Why chosen**: Most maintained and feature-complete Proxmox provider
 
 **Recommended Modules:**
 
@@ -511,16 +541,17 @@ This section provides a comprehensive list of tools specifically for Talos Linux
 
 ### Kubernetes Networking
 
-**Recommended CNI:**
+**Selected for This Project: Cilium**
 
-1. **Cilium** (latest version)
+1. **Cilium** (latest version) - **CHOSEN**
    - Purpose: eBPF-based networking and security
    - Official docs: https://docs.cilium.io/
    - Use: CNI, L2 load balancing, network policies
    - Installation: Via Helm chart or Talos bootstrapping
    - Talos integration: https://www.talos.dev/v1.10/kubernetes-guides/network/deploying-cilium/
+   - **Why chosen**: Modern eBPF technology, excellent performance, advanced features
 
-**Alternative CNIs:**
+**Alternative CNIs (not used in this project):**
 
 2. **Flannel** (latest version)
    - Purpose: Simple overlay network
@@ -532,12 +563,18 @@ This section provides a comprehensive list of tools specifically for Talos Linux
 
 ### Kubernetes Storage
 
-1. **Longhorn** (latest version)
+**Selected for This Project: Longhorn (Talos only)**
+
+1. **Longhorn** (latest version) - **CHOSEN FOR TALOS**
    - Purpose: Distributed block storage for Kubernetes
    - Official docs: https://longhorn.io/
    - Use: Persistent volumes, snapshots, backups
    - Talos support: Confirmed working in 2025
    - Installation: Via Helm chart
+   - **Why chosen**: Cloud-native, simpler than Ceph, sufficient for homelab scale
+   - **Note**: Used exclusively for Talos Kubernetes cluster
+
+**Alternative Storage (not used in this project):**
 
 2. **Ceph** (latest version)
    - Purpose: Distributed storage system
@@ -558,16 +595,16 @@ This section provides a comprehensive list of tools specifically for Talos Linux
 
 ### GitOps Tools
 
-**Recommended: FluxCD**
+**Selected for This Project: FluxCD**
 
-1. **FluxCD** (latest version)
+1. **FluxCD** (latest version) - **CHOSEN**
    - Purpose: Kubernetes GitOps continuous delivery
    - Official docs: https://fluxcd.io/
    - Use: Automated cluster reconciliation from Git
-   - Why: More popular with Talos, better Helm integration with hooks
    - Installation: Bootstrap via flux CLI
+   - **Why chosen**: More popular with Talos community, better Helm integration with hooks, lightweight
 
-**Alternative: ArgoCD**
+**Alternative GitOps (not used in this project):**
 
 2. **ArgoCD** (latest version)
    - Purpose: Declarative GitOps CD for Kubernetes
@@ -576,11 +613,13 @@ This section provides a comprehensive list of tools specifically for Talos Linux
    - Why: Better for developer-facing deployments
    - Note: Can combine both FluxCD (infra) + ArgoCD (apps)
 
+**Supporting Tools:**
+
 3. **Helm** (latest version)
    - Purpose: Kubernetes package manager
    - Official docs: https://helm.sh/
    - Use: Deploy charts, manage releases
-   - Note: Both FluxCD and ArgoCD support Helm charts
+   - Note: FluxCD has excellent Helm support
 
 ### Monitoring & Observability
 
@@ -817,9 +856,10 @@ This project implements Infrastructure as Code (IaC) with automated CI/CD pipeli
 
 ### CI/CD Platform Options
 
-**Recommended for This Setup: GitHub Actions or GitLab CI**
+**Selected for This Project: GitHub Actions (current) → Gitea Actions (future)**
 
-#### GitHub Actions
+#### GitHub Actions (Currently Used)
+- **Status**: Temporary, will migrate to Gitea
 - **Pros**:
   - Native GitHub integration
   - Free for public repos, generous free tier for private
@@ -831,7 +871,23 @@ This project implements Infrastructure as Code (IaC) with automated CI/CD pipeli
   - Less control over runner infrastructure
 - **Best for**: Projects already using GitHub, teams wanting simplicity
 
-#### GitLab CI
+#### Gitea (Future Platform) - **CHOSEN FOR PRODUCTION**
+- **Status**: Future self-hosted Git platform
+- **Pros**:
+  - Self-hosted, full control over infrastructure
+  - Lightweight (single binary, low resource usage)
+  - Compatible with GitHub Actions workflows (Gitea Actions)
+  - Built-in CI/CD (Gitea Actions runner)
+  - Free and open source
+  - Privacy and data control
+- **Cons**:
+  - Requires self-hosting infrastructure
+  - Smaller ecosystem compared to GitHub
+  - Need to manage updates and backups
+- **Why chosen**: Self-hosted control, lightweight, privacy, compatible with GitHub Actions
+- **Migration path**: Existing GitHub Actions workflows will work with Gitea Actions
+
+#### GitLab CI (Alternative, not chosen)
 - **Pros**:
   - Built-in CI/CD (no external service needed)
   - Integrated security scanning (SAST, DAST, dependency scanning)
@@ -867,9 +923,11 @@ This project implements Infrastructure as Code (IaC) with automated CI/CD pipeli
   - Overkill for homelab/small teams
 - **Best for**: Large enterprises with dedicated DevOps teams
 
-### Recommended CI/CD Strategy
+### Project CI/CD Strategy
 
-**For this project, use GitHub Actions or GitLab CI** depending on your Git platform preference.
+**This project uses: GitHub Actions (current) → Gitea Actions (future migration)**
+
+The CI/CD workflows will be compatible with both GitHub Actions and Gitea Actions, allowing for seamless migration when transitioning to self-hosted Gitea infrastructure.
 
 **Pipeline Architecture:**
 
@@ -1735,6 +1793,19 @@ atlantis unlock                            # Unlock state (via PR comment)
 ```
 
 ## Version History
+
+- **2025-11-18**: Project-specific tool decisions and clarifications
+  - Added "Project-Specific Tool Decisions" section documenting chosen tools
+  - **Version Control**: GitHub (current) → Gitea (future self-hosted)
+  - **CI/CD**: GitHub Actions (current) → Gitea Actions (future)
+  - **Terraform Providers**: siderolabs/talos + bpg/proxmox (chosen and emphasized)
+  - **Talos Networking**: Cilium (chosen, eBPF-based CNI)
+  - **Talos Storage**: Longhorn (chosen for Talos Kubernetes only)
+  - **GitOps**: FluxCD (chosen for better Helm integration)
+  - Updated all tool sections to clearly mark chosen vs alternative options
+  - Added rationale for each tool selection
+  - Documented migration path from GitHub to Gitea
+  - Emphasized that workflows will be compatible with both GitHub Actions and Gitea Actions
 
 - **2025-11-18**: Talos Linux recommended tools and ecosystem
   - Added comprehensive "Talos Linux Recommended Tools" section
