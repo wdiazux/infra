@@ -207,7 +207,8 @@ These tools enhance the core workflow and follow industry best practices:
 - **Minisforum MS-A2**
 - CPU: AMD Ryzen AI 9 HX 370 (formerly 9955HX)
 - RAM: 96GB
-- Use case: Enterprise-grade mini PC for homelab/production virtualization
+- GPU: NVIDIA Ada Lovelace RTX 4000
+- Use case: Enterprise-grade mini PC for homelab/production virtualization with GPU acceleration
 
 ## Supported Operating Systems
 
@@ -843,7 +844,8 @@ tfenv use 1.x.x                           # Use specific version
 
 - **2025-11-18**: Hardware platform specification
   - Added hardware platform details (Minisforum MS-A2 with AMD Ryzen AI 9 HX 370, 96GB RAM)
-  - Documented target system for Proxmox VE deployment
+  - Added GPU information (NVIDIA Ada Lovelace RTX 4000)
+  - Documented target system for Proxmox VE deployment with GPU acceleration capabilities
 
 - **2025-11-18**: Complementary tools and best practices mandate
   - Added comprehensive complementary tools section for Terraform and Ansible
