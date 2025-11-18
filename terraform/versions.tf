@@ -40,11 +40,17 @@ provider "proxmox" {
   endpoint = var.proxmox_url
   username = var.proxmox_username
 
-  # Use API token (recommended)
+  # Authentication Method Selection:
+  #
+  # Option 1: API Token (recommended for most operations)
   api_token = var.proxmox_api_token
 
-  # Or use password (less secure)
+  # Option 2: Password (required for GPU passthrough with PCI ID parameter)
+  # If using GPU passthrough, uncomment this and comment out api_token above:
   # password = var.proxmox_password
+  #
+  # Note: Some GPU passthrough configurations require password authentication.
+  # If you encounter "403 Forbidden" errors with GPU setup, switch to password auth.
 
   insecure = var.proxmox_insecure  # For self-signed certs
 

@@ -76,14 +76,14 @@ enable_gpu_passthrough = true
 
 # Find your GPU PCI ID with: lspci | grep -i nvidia
 # Example output: 01:00.0 VGA compatible controller: NVIDIA Corporation ...
-# Use "01:00" as the PCI ID
+# Use "01:00" format (will be converted to "0000:01:00.0" internally)
 gpu_pci_id = "01:00"
 
 # PCIe passthrough mode (recommended)
 gpu_pcie = true
 
-# GPU ROM bar (0 if using vBIOS, 1 if using physical ROM)
-gpu_rombar = 0
+# GPU ROM bar (false recommended for GPU passthrough)
+gpu_rombar = false
 
 # ============================================================================
 # Network Configuration

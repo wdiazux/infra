@@ -190,9 +190,9 @@ resource "proxmox_virtual_environment_vm" "talos_node" {
     for_each = var.enable_gpu_passthrough ? [1] : []
     content {
       device  = "hostpci0"
-      id      = var.gpu_pci_id
+      id      = "0000:${var.gpu_pci_id}.0"  # Full PCI format required: 0000:XX:YY.0
       pcie    = var.gpu_pcie
-      rombar  = var.gpu_rombar
+      rombar  = var.gpu_rombar  # Boolean: true enables ROM bar, false disables
       mapping = null
     }
   }
