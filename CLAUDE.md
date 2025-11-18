@@ -212,19 +212,136 @@ These tools enhance the core workflow and follow industry best practices:
 
 ## Supported Operating Systems
 
-The project targets the following operating systems:
+### Primary Focus: Talos Linux
+
+**Talos Linux** is the primary and most-used VM in this infrastructure:
+
+- **Purpose**: Kubernetes-native, immutable, minimal Linux distribution
+- **Primary Use Cases**:
+  - Kubernetes cluster hosting
+  - Multimedia services (Plex, Jellyfin, etc.)
+  - AI/ML workloads (leveraging NVIDIA RTX 4000 GPU)
+  - Container orchestration for production workloads
+- **Key Features**:
+  - API-driven configuration (no SSH, no shell)
+  - Immutable infrastructure
+  - Minimal attack surface
+  - GPU passthrough support for AI/ML workloads
+- **Official Docs**: https://www.talos.dev/
+
+### Additional Operating Systems
+
+Supporting golden images for:
 
 1. **Debian** (latest stable)
 2. **Ubuntu** (latest LTS)
 3. **Arch Linux**
 4. **NixOS**
-5. **Talos**
-6. **Windows** (version TBD)
+5. **Windows** (version TBD)
 
-Each OS should have:
+### OS-Specific Requirements
+
+**For Talos Linux:**
+- Custom Packer template with qemu-guest-agent
+- Talos Factory images with NVIDIA extensions (for GPU passthrough)
+- Terraform-based cluster deployment
+- Ansible for Day 0/1/2 operations
+- No cloud-init (uses machine configuration API)
+
+**For traditional OSes:**
 - Dedicated Packer template
 - OS-specific cloud-init configuration
 - Ansible playbook for baseline configuration
+
+## Talos Linux Implementation Guide
+
+### Overview
+
+Talos Linux is a modern, immutable Linux distribution designed specifically for Kubernetes. It provides a secure, minimal, and API-driven platform for running containerized workloads.
+
+### Key Characteristics
+
+- **Immutable**: No package manager, no shell access
+- **API-Driven**: All configuration via declarative API
+- **Kubernetes-Native**: Built specifically for running Kubernetes
+- **Minimal**: Small attack surface with only essential components
+- **Production-Ready**: Used in enterprise environments
+
+### Implementation Strategy
+
+**Packer Image Building:**
+- Use Talos Factory (factory.talos.dev) to build custom images
+- Include qemu-guest-agent support for Terraform integration
+- Add NVIDIA extensions for GPU passthrough:
+  - nvidia-open-gpu-kernel-modules
+  - nvidia-container-toolkit
+- Image type considerations:
+  - Talos 1.7.x: "nocloud" images (cloud-init compatible)
+  - Talos 1.8.0+: "metal" images (recommended for current versions)
+
+**Terraform Deployment:**
+- Use official Proxmox provider (bpg/proxmox)
+- Use Talos provider (siderolabs/talos)
+- Structure:
+  - Template module for reusable VM templates
+  - Cluster module for multi-node deployments
+  - Network module for Cilium integration
+- Enable IOMMU for GPU passthrough in VM configuration
+- Configure PCI device passthrough for NVIDIA GPU
+
+**Ansible Automation:**
+- Day 0: Prerequisites and network configuration
+- Day 1: Cluster deployment and bootstrapping
+- Day 2: Ongoing operations and updates
+- Use available roles:
+  - mgrzybek/talos-ansible-playbooks
+  - sergelogvinov/ansible-role-talos-boot
+
+**Kubernetes Integration:**
+- Cilium for networking and L2 load balancing
+- Longhorn for distributed persistent storage
+- NVIDIA GPU Operator for GPU workload scheduling
+- System extensions for GPU support
+
+### GPU Passthrough Configuration
+
+**Proxmox Host Setup:**
+1. Enable IOMMU in BIOS
+2. Edit `/etc/default/grub`:
+   - AMD: Add `amd_iommu=on iommu=pt`
+   - Intel: Add `intel_iommu=on iommu=pt`
+3. Blacklist NVIDIA drivers on host
+4. Bind GPU to VFIO driver
+
+**Talos Configuration:**
+1. Build custom image with NVIDIA extensions from Talos Factory
+2. Configure machine config with GPU device mapping
+3. Install NVIDIA GPU Operator in Kubernetes
+4. Deploy workloads with GPU resource requests
+
+### Best Practices for Talos
+
+- Use Talos Factory for custom image creation
+- Pin Talos version for reproducibility
+- Implement GitOps workflow for configuration management
+- Use talosctl for cluster operations
+- Maintain machine configurations in version control
+- Test GPU passthrough before production deployment
+- Monitor GPU utilization in Kubernetes
+
+### Reference Implementations
+
+- **GitHub Examples**:
+  - rgl/terraform-proxmox-talos
+  - pascalinthecloud/terraform-proxmox-talos-cluster
+  - mgrzybek/talos-ansible-playbooks
+- **Blog Posts**:
+  - TechDufus: Building Talos Kubernetes Homelab on Proxmox with Terraform (June 2025)
+  - Suraj Remanan: Automating Talos Installation with Packer and Terraform (August 2025)
+  - Duck's Blog: NVIDIA GPU Passthrough to TalosOS VM to Kubernetes (March 2025)
+- **Official Documentation**:
+  - https://www.talos.dev/
+  - https://factory.talos.dev/
 
 ## Development Workflows
 
@@ -283,23 +400,26 @@ Follow this sequence for development:
    - Identify breaking changes from older versions
 
 2. **Packer Templates**
-   - Create templates for each OS
+   - **Talos**: Build custom image from Talos Factory with NVIDIA extensions
+   - **Traditional OS**: Create templates for each OS
    - Test builds individually
    - Optimize for size and build time
 
-3. **Cloud-init Configuration**
+3. **Cloud-init Configuration** (Traditional OS only)
    - Set up initial provisioning
    - Configure networking
    - Create initial users
+   - Note: Talos uses machine configuration API instead
 
 4. **Ansible Playbooks**
-   - Define baseline package sets
-   - Apply OS-specific configurations
-   - Set default credentials (username/password)
+   - **Talos**: Day 0/1/2 operations (prerequisites, deployment, updates)
+   - **Traditional OS**: Define baseline packages, apply configurations
+   - Set default credentials (username/password for traditional OS)
 
 5. **Terraform Integration**
-   - Orchestrate image building
-   - Manage VM deployment
+   - **Talos**: Use Proxmox + Talos providers for cluster deployment
+   - **Traditional OS**: Orchestrate image building and VM deployment
+   - Configure GPU passthrough for Talos VMs
    - Handle provider configuration
 
 6. **Testing & Validation**
@@ -483,37 +603,53 @@ source "proxmox-iso" "d12" {
 6. **SOPS Documentation**: https://github.com/getsops/sops
 7. **Age Documentation**: https://github.com/FiloSottile/age
 
+**Talos Linux:**
+8. **Talos Documentation**: https://www.talos.dev/
+9. **Talos Factory**: https://factory.talos.dev/
+10. **Talos GitHub**: https://github.com/siderolabs/talos
+11. **Talos NVIDIA GPU Guide**: https://www.talos.dev/v1.8/talos-guides/configuration/nvidia-gpu/
+12. **Talosctl CLI**: https://www.talos.dev/v1.8/reference/cli/
+
 **Terraform Complementary Tools:**
-8. **TFLint**: https://github.com/terraform-linters/tflint
-9. **terraform-docs**: https://terraform-docs.io/
-10. **Trivy**: https://aquasecurity.github.io/trivy/
-11. **Checkov**: https://www.checkov.io/
-12. **Terrascan**: https://runterrascan.io/
-13. **Infracost**: https://www.infracost.io/
-14. **tfenv**: https://github.com/tfutils/tfenv
-15. **Terragrunt**: https://terragrunt.gruntwork.io/
-16. **Atlantis**: https://www.runatlantis.io/
+13. **TFLint**: https://github.com/terraform-linters/tflint
+14. **terraform-docs**: https://terraform-docs.io/
+15. **Trivy**: https://aquasecurity.github.io/trivy/
+16. **Checkov**: https://www.checkov.io/
+17. **Terrascan**: https://runterrascan.io/
+18. **Infracost**: https://www.infracost.io/
+19. **tfenv**: https://github.com/tfutils/tfenv
+20. **Terragrunt**: https://terragrunt.gruntwork.io/
+21. **Atlantis**: https://www.runatlantis.io/
 
 **Ansible Complementary Tools:**
-17. **ansible-lint**: https://ansible-lint.readthedocs.io/
-18. **Molecule**: https://molecule.readthedocs.io/
-19. **yamllint**: https://yamllint.readthedocs.io/
-20. **Ansible Semaphore**: https://semaphoreui.com/
-21. **AWX**: https://github.com/ansible/awx
+22. **ansible-lint**: https://ansible-lint.readthedocs.io/
+23. **Molecule**: https://molecule.readthedocs.io/
+24. **yamllint**: https://yamllint.readthedocs.io/
+25. **Ansible Semaphore**: https://semaphoreui.com/
+26. **AWX**: https://github.com/ansible/awx
 
 **Cross-cutting Tools:**
-22. **pre-commit**: https://pre-commit.com/
-23. **pre-commit-terraform**: https://github.com/antonbabenko/pre-commit-terraform
+27. **pre-commit**: https://pre-commit.com/
+28. **pre-commit-terraform**: https://github.com/antonbabenko/pre-commit-terraform
 
 **Best Practices Guides:**
-24. **Terraform Best Practices**: https://www.terraform-best-practices.com/
-25. **HashiCorp Terraform Style Guide**: https://developer.hashicorp.com/terraform/language/style
-26. **Ansible Best Practices**: https://docs.ansible.com/ansible/latest/tips_tricks/ansible_tips_tricks.html
+29. **Terraform Best Practices**: https://www.terraform-best-practices.com/
+30. **HashiCorp Terraform Style Guide**: https://developer.hashicorp.com/terraform/language/style
+31. **Ansible Best Practices**: https://docs.ansible.com/ansible/latest/tips_tricks/ansible_tips_tricks.html
 
 ### Reference Repositories (Inspiration Only)
 
 These repositories are for pattern reference, NOT for copying:
 
+**Talos-Specific:**
+- [rgl/terraform-proxmox-talos](https://github.com/rgl/terraform-proxmox-talos) - Talos Kubernetes on Proxmox with Terraform
+- [pascalinthecloud/terraform-proxmox-talos-cluster](https://github.com/pascalinthecloud/terraform-proxmox-talos-cluster) - Terraform module for Talos clusters
+- [mgrzybek/talos-ansible-playbooks](https://github.com/mgrzybek/talos-ansible-playbooks) - Ansible playbooks for Talos management
+- [sergelogvinov/ansible-role-talos-boot](https://github.com/sergelogvinov/ansible-role-talos-boot) - Ansible role for Talos bootstrapping
+- [Robert-litts/Talos_Kubernetes](https://github.com/Robert-litts/Talos_Kubernetes) - Automated Talos deployment with Packer and Terraform
+- [kubebn/talos-proxmox-kaas](https://github.com/kubebn/talos-proxmox-kaas) - Kubernetes-as-a-Service on Proxmox
+
+**General Homelab:**
 - [kencx/homelab](https://github.com/kencx/homelab)
 - [zimmertr/TJs-Kubernetes-Service](https://github.com/zimmertr/TJs-Kubernetes-Service)
 - [sergelogvinov/terraform-talos](https://github.com/sergelogvinov/terraform-talos)
@@ -523,7 +659,14 @@ These repositories are for pattern reference, NOT for copying:
 
 ### Reference Blog Posts
 
-- [Talos Cluster on Proxmox with Terraform](https://olav.ninja/talos-cluster-on-proxmox-with-terraform)
+**Talos on Proxmox:**
+- [Building a Talos Kubernetes Homelab with Terraform on Proxmox - TechDufus (June 2025)](https://techdufus.com/tech/2025/06/30/building-a-talos-kubernetes-homelab-on-proxmox-with-terraform.html)
+- [Automating Talos Installation on Proxmox with Packer and Terraform - Suraj Remanan (August 2025)](https://surajremanan.com/posts/automating-talos-installation-on-proxmox-with-packer-and-terraform/)
+- [NVIDIA GPU Passthrough to TalosOS VM to Kubernetes - Duck's Blog (March 2025)](https://blog.duckdefense.cc/kubernetes-gpu-passthrough/)
+- [Talos cluster on Proxmox with Terraform - Olav.ninja](https://olav.ninja/talos-cluster-on-proxmox-with-terraform)
+- [Kubernetes with Proxmox, Talos, and Terraform - BB Tech Systems](https://bbtechsystems.com/blog/k8s-with-pxe-tf/)
+
+**General Infrastructure:**
 - [Homelab as Code](https://merox.dev/blog/homelab-as-code/)
 - [Terraform Proxmox Provider Guide](https://spacelift.io/blog/terraform-proxmox-provider)
 
@@ -838,9 +981,31 @@ pre-commit autoupdate                      # Update hook versions
 tfenv list                                 # List Terraform versions
 tfenv install latest                       # Install latest Terraform
 tfenv use 1.x.x                           # Use specific version
+
+# Talos Linux
+talosctl version                           # Check Talos version
+talosctl cluster create                    # Create local test cluster
+talosctl gen config                        # Generate machine configuration
+talosctl apply-config                      # Apply configuration to nodes
+talosctl bootstrap                         # Bootstrap Kubernetes
+talosctl kubeconfig                        # Get kubeconfig
+talosctl dashboard                         # Launch Talos dashboard
+talosctl get members                       # List cluster members
 ```
 
 ## Version History
+
+- **2025-11-18**: Talos Linux as primary platform
+  - Designated Talos Linux as primary and most-used VM
+  - Added comprehensive Talos Linux Implementation Guide
+  - Documented Kubernetes use cases (multimedia, AI/ML, production workloads)
+  - Added GPU passthrough configuration for Talos
+  - Included Packer, Terraform, and Ansible strategies for Talos deployment
+  - Added Talos-specific official documentation and reference links
+  - Expanded reference repositories with 6 Talos-specific examples
+  - Added 5 current blog posts (2025) for Talos on Proxmox
+  - Updated implementation order to distinguish Talos vs traditional OS workflows
+  - Added talosctl command reference
 
 - **2025-11-18**: Hardware platform specification
   - Added hardware platform details (Minisforum MS-A2 with AMD Ryzen AI 9 HX 370, 96GB RAM)
