@@ -20,6 +20,9 @@ packer_cache/
 crash.log
 packer-manifest.json
 output-*/
+*.auto.pkrvars.hcl
+*-vars.pkr.hcl
+manifest.json
 
 # Ansible
 *.retry
