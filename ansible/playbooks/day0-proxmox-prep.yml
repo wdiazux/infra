@@ -1,0 +1,316 @@
+# Day 0: Proxmox Host Preparation for Talos Linux
+#
+# This playbook prepares the Proxmox VE host for deploying Talos with GPU passthrough
+#
+# Run with: ansible-playbook playbooks/day0-proxmox-prep.yml
+#
+# Prerequisites:
+# - Proxmox VE 9.0 installed
+# - SSH access to Proxmox host as root
+# - IOMMU support in BIOS (VT-d for Intel, AMD-Vi for AMD)
+
+---
+- name: Prepare Proxmox Host for Talos with GPU Passthrough
+  hosts: proxmox
+  gather_facts: yes
+  become: yes
+
+  vars:
+    # GRUB configuration based on CPU vendor
+    grub_cmdline_amd: "quiet amd_iommu=on iommu=pt"
+    grub_cmdline_intel: "quiet intel_iommu=on iommu=pt"
+
+    # Kernel modules for VFIO (GPU passthrough)
+    vfio_modules:
+      - vfio
+      - vfio_iommu_type1
+      - vfio_pci
+      - vfio_virqfd
+
+    # Modules to blacklist (prevent host from using GPU)
+    blacklist_modules:
+      - nvidia
+      - nouveau
+      - nvidiafb
+
+  tasks:
+    # ========================================================================
+    # System Information
+    # ========================================================================
+
+    - name: Display system information
+      ansible.builtin.debug:
+        msg: |
+          Proxmox Host: {{ ansible_hostname }}
+          CPU: {{ ansible_processor[2] if ansible_processor is defined else 'Unknown' }}
+          Vendor: {{ cpu_vendor }}
+          Memory: {{ ansible_memtotal_mb }}MB
+          Kernel: {{ ansible_kernel }}
+          Distribution: {{ ansible_distribution }} {{ ansible_distribution_version }}
+
+    # ========================================================================
+    # Prerequisites Check
+    # ========================================================================
+
+    - name: Check if Proxmox VE is installed
+      ansible.builtin.command: pveversion
+      register: pve_version
+      changed_when: false
+      failed_when: false
+
+    - name: Verify Proxmox VE 9.0+
+      ansible.builtin.assert:
+        that:
+          - pve_version.rc == 0
+          - "'pve-manager/9' in pve_version.stdout or 'pve-manager/8' in pve_version.stdout"
+        fail_msg: "Proxmox VE 9.0+ required (or 8.x acceptable)"
+        success_msg: "Proxmox VE version: {{ pve_version.stdout }}"
+
+    - name: Check CPU vendor
+      ansible.builtin.set_fact:
+        detected_cpu_vendor: "{{ 'amd' if 'AMD' in ansible_processor[2] else 'intel' if 'Intel' in ansible_processor[2] else 'unknown' }}"
+
+    - name: Validate CPU vendor
+      ansible.builtin.assert:
+        that:
+          - detected_cpu_vendor != 'unknown'
+        fail_msg: "Could not detect CPU vendor (AMD or Intel required)"
+        success_msg: "Detected CPU vendor: {{ detected_cpu_vendor }}"
+
+    # ========================================================================
+    # IOMMU Configuration
+    # ========================================================================
+
+    - name: Check if IOMMU is already enabled
+      ansible.builtin.shell: dmesg | grep -i iommu | grep -i enabled
+      register: iommu_check
+      changed_when: false
+      failed_when: false
+
+    - name: Display current IOMMU status
+      ansible.builtin.debug:
+        msg: "IOMMU Status: {{ 'Enabled' if iommu_check.rc == 0 else 'Not Enabled' }}"
+
+    - name: Read current GRUB configuration
+      ansible.builtin.slurp:
+        src: /etc/default/grub
+      register: grub_config
+
+    - name: Parse GRUB cmdline
+      ansible.builtin.set_fact:
+        current_grub_cmdline: "{{ (grub_config['content'] | b64decode | regex_search('GRUB_CMDLINE_LINUX_DEFAULT=\"(.*)\"', '\\1') | first) if grub_config['content'] is defined else '' }}"
+
+    - name: Set target GRUB cmdline based on CPU vendor
+      ansible.builtin.set_fact:
+        target_grub_cmdline: "{{ grub_cmdline_amd if cpu_vendor == 'amd' else grub_cmdline_intel }}"
+
+    - name: Update GRUB configuration for IOMMU
+      ansible.builtin.lineinfile:
+        path: /etc/default/grub
+        regexp: '^GRUB_CMDLINE_LINUX_DEFAULT='
+        line: 'GRUB_CMDLINE_LINUX_DEFAULT="{{ target_grub_cmdline }}"'
+        backup: yes
+      register: grub_updated
+      notify: Update GRUB
+
+    - name: Display GRUB update status
+      ansible.builtin.debug:
+        msg: "GRUB configuration {{ 'updated' if grub_updated.changed else 'already correct' }}"
+
+    # ========================================================================
+    # VFIO Kernel Modules
+    # ========================================================================
+
+    - name: Load VFIO kernel modules
+      ansible.builtin.modprobe:
+        name: "{{ item }}"
+        state: present
+      loop: "{{ vfio_modules }}"
+      when: has_gpu | default(false)
+
+    - name: Configure VFIO modules to load at boot
+      ansible.builtin.lineinfile:
+        path: /etc/modules
+        line: "{{ item }}"
+        create: yes
+      loop: "{{ vfio_modules }}"
+      when: has_gpu | default(false)
+
+    # ========================================================================
+    # Blacklist GPU Drivers on Host
+    # ========================================================================
+
+    - name: Create blacklist configuration for GPU drivers
+      ansible.builtin.copy:
+        dest: /etc/modprobe.d/blacklist-gpu.conf
+        content: |
+          # Blacklist GPU drivers to prevent host from using GPU
+          # GPU will be passed through to VMs instead
+          {% for module in blacklist_modules %}
+          blacklist {{ module }}
+          {% endfor %}
+        mode: '0644'
+      when: has_gpu | default(false)
+      notify: Update initramfs
+
+    # ========================================================================
+    # ZFS Configuration
+    # ========================================================================
+
+    - name: Check if ZFS is installed
+      ansible.builtin.command: zpool status
+      register: zfs_check
+      changed_when: false
+      failed_when: false
+
+    - name: Configure ZFS ARC memory limit
+      ansible.builtin.lineinfile:
+        path: /etc/modprobe.d/zfs.conf
+        line: "options zfs zfs_arc_max={{ (zfs_arc_max_gb | default(16)) * 1024 * 1024 * 1024 }}"
+        create: yes
+        regexp: '^options zfs zfs_arc_max='
+      when: zfs_check.rc == 0
+      notify: Update initramfs
+
+    - name: Display ZFS configuration
+      ansible.builtin.debug:
+        msg: "ZFS ARC max: {{ zfs_arc_max_gb | default(16) }}GB"
+      when: zfs_check.rc == 0
+
+    # ========================================================================
+    # Network Configuration
+    # ========================================================================
+
+    - name: Verify network bridge exists
+      ansible.builtin.command: ip link show vmbr0
+      register: bridge_check
+      changed_when: false
+      failed_when: false
+
+    - name: Display bridge status
+      ansible.builtin.debug:
+        msg: "Network bridge vmbr0: {{ 'Present' if bridge_check.rc == 0 else 'Not Found - create manually in Proxmox' }}"
+
+    # ========================================================================
+    # GPU Information
+    # ========================================================================
+
+    - name: Get GPU information
+      ansible.builtin.shell: lspci | grep -i vga | grep -i nvidia
+      register: gpu_info
+      changed_when: false
+      failed_when: false
+      when: has_gpu | default(false)
+
+    - name: Display GPU information
+      ansible.builtin.debug:
+        msg: "GPU detected: {{ gpu_info.stdout if gpu_info.rc == 0 else 'No NVIDIA GPU found' }}"
+      when: has_gpu | default(false)
+
+    - name: Get GPU PCI ID
+      ansible.builtin.shell: lspci | grep -i nvidia | awk '{print $1}'
+      register: gpu_pci
+      changed_when: false
+      failed_when: false
+      when: has_gpu | default(false)
+
+    - name: Display GPU PCI ID for Terraform
+      ansible.builtin.debug:
+        msg: |
+          GPU PCI ID for Terraform configuration: {{ gpu_pci.stdout.split('.')[0] if gpu_pci.rc == 0 else 'Not detected' }}
+          Use this in terraform/terraform.tfvars: gpu_pci_id = "{{ gpu_pci.stdout.split('.')[0] }}"
+      when: has_gpu | default(false)
+
+    # ========================================================================
+    # Verify IOMMU Groups
+    # ========================================================================
+
+    - name: List IOMMU groups
+      ansible.builtin.shell: find /sys/kernel/iommu_groups/ -type l | sort -V
+      register: iommu_groups
+      changed_when: false
+      failed_when: false
+
+    - name: Display IOMMU group count
+      ansible.builtin.debug:
+        msg: "IOMMU groups found: {{ iommu_groups.stdout_lines | length if iommu_groups.rc == 0 else '0 (IOMMU not enabled or requires reboot)' }}"
+
+    # ========================================================================
+    # Post-Configuration Summary
+    # ========================================================================
+
+    - name: Display post-configuration summary
+      ansible.builtin.debug:
+        msg: |
+          ============================================================
+          Proxmox Host Preparation Complete
+          ============================================================
+
+          System Information:
+          - Host: {{ ansible_hostname }}
+          - Proxmox Version: {{ pve_version.stdout }}
+          - CPU Vendor: {{ detected_cpu_vendor }}
+          - Memory: {{ ansible_memtotal_mb }}MB
+
+          IOMMU Configuration:
+          - Target GRUB cmdline: {{ target_grub_cmdline }}
+          - GRUB updated: {{ grub_updated.changed }}
+          - VFIO modules configured: {{ has_gpu | default(false) }}
+
+          GPU Configuration:
+          - GPU passthrough enabled: {{ has_gpu | default(false) }}
+          {% if has_gpu | default(false) and gpu_info.rc == 0 %}
+          - GPU detected: {{ gpu_info.stdout }}
+          - PCI ID: {{ gpu_pci.stdout.split('.')[0] }}
+          {% endif %}
+
+          ZFS Configuration:
+          - ZFS installed: {{ zfs_check.rc == 0 }}
+          {% if zfs_check.rc == 0 %}
+          - ARC max: {{ zfs_arc_max_gb | default(16) }}GB
+          {% endif %}
+
+          Network:
+          - Bridge vmbr0: {{ 'Present' if bridge_check.rc == 0 else 'Not Found' }}
+
+          ============================================================
+          IMPORTANT: Reboot Required!
+          ============================================================
+          {% if grub_updated.changed %}
+          GRUB configuration was updated. Reboot Proxmox host to apply changes:
+
+            ssh root@{{ ansible_host }} reboot
+
+          After reboot, verify IOMMU is enabled:
+
+            ssh root@{{ ansible_host }} "dmesg | grep -i iommu | grep -i enabled"
+
+          {% else %}
+          No GRUB changes made. Verify IOMMU status after reboot (if not already enabled).
+          {% endif %}
+
+          Next Steps:
+          1. Reboot Proxmox host (if GRUB was updated)
+          2. Verify IOMMU is enabled
+          3. Run Packer to build Talos template: cd packer/talos && packer build .
+          4. Run Terraform to deploy Talos VM: cd terraform && terraform apply
+          5. Run Day 1 playbook for post-deployment tasks
+
+          ============================================================
+
+  handlers:
+    - name: Update GRUB
+      ansible.builtin.command: update-grub
+      listen: Update GRUB
+
+    - name: Update initramfs
+      ansible.builtin.command: update-initramfs -u
+      listen: Update initramfs
+
+# Notes:
+# - This playbook is IDEMPOTENT - safe to run multiple times
+# - Reboot is required after GRUB changes
+# - GPU passthrough requires IOMMU support in BIOS/UEFI
+# - VFIO modules are loaded but won't work until after reboot with IOMMU enabled
+# - ZFS ARC limit prevents memory starvation on Proxmox host
+# - Blacklisting GPU drivers prevents host from using the GPU (VM passthrough only)
