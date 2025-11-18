@@ -389,8 +389,8 @@ This section provides a comprehensive list of tools specifically for Talos Linux
 
 **Version Control & CI/CD:**
 - **Current**: GitHub (temporary)
-- **Future**: Gitea (self-hosted Git platform)
-- **CI/CD**: GitHub Actions (current), will migrate to Gitea Actions when switching
+- **Future**: Forgejo (self-hosted Git platform)
+- **CI/CD**: GitHub Actions (current), will migrate to Forgejo Actions when switching
 
 **Terraform Stack:**
 - **Providers**:
@@ -403,7 +403,7 @@ This section provides a comprehensive list of tools specifically for Talos Linux
 - **GitOps**: FluxCD (Kubernetes continuous delivery)
 
 **Rationale:**
-- **Gitea**: Self-hosted, lightweight, full control over infrastructure
+- **Forgejo**: Self-hosted, community-driven fork of Gitea, lightweight, full control over infrastructure
 - **FluxCD**: Better Helm integration with hooks, more popular with Talos community
 - **Cilium**: Modern eBPF-based networking with advanced features
 - **Longhorn**: Cloud-native storage, simpler than Ceph, sufficient for homelab scale
@@ -856,10 +856,10 @@ This project implements Infrastructure as Code (IaC) with automated CI/CD pipeli
 
 ### CI/CD Platform Options
 
-**Selected for This Project: GitHub Actions (current) → Gitea Actions (future)**
+**Selected for This Project: GitHub Actions (current) → Forgejo Actions (future)**
 
 #### GitHub Actions (Currently Used)
-- **Status**: Temporary, will migrate to Gitea
+- **Status**: Temporary, will migrate to Forgejo
 - **Pros**:
   - Native GitHub integration
   - Free for public repos, generous free tier for private
@@ -871,21 +871,23 @@ This project implements Infrastructure as Code (IaC) with automated CI/CD pipeli
   - Less control over runner infrastructure
 - **Best for**: Projects already using GitHub, teams wanting simplicity
 
-#### Gitea (Future Platform) - **CHOSEN FOR PRODUCTION**
+#### Forgejo (Future Platform) - **CHOSEN FOR PRODUCTION**
 - **Status**: Future self-hosted Git platform
 - **Pros**:
   - Self-hosted, full control over infrastructure
+  - Community-driven fork of Gitea with stronger FOSS principles
   - Lightweight (single binary, low resource usage)
-  - Compatible with GitHub Actions workflows (Gitea Actions)
-  - Built-in CI/CD (Gitea Actions runner)
-  - Free and open source
+  - Compatible with GitHub Actions workflows (Forgejo Actions)
+  - Built-in CI/CD (Forgejo Actions runner)
+  - Free and open source (AGPLv3 + MIT)
   - Privacy and data control
+  - Federation support (ActivityPub)
 - **Cons**:
   - Requires self-hosting infrastructure
   - Smaller ecosystem compared to GitHub
   - Need to manage updates and backups
-- **Why chosen**: Self-hosted control, lightweight, privacy, compatible with GitHub Actions
-- **Migration path**: Existing GitHub Actions workflows will work with Gitea Actions
+- **Why chosen**: Self-hosted control, community-driven, lightweight, privacy, compatible with GitHub Actions
+- **Migration path**: Existing GitHub Actions workflows will work with Forgejo Actions
 
 #### GitLab CI (Alternative, not chosen)
 - **Pros**:
@@ -925,9 +927,9 @@ This project implements Infrastructure as Code (IaC) with automated CI/CD pipeli
 
 ### Project CI/CD Strategy
 
-**This project uses: GitHub Actions (current) → Gitea Actions (future migration)**
+**This project uses: GitHub Actions (current) → Forgejo Actions (future migration)**
 
-The CI/CD workflows will be compatible with both GitHub Actions and Gitea Actions, allowing for seamless migration when transitioning to self-hosted Gitea infrastructure.
+The CI/CD workflows will be compatible with both GitHub Actions and Forgejo Actions, allowing for seamless migration when transitioning to self-hosted Forgejo infrastructure.
 
 **Pipeline Architecture:**
 
@@ -1796,16 +1798,16 @@ atlantis unlock                            # Unlock state (via PR comment)
 
 - **2025-11-18**: Project-specific tool decisions and clarifications
   - Added "Project-Specific Tool Decisions" section documenting chosen tools
-  - **Version Control**: GitHub (current) → Gitea (future self-hosted)
-  - **CI/CD**: GitHub Actions (current) → Gitea Actions (future)
+  - **Version Control**: GitHub (current) → Forgejo (future self-hosted)
+  - **CI/CD**: GitHub Actions (current) → Forgejo Actions (future)
   - **Terraform Providers**: siderolabs/talos + bpg/proxmox (chosen and emphasized)
   - **Talos Networking**: Cilium (chosen, eBPF-based CNI)
   - **Talos Storage**: Longhorn (chosen for Talos Kubernetes only)
   - **GitOps**: FluxCD (chosen for better Helm integration)
   - Updated all tool sections to clearly mark chosen vs alternative options
-  - Added rationale for each tool selection
-  - Documented migration path from GitHub to Gitea
-  - Emphasized that workflows will be compatible with both GitHub Actions and Gitea Actions
+  - Added rationale for each tool selection (Forgejo: community-driven fork of Gitea)
+  - Documented migration path from GitHub to Forgejo
+  - Emphasized that workflows will be compatible with both GitHub Actions and Forgejo Actions
 
 - **2025-11-18**: Talos Linux recommended tools and ecosystem
   - Added comprehensive "Talos Linux Recommended Tools" section
