@@ -379,6 +379,312 @@ Talos Linux is a modern, immutable Linux distribution designed specifically for 
 - Test GPU passthrough before production deployment
 - Monitor GPU utilization in Kubernetes
 
+## Talos Linux Recommended Tools
+
+This section provides a comprehensive list of tools specifically for Talos Linux deployment and management on Proxmox using Terraform and Ansible.
+
+### Core Talos Tools (Required)
+
+1. **talosctl** (latest version)
+   - Purpose: Primary CLI tool for Talos API interaction
+   - Official docs: https://www.talos.dev/v1.10/learn-more/talosctl/
+   - Use: Manage and configure Talos machines (no SSH access)
+   - Note: Similar to kubectl but for Talos infrastructure management
+
+2. **kubectl** (latest version)
+   - Purpose: Kubernetes cluster management
+   - Official docs: https://kubernetes.io/docs/reference/kubectl/
+   - Use: Manage Kubernetes resources after cluster deployment
+   - Note: talosctl manages Talos, kubectl manages Kubernetes
+
+3. **Talos Image Factory** (web-based)
+   - Purpose: Generate custom Talos Linux images with extensions
+   - Official site: https://factory.talos.dev/
+   - Use: Build images with qemu-guest-agent, NVIDIA drivers, custom kernels
+   - Official docs: https://github.com/siderolabs/image-factory
+
+### Terraform Providers & Modules
+
+**Required Providers:**
+
+1. **siderolabs/talos** (latest version)
+   - Purpose: Official HashiCorp-verified Terraform provider for Talos
+   - Registry: https://registry.terraform.io/providers/siderolabs/talos/latest
+   - Use: Configure nodes, apply patches, install Kubernetes, bootstrap etcd
+   - Version: ~> 0.7.1 (as of 2025)
+
+2. **bpg/proxmox** (latest version)
+   - Purpose: Proxmox VE provider for Terraform
+   - Registry: https://registry.terraform.io/providers/bpg/proxmox/latest
+   - Use: Provision VMs, manage templates, configure hardware
+   - Version: ~> 0.75.0 (as of 2025)
+
+**Recommended Modules:**
+
+3. **bbtechsys/talos/proxmox** (latest version)
+   - Purpose: Community Terraform module for Talos on Proxmox
+   - Registry: https://registry.terraform.io/modules/bbtechsys/talos/proxmox/latest
+   - Use: Simplified Talos cluster deployment
+   - Published: April 2025
+
+**Alternative Providers:**
+
+4. **OpenTofu** (optional)
+   - Purpose: Open-source Terraform alternative
+   - Official docs: https://opentofu.org/
+   - Use: Drop-in replacement for Terraform
+   - Note: Fully compatible with Terraform providers
+
+### Ansible Roles & Collections
+
+**Recommended Roles:**
+
+1. **mgrzybek/talos-ansible-playbooks** (latest version)
+   - Purpose: Complete Talos Linux lifecycle management
+   - GitHub: https://github.com/mgrzybek/talos-ansible-playbooks
+   - Use: Day 0 (prerequisites), Day 1 (deployment), Day 2 (operations)
+   - Includes: Cilium + Ceph integration
+   - Updated: Active development in 2025
+
+2. **sergelogvinov/ansible-role-talos-boot** (latest version)
+   - Purpose: Bootstrap Talos on cloud servers and bare metal
+   - Ansible Galaxy: https://galaxy.ansible.com/ui/standalone/roles/sergelogvinov/talos-boot/
+   - GitHub: https://github.com/sergelogvinov/ansible-role-talos-boot
+   - Use: Launch Talos via boot menu or kexec without IPMI/PXE
+
+**Role Capabilities:**
+- Gather network information from existing OS
+- Create Talos configuration patch files
+- Download Talos kernel and initrd images
+- Add GRUB boot entries or use kexec for booting
+
+### Proxmox Integration Tools
+
+1. **QEMU Guest Agent Extension**
+   - Purpose: Improve VM management and status reporting
+   - Extension name: `siderolabs/qemu-guest-agent`
+   - Installation: Via Talos Image Factory schematic
+   - Benefits: Better shutdown/reboot, network info reporting, VM status
+
+2. **qemu-guest-agent-talos DaemonSet** (community)
+   - Purpose: Run QEMU guest agent as Kubernetes DaemonSet
+   - GitHub: https://github.com/crisobal/qemu-guest-agent-talos
+   - Use: Alternative approach for running nodes
+   - Note: Good for Proxmox integration
+
+### Talos System Extensions
+
+**NVIDIA GPU Extensions (for AI/ML workloads):**
+
+1. **nonfree-kmod-nvidia-production**
+   - Purpose: NVIDIA proprietary kernel modules (production branch)
+   - Type: System extension
+   - Installation: Via Talos Image Factory
+   - Use: GPU passthrough support
+
+2. **nvidia-open-gpu-kernel-modules**
+   - Purpose: NVIDIA open-source GPU kernel modules
+   - Type: System extension
+   - Use: Open-source alternative to proprietary drivers
+
+3. **nvidia-container-toolkit-production**
+   - Purpose: NVIDIA container runtime and dependencies
+   - Type: System extension
+   - Use: Required for GPU workloads in Kubernetes
+   - Versions: LTS and Production branches available
+
+4. **nvidia-fabricmanager** (optional)
+   - Purpose: NVLink support for multi-GPU setups
+   - Type: System extension
+   - Use: Only for systems requiring NVLink
+
+5. **gdrcopy/gdrdrv** (optional)
+   - Purpose: NVIDIA GPUDirect RDMA for low-latency GPU memory access
+   - Type: System extension
+   - Use: High-performance computing workloads
+
+**Other System Extensions:**
+
+6. **Various hardware support extensions**
+   - Available in siderolabs/extensions repository
+   - Examples: Intel SGX, USB drivers, hardware monitoring
+
+### Kubernetes Networking
+
+**Recommended CNI:**
+
+1. **Cilium** (latest version)
+   - Purpose: eBPF-based networking and security
+   - Official docs: https://docs.cilium.io/
+   - Use: CNI, L2 load balancing, network policies
+   - Installation: Via Helm chart or Talos bootstrapping
+   - Talos integration: https://www.talos.dev/v1.10/kubernetes-guides/network/deploying-cilium/
+
+**Alternative CNIs:**
+
+2. **Flannel** (latest version)
+   - Purpose: Simple overlay network
+   - Use: Lightweight alternative to Cilium
+
+3. **Calico** (latest version)
+   - Purpose: Network policies and security
+   - Use: When advanced network policies are required
+
+### Kubernetes Storage
+
+1. **Longhorn** (latest version)
+   - Purpose: Distributed block storage for Kubernetes
+   - Official docs: https://longhorn.io/
+   - Use: Persistent volumes, snapshots, backups
+   - Talos support: Confirmed working in 2025
+   - Installation: Via Helm chart
+
+2. **Ceph** (latest version)
+   - Purpose: Distributed storage system
+   - Use: Alternative to Longhorn for larger deployments
+   - Note: More complex but enterprise-grade
+
+### GPU Workload Management
+
+1. **NVIDIA GPU Operator** (latest version)
+   - Purpose: Automate GPU resource management in Kubernetes
+   - Official docs: https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/
+   - Use: GPU driver management, device plugin, monitoring
+   - Installation: Via Helm chart after Talos deployment
+
+2. **NVIDIA Device Plugin** (included in GPU Operator)
+   - Purpose: Expose GPU resources to Kubernetes scheduler
+   - Use: Automatically deployed by GPU Operator
+
+### GitOps Tools
+
+**Recommended: FluxCD**
+
+1. **FluxCD** (latest version)
+   - Purpose: Kubernetes GitOps continuous delivery
+   - Official docs: https://fluxcd.io/
+   - Use: Automated cluster reconciliation from Git
+   - Why: More popular with Talos, better Helm integration with hooks
+   - Installation: Bootstrap via flux CLI
+
+**Alternative: ArgoCD**
+
+2. **ArgoCD** (latest version)
+   - Purpose: Declarative GitOps CD for Kubernetes
+   - Official docs: https://argo-cd.readthedocs.io/
+   - Use: UI-based application delivery
+   - Why: Better for developer-facing deployments
+   - Note: Can combine both FluxCD (infra) + ArgoCD (apps)
+
+3. **Helm** (latest version)
+   - Purpose: Kubernetes package manager
+   - Official docs: https://helm.sh/
+   - Use: Deploy charts, manage releases
+   - Note: Both FluxCD and ArgoCD support Helm charts
+
+### Monitoring & Observability
+
+**Recommended Stack:**
+
+1. **kube-prometheus-stack** (Helm chart)
+   - Purpose: Complete monitoring solution
+   - Components: Prometheus, Grafana, Alertmanager, node-exporter
+   - Helm chart: prometheus-community/kube-prometheus-stack
+   - Use: Pre-configured dashboards and alerts
+   - Installation: Via Helm or FluxCD
+
+2. **Prometheus** (included in stack)
+   - Purpose: Metrics collection and storage
+   - Use: Scrape metrics from Kubernetes and Talos
+
+3. **Grafana** (included in stack)
+   - Purpose: Metrics visualization and dashboards
+   - Use: Visualize Prometheus metrics
+
+4. **Loki** (latest version)
+   - Purpose: Log aggregation system
+   - Official docs: https://grafana.com/oss/loki/
+   - Use: Centralized logging for Kubernetes pods
+   - Installation: Via Helm chart
+
+5. **Kubernetes Metrics Server** (latest version)
+   - Purpose: Cluster-wide resource metrics
+   - Use: Enable HPA (Horizontal Pod Autoscaler)
+   - Installation: Via kubectl or Helm
+
+**Alternative Monitoring:**
+
+6. **VictoriaMetrics** (latest version)
+   - Purpose: Time-series database (Prometheus alternative)
+   - Official docs: https://victoriametrics.com/
+   - Use: Lower resource usage than Prometheus
+   - Note: Drop-in replacement for Prometheus
+
+### Additional Utilities
+
+1. **k9s** (latest version)
+   - Purpose: Terminal UI for Kubernetes
+   - Official docs: https://k9scli.io/
+   - Use: Interactive cluster management
+
+2. **kubectx/kubens** (latest version)
+   - Purpose: Quick context and namespace switching
+   - Use: Faster workflow when managing multiple clusters
+
+3. **Lens** (optional)
+   - Purpose: Kubernetes IDE
+   - Official docs: https://k8slens.dev/
+   - Use: GUI alternative to kubectl and k9s
+
+### Tool Selection Guidelines for Talos
+
+**Mandatory for Talos Deployment:**
+- talosctl (Talos management)
+- kubectl (Kubernetes management)
+- Talos Image Factory (custom images)
+- siderolabs/talos Terraform provider
+- bpg/proxmox Terraform provider
+- QEMU Guest Agent extension (for Proxmox)
+
+**Mandatory for Production:**
+- Cilium (networking)
+- Longhorn or Ceph (storage)
+- FluxCD or ArgoCD (GitOps)
+- kube-prometheus-stack (monitoring)
+- Loki (logging)
+
+**Optional for GPU Workloads:**
+- NVIDIA system extensions (via Talos Factory)
+- NVIDIA GPU Operator (in Kubernetes)
+
+**Optional for Enhanced Workflow:**
+- Ansible roles (automated lifecycle management)
+- Helm (package management)
+- k9s (terminal UI)
+- Terraform modules (simplified deployment)
+
+**Selection Criteria:**
+- Start with mandatory tools
+- Add production tools before going live
+- GPU extensions only if using NVIDIA hardware
+- Choose FluxCD for Helm chart support, ArgoCD for UI
+- Consider both for large deployments (FluxCD for infra, ArgoCD for apps)
+
+### Version Compatibility Matrix (2025)
+
+| Component | Recommended Version | Notes |
+|-----------|-------------------|-------|
+| Talos Linux | v1.10+ | Use latest stable |
+| Kubernetes | v1.31+ | Supported by Talos |
+| talosctl | Match Talos version | Client-server compatibility |
+| kubectl | Match K8s version | Within 1 minor version |
+| Terraform | v1.9+ | Latest stable |
+| siderolabs/talos provider | ~> 0.7.1 | As of April 2025 |
+| bpg/proxmox provider | ~> 0.75.0 | As of April 2025 |
+| Cilium | v1.18+ | Current stable |
+| FluxCD | v2.4+ | Current stable |
+| kube-prometheus-stack | Latest | Helm chart |
+
 ### Reference Implementations
 
 - **GitHub Examples**:
@@ -980,39 +1286,60 @@ source "proxmox-iso" "d12" {
 6. **SOPS Documentation**: https://github.com/getsops/sops
 7. **Age Documentation**: https://github.com/FiloSottile/age
 
-**Talos Linux:**
+**Talos Linux Core:**
 8. **Talos Documentation**: https://www.talos.dev/
 9. **Talos Factory**: https://factory.talos.dev/
 10. **Talos GitHub**: https://github.com/siderolabs/talos
 11. **Talos NVIDIA GPU Guide**: https://www.talos.dev/v1.8/talos-guides/configuration/nvidia-gpu/
 12. **Talosctl CLI**: https://www.talos.dev/v1.8/reference/cli/
+13. **Talos System Extensions**: https://github.com/siderolabs/extensions
+14. **Talos Proxmox Guide**: https://www.talos.dev/v1.10/talos-guides/install/virtualized-platforms/proxmox/
+
+**Talos-Specific Terraform:**
+15. **siderolabs/talos Provider**: https://registry.terraform.io/providers/siderolabs/talos/latest
+16. **bpg/proxmox Provider**: https://registry.terraform.io/providers/bpg/proxmox/latest
+17. **bbtechsys/talos/proxmox Module**: https://registry.terraform.io/modules/bbtechsys/talos/proxmox/latest
+
+**Talos-Specific Ansible:**
+18. **mgrzybek/talos-ansible-playbooks**: https://github.com/mgrzybek/talos-ansible-playbooks
+19. **sergelogvinov/ansible-role-talos-boot**: https://galaxy.ansible.com/ui/standalone/roles/sergelogvinov/talos-boot/
+
+**Kubernetes Tools for Talos:**
+20. **Cilium Documentation**: https://docs.cilium.io/
+21. **Longhorn Documentation**: https://longhorn.io/
+22. **NVIDIA GPU Operator**: https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/
+23. **FluxCD Documentation**: https://fluxcd.io/
+24. **ArgoCD Documentation**: https://argo-cd.readthedocs.io/
+25. **kube-prometheus-stack**: https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack
+26. **Loki Documentation**: https://grafana.com/oss/loki/
+27. **k9s**: https://k9scli.io/
 
 **Terraform Complementary Tools:**
-13. **TFLint**: https://github.com/terraform-linters/tflint
-14. **terraform-docs**: https://terraform-docs.io/
-15. **Trivy**: https://aquasecurity.github.io/trivy/
-16. **Checkov**: https://www.checkov.io/
-17. **Terrascan**: https://runterrascan.io/
-18. **Infracost**: https://www.infracost.io/
-19. **tfenv**: https://github.com/tfutils/tfenv
-20. **Terragrunt**: https://terragrunt.gruntwork.io/
-21. **Atlantis**: https://www.runatlantis.io/
+28. **TFLint**: https://github.com/terraform-linters/tflint
+29. **terraform-docs**: https://terraform-docs.io/
+30. **Trivy**: https://aquasecurity.github.io/trivy/
+31. **Checkov**: https://www.checkov.io/
+32. **Terrascan**: https://runterrascan.io/
+33. **Infracost**: https://www.infracost.io/
+34. **tfenv**: https://github.com/tfutils/tfenv
+35. **Terragrunt**: https://terragrunt.gruntwork.io/
+36. **Atlantis**: https://www.runatlantis.io/
 
 **Ansible Complementary Tools:**
-22. **ansible-lint**: https://ansible-lint.readthedocs.io/
-23. **Molecule**: https://molecule.readthedocs.io/
-24. **yamllint**: https://yamllint.readthedocs.io/
-25. **Ansible Semaphore**: https://semaphoreui.com/
-26. **AWX**: https://github.com/ansible/awx
+37. **ansible-lint**: https://ansible-lint.readthedocs.io/
+38. **Molecule**: https://molecule.readthedocs.io/
+39. **yamllint**: https://yamllint.readthedocs.io/
+40. **Ansible Semaphore**: https://semaphoreui.com/
+41. **AWX**: https://github.com/ansible/awx
 
 **Cross-cutting Tools:**
-27. **pre-commit**: https://pre-commit.com/
-28. **pre-commit-terraform**: https://github.com/antonbabenko/pre-commit-terraform
+42. **pre-commit**: https://pre-commit.com/
+43. **pre-commit-terraform**: https://github.com/antonbabenko/pre-commit-terraform
 
 **Best Practices Guides:**
-29. **Terraform Best Practices**: https://www.terraform-best-practices.com/
-30. **HashiCorp Terraform Style Guide**: https://developer.hashicorp.com/terraform/language/style
-31. **Ansible Best Practices**: https://docs.ansible.com/ansible/latest/tips_tricks/ansible_tips_tricks.html
+44. **Terraform Best Practices**: https://www.terraform-best-practices.com/
+45. **HashiCorp Terraform Style Guide**: https://developer.hashicorp.com/terraform/language/style
+46. **Ansible Best Practices**: https://docs.ansible.com/ansible/latest/tips_tricks/ansible_tips_tricks.html
 
 ### Reference Repositories (Inspiration Only)
 
@@ -1368,6 +1695,16 @@ talosctl bootstrap                         # Bootstrap Kubernetes
 talosctl kubeconfig                        # Get kubeconfig
 talosctl dashboard                         # Launch Talos dashboard
 talosctl get members                       # List cluster members
+talosctl upgrade                           # Upgrade Talos version
+talosctl upgrade-k8s                       # Upgrade Kubernetes version
+
+# Kubernetes Tools (for Talos)
+kubectl get nodes                          # List cluster nodes
+kubectl get pods -A                        # List all pods
+k9s                                        # Launch interactive terminal UI
+helm list -A                               # List all Helm releases
+flux get sources git                       # Check FluxCD git sources
+flux reconcile source git flux-system      # Force FluxCD reconciliation
 
 # ZFS Storage
 zpool status                               # Check pool health
@@ -1398,6 +1735,25 @@ atlantis unlock                            # Unlock state (via PR comment)
 ```
 
 ## Version History
+
+- **2025-11-18**: Talos Linux recommended tools and ecosystem
+  - Added comprehensive "Talos Linux Recommended Tools" section
+  - Documented core Talos tools (talosctl, kubectl, Talos Image Factory)
+  - Added Terraform providers for Talos (siderolabs/talos ~> 0.7.1, bpg/proxmox ~> 0.75.0)
+  - Documented Terraform modules (bbtechsys/talos/proxmox)
+  - Added Ansible roles (mgrzybek/talos-ansible-playbooks, sergelogvinov/ansible-role-talos-boot)
+  - Documented Proxmox integration tools (QEMU Guest Agent extension)
+  - Listed all NVIDIA GPU system extensions (nonfree-kmod-nvidia, nvidia-container-toolkit, nvidia-open-gpu-kernel-modules)
+  - Added Kubernetes networking options (Cilium recommended, Flannel, Calico alternatives)
+  - Documented storage solutions (Longhorn recommended, Ceph alternative)
+  - Added GPU workload management (NVIDIA GPU Operator, Device Plugin)
+  - Documented GitOps tools (FluxCD recommended for Talos, ArgoCD alternative)
+  - Added complete monitoring stack (kube-prometheus-stack, Prometheus, Grafana, Loki, Kubernetes Metrics Server)
+  - Included additional utilities (k9s, kubectx/kubens, Lens)
+  - Added tool selection guidelines with mandatory/optional categorization
+  - Added version compatibility matrix for 2025
+  - Updated Reference Materials with 20 new Talos-specific documentation links
+  - Added Kubernetes tool commands to Quick Reference section
 
 - **2025-11-18**: ZFS storage and CI/CD implementation
   - Added comprehensive ZFS storage configuration section
