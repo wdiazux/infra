@@ -1,0 +1,46 @@
+# SOPS Configuration for Infrastructure Automation Project
+# This file defines encryption rules for different file patterns
+
+# IMPORTANT: You must generate an Age key pair before using SOPS
+# See secrets/README.md for instructions on generating keys
+
+creation_rules:
+  # Encrypt all .enc.yaml files in the secrets/ directory
+  - path_regex: secrets/.*\.enc\.yaml$
+    age: >-
+      YOUR_AGE_PUBLIC_KEY_HERE
+    # Example: age1yl4td9av3g5j2z5w0cm7mqlcvx3u0p3r5jtqskhf7y8uevm8l8jqhs9xu7
+
+  # Encrypt all files with .enc.yaml extension anywhere in the repo
+  - path_regex: .*\.enc\.yaml$
+    age: >-
+      YOUR_AGE_PUBLIC_KEY_HERE
+
+  # Encrypt Terraform variable files with secrets
+  - path_regex: terraform/.*/secrets\.tfvars$
+    age: >-
+      YOUR_AGE_PUBLIC_KEY_HERE
+
+  # Encrypt Ansible vault files
+  - path_regex: ansible/.*/.*vault.*\.yml$
+    age: >-
+      YOUR_AGE_PUBLIC_KEY_HERE
+
+# Notes:
+# 1. Replace YOUR_AGE_PUBLIC_KEY_HERE with your actual Age public key
+# 2. Age public keys start with "age1" and are 62 characters long
+# 3. You can add multiple public keys for team access (comma-separated)
+# 4. Files matching these patterns will be encrypted with SOPS automatically
+# 5. Store your Age private key securely (e.g., password manager, hardware token)
+# 6. Never commit Age private keys to version control
+
+# Multi-key example (for team access):
+# creation_rules:
+#   - path_regex: secrets/.*\.enc\.yaml$
+#     age: >-
+#       age1yl4td9av3g5j2z5w0cm7mqlcvx3u0p3r5jtqskhf7y8uevm8l8jqhs9xu7,
+#       age1ze3x5y2j5w0cm7mqlcvx3u0p3r5jtqskhf7y8uevm8l8jqhs9abc123
+
+# Key rotation:
+# To rotate keys, update this file with new public keys and re-encrypt all files:
+# find . -name "*.enc.yaml" -exec sops updatekeys {} \;

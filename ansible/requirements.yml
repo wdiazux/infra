@@ -1,0 +1,42 @@
+# Ansible Requirements for Talos Infrastructure
+#
+# Install with: ansible-galaxy install -r requirements.yml
+
+---
+# Ansible Collections
+collections:
+  # SOPS for encrypted secrets
+  - name: community.sops
+    version: ">=1.0.0,<2.0.0"
+    source: https://galaxy.ansible.com
+
+  # General utilities
+  - name: community.general
+    version: ">=7.0.0"
+    source: https://galaxy.ansible.com
+
+  # Kubernetes management
+  - name: kubernetes.core
+    version: ">=2.4.0"
+    source: https://galaxy.ansible.com
+
+  # Proxmox management (if needed)
+  - name: community.general
+    version: ">=7.0.0"
+    source: https://galaxy.ansible.com
+
+# Ansible Roles (optional - reference implementations)
+roles:
+  # Talos boot/bootstrap role
+  # https://galaxy.ansible.com/sergelogvinov/talos-boot
+  # - name: sergelogvinov.talos-boot
+  #   version: ">=1.0.0"
+
+# Notes:
+# - community.sops: Required for decrypting SOPS-encrypted secrets
+# - kubernetes.core: For kubectl and Helm operations
+# - Talos-specific roles are commented out as reference
+# - Most Talos operations use talosctl via shell module
+# - For comprehensive Talos management, see:
+#   * https://github.com/mgrzybek/talos-ansible-playbooks
+#   * https://galaxy.ansible.com/sergelogvinov/talos-boot

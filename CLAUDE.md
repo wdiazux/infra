@@ -6,11 +6,43 @@ This repository contains Infrastructure-as-Code (IaC) automation for building go
 
 ### Project Goals
 
-- Automate golden image creation for enterprise-grade VM templates
+- Automate golden image creation for reliable, reproducible VM templates
 - Support multiple operating systems with consistent baseline configurations
 - Maintain simple, optimized, and maintainable code
 - Prioritize functionality and reliability over complexity
 - Use industry best practices from official documentation
+
+### Homelab vs Enterprise Considerations
+
+**This is a HOMELAB setup** - some enterprise best practices are optional:
+
+**Essential (Keep for Quality):**
+- ✅ Linting and security scanning (TFLint, Trivy, ansible-lint)
+- ✅ Version control (Git)
+- ✅ Documentation
+- ✅ Secrets encryption (SOPS + Age)
+- ✅ Infrastructure as Code
+
+**Optional (Adds Complexity, Use if Learning or Scaling):**
+- ⚠️ Remote Terraform state (local state is fine for solo homelab)
+- ⚠️ Dev/staging/prod environments (single environment is fine)
+- ⚠️ PR reviews and approvals (you're one person)
+- ⚠️ VLANs (unless you have managed switches already)
+- ⚠️ Manual deployment approvals (automate for convenience)
+
+**Not Applicable to Homelab:**
+- ❌ Cloud cost controls (no per-hour costs on self-hosted)
+- ❌ Team RBAC and permissions
+- ❌ Multi-region deployments
+- ❌ Enterprise compliance frameworks
+
+**Use Enterprise Practices If:**
+- You're learning for career/work
+- You're practicing team workflows
+- You plan to scale to multi-person team
+- You want production-grade resilience
+
+**Homelab Philosophy:** Start simple, add complexity only when needed. It's okay to push directly to main, use local state, and skip manual approvals when you're the only operator.
 
 ## Repository Structure
 
@@ -98,24 +130,28 @@ These tools enhance the core workflow and follow industry best practices:
    - Use: Maintain up-to-date module documentation
 
 3. **Trivy** (latest version, successor to tfsec)
-   - Purpose: Security scanner for IaC misconfigurations and vulnerabilities
+   - Purpose: Comprehensive security scanner for IaC, containers, and OS vulnerabilities
    - Official docs: https://aquasecurity.github.io/trivy/
    - Use: Scan Terraform code for security issues and compliance violations
+   - Note: Most comprehensive tool, combines features of tfsec, Checkov, and container scanning
 
-4. **Checkov** (latest version)
+4. **Checkov** (latest version) - **OPTIONAL, NOT USED IN THIS PROJECT**
    - Purpose: Static code analysis for IaC with 750+ pre-defined checks
    - Official docs: https://www.checkov.io/
-   - Use: Security scanning across multiple cloud providers and compliance frameworks
+   - Use: Additional policy-as-code scanning if Trivy is insufficient
+   - Note: Redundant with Trivy for most use cases
 
-5. **Terrascan** (latest version)
+5. **Terrascan** (latest version) - **OPTIONAL, NOT USED IN THIS PROJECT**
    - Purpose: IaC security scanner with OPA policy support
    - Official docs: https://runterrascan.io/
    - Use: Custom policy enforcement with 500+ built-in policies
+   - Note: Redundant with Trivy for most use cases
 
-6. **Infracost** (latest version)
+6. **Infracost** (latest version) - **NOT APPLICABLE FOR PROXMOX**
    - Purpose: Cloud cost estimation from Terraform code
    - Official docs: https://www.infracost.io/
    - Use: Show cost impact in pull requests before deployment
+   - **Why not applicable**: Designed for cloud providers (AWS, Azure, GCP) with per-hour costs. Self-hosted Proxmox has fixed infrastructure costs, making Infracost irrelevant.
 
 7. **tfenv** (latest version)
    - Purpose: Terraform version manager
@@ -177,13 +213,16 @@ These tools enhance the core workflow and follow industry best practices:
 ### Tool Selection Guidelines
 
 **Mandatory Tools:**
-- TFLint, terraform-docs, Trivy/Checkov (one security scanner minimum)
-- ansible-lint, Molecule, yamllint
-- pre-commit (with appropriate hooks)
+- TFLint, terraform-docs, Trivy (security scanning)
+- ansible-lint, yamllint
 
-**Optional But Recommended:**
-- Infracost (for cost awareness)
+**Recommended Tools:**
+- pre-commit (with appropriate hooks) - adds automation but can slow early development
 - tfenv (for version management)
+
+**Optional Tools:**
+- Molecule (for complex reusable Ansible roles)
+- Checkov/Terrascan (additional security scanning if needed)
 - Ansible Semaphore (for UI-based management)
 
 **Enterprise/Advanced:**
@@ -208,23 +247,810 @@ These tools enhance the core workflow and follow industry best practices:
 - CPU: AMD Ryzen AI 9 HX 370 (formerly 9955HX)
 - RAM: 96GB
 - GPU: NVIDIA Ada Lovelace RTX 4000
-- Use case: Enterprise-grade mini PC for homelab/production virtualization with GPU acceleration
+- Use case: High-performance mini PC for homelab virtualization with GPU acceleration
+
+### Storage Configuration
+
+**ZFS on Proxmox:**
+
+This infrastructure uses ZFS as the primary storage backend for Proxmox VE, providing enterprise-grade features like snapshots, checksums, compression, and data integrity.
+
+**ZFS Memory (ARC) Configuration:**
+- **Recommended ARC Size**: 10% of total system RAM
+- **Maximum ARC Size**: 16GB (for this 96GB system)
+- **Calculation**: 2GB base + 1GB per TiB of storage
+- **Configuration**: Set in `/etc/modprobe.d/zfs.conf`:
+  ```bash
+  options zfs zfs_arc_max=17179869184  # 16GB in bytes
+  ```
+
+**RAID Configuration:**
+- **Recommended**: Mirror vdevs (RAID1 or RAID10)
+- **Reasoning**: Best for VM workloads requiring consistent performance
+- **Trade-offs**: More redundancy vs. storage efficiency
+- **Avoid**: RAIDZ for VM storage (inconsistent performance)
+
+**Performance Optimization:**
+- **Extended Attributes**: `xattr=sa` (store metadata in inode)
+- **Compression**: LZ4 (default, minimal CPU overhead, ~2:1 ratio)
+- **Block Size**:
+  - NVMe SSDs: 16KB recordsize
+  - HDDs: 128KB recordsize
+  - VMs: Match guest filesystem block size
+- **ARC Efficiency**: Monitor with `arc_summary` command
+
+**ZFS Setup Best Practices:**
+1. Use single large partition for ZFS (not multiple small ones)
+2. Let ZFS handle disk management directly
+3. Avoid `ashift=9` (use `ashift=12` for 4K sectors, `ashift=13` for 8K)
+4. Enable compression at pool creation (can't change later)
+5. Regular scrubs (weekly/monthly) for data integrity
+6. Monitor pool health with `zpool status`
+
+**Proxmox-Specific Configuration:**
+- Create ZFS pool during Proxmox installation, or
+- Create manually: `zpool create -o ashift=12 -O compression=lz4 -O xattr=sa <pool-name> <devices>`
+- Add to Proxmox: Datacenter → Storage → Add → ZFS
+
+**Benefits for This Setup:**
+- Snapshots for VM backup/restore
+- Copy-on-write for instant clones
+- Data deduplication (optional, RAM-intensive)
+- Built-in compression saves disk space
+- Checksums prevent silent data corruption
+
+### Storage Capacity Planning
+
+**Planning Questions to Answer:**
+
+Before implementing ZFS, determine:
+1. **Physical Disks**: How many drives? What capacity (e.g., 2x 2TB NVMe)?
+2. **RAID Layout**: Mirror (RAID1/10) recommended for VM workloads
+3. **Usable Capacity**: With mirror, usable capacity = total capacity / 2
+4. **Storage Allocation**:
+   - Proxmox system: ~100GB
+   - VM templates/images: ~50-100GB per OS
+   - Talos Kubernetes: varies by workload (persistent data on NAS, ephemeral data local)
+   - Traditional VMs: varies by VM count and size
+   - Backup space: 20-30% of total for snapshots/backups
+
+**Example for 2x 2TB NVMe (Mirror Configuration):**
+- Total capacity: 4TB
+- Usable capacity: ~2TB (after mirror)
+- Proxmox system: 100GB
+- VM templates: 200GB (5-6 OS templates)
+- Talos single node: 200GB (OS + containers + local persistent volumes)
+- Traditional VMs: 1100GB (flexible allocation across 3-4 VMs)
+- Backup/snapshot reserve: 400GB
+
+**Recommendations:**
+- Leave 20% free space for ZFS performance
+- Monitor usage with `zpool list` and `zfs list`
+- Plan for growth - easier to start small and add later
+- Consider separate dataset for each major use case
+- Use ZFS quotas to prevent single VM consuming all space
+
+**Future Expansion:**
+- Add vdevs (additional mirror pairs) to expand pool
+- Cannot add single disks to existing mirror vdevs
+- Cannot change vdev type (e.g., mirror to raidz) after creation
+
+### Resource Allocation Guidance
+
+**System Resources: 96GB RAM, 12-core CPU (AMD Ryzen AI 9 HX 370)**
+
+**Resource Allocation Strategy:**
+
+1. **Proxmox Host Overhead:**
+   - ZFS ARC: 16GB (max, part of host RAM)
+   - Proxmox services: ~4GB
+   - **Total host overhead**: ~20GB
+   - CPU: 1-2 cores reserved
+   - **Effective available**: ~76GB RAM, 10-11 usable cores
+
+2. **Talos Kubernetes Single Node (Primary Workload):**
+   - **Single-node cluster** (with option to expand to 3-node HA later)
+   - Control plane + worker combined (homelab configuration)
+   - RAM: 24-32GB (depends on workload requirements)
+   - CPU: 6-8 cores
+   - Storage: 150-200GB for OS + containers (thin provisioned)
+   - **GPU assignment**: RTX 4000 passed through for AI/ML workloads
+   - **Minimum requirements**: 2GB RAM, 2 cores, 10GB disk (Talos can run on very little)
+
+3. **Traditional VMs (Secondary Workload):**
+   - Remaining resources after Talos allocation
+   - Typical VM: 8-16GB RAM, 2-4 cores
+   - Example: 3-4 traditional VMs possible depending on Talos allocation
+   - Storage: varies by use case (thin provisioned recommended)
+
+**Example Allocation for 96GB System:**
+
+**Scenario A: Talos-Heavy (AI/ML Focus)**
+- Proxmox host overhead: 20GB (16GB ZFS ARC + 4GB services)
+- Talos single node: 32GB RAM, 8 cores, 200GB storage, **GPU passthrough**
+- Debian VM: 16GB RAM, 4 cores, 100GB storage
+- Ubuntu VM: 16GB RAM, 4 cores, 100GB storage
+- Free buffer: 12GB RAM
+- **Total**: 96GB RAM (12GB buffer for flexibility)
+
+**Scenario B: Balanced (Mixed Workloads)**
+- Proxmox host overhead: 20GB (16GB ZFS ARC + 4GB services)
+- Talos single node: 24GB RAM, 6 cores, 150GB storage, **GPU passthrough**
+- Debian VM: 12GB RAM, 4 cores, 100GB storage
+- Ubuntu VM: 12GB RAM, 4 cores, 100GB storage
+- Windows VM: 16GB RAM, 4 cores, 150GB storage
+- Free buffer: 12GB RAM
+- **Total**: 96GB RAM (12GB buffer for flexibility)
+
+**Scenario C: Maximum Traditional VMs**
+- Proxmox host overhead: 20GB (16GB ZFS ARC + 4GB services)
+- Talos single node: 16GB RAM, 4 cores, 100GB storage, **GPU passthrough**
+- Debian VM: 16GB RAM, 4 cores, 100GB storage
+- Ubuntu VM: 12GB RAM, 4 cores, 100GB storage
+- Arch VM: 12GB RAM, 4 cores, 80GB storage
+- Windows VM: 16GB RAM, 4 cores, 150GB storage
+- Free buffer: 4GB RAM
+- **Total**: 96GB RAM (4GB buffer - tight but workable)
+
+**Important Considerations:**
+
+- **Memory overcommit**: Avoid for production workloads, acceptable for testing/development VMs
+- **CPU overcommit**: More acceptable than RAM, but monitor performance
+- **Thin provisioning**: Use for storage to avoid wasting space
+- **Balloon driver**: Enable in VMs for dynamic memory management
+- **GPU limitation**: Remember only ONE VM can use the GPU at a time
+- **Hybrid storage strategy**:
+  - **Persistent data**: NFS CSI driver mounting external NAS (durable, backed up)
+  - **Ephemeral data**: local-path-provisioner for caches and temporary files (fast, local)
+  - **External NAS**: Provides data durability independent of Talos node health
+  - Traditional VMs can also mount NAS via NFS/Samba for shared storage
+- **Scaling path**: Single-node Talos can be expanded to 3-node HA cluster later without rebuilding
+
+**Monitoring and Adjustment:**
+- Use Proxmox dashboard to monitor resource usage
+- Adjust VM allocations based on actual usage patterns
+- Start conservative, scale up as needed
+- Use Kubernetes resource requests/limits for containerized workloads
+- Monitor ZFS ARC hit ratio to optimize memory allocation
+
+**Best Practices:**
+- Leave 5-10% RAM free for system overhead
+- Don't allocate all CPU cores to VMs (leave 1-2 for host)
+- Use CPU pinning for performance-critical VMs
+- Enable NUMA if running large VMs (16GB+ RAM)
+- Regular monitoring of resource utilization
+
+### Networking Prerequisites
+
+**Network Configuration Requirements:**
+
+1. **Proxmox Network Bridge:**
+   - Default: `vmbr0` (typically configured during Proxmox installation)
+   - Type: Linux Bridge
+   - Connected to physical interface for external connectivity
+
+2. **Static IP Addresses:**
+   - **Talos node**: Assign static IP (DHCP reservation or static configuration)
+   - **Traditional VMs**: Static IPs recommended for infrastructure VMs
+   - **NAS**: Static IP for reliable NFS/Samba connectivity
+
+3. **DNS Configuration:**
+   - Configure DNS servers in Proxmox and VMs
+   - Ensure Talos node can resolve external domains (for pulling container images)
+   - Local DNS or hosts file for internal service discovery
+
+4. **Firewall Considerations:**
+   - **Talos API**: Port 50000 (talosctl communication)
+   - **Kubernetes API**: Port 6443 (kubectl access)
+   - **NFS**: Ports 2049, 111 (TCP/UDP)
+   - **Samba/CIFS**: Ports 445, 139, 137-138
+   - **SSH**: Port 22 (traditional VMs only, Talos has no SSH)
+   - **Proxmox Web UI**: Port 8006
+
+5. **Network Topology Options:**
+
+   **Option A: Single Network (Simplest)**
+   - All VMs and Proxmox host on same network
+   - Talos, traditional VMs, and NAS can communicate directly
+   - Suitable for homelab without strict security requirements
+
+   **Option B: VLANs (More Secure - Advanced/Optional)**
+   - **Note**: VLANs require managed switch with VLAN support - likely overkill for most homelabs
+   - **Best for**: Learning enterprise networking, already have managed switch, or strict security requirements
+   - Separate VLANs for management, VM traffic, storage
+   - Requires VLAN-capable managed switch
+   - Example:
+     - VLAN 10: Proxmox management
+     - VLAN 20: VM traffic (Talos, traditional VMs)
+     - VLAN 30: Storage (NFS/NAS access)
+
+6. **NAS Connectivity:**
+   - Ensure NAS is reachable from Proxmox network
+   - Test NFS mount from Proxmox host before configuring Kubernetes
+   - Consider dedicated storage network for better performance
+
+7. **External Access:**
+   - Configure port forwarding on router if accessing from outside
+   - Consider VPN (WireGuard, Tailscale) for secure remote access
+   - Kubernetes ingress controller for exposing services (Cilium can handle L4/L7 load balancing)
+
+**Network Testing Checklist:**
+- [ ] Proxmox host can reach internet
+- [ ] Proxmox host can reach NAS
+- [ ] VMs can reach internet
+- [ ] VMs can reach NAS
+- [ ] VMs can reach each other
+- [ ] DNS resolution working for all VMs
 
 ## Supported Operating Systems
 
-The project targets the following operating systems:
+### Primary Focus: Talos Linux
+
+**Talos Linux** is the primary and most-used VM in this infrastructure:
+
+- **Purpose**: Kubernetes-native, immutable, minimal Linux distribution
+- **Primary Use Cases**:
+  - Kubernetes cluster hosting
+  - Multimedia services (Plex, Jellyfin, etc.)
+  - AI/ML workloads (leveraging NVIDIA RTX 4000 GPU)
+  - Container orchestration for production workloads
+- **Key Features**:
+  - API-driven configuration (no SSH, no shell)
+  - Immutable infrastructure
+  - Minimal attack surface
+  - GPU passthrough support for AI/ML workloads
+- **Official Docs**: https://www.talos.dev/
+
+### Additional Operating Systems
+
+Supporting golden images for:
 
 1. **Debian** (latest stable)
 2. **Ubuntu** (latest LTS)
 3. **Arch Linux**
 4. **NixOS**
-5. **Talos**
-6. **Windows** (version TBD)
+5. **Windows** (version TBD)
 
-Each OS should have:
+### OS-Specific Requirements
+
+**For Talos Linux:**
+- Custom Packer template with qemu-guest-agent
+- Talos Factory images with NVIDIA extensions (for GPU passthrough)
+- Terraform-based cluster deployment
+- Ansible for Day 0/1/2 operations
+- No cloud-init (uses machine configuration API)
+
+**For traditional OSes:**
 - Dedicated Packer template
 - OS-specific cloud-init configuration
 - Ansible playbook for baseline configuration
+
+## Talos Linux Implementation Guide
+
+### Overview
+
+Talos Linux is a modern, immutable Linux distribution designed specifically for Kubernetes. It provides a secure, minimal, and API-driven platform for running containerized workloads.
+
+### Key Characteristics
+
+- **Immutable**: No package manager, no shell access
+- **API-Driven**: All configuration via declarative API
+- **Kubernetes-Native**: Built specifically for running Kubernetes
+- **Minimal**: Small attack surface with only essential components
+- **Production-Ready**: Used in enterprise environments
+
+### Implementation Strategy
+
+**Packer Image Building:**
+- Use Talos Factory (factory.talos.dev) to build custom images
+- Include qemu-guest-agent support for Terraform integration
+- Add NVIDIA extensions for GPU passthrough:
+  - nvidia-open-gpu-kernel-modules
+  - nvidia-container-toolkit
+- Image type considerations:
+  - Talos 1.7.x: "nocloud" images (cloud-init compatible)
+  - Talos 1.8.0+: "metal" images (recommended for current versions)
+
+**Terraform Deployment:**
+- Use official Proxmox provider (bpg/proxmox)
+- Use Talos provider (siderolabs/talos)
+- Structure:
+  - Template module for reusable VM templates
+  - Cluster module for multi-node deployments
+  - Network module for Cilium integration
+- Enable IOMMU for GPU passthrough in VM configuration
+- Configure PCI device passthrough for NVIDIA GPU
+
+**Ansible Automation:**
+- Day 0: Prerequisites and network configuration
+- Day 1: Cluster deployment and bootstrapping
+- Day 2: Ongoing operations and updates
+- Use available roles:
+  - mgrzybek/talos-ansible-playbooks
+  - sergelogvinov/ansible-role-talos-boot
+
+**Kubernetes Integration:**
+- Cilium for networking and L2 load balancing
+- NFS CSI driver for persistent storage (external NAS) + local-path-provisioner for ephemeral data
+- NVIDIA GPU Operator for GPU workload scheduling
+- System extensions for GPU support
+
+### GPU Passthrough Configuration
+
+**⚠️ CRITICAL LIMITATION: Single GPU Constraint**
+
+The NVIDIA Ada Lovelace RTX 4000 in this system **can only be passed through to ONE VM at a time**. Consumer and gaming GPUs do not support:
+- **vGPU (NVIDIA GRID)**: Only available on Quadro/Tesla datacenter GPUs
+- **SR-IOV**: Not supported on consumer GeForce/RTX cards
+
+**You must choose ONE of the following:**
+1. **Talos Kubernetes cluster** - GPU available for AI/ML containerized workloads
+2. **Single traditional VM** - GPU available for non-Kubernetes workloads
+
+**Recommendation for this setup**: Assign GPU to Talos Kubernetes cluster, as it provides maximum flexibility for running multiple GPU workloads via Kubernetes scheduling.
+
+**Proxmox Host Setup:**
+1. Enable IOMMU in BIOS
+2. Edit `/etc/default/grub`:
+   - AMD: Add `amd_iommu=on iommu=pt`
+   - Intel: Add `intel_iommu=on iommu=pt`
+3. Blacklist NVIDIA drivers on host
+4. Bind GPU to VFIO driver
+
+**Talos Configuration:**
+1. Build custom image with NVIDIA extensions from Talos Factory
+2. Configure machine config with GPU device mapping
+3. Install NVIDIA GPU Operator in Kubernetes
+4. Deploy workloads with GPU resource requests
+
+### Best Practices for Talos
+
+- Use Talos Factory for custom image creation
+- Pin Talos version for reproducibility
+- Implement GitOps workflow for configuration management
+- Use talosctl for cluster operations
+- Maintain machine configurations in version control
+- Test GPU passthrough before production deployment
+- Monitor GPU utilization in Kubernetes
+
+### Talos Single-Node Cluster Configuration
+
+**This project uses a single-node Talos cluster** with the following specific configurations:
+
+**Cluster Architecture:**
+- Single node acts as both control plane AND worker
+- Minimum requirements: 2GB RAM, 2 cores, 10GB disk
+- Recommended: 24-32GB RAM, 6-8 cores, 150-200GB disk (for real workloads)
+
+**Required Configuration Changes:**
+
+1. **Allow Pod Scheduling on Control Plane:**
+   ```bash
+   kubectl taint nodes --all node-role.kubernetes.io/control-plane-
+   ```
+   This removes the taint that prevents workloads from running on control plane nodes.
+
+2. **System Extensions via Talos Factory:**
+   - `siderolabs/qemu-guest-agent` - Proxmox integration (VM management and status reporting)
+   - `nonfree-kmod-nvidia-production` - NVIDIA proprietary drivers (for GPU passthrough)
+   - `nvidia-container-toolkit-production` - NVIDIA container runtime (for GPU workloads in Kubernetes)
+
+3. **Proxmox VM CPU Type:**
+   - Must set to "host" (not kvm64)
+   - Required for Talos v1.0+ x86-64-v2 microarchitecture support
+   - Cilium also benefits from "host" CPU type
+
+4. **Talos Machine Configuration:**
+   - Disable Flannel and kube-proxy (using Cilium instead)
+   - Enable KubePrism on port 7445
+   - Set CNI to "none" when generating machine config
+   - Drop SYS_MODULE capability from Cilium (Talos doesn't allow loading kernel modules from Kubernetes)
+
+5. **Storage Configuration:**
+   - Talos OS disk: 150-200GB (system, ephemeral storage, and local caches)
+   - **Persistent data**: NFS CSI driver mounting external NAS
+   - **Ephemeral data**: local-path-provisioner for fast local storage
+   - **External NAS**: Available via NFS/Samba on separate computer for durable storage
+   - No additional local disks required (persistent data on NAS)
+
+**Migration Path to 3-Node HA:**
+- Can expand single node to 3-node cluster without rebuilding
+- Add 2 additional Talos VMs with matching configuration
+- Join them to existing cluster via talosctl
+- Optionally add distributed storage (Longhorn, Ceph) for redundancy
+- Update workloads to use new storage class and tolerate node failures
+
+**Benefits of Single-Node Start:**
+- Lower resource usage (no redundant control planes)
+- Simpler to manage and troubleshoot
+- Faster to deploy and iterate
+- Can expand to HA later as needs grow
+- Perfect for learning and development
+
+## Talos Linux Recommended Tools
+
+This section provides a comprehensive list of tools specifically for Talos Linux deployment and management on Proxmox using Terraform and Ansible.
+
+### Project-Specific Tool Decisions
+
+**This project uses the following specific tools (decided choices, not just recommendations):**
+
+**Version Control & CI/CD:**
+- **Current**: GitHub (temporary)
+- **Future**: Forgejo (self-hosted Git platform)
+- **CI/CD**: GitHub Actions (current), will migrate to Forgejo Actions when switching
+
+**Terraform Stack:**
+- **Providers**:
+  - `siderolabs/talos` (~> 0.7.1) - Talos configuration and bootstrapping
+  - `bpg/proxmox` (~> 0.75.0) - Proxmox VM provisioning
+
+**Talos Kubernetes Stack:**
+- **Networking**: Cilium (eBPF-based CNI with L2 load balancing)
+- **Storage**: Local path provisioner for ephemeral data + NFS from external NAS for persistent data
+- **GitOps**: FluxCD (Kubernetes continuous delivery)
+
+**Container Runtime:**
+- **Podman** (preferred over Docker for local development and CI/CD)
+
+**External Storage:**
+- **NAS**: External NAS on separate computer available for shared storage
+- **Protocols**: NFS and Samba/CIFS support
+- **Use cases**: Persistent data, backups, shared volumes across VMs
+
+**Rationale:**
+- **Forgejo**: Self-hosted, community-driven fork of Gitea, lightweight, full control over infrastructure
+- **FluxCD**: Better Helm integration with hooks, more popular with Talos community
+- **Cilium**: Modern eBPF-based networking with advanced features
+- **Storage strategy**: Local-path-provisioner for ephemeral workloads, NFS from external NAS for persistent data needing durability
+- **siderolabs/talos + bpg/proxmox**: Official providers with best support
+- **Podman**: Daemonless, rootless containers, drop-in Docker replacement, better security model
+
+**Note**: Traditional VMs (Debian, Ubuntu, Arch, NixOS, Windows) may also mount NAS storage via NFS or Samba as needed.
+
+### Core Talos Tools (Required)
+
+1. **talosctl** (latest version)
+   - Purpose: Primary CLI tool for Talos API interaction
+   - Official docs: https://www.talos.dev/v1.10/learn-more/talosctl/
+   - Use: Manage and configure Talos machines (no SSH access)
+   - Note: Similar to kubectl but for Talos infrastructure management
+
+2. **kubectl** (latest version)
+   - Purpose: Kubernetes cluster management
+   - Official docs: https://kubernetes.io/docs/reference/kubectl/
+   - Use: Manage Kubernetes resources after cluster deployment
+   - Note: talosctl manages Talos, kubectl manages Kubernetes
+
+3. **Talos Image Factory** (web-based)
+   - Purpose: Generate custom Talos Linux images with extensions
+   - Official site: https://factory.talos.dev/
+   - Use: Build images with qemu-guest-agent, NVIDIA drivers, custom kernels
+   - Official docs: https://github.com/siderolabs/image-factory
+
+### Terraform Providers & Modules
+
+**Selected for This Project:**
+
+1. **siderolabs/talos** (latest version) - **CHOSEN**
+   - Purpose: Official HashiCorp-verified Terraform provider for Talos
+   - Registry: https://registry.terraform.io/providers/siderolabs/talos/latest
+   - Use: Configure nodes, apply patches, install Kubernetes, bootstrap etcd
+   - Version: ~> 0.7.1 (as of 2025)
+   - **Why chosen**: Official provider with best support and features
+
+2. **bpg/proxmox** (latest version) - **CHOSEN**
+   - Purpose: Proxmox VE provider for Terraform
+   - Registry: https://registry.terraform.io/providers/bpg/proxmox/latest
+   - Use: Provision VMs, manage templates, configure hardware
+   - Version: ~> 0.75.0 (as of 2025)
+   - **Why chosen**: Most maintained and feature-complete Proxmox provider
+
+**Recommended Modules:**
+
+3. **bbtechsys/talos/proxmox** (latest version)
+   - Purpose: Community Terraform module for Talos on Proxmox
+   - Registry: https://registry.terraform.io/modules/bbtechsys/talos/proxmox/latest
+   - Use: Simplified Talos cluster deployment
+   - Published: April 2025
+
+**Alternative Providers:**
+
+4. **OpenTofu** (optional)
+   - Purpose: Open-source Terraform alternative
+   - Official docs: https://opentofu.org/
+   - Use: Drop-in replacement for Terraform
+   - Note: Fully compatible with Terraform providers
+
+### Ansible Roles & Collections
+
+**Recommended Roles:**
+
+1. **mgrzybek/talos-ansible-playbooks** (latest version)
+   - Purpose: Complete Talos Linux lifecycle management
+   - GitHub: https://github.com/mgrzybek/talos-ansible-playbooks
+   - Use: Day 0 (prerequisites), Day 1 (deployment), Day 2 (operations)
+   - Includes: Cilium + Ceph integration
+   - Updated: Active development in 2025
+
+2. **sergelogvinov/ansible-role-talos-boot** (latest version)
+   - Purpose: Bootstrap Talos on cloud servers and bare metal
+   - Ansible Galaxy: https://galaxy.ansible.com/ui/standalone/roles/sergelogvinov/talos-boot/
+   - GitHub: https://github.com/sergelogvinov/ansible-role-talos-boot
+   - Use: Launch Talos via boot menu or kexec without IPMI/PXE
+
+**Role Capabilities:**
+- Gather network information from existing OS
+- Create Talos configuration patch files
+- Download Talos kernel and initrd images
+- Add GRUB boot entries or use kexec for booting
+
+### Proxmox Integration Tools
+
+1. **QEMU Guest Agent Extension**
+   - Purpose: Improve VM management and status reporting
+   - Extension name: `siderolabs/qemu-guest-agent`
+   - Installation: Via Talos Image Factory schematic
+   - Benefits: Better shutdown/reboot, network info reporting, VM status
+
+2. **qemu-guest-agent-talos DaemonSet** (community)
+   - Purpose: Run QEMU guest agent as Kubernetes DaemonSet
+   - GitHub: https://github.com/crisobal/qemu-guest-agent-talos
+   - Use: Alternative approach for running nodes
+   - Note: Good for Proxmox integration
+
+### Talos System Extensions
+
+**NVIDIA GPU Extensions (for AI/ML workloads):**
+
+1. **nonfree-kmod-nvidia-production**
+   - Purpose: NVIDIA proprietary kernel modules (production branch)
+   - Type: System extension
+   - Installation: Via Talos Image Factory
+   - Use: GPU passthrough support
+
+2. **nvidia-open-gpu-kernel-modules**
+   - Purpose: NVIDIA open-source GPU kernel modules
+   - Type: System extension
+   - Use: Open-source alternative to proprietary drivers
+
+3. **nvidia-container-toolkit-production**
+   - Purpose: NVIDIA container runtime and dependencies
+   - Type: System extension
+   - Use: Required for GPU workloads in Kubernetes
+   - Versions: LTS and Production branches available
+
+4. **nvidia-fabricmanager** (optional)
+   - Purpose: NVLink support for multi-GPU setups
+   - Type: System extension
+   - Use: Only for systems requiring NVLink
+
+5. **gdrcopy/gdrdrv** (optional)
+   - Purpose: NVIDIA GPUDirect RDMA for low-latency GPU memory access
+   - Type: System extension
+   - Use: High-performance computing workloads
+
+**Other System Extensions:**
+
+6. **Various hardware support extensions**
+   - Available in siderolabs/extensions repository
+   - Examples: Intel SGX, USB drivers, hardware monitoring
+
+### Kubernetes Networking
+
+**Selected for This Project: Cilium**
+
+1. **Cilium** (latest version) - **CHOSEN**
+   - Purpose: eBPF-based networking and security
+   - Official docs: https://docs.cilium.io/
+   - Use: CNI, L2 load balancing, network policies
+   - Installation: Via Helm chart or Talos bootstrapping
+   - Talos integration: https://www.talos.dev/v1.10/kubernetes-guides/network/deploying-cilium/
+   - **Why chosen**: Modern eBPF technology, excellent performance, advanced features
+
+**Alternative CNIs (not used in this project):**
+
+2. **Flannel** (latest version)
+   - Purpose: Simple overlay network
+   - Use: Lightweight alternative to Cilium
+
+3. **Calico** (latest version)
+   - Purpose: Network policies and security
+   - Use: When advanced network policies are required
+
+### Kubernetes Storage
+
+**Selected for This Project: Hybrid Storage Strategy**
+
+1. **NFS CSI Driver** (latest version) - **CHOSEN FOR PERSISTENT DATA**
+   - Purpose: Mount external NAS storage in Kubernetes
+   - GitHub: https://github.com/kubernetes-csi/csi-driver-nfs
+   - Use: Persistent volumes for databases, media, important application data
+   - Installation: Via Helm chart
+   - **Why chosen**: External NAS provides durability, backups, and shared access across VMs
+   - **Benefits**: Data survives node failures, can be accessed by multiple pods, centralized backups
+
+2. **local-path-provisioner** (latest version) - **CHOSEN FOR EPHEMERAL DATA**
+   - Purpose: Dynamic local path provisioning for temporary/cache data
+   - GitHub: https://github.com/rancher/local-path-provisioner
+   - Use: Fast local storage for caches, temp files, build artifacts
+   - Installation: Single kubectl apply
+   - **Why chosen**: Fast local performance for data that doesn't need durability
+   - **Trade-off**: Data lost if node fails (acceptable for ephemeral workloads)
+
+3. **hostPath** (built-in Kubernetes) - **FOR SPECIFIC USE CASES**
+   - Purpose: Direct host directory mounting
+   - Use: When you need specific host paths (e.g., GPU drivers, device access)
+   - **Trade-off**: Manual path management, no dynamic provisioning
+
+**Alternative Storage (not used for single-node, but available for expansion):**
+
+4. **Longhorn** (latest version)
+   - Purpose: Distributed block storage for Kubernetes
+   - Official docs: https://longhorn.io/
+   - **Why not used now**: Requires 3 nodes for proper redundancy
+   - **When to use**: When expanding to 3-node cluster for replicated block storage
+
+5. **Ceph** (latest version)
+   - Purpose: Distributed storage system
+   - **Why not used**: Overkill for homelab, complex setup
+   - **When to use**: Large multi-node deployments with high performance requirements
+
+### GPU Workload Management
+
+1. **NVIDIA GPU Operator** (latest version)
+   - Purpose: Automate GPU resource management in Kubernetes
+   - Official docs: https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/
+   - Use: GPU driver management, device plugin, monitoring
+   - Installation: Via Helm chart after Talos deployment
+
+2. **NVIDIA Device Plugin** (included in GPU Operator)
+   - Purpose: Expose GPU resources to Kubernetes scheduler
+   - Use: Automatically deployed by GPU Operator
+
+### GitOps Tools
+
+**Selected for This Project: FluxCD**
+
+1. **FluxCD** (latest version) - **CHOSEN**
+   - Purpose: Kubernetes GitOps continuous delivery
+   - Official docs: https://fluxcd.io/
+   - Use: Automated cluster reconciliation from Git
+   - Installation: Bootstrap via flux CLI
+   - **Why chosen**: More popular with Talos community, better Helm integration with hooks, lightweight
+
+**Alternative GitOps (not used in this project):**
+
+2. **ArgoCD** (latest version)
+   - Purpose: Declarative GitOps CD for Kubernetes
+   - Official docs: https://argo-cd.readthedocs.io/
+   - Use: UI-based application delivery
+   - Why: Better for developer-facing deployments
+   - Note: Not used in this project - FluxCD is sufficient for homelab scale
+
+**Supporting Tools:**
+
+3. **Helm** (latest version)
+   - Purpose: Kubernetes package manager
+   - Official docs: https://helm.sh/
+   - Use: Deploy charts, manage releases
+   - Note: FluxCD has excellent Helm support
+
+### Monitoring & Observability
+
+**Recommended Stack:**
+
+1. **kube-prometheus-stack** (Helm chart)
+   - Purpose: Complete monitoring solution
+   - Components: Prometheus, Grafana, Alertmanager, node-exporter
+   - Helm chart: prometheus-community/kube-prometheus-stack
+   - Use: Pre-configured dashboards and alerts
+   - Installation: Via Helm or FluxCD
+
+2. **Prometheus** (included in stack)
+   - Purpose: Metrics collection and storage
+   - Use: Scrape metrics from Kubernetes and Talos
+
+3. **Grafana** (included in stack)
+   - Purpose: Metrics visualization and dashboards
+   - Use: Visualize Prometheus metrics
+
+4. **Loki** (latest version)
+   - Purpose: Log aggregation system
+   - Official docs: https://grafana.com/oss/loki/
+   - Use: Centralized logging for Kubernetes pods
+   - Installation: Via Helm chart
+
+5. **Kubernetes Metrics Server** (latest version)
+   - Purpose: Cluster-wide resource metrics
+   - Use: Enable HPA (Horizontal Pod Autoscaler)
+   - Installation: Via kubectl or Helm
+
+**Alternative Monitoring:**
+
+6. **VictoriaMetrics** (latest version)
+   - Purpose: Time-series database (Prometheus alternative)
+   - Official docs: https://victoriametrics.com/
+   - Use: Lower resource usage than Prometheus
+   - Note: Drop-in replacement for Prometheus
+
+### Additional Utilities
+
+1. **k9s** (latest version)
+   - Purpose: Terminal UI for Kubernetes
+   - Official docs: https://k9scli.io/
+   - Use: Interactive cluster management
+
+2. **kubectx/kubens** (latest version)
+   - Purpose: Quick context and namespace switching
+   - Use: Faster workflow when managing multiple clusters
+
+3. **Lens** (optional)
+   - Purpose: Kubernetes IDE
+   - Official docs: https://k8slens.dev/
+   - Use: GUI alternative to kubectl and k9s
+
+### Tool Selection Guidelines for Talos
+
+**Mandatory for Talos Deployment:**
+- talosctl (Talos management)
+- kubectl (Kubernetes management)
+- Talos Image Factory (custom images)
+- siderolabs/talos Terraform provider
+- bpg/proxmox Terraform provider
+- QEMU Guest Agent extension (for Proxmox)
+
+**Mandatory for Production:**
+- Cilium (networking)
+- NFS CSI driver + local-path-provisioner (storage for single-node)
+- FluxCD (GitOps)
+- kube-prometheus-stack (monitoring)
+- Loki (logging)
+
+**Optional for GPU Workloads:**
+- NVIDIA system extensions (via Talos Factory)
+- NVIDIA GPU Operator (in Kubernetes)
+
+**Optional for Enhanced Workflow:**
+- Ansible roles (automated lifecycle management)
+- Helm (package management)
+- k9s (terminal UI)
+- Terraform modules (simplified deployment)
+
+**Selection Criteria:**
+- Start with mandatory tools
+- Add production tools before going live
+- GPU extensions only if using NVIDIA hardware
+- FluxCD is sufficient for homelab scale - no need for ArgoCD
+
+### Version Compatibility Matrix (2025)
+
+| Component | Recommended Version | Notes |
+|-----------|-------------------|-------|
+| Talos Linux | v1.10+ | Use latest stable |
+| Kubernetes | v1.31+ | Supported by Talos |
+| talosctl | Match Talos version | Client-server compatibility |
+| kubectl | Match K8s version | Within 1 minor version |
+| Terraform | v1.9+ | Latest stable |
+| siderolabs/talos provider | ~> 0.7.1 | As of April 2025 |
+| bpg/proxmox provider | ~> 0.75.0 | As of April 2025 |
+| Cilium | v1.18+ | Current stable |
+| FluxCD | v2.4+ | Current stable |
+| kube-prometheus-stack | Latest | Helm chart |
+
+### Reference Implementations
+
+- **GitHub Examples**:
+  - rgl/terraform-proxmox-talos
+  - pascalinthecloud/terraform-proxmox-talos-cluster
+  - mgrzybek/talos-ansible-playbooks
+- **Blog Posts**:
+  - TechDufus: Building Talos Kubernetes Homelab on Proxmox with Terraform (June 2025)
+  - Suraj Remanan: Automating Talos Installation with Packer and Terraform (August 2025)
+  - Duck's Blog: NVIDIA GPU Passthrough to TalosOS VM to Kubernetes (March 2025)
+- **Official Documentation**:
+  - https://www.talos.dev/
+  - https://factory.talos.dev/
 
 ## Development Workflows
 
@@ -257,14 +1083,14 @@ Before implementing ANY feature:
 - Document all non-obvious decisions
 - Use version pinning for reproducibility
 - Implement proper error handling and validation
-- Use remote state backends for Terraform (never local)
-- Separate environments (dev/staging/prod)
+- Use remote state backends for Terraform in team environments (local state acceptable for solo homelab)
+- Separate environments optional for homelab (dev/staging/prod more relevant for teams)
 - Use modules/roles for reusability
 - Implement idempotency in all automation
 - Use pre-commit hooks for code quality
 - Never commit secrets (always use SOPS + Age)
-- Tag and label all cloud resources appropriately
-- Implement cost controls and monitoring
+- Tag and label all resources appropriately (for organization and filtering)
+- Monitor resource usage (CPU, RAM, storage) on Proxmox
 - Use GitOps workflows where applicable
 
 **Verification:**
@@ -283,23 +1109,38 @@ Follow this sequence for development:
    - Identify breaking changes from older versions
 
 2. **Packer Templates**
-   - Create templates for each OS
+   - **Talos**: Build custom image from Talos Factory with NVIDIA extensions
+   - **Traditional OS** (Debian, Ubuntu, Arch, NixOS, Windows):
+     - Create templates for each OS
+     - Configure base OS settings
+     - Install required packages
    - Test builds individually
    - Optimize for size and build time
 
-3. **Cloud-init Configuration**
+3. **Cloud-init Configuration** (Traditional OS only)
    - Set up initial provisioning
    - Configure networking
    - Create initial users
+   - SSH key injection
+   - Basic package installation
+   - Note: Talos uses machine configuration API instead
 
 4. **Ansible Playbooks**
-   - Define baseline package sets
-   - Apply OS-specific configurations
-   - Set default credentials (username/password)
+   - **Talos**: Day 0/1/2 operations (prerequisites, deployment, updates)
+   - **Traditional OS** (Debian, Ubuntu, Arch, NixOS, Windows):
+     - Define baseline package sets
+     - Apply OS-specific configurations
+     - Set default credentials (username/password)
+     - Configure services
+     - Apply security hardening
 
 5. **Terraform Integration**
-   - Orchestrate image building
-   - Manage VM deployment
+   - **Talos**: Use Proxmox + Talos providers for cluster deployment
+   - **Traditional OS**:
+     - Orchestrate image building
+     - Manage VM deployment
+     - Configure VM resources (CPU, RAM, storage)
+   - Configure GPU passthrough (Talos and traditional VMs as needed)
    - Handle provider configuration
 
 6. **Testing & Validation**
@@ -320,6 +1161,343 @@ Follow this sequence for development:
 - Update syntax to match current version
 - Avoid deprecated features
 - Document version requirements in code
+
+## CI/CD Implementation
+
+### Overview
+
+This project implements Infrastructure as Code (IaC) with automated CI/CD pipelines for testing, validating, and deploying infrastructure changes. The CI/CD strategy focuses on immutable infrastructure using golden images built with Packer.
+
+### CI/CD Platform Options
+
+**Selected for This Project: GitHub Actions (current) → Forgejo Actions (future)**
+
+#### GitHub Actions (Currently Used)
+- **Status**: Temporary, will migrate to Forgejo
+- **Pros**:
+  - Native GitHub integration
+  - Free for public repos, generous free tier for private
+  - Extensive marketplace with pre-built actions
+  - Simple YAML configuration
+  - Good for small to medium teams
+- **Cons**:
+  - Requires GitHub repository
+  - Less control over runner infrastructure
+- **Best for**: Projects already using GitHub, teams wanting simplicity
+
+#### Forgejo (Future Platform) - **CHOSEN FOR PRODUCTION**
+- **Status**: Future self-hosted Git platform
+- **Pros**:
+  - Self-hosted, full control over infrastructure
+  - Community-driven fork of Gitea with stronger FOSS principles
+  - Lightweight (single binary, low resource usage)
+  - Compatible with GitHub Actions workflows (Forgejo Actions)
+  - Built-in CI/CD (Forgejo Actions runner)
+  - Free and open source (AGPLv3 + MIT)
+  - Privacy and data control
+  - Federation support (ActivityPub)
+- **Cons**:
+  - Requires self-hosting infrastructure
+  - Smaller ecosystem compared to GitHub
+  - Need to manage updates and backups
+- **Why chosen**: Self-hosted control, community-driven, lightweight, privacy, compatible with GitHub Actions
+- **Migration path**: Existing GitHub Actions workflows will work with Forgejo Actions
+
+#### GitLab CI (Alternative, not chosen)
+- **Pros**:
+  - Built-in CI/CD (no external service needed)
+  - Integrated security scanning (SAST, DAST, dependency scanning)
+  - Self-hosted runners supported
+  - Excellent for GitOps workflows
+  - Built-in container registry
+- **Cons**:
+  - Requires GitLab (self-hosted or SaaS)
+  - Steeper learning curve than GitHub Actions
+- **Best for**: Teams wanting all-in-one DevOps platform, advanced security features
+
+#### Atlantis (Optional)
+- **Pros**:
+  - Purpose-built for Terraform GitOps
+  - Self-hosted, lightweight
+  - Terraform plan/apply via pull request comments
+  - Works with GitHub, GitLab, Bitbucket
+  - Prevents concurrent runs
+- **Cons**:
+  - Terraform-only (doesn't handle Packer, Ansible)
+  - Requires separate server to run
+  - Additional infrastructure to maintain
+- **Best for**: Pure Terraform workflows, teams wanting PR-based infrastructure changes
+
+#### Jenkins (Not Recommended for This Setup)
+- **Pros**:
+  - Most flexible and customizable
+  - Extensive plugin ecosystem
+- **Cons**:
+  - Heavy operational burden
+  - Manual Terraform integration
+  - Complex setup and maintenance
+  - Overkill for homelab/small teams
+- **Best for**: Large enterprises with dedicated DevOps teams
+
+### Project CI/CD Strategy
+
+**This project uses: GitHub Actions (current) → Forgejo Actions (future migration)**
+
+The CI/CD workflows will be compatible with both GitHub Actions and Forgejo Actions, allowing for seamless migration when transitioning to self-hosted Forgejo infrastructure.
+
+**Pipeline Architecture:**
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                     Pull Request                        │
+├─────────────────────────────────────────────────────────┤
+│ 1. Lint & Format                                        │
+│    - terraform fmt -check                               │
+│    - tflint                                             │
+│    - ansible-lint                                       │
+│    - yamllint                                           │
+├─────────────────────────────────────────────────────────┤
+│ 2. Security Scan                                        │
+│    - trivy config (IaC security)                        │
+├─────────────────────────────────────────────────────────┤
+│ 3. Validate                                             │
+│    - terraform validate                                 │
+│    - packer validate                                    │
+│    - ansible-playbook --syntax-check                    │
+├─────────────────────────────────────────────────────────┤
+│ 4. Plan                                                 │
+│    - terraform plan                                     │
+└─────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────┐
+│                     Main Branch                         │
+├─────────────────────────────────────────────────────────┤
+│ 1. Build Images                                         │
+│    - packer build (golden images)                       │
+├─────────────────────────────────────────────────────────┤
+│ 2. Deploy Infrastructure                                │
+│    - terraform apply -auto-approve                      │
+├─────────────────────────────────────────────────────────┤
+│ 3. Configure VMs                                        │
+│    - ansible-playbook (post-deployment config)          │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Pipeline Stages
+
+**Stage 1: Code Quality (runs on every commit)**
+- Format checking: `terraform fmt -check`, `yamllint`
+- Linting: `tflint`, `ansible-lint`
+- Syntax validation: `terraform validate`, `packer validate`
+
+**Stage 2: Security Scanning (runs on every commit)**
+- IaC security: `trivy config .`
+- Secrets detection: pre-commit hooks with detect-secrets (optional)
+- Compliance checks: Trivy built-in policies
+
+**Stage 3: Plan (runs on PRs)**
+- Terraform plan with output
+- Post plan as PR comment for review
+
+**Stage 4: Test (runs on PRs, optional)**
+- Ansible role testing: `molecule test` (only if using complex reusable roles)
+- Integration tests for custom modules
+
+**Stage 5: Build Golden Images (runs on main branch)**
+- Packer builds for each OS template
+- Image validation and tagging
+- Store in Proxmox template library
+
+**Stage 6: Deploy Infrastructure (runs on main branch)**
+- Terraform apply with state locking
+- Capture apply output
+- Notify on success/failure
+
+**Stage 7: Post-Deployment Configuration (runs after deploy)**
+- Ansible playbooks for baseline configuration
+- Validation checks
+- Smoke tests
+
+### Immutable Infrastructure Pattern (2025 Best Practice)
+
+**Golden Images with Packer:**
+- Build VM images with Packer containing all base configuration
+- Images are versioned and immutable
+- Changes require rebuilding images, not modifying running VMs
+- Reduces configuration drift
+- Faster VM provisioning
+
+**Infrastructure Update Approaches:**
+
+**For Talos Linux (Truly Immutable):**
+1. Update Packer template or Talos Factory image
+2. CI/CD builds new golden image
+3. Terraform creates VMs from new image
+4. Old VMs are destroyed (or blue/green deployment)
+5. No in-place VM updates
+
+**For Traditional OS VMs (Homelab Mutable Approach):**
+- **Initial provisioning**: Packer golden images provide consistent baseline
+- **Ongoing management**: Ansible playbooks for configuration updates, package management, and service changes
+- **Reasoning**: For homelab scale, rebuilding entire VMs for minor changes is overkill. Ansible provides flexibility for iterative development and learning.
+- **Hybrid approach**: Use Packer for major OS updates, Ansible for day-to-day configuration management
+
+**Note**: True immutable infrastructure (destroy/rebuild for all changes) is enterprise best practice but may be excessive for homelab environments where experimentation and rapid iteration are priorities.
+
+### Implementation Steps
+
+**1. Set up CI/CD Platform:**
+- Create `.github/workflows/` (GitHub Actions) or `.gitlab-ci.yml` (GitLab CI)
+- Configure runners (use hosted runners or self-hosted)
+- Set up secrets (Proxmox credentials, SOPS Age keys)
+
+**2. Configure Pipeline Stages:**
+- Lint and format stage
+- Security scanning stage
+- Plan stage (PRs only)
+- Apply stage (main branch only)
+
+**3. Terraform State Management:**
+- **Homelab**: Local state is acceptable (add `terraform.tfstate` to `.gitignore`)
+- **Team environments**: Use remote backend (S3, GitLab, Terraform Cloud) with state locking
+- **NEVER** commit state files to Git (always in `.gitignore`)
+
+**4. Configure Branch Protection (Optional for Homelab):**
+- **Solo homelab**: Optional, can push directly to main for speed and flexibility
+- **Team environments**: Require PR reviews and CI/CD checks to pass
+- **For learning GitOps**: Enable to practice enterprise team workflows
+
+**5. Set up Notifications:**
+- Slack/Discord/Email notifications for failures
+- PR comments with plan output and cost estimates
+
+### Security Considerations
+
+**Secrets Management:**
+- Use CI/CD platform's secret management (GitHub Secrets, GitLab CI/CD variables)
+- Store SOPS Age private key in CI/CD secrets
+- Never log sensitive values
+- Encrypt Proxmox credentials with SOPS
+
+**Access Control:**
+- Use service accounts with minimum required permissions
+- Rotate credentials regularly
+- Audit CI/CD logs for suspicious activity
+
+**State File Security:**
+- Encrypt Terraform state at rest
+- Use backend authentication
+- Restrict access to state storage
+
+### Example GitHub Actions Workflow
+
+```yaml
+name: Infrastructure CI/CD
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+      - name: TFLint
+        uses: terraform-linters/setup-tflint@v3
+        run: tflint --init && tflint
+      - name: Ansible Lint
+        run: ansible-lint
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'config'
+          scan-ref: '.'
+
+  plan:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
+
+  apply:
+    if: github.ref == 'refs/heads/main'
+    needs: [lint, security]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Packer Build
+        run: packer build templates/
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
+      - name: Ansible Configure
+        run: ansible-playbook playbooks/baseline.yml
+```
+
+### GitOps Workflow with Atlantis (Optional)
+
+If you want PR-based Terraform automation, use Atlantis:
+
+1. **Install Atlantis** on a server (can be a VM in Proxmox)
+2. **Configure webhook** in GitHub/GitLab to notify Atlantis
+3. **Create atlantis.yaml** in repo root:
+   ```yaml
+   version: 3
+   projects:
+   - dir: terraform/
+     workflow: default
+     autoplan:
+       when_modified: ["*.tf", "*.tfvars"]
+   ```
+4. **Use PR comments** to control Terraform:
+   - `atlantis plan` - Run terraform plan
+   - `atlantis apply` - Run terraform apply
+   - `atlantis unlock` - Unlock state if needed
+
+### Monitoring and Observability
+
+**Pipeline Metrics:**
+- Track build success/failure rates
+- Monitor build duration
+- Alert on failed deployments
+
+**Infrastructure Metrics:**
+- Monitor VM resource usage
+- Track image build times
+- Alert on Terraform state drift
+
+### Best Practices for CI/CD
+
+1. **Always run plan before apply**
+2. **Require manual approval for production** (optional for homelab)
+3. **Use separate environments** (dev, staging, prod) - optional for solo homelab
+4. **Version control everything**
+5. **Test infrastructure changes in dev first**
+6. **Implement rollback procedures**
+7. **Keep pipelines fast** (parallelize where possible)
+8. **Use caching** for dependencies (Terraform providers, Ansible collections)
+9. **Log everything** but sanitize secrets
+10. **Regular pipeline maintenance** (update actions/images)
+
+### Troubleshooting CI/CD Issues
+
+**Common Issues:**
+1. **State locking errors**: Ensure proper backend configuration
+2. **Authentication failures**: Check secret configuration
+3. **Timeout errors**: Increase timeouts or optimize builds
+4. **Concurrent runs**: Use proper locking mechanisms
+5. **Runner resource constraints**: Monitor runner capacity
 
 ## Code Quality Standards
 
@@ -483,37 +1661,74 @@ source "proxmox-iso" "d12" {
 6. **SOPS Documentation**: https://github.com/getsops/sops
 7. **Age Documentation**: https://github.com/FiloSottile/age
 
+**Talos Linux Core:**
+8. **Talos Documentation**: https://www.talos.dev/
+9. **Talos Factory**: https://factory.talos.dev/
+10. **Talos GitHub**: https://github.com/siderolabs/talos
+11. **Talos NVIDIA GPU Guide**: https://www.talos.dev/v1.8/talos-guides/configuration/nvidia-gpu/
+12. **Talosctl CLI**: https://www.talos.dev/v1.8/reference/cli/
+13. **Talos System Extensions**: https://github.com/siderolabs/extensions
+14. **Talos Proxmox Guide**: https://www.talos.dev/v1.10/talos-guides/install/virtualized-platforms/proxmox/
+
+**Talos-Specific Terraform:**
+15. **siderolabs/talos Provider**: https://registry.terraform.io/providers/siderolabs/talos/latest
+16. **bpg/proxmox Provider**: https://registry.terraform.io/providers/bpg/proxmox/latest
+17. **bbtechsys/talos/proxmox Module**: https://registry.terraform.io/modules/bbtechsys/talos/proxmox/latest
+
+**Talos-Specific Ansible:**
+18. **mgrzybek/talos-ansible-playbooks**: https://github.com/mgrzybek/talos-ansible-playbooks
+19. **sergelogvinov/ansible-role-talos-boot**: https://galaxy.ansible.com/ui/standalone/roles/sergelogvinov/talos-boot/
+
+**Kubernetes Tools for Talos:**
+20. **Cilium Documentation**: https://docs.cilium.io/
+21. **NFS CSI Driver**: https://github.com/kubernetes-csi/csi-driver-nfs
+22. **local-path-provisioner**: https://github.com/rancher/local-path-provisioner
+23. **NVIDIA GPU Operator**: https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/
+24. **FluxCD Documentation**: https://fluxcd.io/
+25. **kube-prometheus-stack**: https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack
+26. **Loki Documentation**: https://grafana.com/oss/loki/
+27. **k9s**: https://k9scli.io/
+
 **Terraform Complementary Tools:**
-8. **TFLint**: https://github.com/terraform-linters/tflint
-9. **terraform-docs**: https://terraform-docs.io/
-10. **Trivy**: https://aquasecurity.github.io/trivy/
-11. **Checkov**: https://www.checkov.io/
-12. **Terrascan**: https://runterrascan.io/
-13. **Infracost**: https://www.infracost.io/
-14. **tfenv**: https://github.com/tfutils/tfenv
-15. **Terragrunt**: https://terragrunt.gruntwork.io/
-16. **Atlantis**: https://www.runatlantis.io/
+28. **TFLint**: https://github.com/terraform-linters/tflint
+29. **terraform-docs**: https://terraform-docs.io/
+30. **Trivy**: https://aquasecurity.github.io/trivy/
+31. **Checkov**: https://www.checkov.io/
+32. **Terrascan**: https://runterrascan.io/
+33. **Infracost**: https://www.infracost.io/
+34. **tfenv**: https://github.com/tfutils/tfenv
+35. **Terragrunt**: https://terragrunt.gruntwork.io/
+36. **Atlantis**: https://www.runatlantis.io/
 
 **Ansible Complementary Tools:**
-17. **ansible-lint**: https://ansible-lint.readthedocs.io/
-18. **Molecule**: https://molecule.readthedocs.io/
-19. **yamllint**: https://yamllint.readthedocs.io/
-20. **Ansible Semaphore**: https://semaphoreui.com/
-21. **AWX**: https://github.com/ansible/awx
+37. **ansible-lint**: https://ansible-lint.readthedocs.io/
+38. **Molecule**: https://molecule.readthedocs.io/
+39. **yamllint**: https://yamllint.readthedocs.io/
+40. **Ansible Semaphore**: https://semaphoreui.com/
+41. **AWX**: https://github.com/ansible/awx
 
 **Cross-cutting Tools:**
-22. **pre-commit**: https://pre-commit.com/
-23. **pre-commit-terraform**: https://github.com/antonbabenko/pre-commit-terraform
+42. **pre-commit**: https://pre-commit.com/
+43. **pre-commit-terraform**: https://github.com/antonbabenko/pre-commit-terraform
 
 **Best Practices Guides:**
-24. **Terraform Best Practices**: https://www.terraform-best-practices.com/
-25. **HashiCorp Terraform Style Guide**: https://developer.hashicorp.com/terraform/language/style
-26. **Ansible Best Practices**: https://docs.ansible.com/ansible/latest/tips_tricks/ansible_tips_tricks.html
+44. **Terraform Best Practices**: https://www.terraform-best-practices.com/
+45. **HashiCorp Terraform Style Guide**: https://developer.hashicorp.com/terraform/language/style
+46. **Ansible Best Practices**: https://docs.ansible.com/ansible/latest/tips_tricks/ansible_tips_tricks.html
 
 ### Reference Repositories (Inspiration Only)
 
 These repositories are for pattern reference, NOT for copying:
 
+**Talos-Specific:**
+- [rgl/terraform-proxmox-talos](https://github.com/rgl/terraform-proxmox-talos) - Talos Kubernetes on Proxmox with Terraform
+- [pascalinthecloud/terraform-proxmox-talos-cluster](https://github.com/pascalinthecloud/terraform-proxmox-talos-cluster) - Terraform module for Talos clusters
+- [mgrzybek/talos-ansible-playbooks](https://github.com/mgrzybek/talos-ansible-playbooks) - Ansible playbooks for Talos management
+- [sergelogvinov/ansible-role-talos-boot](https://github.com/sergelogvinov/ansible-role-talos-boot) - Ansible role for Talos bootstrapping
+- [Robert-litts/Talos_Kubernetes](https://github.com/Robert-litts/Talos_Kubernetes) - Automated Talos deployment with Packer and Terraform
+- [kubebn/talos-proxmox-kaas](https://github.com/kubebn/talos-proxmox-kaas) - Kubernetes-as-a-Service on Proxmox
+
+**General Homelab:**
 - [kencx/homelab](https://github.com/kencx/homelab)
 - [zimmertr/TJs-Kubernetes-Service](https://github.com/zimmertr/TJs-Kubernetes-Service)
 - [sergelogvinov/terraform-talos](https://github.com/sergelogvinov/terraform-talos)
@@ -523,7 +1738,14 @@ These repositories are for pattern reference, NOT for copying:
 
 ### Reference Blog Posts
 
-- [Talos Cluster on Proxmox with Terraform](https://olav.ninja/talos-cluster-on-proxmox-with-terraform)
+**Talos on Proxmox:**
+- [Building a Talos Kubernetes Homelab with Terraform on Proxmox - TechDufus (June 2025)](https://techdufus.com/tech/2025/06/30/building-a-talos-kubernetes-homelab-on-proxmox-with-terraform.html)
+- [Automating Talos Installation on Proxmox with Packer and Terraform - Suraj Remanan (August 2025)](https://surajremanan.com/posts/automating-talos-installation-on-proxmox-with-packer-and-terraform/)
+- [NVIDIA GPU Passthrough to TalosOS VM to Kubernetes - Duck's Blog (March 2025)](https://blog.duckdefense.cc/kubernetes-gpu-passthrough/)
+- [Talos cluster on Proxmox with Terraform - Olav.ninja](https://olav.ninja/talos-cluster-on-proxmox-with-terraform)
+- [Kubernetes with Proxmox, Talos, and Terraform - BB Tech Systems](https://bbtechsystems.com/blog/k8s-with-pxe-tf/)
+
+**General Infrastructure:**
 - [Homelab as Code](https://merox.dev/blog/homelab-as-code/)
 - [Terraform Proxmox Provider Guide](https://spacelift.io/blog/terraform-proxmox-provider)
 
@@ -599,11 +1821,9 @@ These repositories are for pattern reference, NOT for copying:
 8. **Leaving old code when updating**: Remove obsolete implementations completely
 9. **Accumulating duplicate code**: Consolidate and clean up redundant logic
 10. **Keeping unused variables/functions**: Delete what isn't being used
-11. **Skipping linters and security scanners**: Always run TFLint, ansible-lint, and security tools
+11. **Skipping linters and security scanners**: Always run TFLint, ansible-lint, and Trivy
 12. **Ignoring best practices**: Follow official style guides and recommendations
-13. **Not using pre-commit hooks**: Automate quality checks before commits
-14. **Skipping cost estimation**: Use Infracost to understand infrastructure costs
-15. **Not testing Ansible roles**: Use Molecule to validate roles before deployment
+13. **Not using quality tools**: Use pre-commit hooks (when ready) and complementary tools
 
 ## Git Workflow
 
@@ -713,17 +1933,18 @@ export SOPS_AGE_KEY_FILE="$HOME/.config/sops/age/keys.txt"
 **Mandatory Complementary Tools:**
 - TFLint
 - terraform-docs
-- Trivy or Checkov (at least one security scanner)
+- Trivy (security scanning)
 - ansible-lint
-- Molecule
 - yamllint
-- pre-commit
-- pre-commit-terraform
 
-**Optional But Recommended:**
-- Infracost (cost estimation)
+**Recommended Tools:**
+- pre-commit (automation, but can slow early development)
+- pre-commit-terraform
 - tfenv (version management)
-- Terrascan (additional security scanning)
+
+**Optional Tools:**
+- Molecule (only for complex reusable Ansible roles)
+- Checkov/Terrascan (additional security scanning if needed)
 - Ansible Semaphore (UI management)
 
 **Enterprise/Advanced (as needed):**
@@ -810,9 +2031,6 @@ tflint                        # Lint Terraform code
 tflint --init                 # Initialize TFLint plugins
 terraform-docs markdown .     # Generate documentation
 trivy config .                # Security scan with Trivy
-checkov -d .                  # Security scan with Checkov
-terrascan scan                # Security scan with Terrascan
-infracost breakdown --path .  # Show cost estimate
 
 # Ansible
 ansible-playbook -i inventory playbook.yml
@@ -838,9 +2056,118 @@ pre-commit autoupdate                      # Update hook versions
 tfenv list                                 # List Terraform versions
 tfenv install latest                       # Install latest Terraform
 tfenv use 1.x.x                           # Use specific version
+
+# Talos Linux
+talosctl version                           # Check Talos version
+talosctl cluster create                    # Create local test cluster
+talosctl gen config                        # Generate machine configuration
+talosctl apply-config                      # Apply configuration to nodes
+talosctl bootstrap                         # Bootstrap Kubernetes
+talosctl kubeconfig                        # Get kubeconfig
+talosctl dashboard                         # Launch Talos dashboard
+talosctl get members                       # List cluster members
+talosctl upgrade                           # Upgrade Talos version
+talosctl upgrade-k8s                       # Upgrade Kubernetes version
+
+# Kubernetes Tools (for Talos)
+kubectl get nodes                          # List cluster nodes
+kubectl get pods -A                        # List all pods
+k9s                                        # Launch interactive terminal UI
+helm list -A                               # List all Helm releases
+flux get sources git                       # Check FluxCD git sources
+flux reconcile source git flux-system      # Force FluxCD reconciliation
+
+# ZFS Storage
+zpool status                               # Check pool health
+zpool list                                 # List all pools
+zfs list                                   # List all datasets
+zfs get all poolname                       # Get all properties
+arc_summary                                # View ARC statistics
+zpool scrub poolname                       # Start scrub (data integrity check)
+zpool create -o ashift=12 \
+  -O compression=lz4 \
+  -O xattr=sa poolname mirror disk1 disk2  # Create mirrored pool
+
+# CI/CD (GitHub Actions)
+gh workflow list                           # List workflows
+gh workflow run workflow.yml               # Trigger workflow
+gh run list                                # List workflow runs
+gh run view RUN_ID                         # View run details
+
+# CI/CD (GitLab)
+gitlab-runner list                         # List registered runners
+gitlab-runner verify                       # Verify runner can connect
+gitlab-runner exec                         # Execute job locally
+
+# CI/CD (Atlantis)
+atlantis plan                              # Run plan (via PR comment)
+atlantis apply                             # Run apply (via PR comment)
+atlantis unlock                            # Unlock state (via PR comment)
 ```
 
 ## Version History
+
+- **2025-11-18**: Project-specific tool decisions and clarifications
+  - Added "Project-Specific Tool Decisions" section documenting chosen tools
+  - **Version Control**: GitHub (current) → Forgejo (future self-hosted)
+  - **CI/CD**: GitHub Actions (current) → Forgejo Actions (future)
+  - **Terraform Providers**: siderolabs/talos + bpg/proxmox (chosen and emphasized)
+  - **Talos Networking**: Cilium (chosen, eBPF-based CNI)
+  - **Talos Storage**: NFS CSI driver + local-path-provisioner (hybrid storage for single-node)
+  - **GitOps**: FluxCD (chosen for better Helm integration)
+  - Updated all tool sections to clearly mark chosen vs alternative options
+  - Added rationale for each tool selection (Forgejo: community-driven fork of Gitea)
+  - Documented migration path from GitHub to Forgejo
+  - Emphasized that workflows will be compatible with both GitHub Actions and Forgejo Actions
+
+- **2025-11-18**: Talos Linux recommended tools and ecosystem
+  - Added comprehensive "Talos Linux Recommended Tools" section
+  - Documented core Talos tools (talosctl, kubectl, Talos Image Factory)
+  - Added Terraform providers for Talos (siderolabs/talos ~> 0.7.1, bpg/proxmox ~> 0.75.0)
+  - Documented Terraform modules (bbtechsys/talos/proxmox)
+  - Added Ansible roles (mgrzybek/talos-ansible-playbooks, sergelogvinov/ansible-role-talos-boot)
+  - Documented Proxmox integration tools (QEMU Guest Agent extension)
+  - Listed all NVIDIA GPU system extensions (nonfree-kmod-nvidia, nvidia-container-toolkit, nvidia-open-gpu-kernel-modules)
+  - Added Kubernetes networking options (Cilium recommended, Flannel, Calico alternatives)
+  - Documented storage solutions (NFS CSI driver + local-path-provisioner for single-node, Longhorn/Ceph for multi-node)
+  - Added GPU workload management (NVIDIA GPU Operator, Device Plugin)
+  - Documented GitOps tools (FluxCD recommended for Talos, ArgoCD alternative)
+  - Added complete monitoring stack (kube-prometheus-stack, Prometheus, Grafana, Loki, Kubernetes Metrics Server)
+  - Included additional utilities (k9s, kubectx/kubens, Lens)
+  - Added tool selection guidelines with mandatory/optional categorization
+  - Added version compatibility matrix for 2025
+  - Updated Reference Materials with 20 new Talos-specific documentation links
+  - Added Kubernetes tool commands to Quick Reference section
+
+- **2025-11-18**: ZFS storage and CI/CD implementation
+  - Added comprehensive ZFS storage configuration section
+  - Documented ZFS ARC memory configuration (16GB max for 96GB system)
+  - Added RAID configuration recommendations (mirror vdevs for VMs)
+  - Included performance optimization settings (xattr=sa, LZ4 compression, block sizes)
+  - Added ZFS setup best practices and Proxmox-specific configuration
+  - Added comprehensive CI/CD implementation section
+  - Compared CI/CD platforms (GitHub Actions, GitLab CI, Atlantis, Jenkins)
+  - Recommended GitHub Actions or GitLab CI for this setup
+  - Documented complete pipeline architecture (lint, security, plan, apply stages)
+  - Added immutable infrastructure pattern with Packer golden images
+  - Included example GitHub Actions workflow
+  - Added Atlantis GitOps workflow documentation
+  - Added security considerations for CI/CD (secrets, access control, state files)
+  - Added monitoring and troubleshooting guidance
+  - Added ZFS and CI/CD commands to Quick Reference section
+
+- **2025-11-18**: Talos Linux as primary platform with multi-OS support
+  - Designated Talos Linux as primary and most-used VM
+  - Clarified support for traditional OS (Debian, Ubuntu, Arch, NixOS, Windows)
+  - Added comprehensive Talos Linux Implementation Guide
+  - Documented Kubernetes use cases (multimedia, AI/ML, production workloads)
+  - Added GPU passthrough configuration for Talos and traditional VMs
+  - Included Packer, Terraform, and Ansible strategies for both Talos and traditional OS
+  - Expanded implementation order with complete workflows for both OS types
+  - Added Talos-specific official documentation and reference links
+  - Expanded reference repositories with 6 Talos-specific examples
+  - Added 5 current blog posts (2025) for Talos on Proxmox
+  - Added talosctl command reference
 
 - **2025-11-18**: Hardware platform specification
   - Added hardware platform details (Minisforum MS-A2 with AMD Ryzen AI 9 HX 370, 96GB RAM)

@@ -1,0 +1,70 @@
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+crash.log
+crash.*.log
+*.tfvars
+.terraform.lock.hcl
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# Packer
+packer_cache/
+*.box
+crash.log
+packer-manifest.json
+output-*/
+*.auto.pkrvars.hcl
+*-vars.pkr.hcl
+manifest.json
+
+# Ansible
+*.retry
+.ansible/
+ansible.log
+vault-password.txt
+
+# Secrets
+secrets/*.txt
+secrets/*.key
+*.age
+keys.txt
+.sops.yaml.bak
+
+# IMPORTANT: Encrypted files with .enc.yaml extension are SAFE to commit
+# Do NOT add *.enc.yaml to .gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# SSH keys
+*.pem
+*.key
+id_rsa*
+id_ed25519*
+
+# Cloud-init user-data with plaintext secrets
+# (versioned files should use SOPS encryption)
+user-data-plaintext.yaml
