@@ -41,8 +41,11 @@ infra/
 │   ├── roles/
 │   └── inventory/
 ├── cloud-init/      # Cloud-init configuration files
+├── secrets/         # Encrypted secrets (SOPS + Age)
+│   └── *.enc.yaml   # Encrypted files
 ├── scripts/         # Helper scripts
 ├── docs/            # Additional documentation
+├── .sops.yaml       # SOPS configuration
 ├── .gitignore       # Git ignore patterns
 ├── README.md        # User-facing documentation
 ├── TODO.md          # Project roadmap
@@ -69,6 +72,14 @@ infra/
 4. **cloud-init**
    - Purpose: Initial VM configuration
    - Official docs: https://cloud-init.io/
+
+5. **SOPS** (latest version)
+   - Purpose: Secrets management and encryption
+   - Official docs: https://github.com/getsops/sops
+
+6. **Age** (latest version)
+   - Purpose: Encryption tool for SOPS
+   - Official docs: https://github.com/FiloSottile/age
 
 ### Target Platform
 
@@ -211,6 +222,47 @@ source "proxmox-iso" "d12" {
 - Modular Ansible roles
 - Logical directory structure
 
+### Code Maintenance and Cleanup
+
+**CRITICAL**: When updating features or implementing changes, maintain code hygiene.
+
+**Removing Obsolete Code:**
+- When replacing a feature, ALWAYS remove the old implementation completely
+- Delete unused functions, variables, and configuration blocks
+- Remove commented-out code unless it serves as critical documentation
+- Clean up deprecated imports and dependencies
+
+**Code Review for Updates:**
+- Before committing changes, review ALL affected files for:
+  - Duplicate code or logic
+  - Unused variables or resources
+  - Orphaned configuration blocks
+  - Deprecated syntax or patterns
+  - Dead code paths
+
+**Replacement Guidelines:**
+- When introducing new implementation:
+  1. Identify all locations of old code
+  2. Implement new feature completely
+  3. Remove old code systematically
+  4. Update all references and documentation
+  5. Verify no remnants of old implementation remain
+
+**Anti-patterns to Avoid:**
+- Leaving both old and new implementations
+- Commenting out old code "just in case"
+- Accumulating unused helper functions
+- Keeping deprecated configuration alongside new config
+- Creating duplicate logic in multiple locations
+
+**Verification Checklist:**
+- [ ] Old feature code completely removed
+- [ ] No unused imports or dependencies
+- [ ] No duplicate logic exists
+- [ ] All variables are used
+- [ ] Configuration is consolidated
+- [ ] Documentation reflects current implementation only
+
 ## Key Conventions
 
 ### Naming Conventions
@@ -233,10 +285,12 @@ source "proxmox-iso" "d12" {
 ### Configuration Management
 
 **Secrets:**
-- NEVER commit credentials
-- Use variables for sensitive data
-- Document required environment variables
-- Consider using Vault or similar
+- NEVER commit unencrypted credentials
+- Use SOPS + Age for encrypting sensitive data
+- Encrypted files (.sops.yaml, *.enc.yaml) can be safely committed
+- Store Age private keys securely (e.g., password manager, hardware token)
+- Document required Age keys and SOPS configuration
+- All secrets must be encrypted with SOPS before committing
 
 **Defaults:**
 - Default username/password should be configurable via Ansible
@@ -266,6 +320,8 @@ source "proxmox-iso" "d12" {
 3. **Ansible Documentation**: https://docs.ansible.com/
 4. **Proxmox Documentation**: https://pve.proxmox.com/pve-docs/
 5. **Cloud-init Documentation**: https://cloud-init.io/
+6. **SOPS Documentation**: https://github.com/getsops/sops
+7. **Age Documentation**: https://github.com/FiloSottile/age
 
 ### Reference Repositories (Inspiration Only)
 
@@ -305,7 +361,13 @@ These repositories are for pattern reference, NOT for copying:
    - Add validation
    - Document assumptions
 
-4. **Test and validate**
+4. **Clean up old code when replacing features**
+   - Identify and remove ALL old implementation code
+   - Delete unused variables, functions, and configurations
+   - Update documentation to reflect current implementation only
+   - Verify no duplicate or dead code remains
+
+5. **Test and validate**
    - Provide testing instructions
    - Document expected outcomes
    - Include troubleshooting tips
@@ -333,9 +395,12 @@ These repositories are for pattern reference, NOT for copying:
 2. **Copying outdated examples**: Validate against current docs
 3. **Over-complicating**: Keep it simple and maintainable
 4. **Skipping documentation**: Always document your code
-5. **Hardcoding secrets**: Use variables and environment configs
+5. **Committing unencrypted secrets**: Always use SOPS + Age for sensitive data
 6. **Ignoring error handling**: Plan for failures
 7. **Not testing**: Verify before committing
+8. **Leaving old code when updating**: Remove obsolete implementations completely
+9. **Accumulating duplicate code**: Consolidate and clean up redundant logic
+10. **Keeping unused variables/functions**: Delete what isn't being used
 
 ## Git Workflow
 
@@ -360,7 +425,12 @@ Types: feat, fix, docs, refactor, test, chore
 - Ensure code follows conventions
 - Test if possible
 - Update documentation
-- Remove any debug code or secrets
+- Remove any debug code or unencrypted secrets
+- Verify all secrets are encrypted with SOPS
+- Remove old/obsolete code completely
+- Delete unused variables, functions, and imports
+- Check for duplicate or redundant logic
+- Ensure no commented-out code remains (unless critical documentation)
 
 ## Environment Setup
 
@@ -377,7 +447,55 @@ export PROXMOX_TOKEN="your-token-here"
 # Ansible defaults
 export ANSIBLE_DEFAULT_USER="admin"
 export ANSIBLE_DEFAULT_PASSWORD="changeme"
+
+# SOPS + Age encryption
+export SOPS_AGE_KEY_FILE="$HOME/.config/sops/age/keys.txt"
 ```
+
+### SOPS + Age Setup
+
+**Initial Setup:**
+
+1. **Generate Age key pair:**
+   ```bash
+   age-keygen -o ~/.config/sops/age/keys.txt
+   ```
+
+2. **Extract public key:**
+   ```bash
+   age-keygen -y ~/.config/sops/age/keys.txt
+   ```
+
+3. **Create .sops.yaml configuration:**
+   ```yaml
+   creation_rules:
+     - path_regex: \.enc\.yaml$
+       age: age1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+     - path_regex: secrets/.*
+       age: age1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+   ```
+
+4. **Encrypt a file:**
+   ```bash
+   sops -e secrets/plaintext.yaml > secrets/encrypted.enc.yaml
+   ```
+
+5. **Decrypt a file:**
+   ```bash
+   sops -d secrets/encrypted.enc.yaml
+   ```
+
+6. **Edit encrypted file in-place:**
+   ```bash
+   sops secrets/encrypted.enc.yaml
+   ```
+
+**Important:**
+- NEVER commit Age private keys to version control
+- Store Age private keys in password managers or hardware tokens
+- Share Age public keys with team members for encryption
+- Encrypted files can be safely committed to Git
+- Use consistent naming convention (*.enc.yaml) for encrypted files
 
 ### Prerequisites
 
@@ -385,6 +503,8 @@ List any tools that need to be installed:
 - Terraform (latest)
 - Packer (latest)
 - Ansible (latest)
+- SOPS (latest)
+- Age (latest)
 - Git
 
 ## Troubleshooting
@@ -405,6 +525,18 @@ List any tools that need to be installed:
    - Check inventory configuration
    - Verify SSH connectivity
    - Review variable definitions
+
+4. **SOPS decryption failures**
+   - Verify SOPS_AGE_KEY_FILE environment variable is set
+   - Check Age private key file exists and has correct permissions
+   - Ensure the file was encrypted with a public key that matches your private key
+   - Verify .sops.yaml configuration is correct
+
+5. **Age encryption issues**
+   - Confirm Age is installed (age --version)
+   - Verify public key format starts with "age1"
+   - Check file permissions on keys.txt (should be 600)
+   - Ensure key file path is correct in SOPS_AGE_KEY_FILE
 
 ## Contributing
 
@@ -450,9 +582,23 @@ terraform apply
 # Ansible
 ansible-playbook -i inventory playbook.yml
 ansible-playbook --check playbook.yml  # Dry run
+
+# SOPS + Age
+age-keygen -o ~/.config/sops/age/keys.txt  # Generate key
+age-keygen -y ~/.config/sops/age/keys.txt  # Extract public key
+sops -e file.yaml > file.enc.yaml          # Encrypt file
+sops -d file.enc.yaml                      # Decrypt file
+sops file.enc.yaml                         # Edit encrypted file
 ```
 
 ## Version History
+
+- **2025-11-18**: SOPS + Age integration and code cleanup guidelines
+  - Added SOPS + Age for secrets management
+  - Added comprehensive code maintenance and cleanup guidelines
+  - Added requirement to remove old/duplicate/unused code during updates
+  - Updated environment setup with SOPS + Age configuration
+  - Added verification checklist for code cleanliness
 
 - **2025-11-18**: Initial CLAUDE.md creation
   - Project in early stages
