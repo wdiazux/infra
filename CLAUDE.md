@@ -199,8 +199,15 @@ These tools enhance the core workflow and follow industry best practices:
 
 ### Target Platform
 
+**Software Platform:**
 - **Proxmox VE 9.0**
 - Official docs: https://pve.proxmox.com/pve-docs/
+
+**Hardware Platform:**
+- **Minisforum MS-A2**
+- CPU: AMD Ryzen AI 9 HX 370 (formerly 9955HX)
+- RAM: 96GB
+- Use case: Enterprise-grade mini PC for homelab/production virtualization
 
 ## Supported Operating Systems
 
@@ -833,6 +840,10 @@ tfenv use 1.x.x                           # Use specific version
 ```
 
 ## Version History
+
+- **2025-11-18**: Hardware platform specification
+  - Added hardware platform details (Minisforum MS-A2 with AMD Ryzen AI 9 HX 370, 96GB RAM)
+  - Documented target system for Proxmox VE deployment
 
 - **2025-11-18**: Complementary tools and best practices mandate
   - Added comprehensive complementary tools section for Terraform and Ansible
