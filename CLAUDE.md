@@ -286,9 +286,9 @@ Before implementing ZFS, determine:
 - Total capacity: 4TB
 - Usable capacity: ~2TB (after mirror)
 - Proxmox system: 100GB
-- VM templates: 200GB (4-5 OS templates)
-- Talos cluster VMs: 500GB (3 nodes, storage for containers)
-- Traditional VMs: 800GB (flexible allocation)
+- VM templates: 200GB (5-6 OS templates)
+- Talos single node: 200GB (OS + containers + local persistent volumes)
+- Traditional VMs: 1100GB (flexible allocation across 3-4 VMs)
 - Backup/snapshot reserve: 400GB
 
 **Recommendations:**
@@ -310,43 +310,55 @@ Before implementing ZFS, determine:
 **Resource Allocation Strategy:**
 
 1. **Proxmox Host Overhead:**
-   - RAM: ~4-8GB (including ZFS ARC: 16GB max)
+   - ZFS ARC: 16GB (max, part of host RAM)
+   - Proxmox services: ~4GB
+   - **Total host overhead**: ~20GB
    - CPU: 1-2 cores reserved
-   - **Effective available**: ~72-76GB RAM, 10-11 cores
+   - **Effective available**: ~76GB RAM, 10-11 usable cores
 
-2. **Talos Kubernetes Cluster (Primary Workload):**
-   - **3-node cluster recommended for HA**
-   - Control plane + worker nodes (combined architecture for homelab)
-   - RAM per node: 16-24GB (total: 48-72GB for cluster)
-   - CPU per node: 4-6 cores (total: 12-18 virtual cores)
-   - Storage per node: 100-200GB (thin provisioned)
-   - **GPU assignment**: 1 RTX 4000 passed through to ONE node for GPU workloads
+2. **Talos Kubernetes Single Node (Primary Workload):**
+   - **Single-node cluster** (with option to expand to 3-node HA later)
+   - Control plane + worker combined (homelab configuration)
+   - RAM: 24-32GB (depends on workload requirements)
+   - CPU: 6-8 cores
+   - Storage: 150-200GB for OS + containers (thin provisioned)
+   - **GPU assignment**: RTX 4000 passed through for AI/ML workloads
+   - **Minimum requirements**: 2GB RAM, 2 cores, 10GB disk (Talos can run on very little)
 
 3. **Traditional VMs (Secondary Workload):**
    - Remaining resources after Talos allocation
-   - Typical VM: 4-8GB RAM, 2-4 cores
-   - Example: 2-3 traditional VMs possible with remaining resources
-   - Storage: varies by use case
+   - Typical VM: 8-16GB RAM, 2-4 cores
+   - Example: 3-4 traditional VMs possible depending on Talos allocation
+   - Storage: varies by use case (thin provisioned recommended)
 
 **Example Allocation for 96GB System:**
 
-**Scenario A: Talos-Heavy (Recommended)**
-- Proxmox host: 8GB RAM (includes 16GB ARC counted separately)
-- Talos node 1 (control+worker): 24GB RAM, 6 cores, 200GB storage, **GPU passthrough**
-- Talos node 2 (control+worker): 24GB RAM, 6 cores, 200GB storage
-- Talos node 3 (control+worker): 24GB RAM, 6 cores, 200GB storage
-- Debian VM: 8GB RAM, 4 cores, 100GB storage
-- Total: 88GB RAM (8GB free for overhead)
+**Scenario A: Talos-Heavy (AI/ML Focus)**
+- Proxmox host overhead: 20GB (16GB ZFS ARC + 4GB services)
+- Talos single node: 32GB RAM, 8 cores, 200GB storage, **GPU passthrough**
+- Debian VM: 16GB RAM, 4 cores, 100GB storage
+- Ubuntu VM: 16GB RAM, 4 cores, 100GB storage
+- Free buffer: 12GB RAM
+- **Total**: 96GB RAM (12GB buffer for flexibility)
 
-**Scenario B: Balanced**
-- Proxmox host: 8GB RAM (includes 16GB ARC)
-- Talos node 1 (control+worker): 20GB RAM, 4 cores, 150GB storage, **GPU passthrough**
-- Talos node 2 (control+worker): 20GB RAM, 4 cores, 150GB storage
-- Talos node 3 (control+worker): 20GB RAM, 4 cores, 150GB storage
-- Debian VM: 8GB RAM, 4 cores, 100GB storage
-- Ubuntu VM: 8GB RAM, 4 cores, 100GB storage
-- Windows VM: 8GB RAM, 4 cores, 150GB storage
-- Total: 92GB RAM (4GB free for overhead)
+**Scenario B: Balanced (Mixed Workloads)**
+- Proxmox host overhead: 20GB (16GB ZFS ARC + 4GB services)
+- Talos single node: 24GB RAM, 6 cores, 150GB storage, **GPU passthrough**
+- Debian VM: 12GB RAM, 4 cores, 100GB storage
+- Ubuntu VM: 12GB RAM, 4 cores, 100GB storage
+- Windows VM: 16GB RAM, 4 cores, 150GB storage
+- Free buffer: 12GB RAM
+- **Total**: 96GB RAM (12GB buffer for flexibility)
+
+**Scenario C: Maximum Traditional VMs**
+- Proxmox host overhead: 20GB (16GB ZFS ARC + 4GB services)
+- Talos single node: 16GB RAM, 4 cores, 100GB storage, **GPU passthrough**
+- Debian VM: 16GB RAM, 4 cores, 100GB storage
+- Ubuntu VM: 12GB RAM, 4 cores, 100GB storage
+- Arch VM: 12GB RAM, 4 cores, 80GB storage
+- Windows VM: 16GB RAM, 4 cores, 150GB storage
+- Free buffer: 4GB RAM
+- **Total**: 96GB RAM (4GB buffer - tight but workable)
 
 **Important Considerations:**
 
@@ -355,7 +367,12 @@ Before implementing ZFS, determine:
 - **Thin provisioning**: Use for storage to avoid wasting space
 - **Balloon driver**: Enable in VMs for dynamic memory management
 - **GPU limitation**: Remember only ONE VM can use the GPU at a time
-- **Longhorn storage**: Requires additional disk space across Talos nodes for replicas
+- **Hybrid storage strategy**:
+  - **Persistent data**: NFS CSI driver mounting external NAS (durable, backed up)
+  - **Ephemeral data**: local-path-provisioner for caches and temporary files (fast, local)
+  - **External NAS**: Provides data durability independent of Talos node health
+  - Traditional VMs can also mount NAS via NFS/Samba for shared storage
+- **Scaling path**: Single-node Talos can be expanded to 3-node HA cluster later without rebuilding
 
 **Monitoring and Adjustment:**
 - Use Proxmox dashboard to monitor resource usage
@@ -370,6 +387,66 @@ Before implementing ZFS, determine:
 - Use CPU pinning for performance-critical VMs
 - Enable NUMA if running large VMs (16GB+ RAM)
 - Regular monitoring of resource utilization
+
+### Networking Prerequisites
+
+**Network Configuration Requirements:**
+
+1. **Proxmox Network Bridge:**
+   - Default: `vmbr0` (typically configured during Proxmox installation)
+   - Type: Linux Bridge
+   - Connected to physical interface for external connectivity
+
+2. **Static IP Addresses:**
+   - **Talos node**: Assign static IP (DHCP reservation or static configuration)
+   - **Traditional VMs**: Static IPs recommended for infrastructure VMs
+   - **NAS**: Static IP for reliable NFS/Samba connectivity
+
+3. **DNS Configuration:**
+   - Configure DNS servers in Proxmox and VMs
+   - Ensure Talos node can resolve external domains (for pulling container images)
+   - Local DNS or hosts file for internal service discovery
+
+4. **Firewall Considerations:**
+   - **Talos API**: Port 50000 (talosctl communication)
+   - **Kubernetes API**: Port 6443 (kubectl access)
+   - **NFS**: Ports 2049, 111 (TCP/UDP)
+   - **Samba/CIFS**: Ports 445, 139, 137-138
+   - **SSH**: Port 22 (traditional VMs only, Talos has no SSH)
+   - **Proxmox Web UI**: Port 8006
+
+5. **Network Topology Options:**
+
+   **Option A: Single Network (Simplest)**
+   - All VMs and Proxmox host on same network
+   - Talos, traditional VMs, and NAS can communicate directly
+   - Suitable for homelab without strict security requirements
+
+   **Option B: VLANs (More Secure)**
+   - Separate VLANs for management, VM traffic, storage
+   - Requires VLAN-capable switch
+   - Example:
+     - VLAN 10: Proxmox management
+     - VLAN 20: VM traffic (Talos, traditional VMs)
+     - VLAN 30: Storage (NFS/NAS access)
+
+6. **NAS Connectivity:**
+   - Ensure NAS is reachable from Proxmox network
+   - Test NFS mount from Proxmox host before configuring Kubernetes
+   - Consider dedicated storage network for better performance
+
+7. **External Access:**
+   - Configure port forwarding on router if accessing from outside
+   - Consider VPN (WireGuard, Tailscale) for secure remote access
+   - Kubernetes ingress controller for exposing services (Cilium can handle L4/L7 load balancing)
+
+**Network Testing Checklist:**
+- [ ] Proxmox host can reach internet
+- [ ] Proxmox host can reach NAS
+- [ ] VMs can reach internet
+- [ ] VMs can reach NAS
+- [ ] VMs can reach each other
+- [ ] DNS resolution working for all VMs
 
 ## Supported Operating Systems
 
@@ -502,6 +579,60 @@ The NVIDIA Ada Lovelace RTX 4000 in this system **can only be passed through to 
 - Test GPU passthrough before production deployment
 - Monitor GPU utilization in Kubernetes
 
+### Talos Single-Node Cluster Configuration
+
+**This project uses a single-node Talos cluster** with the following specific configurations:
+
+**Cluster Architecture:**
+- Single node acts as both control plane AND worker
+- Minimum requirements: 2GB RAM, 2 cores, 10GB disk
+- Recommended: 24-32GB RAM, 6-8 cores, 150-200GB disk (for real workloads)
+
+**Required Configuration Changes:**
+
+1. **Allow Pod Scheduling on Control Plane:**
+   ```bash
+   kubectl taint nodes --all node-role.kubernetes.io/control-plane-
+   ```
+   This removes the taint that prevents workloads from running on control plane nodes.
+
+2. **System Extensions via Talos Factory:**
+   - `siderolabs/qemu-guest-agent` - Proxmox integration (VM management and status reporting)
+   - `nonfree-kmod-nvidia-production` - NVIDIA proprietary drivers (for GPU passthrough)
+   - `nvidia-container-toolkit-production` - NVIDIA container runtime (for GPU workloads in Kubernetes)
+
+3. **Proxmox VM CPU Type:**
+   - Must set to "host" (not kvm64)
+   - Required for Talos v1.0+ x86-64-v2 microarchitecture support
+   - Cilium also benefits from "host" CPU type
+
+4. **Talos Machine Configuration:**
+   - Disable Flannel and kube-proxy (using Cilium instead)
+   - Enable KubePrism on port 7445
+   - Set CNI to "none" when generating machine config
+   - Drop SYS_MODULE capability from Cilium (Talos doesn't allow loading kernel modules from Kubernetes)
+
+5. **Storage Configuration:**
+   - Talos OS disk: 150-200GB (system, ephemeral storage, and local caches)
+   - **Persistent data**: NFS CSI driver mounting external NAS
+   - **Ephemeral data**: local-path-provisioner for fast local storage
+   - **External NAS**: Available via NFS/Samba on separate computer for durable storage
+   - No additional local disks required (persistent data on NAS)
+
+**Migration Path to 3-Node HA:**
+- Can expand single node to 3-node cluster without rebuilding
+- Add 2 additional Talos VMs with matching configuration
+- Join them to existing cluster via talosctl
+- Optionally add distributed storage (Longhorn, Ceph) for redundancy
+- Update workloads to use new storage class and tolerate node failures
+
+**Benefits of Single-Node Start:**
+- Lower resource usage (no redundant control planes)
+- Simpler to manage and troubleshoot
+- Faster to deploy and iterate
+- Can expand to HA later as needs grow
+- Perfect for learning and development
+
 ## Talos Linux Recommended Tools
 
 This section provides a comprehensive list of tools specifically for Talos Linux deployment and management on Proxmox using Terraform and Ansible.
@@ -522,21 +653,26 @@ This section provides a comprehensive list of tools specifically for Talos Linux
 
 **Talos Kubernetes Stack:**
 - **Networking**: Cilium (eBPF-based CNI with L2 load balancing)
-- **Storage**: Longhorn (distributed block storage, Talos only)
+- **Storage**: Local path provisioner for ephemeral data + NFS from external NAS for persistent data
 - **GitOps**: FluxCD (Kubernetes continuous delivery)
 
 **Container Runtime:**
 - **Podman** (preferred over Docker for local development and CI/CD)
 
+**External Storage:**
+- **NAS**: External NAS on separate computer available for shared storage
+- **Protocols**: NFS and Samba/CIFS support
+- **Use cases**: Persistent data, backups, shared volumes across VMs
+
 **Rationale:**
 - **Forgejo**: Self-hosted, community-driven fork of Gitea, lightweight, full control over infrastructure
 - **FluxCD**: Better Helm integration with hooks, more popular with Talos community
 - **Cilium**: Modern eBPF-based networking with advanced features
-- **Longhorn**: Cloud-native storage, simpler than Ceph, sufficient for homelab scale
+- **Storage strategy**: Local-path-provisioner for ephemeral workloads, NFS from external NAS for persistent data needing durability
 - **siderolabs/talos + bpg/proxmox**: Official providers with best support
 - **Podman**: Daemonless, rootless containers, drop-in Docker replacement, better security model
 
-**Note**: Traditional VMs (Debian, Ubuntu, Arch, NixOS, Windows) may use different storage solutions as appropriate.
+**Note**: Traditional VMs (Debian, Ubuntu, Arch, NixOS, Windows) may also mount NAS storage via NFS or Samba as needed.
 
 ### Core Talos Tools (Required)
 
@@ -690,23 +826,41 @@ This section provides a comprehensive list of tools specifically for Talos Linux
 
 ### Kubernetes Storage
 
-**Selected for This Project: Longhorn (Talos only)**
+**Selected for This Project: Hybrid Storage Strategy**
 
-1. **Longhorn** (latest version) - **CHOSEN FOR TALOS**
+1. **NFS CSI Driver** (latest version) - **CHOSEN FOR PERSISTENT DATA**
+   - Purpose: Mount external NAS storage in Kubernetes
+   - GitHub: https://github.com/kubernetes-csi/csi-driver-nfs
+   - Use: Persistent volumes for databases, media, important application data
+   - Installation: Via Helm chart
+   - **Why chosen**: External NAS provides durability, backups, and shared access across VMs
+   - **Benefits**: Data survives node failures, can be accessed by multiple pods, centralized backups
+
+2. **local-path-provisioner** (latest version) - **CHOSEN FOR EPHEMERAL DATA**
+   - Purpose: Dynamic local path provisioning for temporary/cache data
+   - GitHub: https://github.com/rancher/local-path-provisioner
+   - Use: Fast local storage for caches, temp files, build artifacts
+   - Installation: Single kubectl apply
+   - **Why chosen**: Fast local performance for data that doesn't need durability
+   - **Trade-off**: Data lost if node fails (acceptable for ephemeral workloads)
+
+3. **hostPath** (built-in Kubernetes) - **FOR SPECIFIC USE CASES**
+   - Purpose: Direct host directory mounting
+   - Use: When you need specific host paths (e.g., GPU drivers, device access)
+   - **Trade-off**: Manual path management, no dynamic provisioning
+
+**Alternative Storage (not used for single-node, but available for expansion):**
+
+4. **Longhorn** (latest version)
    - Purpose: Distributed block storage for Kubernetes
    - Official docs: https://longhorn.io/
-   - Use: Persistent volumes, snapshots, backups
-   - Talos support: Confirmed working in 2025
-   - Installation: Via Helm chart
-   - **Why chosen**: Cloud-native, simpler than Ceph, sufficient for homelab scale
-   - **Note**: Used exclusively for Talos Kubernetes cluster
+   - **Why not used now**: Requires 3 nodes for proper redundancy
+   - **When to use**: When expanding to 3-node cluster for replicated block storage
 
-**Alternative Storage (not used in this project):**
-
-2. **Ceph** (latest version)
+5. **Ceph** (latest version)
    - Purpose: Distributed storage system
-   - Use: Alternative to Longhorn for larger deployments
-   - Note: More complex but enterprise-grade
+   - **Why not used**: Overkill for homelab, complex setup
+   - **When to use**: Large multi-node deployments with high performance requirements
 
 ### GPU Workload Management
 
