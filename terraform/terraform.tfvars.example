@@ -16,7 +16,11 @@ proxmox_node     = "pve"
 # Use API token (recommended)
 proxmox_api_token = "PVEAPIToken=terraform@pam!terraform-token=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 
-# Or use password (less secure)
+# Alternatively, use environment variable (more secure):
+# export TF_VAR_proxmox_api_token="PVEAPIToken=terraform@pam!terraform-token=..."
+# Then omit proxmox_api_token line above
+
+# Or use password (less secure, but required for some GPU passthrough operations)
 # proxmox_password = "your-password-here"
 
 # Skip TLS verification for self-signed certs (homelab)
