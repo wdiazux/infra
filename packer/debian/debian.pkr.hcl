@@ -157,7 +157,7 @@ build {
   # Install baseline packages with Ansible
   provisioner "ansible" {
     playbook_file = "../../ansible/packer-provisioning/install_baseline_packages.yml"
-    user          = "wdiaz"
+    user          = "debian"
     use_proxy     = false
 
     # Ansible variables passed to playbook

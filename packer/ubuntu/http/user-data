@@ -33,7 +33,7 @@ autoinstall:
   # Identity (user for Packer provisioning and default user)
   identity:
     hostname: ubuntu
-    username: wdiaz
+    username: ubuntu
     password: $6$rounds=4096$saltsalt$YhXjWx6mPLH3wXmPDqH2qM0zBEDNF8gOJNpQx9DVFM4LlJ7wKEUxLx.oGXjJj0yp0FBkKJj4LHDN8oGXjJj0yp0
     # Password: ubuntu (hashed with mkpasswd -m sha-512) - CHANGE IN PRODUCTION
 
@@ -54,7 +54,7 @@ autoinstall:
   user-data:
     disable_root: true
     users:
-      - name: wdiaz
+      - name: ubuntu
         groups: [adm, cdrom, dip, plugdev, sudo]
         lock_passwd: false
         passwd: $6$rounds=4096$saltsalt$YhXjWx6mPLH3wXmPDqH2qM0zBEDNF8gOJNpQx9DVFM4LlJ7wKEUxLx.oGXjJj0yp0FBkKJj4LHDN8oGXjJj0yp0
@@ -63,7 +63,7 @@ autoinstall:
 
   # Late commands (run after installation, before reboot)
   late-commands:
-    - echo 'wdiaz ALL=(ALL) NOPASSWD:ALL' > /target/etc/sudoers.d/wdiaz
-    - chmod 0440 /target/etc/sudoers.d/wdiaz
+    - echo 'ubuntu ALL=(ALL) NOPASSWD:ALL' > /target/etc/sudoers.d/ubuntu
+    - chmod 0440 /target/etc/sudoers.d/ubuntu
     - curtin in-target --target=/target -- systemctl enable ssh
     - curtin in-target --target=/target -- systemctl enable qemu-guest-agent

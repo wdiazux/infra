@@ -121,13 +121,13 @@ variable "vm_network_bridge" {
 variable "ssh_username" {
   type        = string
   description = "SSH username for provisioning"
-  default     = "wdiaz"
+  default     = "ubuntu"
 }
 
 variable "ssh_password" {
   type        = string
   description = "SSH password for provisioning"
-  default     = "wdiaz"
+  default     = "ubuntu"
   sensitive   = true
 }
 
