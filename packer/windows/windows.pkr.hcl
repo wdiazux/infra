@@ -11,6 +11,10 @@ packer {
       source  = "github.com/hashicorp/proxmox"
       version = "~> 1.2.0"
     }
+    ansible = {
+      source  = "github.com/hashicorp/ansible"
+      version = "~> 1"
+    }
   }
 }
 
@@ -132,20 +136,18 @@ build {
     script = "${path.root}/scripts/install-cloudbase-init.ps1"
   }
 
-  # Install additional software (optional)
-  # provisioner "powershell" {
-  #   inline = [
-  #     "# Install Chocolatey",
-  #     "Set-ExecutionPolicy Bypass -Scope Process -Force",
-  #     "[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072",
-  #     "iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))",
-  #     "",
-  #     "# Install packages",
-  #     "choco install -y git",
-  #     "choco install -y 7zip",
-  #     "choco install -y notepadplusplus"
-  #   ]
-  # }
+  # Install baseline packages with Ansible
+  provisioner "ansible" {
+    playbook_file = "../../ansible/packer-provisioning/install-baseline-packages.yml"
+    user          = "Administrator"
+    use_proxy     = false
+
+    # Ansible variables for Windows/WinRM
+    extra_arguments = [
+      "--connection", "winrm",
+      "--extra-vars", "ansible_connection=winrm ansible_winrm_server_cert_validation=ignore ansible_shell_type=powershell"
+    ]
+  }
 
   # Cleanup
   provisioner "powershell" {

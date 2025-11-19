@@ -11,6 +11,10 @@ packer {
       source  = "github.com/hashicorp/proxmox"
       version = "~> 1.2.0"
     }
+    ansible = {
+      source  = "github.com/hashicorp/ansible"
+      version = "~> 1"
+    }
   }
 }
 
@@ -130,24 +134,27 @@ build {
     ]
   }
 
-  # Install baseline packages
+  # Install essential packages (needed for boot and provisioning)
   provisioner "shell" {
     inline = [
       "sudo apt-get install -y",
       "  qemu-guest-agent",
       "  cloud-init",
       "  cloud-initramfs-growroot",
-      "  vim",
-      "  curl",
-      "  wget",
-      "  git",
-      "  htop",
-      "  net-tools",
-      "  dnsutils",
-      "  python3",
-      "  python3-pip",
       "  sudo",
       "  openssh-server"
+    ]
+  }
+
+  # Install baseline packages with Ansible
+  provisioner "ansible" {
+    playbook_file = "../../ansible/packer-provisioning/install-baseline-packages.yml"
+    user          = "ubuntu"
+    use_proxy     = false
+
+    # Ansible variables passed to playbook
+    extra_arguments = [
+      "--extra-vars", "ansible_python_interpreter=/usr/bin/python3"
     ]
   }
 
@@ -202,16 +209,28 @@ build {
 
 # Usage Notes:
 #
+# PREREQUISITES:
+# - Ansible 2.16+ installed on Packer build machine
+# - Ansible collections: ansible-galaxy collection install -r ../../ansible/requirements.yml
+#
+# BUILD:
 # 1. Create autoinstall files in http/ directory (user-data, meta-data)
 # 2. Set variables in ubuntu.auto.pkrvars.hcl
 # 3. Run: packer init .
 # 4. Run: packer validate .
 # 5. Run: packer build .
 #
+# Architecture:
+# - ISO install: Installs essential packages (qemu-guest-agent, cloud-init, openssh-server)
+# - Packer + Ansible provisioner: Installs baseline packages in golden image
+# - Terraform: Deploys VMs from golden image
+# - Ansible baseline role: Instance-specific configuration (hostnames, IPs, secrets)
+#
 # After building:
-# - Template available in Proxmox
+# - Template available in Proxmox with baseline packages pre-installed
 # - Clone VMs from template
 # - Customize with cloud-init (user-data, network-config)
+# - Configure with Ansible baseline role for instance-specific settings
 # - Configure with Ansible for baseline setup
 #
 # Cloud-init customization example:
