@@ -1,0 +1,181 @@
+---
+# Arch Linux-Specific Tasks
+# These tasks handle instance-specific configuration AFTER VM deployment
+# Packages should be pre-installed in Packer golden images
+
+# ==============================================================================
+# System Updates (Post-Deployment)
+# ==============================================================================
+
+- name: Update package database
+  community.general.pacman:
+    update_cache: yes
+  tags: [updates]
+
+- name: Upgrade all packages (post-deployment)
+  community.general.pacman:
+    upgrade: yes
+  when: baseline_auto_security_updates | bool
+  tags: [updates]
+
+# ==============================================================================
+# Instance-Specific Configuration
+# ==============================================================================
+
+- name: Set timezone
+  community.general.timezone:
+    name: "{{ baseline_timezone }}"
+  tags: [config]
+
+- name: Generate locale
+  community.general.locale_gen:
+    name: "{{ baseline_locale }}"
+    state: present
+  tags: [config]
+
+- name: Set default locale
+  ansible.builtin.copy:
+    dest: /etc/locale.conf
+    content: |
+      LANG={{ baseline_locale }}
+    mode: '0644'
+  tags: [config]
+
+# ==============================================================================
+# SSH Hardening
+# ==============================================================================
+
+- name: Configure SSH daemon
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    backup: yes
+    validate: 'sshd -t -f %s'
+  loop:
+    - { regexp: '^#?PermitRootLogin', line: 'PermitRootLogin {{ "yes" if baseline_ssh_permit_root_login else "no" }}' }
+    - { regexp: '^#?PasswordAuthentication', line: 'PasswordAuthentication {{ "yes" if baseline_ssh_password_authentication else "no" }}' }
+    - { regexp: '^#?PubkeyAuthentication', line: 'PubkeyAuthentication {{ "yes" if baseline_ssh_pubkey_authentication else "no" }}' }
+    - { regexp: '^#?Port', line: 'Port {{ baseline_ssh_port }}' }
+  notify: restart ssh
+  tags: [security, ssh]
+
+# ==============================================================================
+# Firewall Configuration
+# ==============================================================================
+
+- name: Enable UFW
+  community.general.ufw:
+    state: enabled
+    policy: "{{ baseline_firewall_default_policy }}"
+  when: baseline_firewall_enabled | bool
+  tags: [security, firewall]
+
+- name: Configure UFW allowed ports
+  community.general.ufw:
+    rule: allow
+    port: "{{ item | string }}"
+    proto: tcp
+  loop: "{{ baseline_firewall_allowed_ports }}"
+  when: baseline_firewall_enabled | bool
+  tags: [security, firewall]
+
+# ==============================================================================
+# Fail2ban Configuration
+# ==============================================================================
+
+- name: Configure fail2ban
+  ansible.builtin.template:
+    src: fail2ban-jail.local.j2
+    dest: /etc/fail2ban/jail.local
+    mode: '0644'
+  when: baseline_fail2ban_enabled | bool
+  notify: restart fail2ban
+  tags: [security, fail2ban]
+
+- name: Enable and start fail2ban
+  ansible.builtin.service:
+    name: fail2ban
+    state: started
+    enabled: yes
+  when: baseline_fail2ban_enabled | bool
+  tags: [security, fail2ban]
+
+# ==============================================================================
+# NFS Mounts
+# ==============================================================================
+
+- name: Create NFS mount points
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    mode: '0755'
+  loop: "{{ baseline_nfs_mounts }}"
+  when: baseline_nfs_mounts | length > 0
+  tags: [storage, nfs]
+
+- name: Configure NFS mounts
+  ansible.posix.mount:
+    src: "{{ item.src }}"
+    path: "{{ item.path }}"
+    fstype: nfs
+    opts: "{{ item.opts | default('defaults') }}"
+    state: "{{ item.state | default('mounted') }}"
+  loop: "{{ baseline_nfs_mounts }}"
+  when: baseline_nfs_mounts | length > 0
+  tags: [storage, nfs]
+
+# ==============================================================================
+# System Performance Tuning
+# ==============================================================================
+
+- name: Configure sysctl parameters
+  ansible.posix.sysctl:
+    name: "{{ item.key }}"
+    value: "{{ item.value }}"
+    state: present
+    reload: yes
+  loop: "{{ baseline_sysctl_params | dict2items }}"
+  tags: [performance, sysctl]
+
+- name: Set vm.swappiness
+  ansible.posix.sysctl:
+    name: vm.swappiness
+    value: "{{ baseline_vm_swappiness }}"
+    state: present
+    reload: yes
+  tags: [performance, sysctl]
+
+# ==============================================================================
+# Optional: Docker Installation
+# ==============================================================================
+
+- name: Install Docker (if requested)
+  community.general.pacman:
+    name:
+      - docker
+      - docker-compose
+    state: present
+  when: baseline_install_docker | bool
+  tags: [docker]
+
+- name: Start and enable Docker
+  ansible.builtin.service:
+    name: docker
+    state: started
+    enabled: yes
+  when: baseline_install_docker | bool
+  tags: [docker]
+
+# ==============================================================================
+# Optional: Podman Installation
+# ==============================================================================
+
+- name: Install Podman (if requested)
+  community.general.pacman:
+    name:
+      - podman
+      - podman-compose
+    state: present
+  when: baseline_install_podman | bool
+  tags: [podman]
