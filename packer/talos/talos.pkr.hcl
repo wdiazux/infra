@@ -31,8 +31,8 @@ locals {
   # Construct image URL for alternative approach (raw disk image)
   talos_raw_image_url = "https://factory.talos.dev/image/${var.talos_schematic_id}/${var.talos_version}/metal-amd64.raw.xz"
 
-  # Template name with timestamp
-  template_name = "${var.template_name}-${formatdate("YYYYMMDD-hhmm", timestamp())}"
+  # Template name (no timestamp - Terraform expects exact name)
+  template_name = var.template_name
 }
 
 # Proxmox ISO Builder
