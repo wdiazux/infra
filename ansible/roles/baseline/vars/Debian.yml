@@ -1,0 +1,40 @@
+---
+# OS-Specific Variables for Debian/Ubuntu
+# This file is automatically loaded based on ansible_os_family
+
+# Package name mappings (common name → Debian package name)
+os_package_map:
+  vim: vim
+  git: git
+  htop: htop
+  curl: curl
+  wget: wget
+  tmux: tmux
+  rsync: rsync
+  zip: zip
+  unzip: unzip
+  tree: tree
+  net_tools: net-tools
+  bind_utils: dnsutils
+  gcc: build-essential
+  make: make
+  python3: python3
+  python_pip: python3-pip
+  nfs_client: nfs-common
+
+# Security packages (OS-specific)
+os_security_packages:
+  - ufw
+  - fail2ban
+  - unattended-upgrades
+  - apt-listchanges
+
+# Package manager specific settings
+os_package_manager: apt
+os_update_cache_command: "apt update"
+os_upgrade_command: "apt upgrade -y"
+
+# Service names (OS-specific)
+os_ssh_service: ssh
+os_firewall_service: ufw
+os_fail2ban_service: fail2ban

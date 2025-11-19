@@ -1,0 +1,164 @@
+---
+# Baseline Role - Default Variables
+#
+# These are default values that can be overridden in:
+# - group_vars/
+# - host_vars/
+# - playbook vars
+#
+# Best Practice: Set sane defaults here that work for most environments
+
+# ==============================================================================
+# Common Configuration
+# ==============================================================================
+
+# Timezone configuration
+baseline_timezone: "America/New_York"
+
+# Locale configuration (Linux only)
+baseline_locale: "en_US.UTF-8"
+
+# ==============================================================================
+# Common Packages (OS-agnostic names)
+# ==============================================================================
+# These package names will be mapped to OS-specific names in vars/<OS>.yml
+
+baseline_common_packages:
+  - vim          # Text editor
+  - git          # Version control
+  - htop         # System monitoring
+  - curl         # HTTP client
+  - wget         # Download tool
+  - tmux         # Terminal multiplexer
+  - rsync        # File synchronization
+  - zip          # Compression
+  - unzip        # Decompression
+  - tree         # Directory tree viewer
+  - net_tools    # Network utilities (ifconfig, netstat, etc.)
+  - bind_utils   # DNS utilities (dig, nslookup)
+
+# Development tools (optional)
+baseline_dev_packages:
+  - gcc          # C compiler
+  - make         # Build tool
+  - python3      # Python interpreter
+  - python_pip   # Python package manager
+
+# ==============================================================================
+# Security Configuration
+# ==============================================================================
+
+# Firewall configuration
+baseline_firewall_enabled: true
+baseline_firewall_default_policy: deny
+baseline_firewall_allowed_ports:
+  - 22   # SSH (Linux)
+  - 3389 # RDP (Windows)
+  - 5985 # WinRM HTTP (Windows)
+  - 5986 # WinRM HTTPS (Windows)
+
+# Fail2ban configuration (Linux only)
+baseline_fail2ban_enabled: true
+baseline_fail2ban_maxretry: 5
+baseline_fail2ban_findtime: 600    # 10 minutes
+baseline_fail2ban_bantime: 3600    # 1 hour
+
+# SSH hardening (Linux only)
+baseline_ssh_permit_root_login: false
+baseline_ssh_password_authentication: false
+baseline_ssh_pubkey_authentication: true
+baseline_ssh_port: 22
+
+# ==============================================================================
+# Automatic Updates
+# ==============================================================================
+
+# Enable automatic security updates
+baseline_auto_security_updates: true
+
+# Windows Update settings (Windows only)
+baseline_windows_update_categories:
+  - SecurityUpdates
+  - CriticalUpdates
+
+# ==============================================================================
+# Optional Software
+# ==============================================================================
+
+# Container runtime installation
+baseline_install_docker: false
+baseline_install_podman: false
+
+# ==============================================================================
+# NFS Mount Configuration
+# ==============================================================================
+
+baseline_nfs_mounts: []
+# Example:
+# baseline_nfs_mounts:
+#   - src: "192.168.1.200:/mnt/tank/shared"
+#     path: "/mnt/nfs/shared"
+#     opts: "rw,sync,hard,intr"
+#     state: mounted
+
+# ==============================================================================
+# System Performance Tuning
+# ==============================================================================
+
+# Sysctl parameters (Linux only)
+baseline_sysctl_params:
+  # Network performance
+  net.core.rmem_max: 16777216
+  net.core.wmem_max: 16777216
+  net.ipv4.tcp_rmem: "4096 87380 16777216"
+  net.ipv4.tcp_wmem: "4096 65536 16777216"
+  # Disable IPv6 (optional)
+  # net.ipv6.conf.all.disable_ipv6: 1
+  # net.ipv6.conf.default.disable_ipv6: 1
+
+# Swappiness (Linux only)
+baseline_vm_swappiness: 10
+
+# ==============================================================================
+# Windows-Specific Configuration
+# ==============================================================================
+
+# Windows Features to install
+baseline_windows_features:
+  - NET-Framework-45-Core
+  - Telnet-Client
+
+# Windows password policy
+baseline_windows_password_length: 12
+baseline_windows_password_complexity: true
+baseline_windows_password_max_age: 90
+baseline_windows_password_min_age: 1
+baseline_windows_password_history: 24
+
+# Windows account lockout policy
+baseline_windows_lockout_threshold: 5
+baseline_windows_lockout_duration: 30    # minutes
+baseline_windows_lockout_reset: 30       # minutes
+
+# ==============================================================================
+# NixOS-Specific Configuration
+# ==============================================================================
+
+# Enable Docker via NixOS configuration
+baseline_nixos_enable_docker: false
+
+# Enable Podman via NixOS configuration
+baseline_nixos_enable_podman: false
+
+# NixOS system packages (using Nix package names)
+baseline_nixos_system_packages:
+  - vim
+  - git
+  - htop
+  - curl
+  - wget
+  - tmux
+  - rsync
+  - unzip
+  - tree
+  - bind  # DNS utilities

@@ -1,0 +1,42 @@
+---
+# OS-Specific Variables for Arch Linux
+# This file is automatically loaded based on ansible_os_family
+
+# Package name mappings (common name → Arch package name)
+os_package_map:
+  vim: vim
+  git: git
+  htop: htop
+  curl: curl
+  wget: wget
+  tmux: tmux
+  rsync: rsync
+  zip: zip
+  unzip: unzip
+  tree: tree
+  net_tools: net-tools
+  bind_utils: bind
+  gcc: gcc
+  make: make
+  python3: python
+  python_pip: python-pip
+  nfs_client: nfs-utils
+
+# Security packages (OS-specific)
+os_security_packages:
+  - ufw
+  - fail2ban
+
+# Package manager specific settings
+os_package_manager: pacman
+os_update_cache_command: "pacman -Sy"
+os_upgrade_command: "pacman -Syu --noconfirm"
+
+# Service names (OS-specific)
+os_ssh_service: sshd
+os_firewall_service: ufw
+os_fail2ban_service: fail2ban
+
+# AUR helper (optional)
+os_aur_helper: yay
+os_install_aur_helper: false

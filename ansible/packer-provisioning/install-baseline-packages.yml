@@ -1,0 +1,157 @@
+---
+# Ansible Playbook for Packer Provisioning
+# Install baseline packages during golden image creation
+#
+# This playbook is run during Packer builds to install packages into golden images.
+# Post-deployment instance-specific configuration is handled by the baseline role.
+
+- name: Install Baseline Packages (Packer Provisioning)
+  hosts: default
+  become: yes
+  gather_facts: yes
+
+  vars:
+    # Common packages to install (OS-specific names will be mapped)
+    common_packages:
+      - vim
+      - git
+      - htop
+      - curl
+      - wget
+      - tmux
+      - rsync
+      - zip
+      - unzip
+      - tree
+      - python3
+      - python3-pip
+
+  tasks:
+    # ==========================================================================
+    # Display Build Information
+    # ==========================================================================
+
+    - name: Display Packer build information
+      ansible.builtin.debug:
+        msg: |
+          ============================================================
+          Packer Provisioning - Baseline Package Installation
+          ============================================================
+          Builder: {{ packer_builder_type | default('unknown') }}
+          Build Name: {{ packer_build_name | default('unknown') }}
+          OS Family: {{ ansible_os_family }}
+          Distribution: {{ ansible_distribution }} {{ ansible_distribution_version }}
+          Architecture: {{ ansible_architecture }}
+          ============================================================
+      tags: [always]
+
+    # ==========================================================================
+    # Debian/Ubuntu Package Installation
+    # ==========================================================================
+
+    - name: Update APT cache (Debian/Ubuntu)
+      ansible.builtin.apt:
+        update_cache: yes
+        cache_valid_time: 3600
+      when: ansible_os_family == "Debian"
+      tags: [debian, ubuntu]
+
+    - name: Upgrade all packages (Debian/Ubuntu)
+      ansible.builtin.apt:
+        upgrade: dist
+        autoremove: yes
+        autoclean: yes
+      when: ansible_os_family == "Debian"
+      tags: [debian, ubuntu]
+
+    - name: Install baseline packages (Debian/Ubuntu)
+      ansible.builtin.apt:
+        name: "{{ common_packages + ['net-tools', 'dnsutils'] }}"
+        state: present
+      when: ansible_os_family == "Debian"
+      tags: [debian, ubuntu]
+
+    - name: Install security packages (Debian/Ubuntu)
+      ansible.builtin.apt:
+        name:
+          - ufw
+          - fail2ban
+          - unattended-upgrades
+        state: present
+      when: ansible_os_family == "Debian"
+      tags: [debian, ubuntu]
+
+    # ==========================================================================
+    # Arch Linux Package Installation
+    # ==========================================================================
+
+    - name: Update package database (Arch Linux)
+      community.general.pacman:
+        update_cache: yes
+      when: ansible_os_family == "Archlinux"
+      tags: [arch]
+
+    - name: Upgrade all packages (Arch Linux)
+      community.general.pacman:
+        upgrade: yes
+      when: ansible_os_family == "Archlinux"
+      tags: [arch]
+
+    - name: Install baseline packages (Arch Linux)
+      community.general.pacman:
+        name: "{{ common_packages + ['net-tools', 'bind'] }}"
+        state: present
+      when: ansible_os_family == "Archlinux"
+      tags: [arch]
+
+    - name: Install security packages (Arch Linux)
+      community.general.pacman:
+        name:
+          - ufw
+          - fail2ban
+        state: present
+      when: ansible_os_family == "Archlinux"
+      tags: [arch]
+
+    # ==========================================================================
+    # Windows Package Installation
+    # ==========================================================================
+
+    - name: Install Chocolatey (Windows)
+      ansible.windows.win_chocolatey:
+        name: chocolatey
+        state: present
+      when: ansible_os_family == "Windows"
+      tags: [windows]
+
+    - name: Install baseline packages (Windows)
+      ansible.windows.win_chocolatey:
+        name:
+          - vim
+          - git
+          - curl
+          - wget
+          - 7zip
+          - python
+          - sysinternals
+          - putty
+          - winscp
+        state: present
+      when: ansible_os_family == "Windows"
+      tags: [windows]
+
+    # ==========================================================================
+    # Post-Installation Cleanup
+    # ==========================================================================
+
+    - name: Display completion message
+      ansible.builtin.debug:
+        msg: |
+          ============================================================
+          Baseline Package Installation Complete
+          ============================================================
+          OS: {{ ansible_distribution }} {{ ansible_distribution_version }}
+          Packages installed successfully
+          Golden image ready for cloning
+          ============================================================
+      tags: [always]
