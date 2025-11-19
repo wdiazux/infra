@@ -1,14 +1,19 @@
 # Day 1: Arch Linux VM Baseline Configuration
 #
-# This playbook configures newly deployed Arch Linux VMs with baseline settings,
-# security hardening, and essential packages.
+# This playbook configures newly deployed Arch Linux VMs with instance-specific settings.
+# Baseline packages are pre-installed in the Packer golden image.
 #
 # Run with: ansible-playbook playbooks/day1-arch-baseline.yml
 #
 # Prerequisites:
-# - Arch Linux VM deployed from Packer template
+# - Arch Linux VM deployed from Packer golden image (with baseline packages)
 # - SSH access configured via cloud-init
 # - User has sudo privileges
+#
+# Architecture (3-Layer):
+# - Layer 1 (Packer): Baseline packages installed in golden image
+# - Layer 2 (Terraform): Deploy VMs from golden image
+# - Layer 3 (Ansible): Instance-specific configuration ONLY
 
 ---
 - name: Configure Arch Linux VM Baseline
@@ -23,31 +28,12 @@
     # Locale configuration
     locale: "en_US.UTF-8"
 
-    # Baseline packages to install
-    baseline_packages:
-      - vim
-      - git
-      - htop
-      - curl
-      - wget
-      - tmux
-      - tree
-      - ncdu
-      - jq
-      - net-tools
-      - bind-tools  # dnsutils equivalent
-      - tcpdump
-      - base-devel
-      - python-pip
-      - unzip
-      - zip
-      - rsync
-      - nfs-utils
-
-    # Security packages
-    security_packages:
-      - ufw
-      - fail2ban
+    # Note: Baseline packages are pre-installed in Packer golden image:
+    # - vim, git, htop, curl, wget, tmux, tree, net-tools, bind (dnsutils)
+    # - python3, python3-pip, rsync, zip, unzip
+    # - Security: ufw, fail2ban
+    #
+    # Only install instance-specific packages here (e.g., nfs-utils for NFS mounts)
 
     # AUR helper (optional)
     install_yay: false
@@ -103,18 +89,16 @@
         msg: "System upgrade: {{ 'completed' if upgrade_result.changed else 'no updates available' }}"
 
     # ========================================================================
-    # Baseline Packages
+    # Instance-Specific Package Installation
     # ========================================================================
+    # Note: Baseline packages are pre-installed in Packer golden image.
+    # Only install packages needed for instance-specific configuration.
 
-    - name: Install baseline packages
+    - name: Install NFS client (if NFS mounts configured)
       community.general.pacman:
-        name: "{{ baseline_packages }}"
+        name: nfs-utils
         state: present
-
-    - name: Install security packages
-      community.general.pacman:
-        name: "{{ security_packages }}"
-        state: present
+      when: nfs_mounts | length > 0
 
     # ========================================================================
     # Timezone and Locale

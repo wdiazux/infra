@@ -1,15 +1,20 @@
 # Day 1: Windows Server VM Baseline Configuration
 #
-# This playbook configures newly deployed Windows Server VMs with baseline
-# settings, security hardening, and essential software.
+# This playbook configures newly deployed Windows Server VMs with instance-specific
+# settings. Baseline packages are pre-installed in the Packer golden image.
 #
 # Run with: ansible-playbook playbooks/day1-windows-baseline.yml
 #
 # Prerequisites:
-# - Windows Server VM deployed from Packer template
+# - Windows Server VM deployed from Packer golden image (with baseline packages)
 # - WinRM configured via Cloudbase-Init
 # - User has Administrator privileges
 # - Ansible control node has pywinrm installed: pip install pywinrm
+#
+# Architecture (3-Layer):
+# - Layer 1 (Packer): Baseline packages installed in golden image via Chocolatey
+# - Layer 2 (Terraform): Deploy VMs from golden image
+# - Layer 3 (Ansible): Instance-specific configuration ONLY
 
 ---
 - name: Configure Windows Server VM Baseline
@@ -20,22 +25,18 @@
     # Timezone configuration
     timezone: "Eastern Standard Time"
 
-    # Windows Features to install
+    # Windows Features to install (instance-specific)
     windows_features:
       - NET-Framework-45-Core
       - Telnet-Client
       - RSAT-AD-Tools
 
-    # Chocolatey packages to install
-    chocolatey_packages:
-      - vim
-      - git
-      - curl
-      - wget
-      - 7zip
-      - sysinternals
-      - putty
-      - winscp
+    # Note: Baseline packages are pre-installed in Packer golden image:
+    # - Chocolatey (package manager)
+    # - vim, git, curl, wget, 7zip, python
+    # - sysinternals, putty, winscp
+    #
+    # Only install instance-specific packages here
 
     # Optional: Docker installation
     install_docker: false
@@ -112,19 +113,16 @@
       when: feature_install.results | selectattr('reboot_required', 'equalto', true) | list | length > 0
 
     # ========================================================================
-    # Chocolatey Package Manager
+    # Instance-Specific Package Installation
     # ========================================================================
-
-    - name: Install Chocolatey
-      ansible.windows.win_chocolatey:
-        name: chocolatey
-        state: present
-
-    - name: Install Chocolatey packages
-      ansible.windows.win_chocolatey:
-        name: "{{ item }}"
-        state: present
-      loop: "{{ chocolatey_packages }}"
+    # Note: Chocolatey and baseline packages are pre-installed in Packer golden image.
+    # Only install instance-specific packages here if needed.
+    #
+    # Example for instance-specific package:
+    # - name: Install instance-specific package
+    #   ansible.windows.win_chocolatey:
+    #     name: specific-package-name
+    #     state: present
 
     # ========================================================================
     # Windows Firewall Configuration

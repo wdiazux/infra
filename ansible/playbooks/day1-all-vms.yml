@@ -1,15 +1,21 @@
 # Day 1: All VMs Configuration Orchestration
 #
-# This playbook orchestrates the baseline configuration of all traditional VMs
+# This playbook orchestrates instance-specific configuration of all traditional VMs
 # by running the appropriate OS-specific playbook for each VM type.
+# Baseline packages are pre-installed in Packer golden images.
 #
 # Run with: ansible-playbook playbooks/day1-all-vms.yml
 #
 # Prerequisites:
-# - All VMs deployed from Packer templates via Terraform
+# - All VMs deployed from Packer golden images via Terraform
 # - SSH access configured via cloud-init (Linux VMs)
 # - WinRM configured via Cloudbase-Init (Windows VMs)
 # - Ansible inventory configured with all hosts
+#
+# Architecture (3-Layer):
+# - Layer 1 (Packer): Baseline packages in golden images
+# - Layer 2 (Terraform): Deploy VMs from golden images
+# - Layer 3 (Ansible): Instance-specific configuration ONLY
 
 ---
 - name: Day 1 Configuration Orchestration
@@ -24,14 +30,16 @@
           Day 1: All VMs Configuration Orchestration
           ============================================================
 
-          This playbook will configure all traditional VMs with:
-          - System updates
-          - Baseline packages
-          - Security hardening
-          - Firewall configuration
-          - SSH hardening (Linux)
-          - Fail2ban (Linux)
-          - Optional Docker/Podman
+          This playbook configures instance-specific settings for all VMs.
+          Baseline packages are pre-installed in Packer golden images.
+
+          Configuration includes:
+          - System updates (post-deployment)
+          - Timezone and locale
+          - Hostname configuration
+          - Security hardening (SSH, firewall, fail2ban)
+          - NFS mounts (if configured)
+          - Optional Docker/Podman (instance-specific)
 
           VMs will be configured in parallel by OS type.
 

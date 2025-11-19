@@ -1,14 +1,19 @@
 # Day 1: Debian VM Baseline Configuration
 #
-# This playbook configures newly deployed Debian VMs with baseline settings,
-# security hardening, and essential packages.
+# This playbook configures newly deployed Debian VMs with instance-specific settings.
+# Baseline packages are pre-installed in the Packer golden image.
 #
 # Run with: ansible-playbook playbooks/day1-debian-baseline.yml
 #
 # Prerequisites:
-# - Debian VM deployed from Packer template
+# - Debian VM deployed from Packer golden image (with baseline packages)
 # - SSH access configured via cloud-init
 # - User has sudo privileges
+#
+# Architecture (3-Layer):
+# - Layer 1 (Packer): Baseline packages installed in golden image
+# - Layer 2 (Terraform): Deploy VMs from golden image
+# - Layer 3 (Ansible): Instance-specific configuration ONLY
 
 ---
 - name: Configure Debian VM Baseline
@@ -23,35 +28,12 @@
     # Locale configuration
     locale: "en_US.UTF-8"
 
-    # Baseline packages to install
-    baseline_packages:
-      - vim
-      - git
-      - htop
-      - curl
-      - wget
-      - tmux
-      - tree
-      - ncdu
-      - jq
-      - net-tools
-      - dnsutils
-      - tcpdump
-      - build-essential
-      - python3-pip
-      - python3-venv
-      - unzip
-      - zip
-      - rsync
-      - nfs-common
-      - sudo
-
-    # Security packages
-    security_packages:
-      - ufw
-      - fail2ban
-      - unattended-upgrades
-      - apt-listchanges
+    # Note: Baseline packages are pre-installed in Packer golden image:
+    # - vim, git, htop, curl, wget, tmux, tree, net-tools, dnsutils
+    # - python3, python3-pip, rsync, zip, unzip
+    # - Security: ufw, fail2ban, unattended-upgrades
+    #
+    # Only install instance-specific packages here (e.g., nfs-common for NFS mounts)
 
     # Optional: Docker installation
     install_docker: false
@@ -111,18 +93,16 @@
         msg: "Packages upgraded: {{ upgrade_result.changed | default(false) }}"
 
     # ========================================================================
-    # Baseline Packages
+    # Instance-Specific Package Installation
     # ========================================================================
+    # Note: Baseline packages are pre-installed in Packer golden image.
+    # Only install packages needed for instance-specific configuration.
 
-    - name: Install baseline packages
+    - name: Install NFS client (if NFS mounts configured)
       ansible.builtin.apt:
-        name: "{{ baseline_packages }}"
+        name: nfs-common
         state: present
-
-    - name: Install security packages
-      ansible.builtin.apt:
-        name: "{{ security_packages }}"
-        state: present
+      when: nfs_mounts | length > 0
 
     # ========================================================================
     # Timezone and Locale

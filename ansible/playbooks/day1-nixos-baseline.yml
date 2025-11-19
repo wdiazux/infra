@@ -1,14 +1,20 @@
 # Day 1: NixOS VM Baseline Configuration
 #
-# This playbook configures newly deployed NixOS VMs with baseline settings
+# This playbook configures newly deployed NixOS VMs with instance-specific settings
 # using NixOS's declarative configuration approach.
+# Baseline packages are pre-configured in the Packer golden image's configuration.nix.
 #
 # Run with: ansible-playbook playbooks/day1-nixos-baseline.yml
 #
 # Prerequisites:
-# - NixOS VM deployed from Packer template
+# - NixOS VM deployed from Packer golden image (with baseline packages)
 # - SSH access configured via cloud-init
 # - User has sudo privileges
+#
+# Architecture (3-Layer):
+# - Layer 1 (Packer): Baseline packages in golden image configuration.nix
+# - Layer 2 (Terraform): Deploy VMs from golden image
+# - Layer 3 (Ansible): Instance-specific configuration ONLY
 
 ---
 - name: Configure NixOS VM Baseline
@@ -23,22 +29,12 @@
     # Locale configuration
     locale: "en_US.UTF-8"
 
-    # Baseline packages to install (NixOS package names)
-    baseline_packages:
-      - vim
-      - git
-      - htop
-      - curl
-      - wget
-      - tmux
-      - tree
-      - ncdu
-      - jq
-      - tcpdump
-      - unzip
-      - zip
-      - rsync
-      - nfs-utils
+    # Note: Baseline packages are pre-configured in Packer golden image's configuration.nix:
+    # - vim, git, htop, curl, wget, tmux, tree, tcpdump
+    # - python3, python3-pip, rsync, zip, unzip
+    # - Security packages (ufw, fail2ban)
+    #
+    # This playbook only modifies instance-specific settings via configuration.nix
 
     # Optional: Docker installation
     enable_docker: false
@@ -150,7 +146,7 @@
           - SSH hardening: Applied
 
           Packages:
-          - Baseline packages: {{ baseline_packages | length }} packages
+          - Baseline packages: Pre-configured in golden image
           - Docker: {{ 'Enabled' if enable_docker else 'Disabled' }}
           - Podman: {{ 'Enabled' if enable_podman else 'Disabled' }}
 
