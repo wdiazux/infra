@@ -152,6 +152,11 @@ resource "proxmox_virtual_environment_vm" "vm" {
 
   # Lifecycle
   lifecycle {
+    precondition {
+      condition     = length(data.proxmox_virtual_environment_vms.template.vms) > 0
+      error_message = "Template '${var.template_name}' not found on Proxmox node '${var.proxmox_node}'. Build the template with Packer first."
+    }
+
     ignore_changes = [
       # Ignore changes to template-derived attributes
       clone,

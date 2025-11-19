@@ -20,9 +20,9 @@ variable "proxmox_username" {
 }
 
 variable "proxmox_api_token" {
-  description = "Proxmox API token (recommended over password)"
+  description = "Proxmox API token (recommended over password). Use TF_VAR_proxmox_api_token env var or set in terraform.tfvars"
   type        = string
-  default     = env("PROXMOX_API_TOKEN")
+  default     = null
   sensitive   = true
 }
 
@@ -102,9 +102,9 @@ variable "node_name" {
 }
 
 variable "node_vm_id" {
-  description = "Proxmox VM ID for the node"
+  description = "Proxmox VM ID for the Talos node (changed from 100 to avoid conflict with traditional VMs)"
   type        = number
-  default     = 100
+  default     = 1000
 }
 
 variable "node_ip" {
@@ -225,6 +225,12 @@ variable "dns_servers" {
   description = "DNS servers for the node"
   type        = list(string)
   default     = ["8.8.8.8", "8.8.4.4"]
+}
+
+variable "dns_domain" {
+  description = "DNS domain for all VMs"
+  type        = string
+  default     = "local"
 }
 
 variable "ntp_servers" {
