@@ -1,0 +1,461 @@
+# Day 1: Ubuntu VM Baseline Configuration
+#
+# This playbook configures newly deployed Ubuntu VMs with baseline settings,
+# security hardening, and essential packages.
+#
+# Run with: ansible-playbook playbooks/day1-ubuntu-baseline.yml
+#
+# Prerequisites:
+# - Ubuntu VM deployed from Packer template
+# - SSH access configured via cloud-init
+# - User has sudo privileges
+
+---
+- name: Configure Ubuntu VM Baseline
+  hosts: ubuntu_vms
+  gather_facts: yes
+  become: yes
+
+  vars:
+    # Timezone configuration
+    timezone: "America/New_York"
+
+    # Locale configuration
+    locale: "en_US.UTF-8"
+
+    # NTP servers
+    ntp_servers:
+      - "0.pool.ntp.org"
+      - "1.pool.ntp.org"
+      - "2.pool.ntp.org"
+
+    # Baseline packages to install
+    baseline_packages:
+      - vim
+      - git
+      - htop
+      - curl
+      - wget
+      - tmux
+      - tree
+      - ncdu
+      - jq
+      - net-tools
+      - dnsutils
+      - tcpdump
+      - build-essential
+      - python3-pip
+      - python3-venv
+      - unzip
+      - zip
+      - rsync
+      - nfs-common
+
+    # Security packages
+    security_packages:
+      - ufw
+      - fail2ban
+      - unattended-upgrades
+      - apt-listchanges
+
+    # Optional: Docker installation
+    install_docker: false
+
+    # Optional: Podman installation (alternative to Docker)
+    install_podman: false
+
+    # Firewall allowed ports
+    firewall_allowed_ports:
+      - 22   # SSH
+
+    # Fail2ban configuration
+    fail2ban_maxretry: 5
+    fail2ban_findtime: 600
+    fail2ban_bantime: 3600
+
+    # Automatic security updates
+    enable_auto_security_updates: true
+
+    # Optional: NFS mount configuration
+    nfs_mounts: []
+    # Example:
+    # nfs_mounts:
+    #   - src: "192.168.1.200:/mnt/tank/shared"
+    #     path: "/mnt/nfs/shared"
+    #     opts: "rw,sync,hard,intr"
+
+  tasks:
+    # ========================================================================
+    # System Information
+    # ========================================================================
+
+    - name: Display system information
+      ansible.builtin.debug:
+        msg: |
+          Hostname: {{ ansible_hostname }}
+          Distribution: {{ ansible_distribution }} {{ ansible_distribution_version }}
+          Kernel: {{ ansible_kernel }}
+          Architecture: {{ ansible_architecture }}
+          CPU Cores: {{ ansible_processor_vcpus }}
+          Memory: {{ ansible_memtotal_mb }}MB
+          Python: {{ ansible_python_version }}
+
+    # ========================================================================
+    # System Updates
+    # ========================================================================
+
+    - name: Update APT cache
+      ansible.builtin.apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Upgrade all packages
+      ansible.builtin.apt:
+        upgrade: dist
+        autoremove: yes
+        autoclean: yes
+      register: upgrade_result
+
+    - name: Display upgrade summary
+      ansible.builtin.debug:
+        msg: "{{ upgrade_result.stdout_lines | default(['No packages upgraded']) }}"
+
+    # ========================================================================
+    # Baseline Packages
+    # ========================================================================
+
+    - name: Install baseline packages
+      ansible.builtin.apt:
+        name: "{{ baseline_packages }}"
+        state: present
+
+    - name: Install security packages
+      ansible.builtin.apt:
+        name: "{{ security_packages }}"
+        state: present
+
+    # ========================================================================
+    # Timezone and Locale
+    # ========================================================================
+
+    - name: Set timezone
+      community.general.timezone:
+        name: "{{ timezone }}"
+
+    - name: Generate locale
+      community.general.locale_gen:
+        name: "{{ locale }}"
+        state: present
+
+    - name: Set default locale
+      ansible.builtin.command: localectl set-locale LANG={{ locale }}
+      changed_when: false
+
+    # ========================================================================
+    # Hostname Configuration
+    # ========================================================================
+
+    - name: Set hostname
+      ansible.builtin.hostname:
+        name: "{{ inventory_hostname }}"
+      when: ansible_hostname != inventory_hostname
+
+    - name: Update /etc/hosts
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        regexp: '^127\.0\.1\.1'
+        line: "127.0.1.1 {{ inventory_hostname }} {{ inventory_hostname.split('.')[0] }}"
+        backup: yes
+
+    # ========================================================================
+    # SSH Hardening
+    # ========================================================================
+
+    - name: Configure SSH daemon
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+        backup: yes
+      loop:
+        - { regexp: '^#?PermitRootLogin', line: 'PermitRootLogin no' }
+        - { regexp: '^#?PasswordAuthentication', line: 'PasswordAuthentication no' }
+        - { regexp: '^#?PubkeyAuthentication', line: 'PubkeyAuthentication yes' }
+        - { regexp: '^#?X11Forwarding', line: 'X11Forwarding no' }
+        - { regexp: '^#?MaxAuthTries', line: 'MaxAuthTries 3' }
+        - { regexp: '^#?ClientAliveInterval', line: 'ClientAliveInterval 300' }
+        - { regexp: '^#?ClientAliveCountMax', line: 'ClientAliveCountMax 2' }
+      notify: Restart SSH
+
+    # ========================================================================
+    # Firewall Configuration (UFW)
+    # ========================================================================
+
+    - name: Reset UFW to defaults
+      community.general.ufw:
+        state: reset
+      when: ansible_facts.services['ufw.service'] is defined
+
+    - name: Set UFW default policies
+      community.general.ufw:
+        direction: "{{ item.direction }}"
+        policy: "{{ item.policy }}"
+      loop:
+        - { direction: 'incoming', policy: 'deny' }
+        - { direction: 'outgoing', policy: 'allow' }
+        - { direction: 'routed', policy: 'deny' }
+
+    - name: Allow firewall ports
+      community.general.ufw:
+        rule: allow
+        port: "{{ item }}"
+        proto: tcp
+      loop: "{{ firewall_allowed_ports }}"
+
+    - name: Enable UFW
+      community.general.ufw:
+        state: enabled
+
+    - name: Check UFW status
+      ansible.builtin.command: ufw status verbose
+      register: ufw_status
+      changed_when: false
+
+    - name: Display UFW status
+      ansible.builtin.debug:
+        var: ufw_status.stdout_lines
+
+    # ========================================================================
+    # Fail2ban Configuration
+    # ========================================================================
+
+    - name: Configure fail2ban jail for SSH
+      ansible.builtin.copy:
+        dest: /etc/fail2ban/jail.d/sshd.local
+        content: |
+          [sshd]
+          enabled = true
+          port = ssh
+          filter = sshd
+          logpath = /var/log/auth.log
+          maxretry = {{ fail2ban_maxretry }}
+          findtime = {{ fail2ban_findtime }}
+          bantime = {{ fail2ban_bantime }}
+        mode: '0644'
+      notify: Restart fail2ban
+
+    - name: Enable and start fail2ban
+      ansible.builtin.systemd:
+        name: fail2ban
+        enabled: yes
+        state: started
+
+    # ========================================================================
+    # Automatic Security Updates
+    # ========================================================================
+
+    - name: Configure unattended-upgrades
+      ansible.builtin.copy:
+        dest: /etc/apt/apt.conf.d/50unattended-upgrades
+        content: |
+          Unattended-Upgrade::Allowed-Origins {
+              "${distro_id}:${distro_codename}";
+              "${distro_id}:${distro_codename}-security";
+              "${distro_id}ESMApps:${distro_codename}-apps-security";
+              "${distro_id}ESM:${distro_codename}-infra-security";
+          };
+          Unattended-Upgrade::AutoFixInterruptedDpkg "true";
+          Unattended-Upgrade::MinimalSteps "true";
+          Unattended-Upgrade::Remove-Unused-Kernel-Packages "true";
+          Unattended-Upgrade::Remove-Unused-Dependencies "true";
+          Unattended-Upgrade::Automatic-Reboot "false";
+          Unattended-Upgrade::Automatic-Reboot-Time "03:00";
+        mode: '0644'
+      when: enable_auto_security_updates
+
+    - name: Enable automatic updates
+      ansible.builtin.copy:
+        dest: /etc/apt/apt.conf.d/20auto-upgrades
+        content: |
+          APT::Periodic::Update-Package-Lists "1";
+          APT::Periodic::Download-Upgradeable-Packages "1";
+          APT::Periodic::AutocleanInterval "7";
+          APT::Periodic::Unattended-Upgrade "1";
+        mode: '0644'
+      when: enable_auto_security_updates
+
+    # ========================================================================
+    # Docker Installation (Optional)
+    # ========================================================================
+
+    - name: Install Docker prerequisites
+      ansible.builtin.apt:
+        name:
+          - ca-certificates
+          - gnupg
+          - lsb-release
+        state: present
+      when: install_docker
+
+    - name: Add Docker GPG key
+      ansible.builtin.apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+      when: install_docker
+
+    - name: Add Docker repository
+      ansible.builtin.apt_repository:
+        repo: "deb [arch={{ ansible_architecture }}] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        state: present
+      when: install_docker
+
+    - name: Install Docker
+      ansible.builtin.apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-compose-plugin
+        state: present
+        update_cache: yes
+      when: install_docker
+
+    - name: Add user to docker group
+      ansible.builtin.user:
+        name: "{{ ansible_user }}"
+        groups: docker
+        append: yes
+      when: install_docker
+
+    - name: Enable and start Docker
+      ansible.builtin.systemd:
+        name: docker
+        enabled: yes
+        state: started
+      when: install_docker
+
+    # ========================================================================
+    # Podman Installation (Optional)
+    # ========================================================================
+
+    - name: Install Podman
+      ansible.builtin.apt:
+        name:
+          - podman
+          - podman-compose
+        state: present
+      when: install_podman
+
+    # ========================================================================
+    # NFS Mounts (Optional)
+    # ========================================================================
+
+    - name: Create NFS mount points
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: directory
+        mode: '0755'
+      loop: "{{ nfs_mounts }}"
+      when: nfs_mounts | length > 0
+
+    - name: Add NFS mounts to /etc/fstab
+      ansible.posix.mount:
+        src: "{{ item.src }}"
+        path: "{{ item.path }}"
+        fstype: nfs
+        opts: "{{ item.opts | default('defaults') }}"
+        state: mounted
+      loop: "{{ nfs_mounts }}"
+      when: nfs_mounts | length > 0
+
+    # ========================================================================
+    # System Tuning
+    # ========================================================================
+
+    - name: Configure sysctl parameters
+      ansible.posix.sysctl:
+        name: "{{ item.name }}"
+        value: "{{ item.value }}"
+        state: present
+        reload: yes
+      loop:
+        - { name: 'vm.swappiness', value: '10' }
+        - { name: 'net.ipv4.tcp_keepalive_time', value: '600' }
+        - { name: 'net.core.somaxconn', value: '1024' }
+
+    # ========================================================================
+    # Cleanup
+    # ========================================================================
+
+    - name: Remove cloud-init if not needed
+      ansible.builtin.apt:
+        name: cloud-init
+        state: absent
+        purge: yes
+      when: false  # Set to true if you want to remove cloud-init after initial setup
+
+    - name: Clean APT cache
+      ansible.builtin.apt:
+        autoclean: yes
+        autoremove: yes
+
+    # ========================================================================
+    # Final Status
+    # ========================================================================
+
+    - name: Display configuration summary
+      ansible.builtin.debug:
+        msg: |
+          ============================================================
+          Ubuntu VM Baseline Configuration Complete
+          ============================================================
+
+          System:
+          - Hostname: {{ inventory_hostname }}
+          - Timezone: {{ timezone }}
+          - Locale: {{ locale }}
+
+          Security:
+          - UFW firewall: Enabled
+          - Fail2ban: Enabled
+          - SSH hardening: Applied
+          - Auto security updates: {{ 'Enabled' if enable_auto_security_updates else 'Disabled' }}
+
+          Packages:
+          - Baseline packages: Installed
+          - Security packages: Installed
+          - Docker: {{ 'Installed' if install_docker else 'Not installed' }}
+          - Podman: {{ 'Installed' if install_podman else 'Not installed' }}
+
+          Network:
+          - NFS mounts: {{ nfs_mounts | length }} configured
+
+          ============================================================
+          Next Steps:
+          ============================================================
+          1. Verify SSH access with key authentication
+          2. Test firewall rules
+          3. Configure application-specific settings
+          4. Set up monitoring (Prometheus, Grafana, etc.)
+          5. Configure backups
+
+          ============================================================
+
+  handlers:
+    - name: Restart SSH
+      ansible.builtin.systemd:
+        name: sshd
+        state: restarted
+
+    - name: Restart fail2ban
+      ansible.builtin.systemd:
+        name: fail2ban
+        state: restarted
+
+# Notes:
+# - This playbook is IDEMPOTENT - safe to run multiple times
+# - Customize variables in the vars section or via group_vars/host_vars
+# - For production: Store sensitive variables in ansible-vault or SOPS
+# - Test in development environment first
+# - Review firewall rules before applying to production
+# - SSH will be restarted if configuration changes - ensure you have console access

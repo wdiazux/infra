@@ -1,0 +1,199 @@
+# Day 1: NixOS VM Baseline Configuration
+#
+# This playbook configures newly deployed NixOS VMs with baseline settings
+# using NixOS's declarative configuration approach.
+#
+# Run with: ansible-playbook playbooks/day1-nixos-baseline.yml
+#
+# Prerequisites:
+# - NixOS VM deployed from Packer template
+# - SSH access configured via cloud-init
+# - User has sudo privileges
+
+---
+- name: Configure NixOS VM Baseline
+  hosts: nixos_vms
+  gather_facts: yes
+  become: yes
+
+  vars:
+    # Timezone configuration
+    timezone: "America/New_York"
+
+    # Locale configuration
+    locale: "en_US.UTF-8"
+
+    # Baseline packages to install (NixOS package names)
+    baseline_packages:
+      - vim
+      - git
+      - htop
+      - curl
+      - wget
+      - tmux
+      - tree
+      - ncdu
+      - jq
+      - tcpdump
+      - unzip
+      - zip
+      - rsync
+      - nfs-utils
+
+    # Optional: Docker installation
+    enable_docker: false
+
+    # Optional: Podman installation
+    enable_podman: false
+
+    # Firewall allowed ports
+    firewall_allowed_ports:
+      - 22   # SSH
+
+    # Optional: NFS mount configuration
+    nfs_mounts: []
+
+  tasks:
+    # ========================================================================
+    # System Information
+    # ========================================================================
+
+    - name: Display system information
+      ansible.builtin.debug:
+        msg: |
+          Hostname: {{ ansible_hostname }}
+          Distribution: {{ ansible_distribution }}
+          Kernel: {{ ansible_kernel }}
+          Architecture: {{ ansible_architecture }}
+          CPU Cores: {{ ansible_processor_vcpus }}
+          Memory: {{ ansible_memtotal_mb }}MB
+
+    # ========================================================================
+    # NixOS Configuration File Management
+    # ========================================================================
+
+    - name: Create backup of current configuration
+      ansible.builtin.copy:
+        src: /etc/nixos/configuration.nix
+        dest: "/etc/nixos/configuration.nix.backup-{{ ansible_date_time.iso8601_basic_short }}"
+        remote_src: yes
+        mode: '0644'
+
+    - name: Generate NixOS baseline configuration
+      ansible.builtin.template:
+        src: nixos-configuration.nix.j2
+        dest: /etc/nixos/configuration.nix
+        mode: '0644'
+        backup: yes
+        validate: 'nixos-rebuild dry-build -I nixos-config=%s'
+      register: nixos_config_updated
+
+    - name: Display configuration status
+      ansible.builtin.debug:
+        msg: "NixOS configuration {{ 'updated' if nixos_config_updated.changed else 'unchanged' }}"
+
+    # ========================================================================
+    # Apply NixOS Configuration
+    # ========================================================================
+
+    - name: Apply NixOS configuration
+      ansible.builtin.command: nixos-rebuild switch
+      when: nixos_config_updated.changed
+      register: nixos_rebuild
+      async: 600  # 10 minutes timeout
+      poll: 10
+
+    - name: Display rebuild output
+      ansible.builtin.debug:
+        var: nixos_rebuild.stdout_lines
+      when: nixos_config_updated.changed
+
+    # ========================================================================
+    # NFS Mounts (if configured)
+    # ========================================================================
+
+    - name: Add NFS mounts to configuration.nix
+      ansible.builtin.blockinfile:
+        path: /etc/nixos/configuration.nix
+        marker: "  # {mark} ANSIBLE MANAGED NFS MOUNTS"
+        insertafter: "^  fileSystems"
+        block: |
+          {% for mount in nfs_mounts %}
+            fileSystems."{{ mount.path }}" = {
+              device = "{{ mount.src }}";
+              fsType = "nfs";
+              options = [ "{{ mount.opts | default('defaults') }}" ];
+            };
+          {% endfor %}
+      when: nfs_mounts | length > 0
+      notify: Rebuild NixOS
+
+    # ========================================================================
+    # Final Status
+    # ========================================================================
+
+    - name: Display configuration summary
+      ansible.builtin.debug:
+        msg: |
+          ============================================================
+          NixOS VM Baseline Configuration Complete
+          ============================================================
+
+          System:
+          - Hostname: {{ inventory_hostname }}
+          - Timezone: {{ timezone }}
+          - Locale: {{ locale }}
+
+          Security:
+          - Firewall: Enabled (ports: {{ firewall_allowed_ports | join(', ') }})
+          - Fail2ban: Enabled
+          - SSH hardening: Applied
+
+          Packages:
+          - Baseline packages: {{ baseline_packages | length }} packages
+          - Docker: {{ 'Enabled' if enable_docker else 'Disabled' }}
+          - Podman: {{ 'Enabled' if enable_podman else 'Disabled' }}
+
+          Network:
+          - NFS mounts: {{ nfs_mounts | length }} configured
+
+          ============================================================
+          NixOS Declarative Configuration:
+          ============================================================
+          Configuration file: /etc/nixos/configuration.nix
+          Backup created: configuration.nix.backup-*
+
+          To make additional changes:
+          1. Edit /etc/nixos/configuration.nix
+          2. Test: sudo nixos-rebuild test
+          3. Apply: sudo nixos-rebuild switch
+          4. Rollback if needed: sudo nixos-rebuild --rollback switch
+
+          ============================================================
+          Next Steps:
+          ============================================================
+          1. Verify SSH access with key authentication
+          2. Test firewall rules
+          3. Review /etc/nixos/configuration.nix
+          4. Configure application-specific settings
+          5. Set up monitoring and backups
+
+          NixOS allows declarative rollbacks - previous configurations
+          are available via GRUB boot menu!
+
+          ============================================================
+
+  handlers:
+    - name: Rebuild NixOS
+      ansible.builtin.command: nixos-rebuild switch
+      async: 600
+      poll: 10
+
+# Notes:
+# - NixOS uses declarative configuration in /etc/nixos/configuration.nix
+# - Changes require running 'nixos-rebuild switch'
+# - NixOS maintains generations for rollback capability
+# - Template file needed: templates/nixos-configuration.nix.j2
+# - This playbook generates a baseline configuration
+# - For advanced customization, edit /etc/nixos/configuration.nix directly
+# - Backup configurations are created automatically
