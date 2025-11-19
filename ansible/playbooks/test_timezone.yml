@@ -11,7 +11,7 @@
 
   vars:
     # Override default timezone for this test
-    baseline_timezone: "America/New_York"
+    baseline_timezone: "America/El_Salvador"
 
   tasks:
     - name: Set timezone (Linux)
@@ -21,7 +21,7 @@
 
     - name: Set timezone (Windows)
       community.windows.win_timezone:
-        timezone: "Eastern Standard Time"  # Windows timezone name
+        timezone: "Central America Standard Time"  # Windows timezone name for El Salvador
       when: ansible_os_family == "Windows"
 
     - name: Display current timezone (Linux)
