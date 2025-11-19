@@ -1,0 +1,31 @@
+---
+# Debian/Ubuntu Package Installation Tasks
+# This file is included by install-baseline-packages.yml for Debian-based systems
+
+- name: Update APT cache (Debian/Ubuntu)
+  ansible.builtin.apt:
+    update_cache: yes
+    cache_valid_time: 3600
+  tags: [debian, ubuntu]
+
+- name: Upgrade all packages (Debian/Ubuntu)
+  ansible.builtin.apt:
+    upgrade: dist
+    autoremove: yes
+    autoclean: yes
+  tags: [debian, ubuntu]
+
+- name: Install baseline packages (Debian/Ubuntu)
+  ansible.builtin.apt:
+    name: "{{ common_packages + ['net-tools', 'dnsutils'] }}"
+    state: present
+  tags: [debian, ubuntu]
+
+- name: Install security packages (Debian/Ubuntu)
+  ansible.builtin.apt:
+    name:
+      - ufw
+      - fail2ban
+      - unattended-upgrades
+    state: present
+  tags: [debian, ubuntu]

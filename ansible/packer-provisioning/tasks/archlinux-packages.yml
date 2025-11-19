@@ -1,0 +1,27 @@
+---
+# Arch Linux Package Installation Tasks
+# This file is included by install-baseline-packages.yml for Arch Linux systems
+
+- name: Update package database (Arch Linux)
+  community.general.pacman:
+    update_cache: yes
+  tags: [arch]
+
+- name: Upgrade all packages (Arch Linux)
+  community.general.pacman:
+    upgrade: yes
+  tags: [arch]
+
+- name: Install baseline packages (Arch Linux)
+  community.general.pacman:
+    name: "{{ common_packages + ['net-tools', 'bind'] }}"
+    state: present
+  tags: [arch]
+
+- name: Install security packages (Arch Linux)
+  community.general.pacman:
+    name:
+      - ufw
+      - fail2ban
+    state: present
+  tags: [arch]

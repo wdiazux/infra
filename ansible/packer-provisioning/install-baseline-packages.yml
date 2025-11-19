@@ -4,6 +4,8 @@
 #
 # This playbook is run during Packer builds to install packages into golden images.
 # Post-deployment instance-specific configuration is handled by the baseline role.
+#
+# Architecture: Modular task files per OS for better maintainability
 
 - name: Install Baseline Packages (Packer Provisioning)
   hosts: default
@@ -46,102 +48,26 @@
       tags: [always]
 
     # ==========================================================================
-    # Debian/Ubuntu Package Installation
+    # Include OS-Specific Package Installation Tasks
     # ==========================================================================
 
-    - name: Update APT cache (Debian/Ubuntu)
-      ansible.builtin.apt:
-        update_cache: yes
-        cache_valid_time: 3600
+    - name: Include Debian/Ubuntu package installation tasks
+      ansible.builtin.include_tasks: tasks/debian-packages.yml
       when: ansible_os_family == "Debian"
       tags: [debian, ubuntu]
 
-    - name: Upgrade all packages (Debian/Ubuntu)
-      ansible.builtin.apt:
-        upgrade: dist
-        autoremove: yes
-        autoclean: yes
-      when: ansible_os_family == "Debian"
-      tags: [debian, ubuntu]
-
-    - name: Install baseline packages (Debian/Ubuntu)
-      ansible.builtin.apt:
-        name: "{{ common_packages + ['net-tools', 'dnsutils'] }}"
-        state: present
-      when: ansible_os_family == "Debian"
-      tags: [debian, ubuntu]
-
-    - name: Install security packages (Debian/Ubuntu)
-      ansible.builtin.apt:
-        name:
-          - ufw
-          - fail2ban
-          - unattended-upgrades
-        state: present
-      when: ansible_os_family == "Debian"
-      tags: [debian, ubuntu]
-
-    # ==========================================================================
-    # Arch Linux Package Installation
-    # ==========================================================================
-
-    - name: Update package database (Arch Linux)
-      community.general.pacman:
-        update_cache: yes
+    - name: Include Arch Linux package installation tasks
+      ansible.builtin.include_tasks: tasks/archlinux-packages.yml
       when: ansible_os_family == "Archlinux"
       tags: [arch]
 
-    - name: Upgrade all packages (Arch Linux)
-      community.general.pacman:
-        upgrade: yes
-      when: ansible_os_family == "Archlinux"
-      tags: [arch]
-
-    - name: Install baseline packages (Arch Linux)
-      community.general.pacman:
-        name: "{{ common_packages + ['net-tools', 'bind'] }}"
-        state: present
-      when: ansible_os_family == "Archlinux"
-      tags: [arch]
-
-    - name: Install security packages (Arch Linux)
-      community.general.pacman:
-        name:
-          - ufw
-          - fail2ban
-        state: present
-      when: ansible_os_family == "Archlinux"
-      tags: [arch]
-
-    # ==========================================================================
-    # Windows Package Installation
-    # ==========================================================================
-
-    - name: Install Chocolatey (Windows)
-      ansible.windows.win_chocolatey:
-        name: chocolatey
-        state: present
-      when: ansible_os_family == "Windows"
-      tags: [windows]
-
-    - name: Install baseline packages (Windows)
-      ansible.windows.win_chocolatey:
-        name:
-          - vim
-          - git
-          - curl
-          - wget
-          - 7zip
-          - python
-          - sysinternals
-          - putty
-          - winscp
-        state: present
+    - name: Include Windows package installation tasks
+      ansible.builtin.include_tasks: tasks/windows-packages.yml
       when: ansible_os_family == "Windows"
       tags: [windows]
 
     # ==========================================================================
-    # Post-Installation Cleanup
+    # Post-Installation Summary
     # ==========================================================================
 
     - name: Display completion message

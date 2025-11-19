@@ -1,0 +1,24 @@
+---
+# Windows Package Installation Tasks
+# This file is included by install-baseline-packages.yml for Windows systems
+
+- name: Install Chocolatey (Windows)
+  ansible.windows.win_chocolatey:
+    name: chocolatey
+    state: present
+  tags: [windows]
+
+- name: Install baseline packages (Windows)
+  ansible.windows.win_chocolatey:
+    name:
+      - vim
+      - git
+      - curl
+      - wget
+      - 7zip
+      - python
+      - sysinternals
+      - putty
+      - winscp
+    state: present
+  tags: [windows]
