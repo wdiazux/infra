@@ -51,8 +51,8 @@ variable "ubuntu_iso_url" {
 
 variable "ubuntu_iso_checksum" {
   type        = string
-  description = "SHA256 checksum of Ubuntu ISO"
-  default     = "sha256:e240e4b801f7bb68c20d1356b60968ad0c33a41d00d828e74ceb3364a0317be9"
+  description = "SHA256 checksum of Ubuntu ISO (file: reference auto-validates against official checksums)"
+  default     = "file:https://releases.ubuntu.com/24.04/SHA256SUMS"
 }
 
 # Template Configuration

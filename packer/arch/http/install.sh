@@ -43,6 +43,10 @@ pacstrap /mnt base base-devel linux linux-firmware
 echo "==> Generating fstab..."
 genfstab -U /mnt >> /mnt/etc/fstab
 
+# Get root partition PARTUUID for bootloader
+ROOT_PARTUUID=$(blkid -s PARTUUID -o value ${DISK}2)
+echo "==> Root partition PARTUUID: ${ROOT_PARTUUID}"
+
 # Chroot and configure system
 echo "==> Configuring system..."
 arch-chroot /mnt /bin/bash <<EOF
@@ -106,7 +110,7 @@ cat > /boot/loader/entries/arch.conf <<ENTRY
 title   Arch Linux
 linux   /vmlinuz-linux
 initrd  /initramfs-linux.img
-options root=${DISK}2 rw
+options root=PARTUUID=${ROOT_PARTUUID} rw
 ENTRY
 
 # Set root password
