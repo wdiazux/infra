@@ -1,10 +1,13 @@
-# Talos Linux Terraform Deployment for Proxmox
+# Terraform Infrastructure Deployment for Proxmox
 
-This directory contains Terraform configuration to deploy a single-node Talos Kubernetes cluster on Proxmox VE 9.0 with NVIDIA GPU support and external NFS storage.
+This directory contains Terraform configuration to deploy infrastructure on Proxmox VE 9.0:
+- **Primary:** Single-node Talos Kubernetes cluster with NVIDIA GPU support
+- **Additional:** Traditional VMs (Ubuntu, Debian, Arch, NixOS, Windows) from Packer golden images
 
 ## Table of Contents
 
 - [Overview](#overview)
+- [Deploying All VMs](#deploying-all-vms)
 - [Prerequisites](#prerequisites)
 - [Quick Start](#quick-start)
 - [Configuration](#configuration)
@@ -14,8 +17,11 @@ This directory contains Terraform configuration to deploy a single-node Talos Ku
 - [Storage Configuration](#storage-configuration)
 - [Troubleshooting](#troubleshooting)
 - [Advanced Topics](#advanced-topics)
+- [Code Verification](#code-verification)
 
 ## Overview
+
+### Talos Kubernetes (Primary)
 
 This Terraform configuration:
 
@@ -34,6 +40,154 @@ This Terraform configuration:
 - **Storage**: 150-200GB local disk + external NAS for persistent data
 - **GPU**: Optional NVIDIA RTX 4000 passthrough
 - **Network**: Cilium CNI with eBPF (replaces kube-proxy)
+
+### Traditional VMs (Additional)
+
+This configuration also supports deploying traditional VMs from Packer golden images:
+
+- **Ubuntu 24.04 LTS**: General purpose, cloud-init enabled
+- **Debian 12 (Bookworm)**: Stable server workloads, cloud-init enabled
+- **Arch Linux**: Rolling release, bleeding edge packages
+- **NixOS**: Declarative configuration management
+- **Windows Server 2022**: Windows workloads, Cloudbase-Init enabled
+
+**Features:**
+- Modular `proxmox-vm` module for consistent deployment
+- Enable/disable individual VMs via variables
+- Cloud-init configuration (Linux) or Cloudbase-Init (Windows)
+- UEFI boot, QEMU Guest Agent, virtio drivers
+- Static or DHCP IP addresses
+- Customizable CPU, memory, and disk allocations
+
+## Deploying All VMs
+
+### Supported VMs and Control Variables
+
+All VMs are deployed from Packer golden images. You can enable/disable each VM individually:
+
+| VM Type | Module | Control Variable | Default VM ID | Template Source |
+|---------|--------|-----------------|---------------|----------------|
+| **Talos** | Direct resource | Always deployed | 1000 | `packer/talos/` |
+| **Ubuntu** | `module.ubuntu_vm` | `deploy_ubuntu_vm` | 100-199 | `packer/ubuntu-cloud/` or `packer/ubuntu/` |
+| **Debian** | `module.debian_vm` | `deploy_debian_vm` | 200-299 | `packer/debian-cloud/` or `packer/debian/` |
+| **Arch** | `module.arch_vm` | `deploy_arch_vm` | 300-399 | `packer/arch/` |
+| **NixOS** | `module.nixos_vm` | `deploy_nixos_vm` | 400-499 | `packer/nixos/` |
+| **Windows** | `module.windows_vm` | `deploy_windows_vm` | 500-599 | `packer/windows/` |
+
+### Deployment Options
+
+#### Option 1: Deploy Everything
+
+```hcl
+# terraform.tfvars
+deploy_ubuntu_vm  = true
+deploy_debian_vm  = true
+deploy_arch_vm    = true
+deploy_nixos_vm   = true
+deploy_windows_vm = true
+```
+
+Then run:
+```bash
+terraform apply
+```
+
+#### Option 2: Deploy Specific VMs Only
+
+```hcl
+# terraform.tfvars
+deploy_ubuntu_vm  = true   # Deploy Ubuntu
+deploy_debian_vm  = true   # Deploy Debian
+deploy_arch_vm    = false  # Skip Arch
+deploy_nixos_vm   = false  # Skip NixOS
+deploy_windows_vm = false  # Skip Windows
+```
+
+#### Option 3: Deploy One VM at a Time
+
+```bash
+# Deploy only Ubuntu
+terraform apply -target=module.ubuntu_vm
+
+# Deploy only Debian
+terraform apply -target=module.debian_vm
+```
+
+### Workflow: Build Templates → Deploy VMs
+
+**Step 1: Build Packer Templates**
+```bash
+# Build all templates you want to deploy
+cd packer/talos && packer build .
+cd packer/ubuntu-cloud && packer build .
+cd packer/debian-cloud && packer build .
+cd packer/arch && packer build .
+cd packer/nixos && packer build .
+cd packer/windows && packer build .
+```
+
+**Step 2: Update Template Names in terraform.tfvars**
+```hcl
+# Template names with timestamps from Packer builds
+talos_template_name   = "talos-1.11.4-nvidia-template"
+ubuntu_template_name  = "ubuntu-2404-cloud-template-20251119"
+debian_template_name  = "debian-12-cloud-template-20251119"
+arch_template_name    = "arch-linux-golden-template-20251119"
+nixos_template_name   = "nixos-golden-template-20251119"
+windows_template_name = "windows-server-2022-golden-template-20251119"
+```
+
+**Step 3: Configure VMs (CPU, memory, IPs, etc.)**
+```hcl
+# Ubuntu configuration
+ubuntu_cpu_cores  = 4
+ubuntu_memory     = 12288  # 12GB
+ubuntu_disk_size  = 100    # 100GB
+ubuntu_ip_address = "192.168.1.110/24"  # or "dhcp"
+
+# Repeat for other VMs...
+```
+
+**Step 4: Deploy with Terraform**
+```bash
+cd terraform/
+terraform init
+terraform plan   # Review what will be created
+terraform apply  # Deploy all enabled VMs
+```
+
+### Resource Planning Example (96GB RAM Total)
+
+**Balanced Allocation:**
+```hcl
+# Talos (primary workload)
+node_cpu_cores = 8
+node_memory    = 32768  # 32GB
+
+# Ubuntu
+ubuntu_cpu_cores = 4
+ubuntu_memory    = 12288  # 12GB
+
+# Debian
+debian_cpu_cores = 4
+debian_memory    = 12288  # 12GB
+
+# Arch
+arch_cpu_cores   = 2
+arch_memory      = 8192   # 8GB
+
+# NixOS
+nixos_cpu_cores  = 2
+nixos_memory     = 8192   # 8GB
+
+# Windows
+windows_cpu_cores = 4
+windows_memory    = 16384  # 16GB
+
+# Total: 32+12+12+8+8+16 = 88GB (8GB free for Proxmox host)
+```
+
+See `../CLAUDE.md` for more resource allocation examples.
 
 ## Prerequisites
 
@@ -1242,3 +1396,78 @@ sudo systemctl enable qemu-guest-agent
 - Test templates before production deployment
 - Keep old templates for rollback
 
+
+## Code Verification
+
+### Comprehensive Verification Report (2025)
+
+A complete verification of all Packer, Terraform, and Ansible code has been performed to ensure:
+- ✅ Latest versions and modern syntax
+- ✅ Best practices compliance
+- ✅ Correct integration between components
+- ✅ Deployment readiness
+
+**Report Location:** [`docs/COMPREHENSIVE-CODE-VERIFICATION-2025.md`](../docs/COMPREHENSIVE-CODE-VERIFICATION-2025.md)
+
+### Verification Summary
+
+**Status: ⚠️  MOSTLY READY** with 1 Critical Gap
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| **Packer** | ✅ READY | Latest version (1.14.2+), modern syntax, best practices |
+| **Terraform** | ✅ READY | Latest providers (0.86.0, 0.9.0), correctly uses golden images |
+| **Ansible** | 🔴 GAP | Day 0 ready, missing Day 1/2 playbooks for traditional VMs |
+
+### What Works
+
+1. **Packer Templates (8 total):**
+   - ✅ Modern `packer` block with `required_plugins`
+   - ✅ Correct builder types (`proxmox-clone` for cloud, `proxmox-iso` for ISOs)
+   - ✅ Checksum validation with `file:` references (2025 best practice)
+   - ✅ UEFI boot configuration
+   - ✅ Timestamp format fixed (YYYYMMDD)
+
+2. **Terraform Configuration:**
+   - ✅ Latest provider versions (Proxmox 0.86.0, Talos 0.9.0)
+   - ✅ Correctly clones from Packer golden images
+   - ✅ Template validation with lifecycle preconditions
+   - ✅ Can deploy all VMs (Talos + 5 traditional VMs)
+   - ✅ Modular `proxmox-vm` module for reusability
+
+3. **Ansible Day 0:**
+   - ✅ Proxmox host preparation playbook ready
+   - ✅ Modern Ansible syntax (FQCN)
+   - ✅ GPU passthrough configuration
+   - ✅ ZFS ARC memory limits
+
+### Critical Gap
+
+**🔴 Missing: Ansible Playbooks for Traditional VMs**
+
+**Impact:**
+- VMs can be deployed with Terraform
+- BUT: No automated post-deployment configuration
+- Manual configuration required after deployment
+
+**Missing Playbooks:**
+- `day1-ubuntu-baseline.yml` - Ubuntu baseline configuration
+- `day1-debian-baseline.yml` - Debian baseline configuration
+- `day1-arch-baseline.yml` - Arch baseline configuration
+- `day1-nixos-baseline.yml` - NixOS baseline configuration
+- `day1-windows-baseline.yml` - Windows baseline configuration
+
+**Recommendation:**
+Create Ansible baseline playbooks before production deployment of traditional VMs. Talos deployment is fully ready (manual Kubernetes setup acceptable).
+
+### Version Compatibility (November 2025)
+
+| Component | Version | Status |
+|-----------|---------|--------|
+| Terraform | >= 1.13.5 | ✅ CURRENT (latest: 1.14.0) |
+| Packer | >= 1.14.2 | ✅ CURRENT |
+| Proxmox Provider | ~> 0.86.0 | ✅ LATEST |
+| Talos Provider | ~> 0.9.0 | ✅ LATEST |
+| Proxmox VE | >= 9.0 | ✅ SUPPORTED |
+
+See the full verification report for detailed analysis and recommendations.
