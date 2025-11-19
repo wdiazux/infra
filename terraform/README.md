@@ -710,3 +710,395 @@ See `../ansible/` for Day 0/1/2 automation playbooks.
 ---
 
 **Support**: For issues, check project documentation in `../CLAUDE.md` and `../docs/versions.md`.
+
+## Traditional VMs Deployment
+
+In addition to Talos Linux, this Terraform configuration can deploy traditional Linux and Windows VMs from Packer templates using a reusable module.
+
+### Supported Operating Systems
+
+- **Ubuntu 24.04 LTS** - General purpose development
+- **Debian 12 (Bookworm)** - Stable server workloads
+- **Arch Linux** - Rolling release, bleeding edge
+- **NixOS** - Declarative configuration management
+- **Windows Server 2022** - Windows workloads
+
+### Module Architecture
+
+```
+terraform/
+├── main.tf                  # Talos deployment
+├── traditional-vms.tf       # Traditional VMs deployment (uses module)
+├── modules/
+│   └── proxmox-vm/         # Generic reusable VM module
+│       ├── main.tf
+│       ├── variables.tf
+│       └── outputs.tf
+├── variables.tf            # All variables (Talos + traditional VMs)
+└── outputs.tf              # All outputs (Talos + traditional VMs)
+```
+
+### Quick Start - Traditional VMs
+
+**1. Build Packer templates:**
+
+```bash
+# Build all templates
+cd ../packer/ubuntu-cloud && packer build .
+cd ../packer/debian-cloud && packer build .
+cd ../packer/arch && packer build .
+cd ../packer/nixos && packer build .
+cd ../packer/windows && packer build .
+```
+
+**2. Configure terraform.tfvars:**
+
+```hcl
+# Enable VMs you want to deploy
+deploy_ubuntu_vm = true
+deploy_debian_vm = true
+deploy_arch_vm   = false
+deploy_nixos_vm  = false
+deploy_windows_vm = false
+
+# Update template names (from Packer output)
+ubuntu_template_name = "ubuntu-24.04-golden-template-20251118-1234"
+debian_template_name = "debian-12-golden-template-20251118-1234"
+
+# Configure resources
+ubuntu_cpu_cores = 4
+ubuntu_memory    = 8192   # MB
+ubuntu_disk_size = 40     # GB
+
+debian_cpu_cores = 4
+debian_memory    = 8192   # MB
+debian_disk_size = 40     # GB
+
+# Network configuration
+ubuntu_ip_address = "dhcp"  # Or "192.168.1.100/24" for static
+debian_ip_address = "dhcp"  # Or "192.168.1.101/24" for static
+
+# Cloud-init credentials
+cloud_init_user     = "admin"
+cloud_init_password = "changeme"
+# cloud_init_ssh_keys = ["ssh-rsa AAAA..."]
+```
+
+**3. Deploy VMs:**
+
+```bash
+# Deploy all enabled VMs
+terraform apply
+
+# Or deploy specific VM
+terraform apply -target=module.ubuntu_vm
+terraform apply -target=module.debian_vm
+```
+
+**4. Verify deployment:**
+
+```bash
+# Check outputs
+terraform output deployed_vms_summary
+
+# SSH to VM (after cloud-init completes)
+ssh admin@<vm-ip>
+```
+
+### Resource Allocation Guidelines
+
+**System Resources:** 96GB RAM, 12 CPU cores
+
+**Example Allocation:**
+
+```
+Proxmox overhead:  20GB RAM,  1-2 cores
+Talos cluster:     32GB RAM,  8 cores   (primary, has GPU)
+Ubuntu VM:         16GB RAM,  4 cores
+Debian VM:         16GB RAM,  4 cores
+Arch VM:           4GB RAM,   2 cores
+Free buffer:       8GB RAM
+----------------------------------------
+Total:            96GB RAM,  ~24 threads (with SMT)
+```
+
+**Notes:**
+- Talos gets GPU (can't share with traditional VMs)
+- Adjust based on actual workload requirements
+- Leave 5-10% RAM free for system overhead
+- Use DHCP or static IPs based on network setup
+
+### Proxmox VM Module Usage
+
+The `modules/proxmox-vm` module is reusable for any VM deployment.
+
+**Basic Example:**
+
+```hcl
+module "my_custom_vm" {
+  source = "./modules/proxmox-vm"
+
+  proxmox_node  = "pve"
+  template_name = "my-template-name"
+  vm_name       = "my-vm"
+  vm_id         = 150
+
+  cpu_cores = 2
+  memory    = 4096
+
+  disks = [{
+    datastore_id = "local-zfs"
+    size         = 20
+    interface    = "scsi0"
+  }]
+
+  network_devices = [{
+    bridge = "vmbr0"
+    model  = "virtio"
+  }]
+
+  enable_cloud_init = true
+  cloud_init_user   = "admin"
+  cloud_init_ssh_keys = ["ssh-rsa AAAA..."]
+
+  tags = ["custom", "development"]
+}
+```
+
+**See:** `modules/proxmox-vm/README.md` for complete documentation.
+
+### VM Management
+
+**Start/Stop VMs:**
+
+```bash
+# Via Proxmox CLI
+qm start <vm-id>
+qm stop <vm-id>
+qm shutdown <vm-id>
+
+# Or via Proxmox Web UI
+```
+
+**Enable/Disable VM Deployment:**
+
+```hcl
+# In terraform.tfvars
+deploy_ubuntu_vm = false  # Skip deployment
+```
+
+Then run `terraform apply` to destroy disabled VMs.
+
+**Update VM Configuration:**
+
+```hcl
+# Change resources in terraform.tfvars
+ubuntu_cpu_cores = 8  # Increase CPUs
+ubuntu_memory    = 16384  # Increase RAM
+
+# Apply changes
+terraform apply
+```
+
+Note: Some changes require VM restart.
+
+**Add Additional Disks:**
+
+```hcl
+module "storage_vm" {
+  source = "./modules/proxmox-vm"
+  
+  # ... other config ...
+
+  disks = [
+    {
+      datastore_id = "local-zfs"
+      size         = 20
+      interface    = "scsi0"
+    },
+    {
+      datastore_id = "local-zfs"
+      size         = 100
+      interface    = "scsi1"  # Additional disk
+    }
+  ]
+}
+```
+
+### Deployment Scenarios
+
+**Scenario 1: Talos Only (Kubernetes Focus)**
+
+```hcl
+# terraform.tfvars
+deploy_ubuntu_vm  = false
+deploy_debian_vm  = false
+deploy_arch_vm    = false
+deploy_nixos_vm   = false
+deploy_windows_vm = false
+```
+
+**Scenario 2: Talos + Ubuntu Dev VM**
+
+```hcl
+deploy_ubuntu_vm   = true
+ubuntu_cpu_cores   = 8
+ubuntu_memory      = 16384
+ubuntu_ip_address  = "192.168.1.100/24"
+```
+
+**Scenario 3: Mixed Linux Environment**
+
+```hcl
+deploy_ubuntu_vm = true  # Development
+deploy_debian_vm = true  # Production services
+deploy_arch_vm   = true  # Experimentation
+```
+
+**Scenario 4: Full Stack (All VMs)**
+
+```hcl
+deploy_ubuntu_vm  = true
+deploy_debian_vm  = true
+deploy_arch_vm    = true
+deploy_nixos_vm   = true
+deploy_windows_vm = true
+```
+
+Adjust resource allocation accordingly (see CLAUDE.md).
+
+### Cloud-init Configuration
+
+All Linux VMs support cloud-init for initial configuration.
+
+**User Creation:**
+
+```hcl
+cloud_init_user     = "admin"
+cloud_init_password = "changeme"
+```
+
+**SSH Key Authentication (Recommended):**
+
+```hcl
+cloud_init_ssh_keys = [
+  "ssh-rsa AAAA... user@workstation",
+  "ssh-ed25519 AAAA... user@laptop"
+]
+```
+
+**Static IP Configuration:**
+
+```hcl
+ubuntu_ip_address = "192.168.1.100/24"
+default_gateway   = "192.168.1.1"
+dns_servers       = ["192.168.1.1", "8.8.8.8"]
+dns_domain        = "home.local"
+```
+
+**Windows Configuration:**
+
+Windows uses Cloudbase-Init (Windows equivalent of cloud-init):
+
+```hcl
+windows_cloud_init_user     = "Administrator"
+windows_cloud_init_password = "ChangeMe123!"
+```
+
+### Troubleshooting Traditional VMs
+
+**VM won't start:**
+
+```bash
+# Check VM status
+qm status <vm-id>
+
+# View VM config
+qm config <vm-id>
+
+# Check Proxmox logs
+journalctl -u pve-cluster -f
+```
+
+**Template not found:**
+
+```bash
+# List templates
+qm list | grep template
+
+# Verify template name matches Packer output
+# Update template_name variable in terraform.tfvars
+```
+
+**Cloud-init not working:**
+
+```bash
+# SSH to VM
+ssh admin@<vm-ip>
+
+# Check cloud-init status
+sudo cloud-init status --wait
+sudo cloud-init status --long
+
+# View cloud-init logs
+sudo cat /var/log/cloud-init.log
+sudo cat /var/log/cloud-init-output.log
+```
+
+**Network issues:**
+
+```bash
+# Check VM network configuration
+sudo ip addr show
+sudo ip route show
+sudo cat /etc/netplan/*.yaml  # Ubuntu
+sudo cat /etc/network/interfaces  # Debian
+
+# Test connectivity
+ping 8.8.8.8
+ping google.com
+```
+
+**QEMU Guest Agent:**
+
+```bash
+# Check agent status
+sudo systemctl status qemu-guest-agent
+
+# Start if stopped
+sudo systemctl start qemu-guest-agent
+sudo systemctl enable qemu-guest-agent
+```
+
+### Best Practices
+
+**Security:**
+- Use SSH keys instead of passwords for Linux VMs
+- Change default cloud-init passwords immediately
+- Keep VMs updated with security patches
+- Use firewall rules (ufw on Ubuntu/Debian)
+
+**Resource Management:**
+- Monitor VM resource usage via Proxmox UI
+- Adjust allocations based on actual usage
+- Don't over-allocate resources
+- Leave buffer for Proxmox host
+
+**Backups:**
+- Use Proxmox backup jobs for VMs
+- Store backups on separate storage
+- Test restore procedures regularly
+- Consider NAS for backup storage
+
+**Networking:**
+- Use static IPs for infrastructure VMs
+- DHCP acceptable for development VMs
+- Document IP allocations
+- Keep DNS records updated
+
+**Template Management:**
+- Rebuild templates monthly for security updates
+- Version template names (include date)
+- Test templates before production deployment
+- Keep old templates for rollback
+

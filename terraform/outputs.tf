@@ -243,3 +243,138 @@ output "deployment_timestamp" {
 # - GPU verification requires NVIDIA GPU Operator to be installed first
 # - Storage configuration assumes NFS CSI driver will be installed
 # - Network information matches the static IP configuration
+
+# ============================================================================
+# Traditional VMs Outputs
+# ============================================================================
+
+# Ubuntu VM Outputs
+# ----------------------------------------------------------------------------
+
+output "ubuntu_vm_id" {
+  description = "Ubuntu VM ID"
+  value       = var.deploy_ubuntu_vm ? module.ubuntu_vm[0].vm_id : null
+}
+
+output "ubuntu_vm_name" {
+  description = "Ubuntu VM name"
+  value       = var.deploy_ubuntu_vm ? module.ubuntu_vm[0].vm_name : null
+}
+
+output "ubuntu_ip_addresses" {
+  description = "Ubuntu VM IP addresses (requires QEMU agent)"
+  value       = var.deploy_ubuntu_vm ? module.ubuntu_vm[0].ipv4_addresses : null
+}
+
+# Debian VM Outputs
+# ----------------------------------------------------------------------------
+
+output "debian_vm_id" {
+  description = "Debian VM ID"
+  value       = var.deploy_debian_vm ? module.debian_vm[0].vm_id : null
+}
+
+output "debian_vm_name" {
+  description = "Debian VM name"
+  value       = var.deploy_debian_vm ? module.debian_vm[0].vm_name : null
+}
+
+output "debian_ip_addresses" {
+  description = "Debian VM IP addresses (requires QEMU agent)"
+  value       = var.deploy_debian_vm ? module.debian_vm[0].ipv4_addresses : null
+}
+
+# Arch Linux VM Outputs
+# ----------------------------------------------------------------------------
+
+output "arch_vm_id" {
+  description = "Arch Linux VM ID"
+  value       = var.deploy_arch_vm ? module.arch_vm[0].vm_id : null
+}
+
+output "arch_vm_name" {
+  description = "Arch Linux VM name"
+  value       = var.deploy_arch_vm ? module.arch_vm[0].vm_name : null
+}
+
+output "arch_ip_addresses" {
+  description = "Arch Linux VM IP addresses (requires QEMU agent)"
+  value       = var.deploy_arch_vm ? module.arch_vm[0].ipv4_addresses : null
+}
+
+# NixOS VM Outputs
+# ----------------------------------------------------------------------------
+
+output "nixos_vm_id" {
+  description = "NixOS VM ID"
+  value       = var.deploy_nixos_vm ? module.nixos_vm[0].vm_id : null
+}
+
+output "nixos_vm_name" {
+  description = "NixOS VM name"
+  value       = var.deploy_nixos_vm ? module.nixos_vm[0].vm_name : null
+}
+
+output "nixos_ip_addresses" {
+  description = "NixOS VM IP addresses (requires QEMU agent)"
+  value       = var.deploy_nixos_vm ? module.nixos_vm[0].ipv4_addresses : null
+}
+
+# Windows Server VM Outputs
+# ----------------------------------------------------------------------------
+
+output "windows_vm_id" {
+  description = "Windows Server VM ID"
+  value       = var.deploy_windows_vm ? module.windows_vm[0].vm_id : null
+}
+
+output "windows_vm_name" {
+  description = "Windows Server VM name"
+  value       = var.deploy_windows_vm ? module.windows_vm[0].vm_name : null
+}
+
+output "windows_ip_addresses" {
+  description = "Windows Server VM IP addresses (requires QEMU agent)"
+  value       = var.deploy_windows_vm ? module.windows_vm[0].ipv4_addresses : null
+}
+
+# Summary Output
+# ----------------------------------------------------------------------------
+
+output "deployed_vms_summary" {
+  description = "Summary of all deployed VMs"
+  value = {
+    talos = {
+      deployed    = true
+      vm_id      = proxmox_virtual_environment_vm.talos_node.vm_id
+      vm_name    = proxmox_virtual_environment_vm.talos_node.name
+      ip         = var.node_ip
+      gpu_enabled = var.enable_gpu_passthrough
+    }
+    ubuntu = var.deploy_ubuntu_vm ? {
+      deployed = true
+      vm_id   = module.ubuntu_vm[0].vm_id
+      vm_name = module.ubuntu_vm[0].vm_name
+    } : { deployed = false }
+    debian = var.deploy_debian_vm ? {
+      deployed = true
+      vm_id   = module.debian_vm[0].vm_id
+      vm_name = module.debian_vm[0].vm_name
+    } : { deployed = false }
+    arch = var.deploy_arch_vm ? {
+      deployed = true
+      vm_id   = module.arch_vm[0].vm_id
+      vm_name = module.arch_vm[0].vm_name
+    } : { deployed = false }
+    nixos = var.deploy_nixos_vm ? {
+      deployed = true
+      vm_id   = module.nixos_vm[0].vm_id
+      vm_name = module.nixos_vm[0].vm_name
+    } : { deployed = false }
+    windows = var.deploy_windows_vm ? {
+      deployed = true
+      vm_id   = module.windows_vm[0].vm_id
+      vm_name = module.windows_vm[0].vm_name
+    } : { deployed = false }
+  }
+}

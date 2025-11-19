@@ -162,3 +162,132 @@ install_disk = "/dev/sda"
 # - For multiple nodes, create separate .tfvars files (e.g., node1.tfvars, node2.tfvars)
 # - GPU passthrough requires IOMMU enabled in BIOS and GRUB configuration
 # - Single-node cluster requires allow_scheduling_on_control_plane = true
+
+# ============================================================================
+# Traditional VMs Configuration (Optional)
+# ============================================================================
+# Deploy traditional Linux and Windows VMs from Packer templates
+# All VMs are disabled by default - enable as needed
+
+# Common Configuration
+# ----------------------------------------------------------------------------
+
+common_tags = ["homelab", "infra"]
+
+# Cloud-init user configuration (applies to all Linux VMs)
+cloud_init_user     = "admin"
+cloud_init_password = "changeme"  # Change this!
+# cloud_init_ssh_keys = ["ssh-rsa AAAA... user@host"]
+
+# Network configuration
+default_gateway = "192.168.1.1"
+dns_servers     = ["192.168.1.1", "8.8.8.8", "8.8.4.4"]
+dns_domain      = "local"
+
+# Ubuntu VM
+# ----------------------------------------------------------------------------
+
+deploy_ubuntu_vm      = false  # Set to true to deploy
+ubuntu_template_name  = "ubuntu-24.04-golden-template-20251118"  # Update with actual template name
+ubuntu_vm_name        = "ubuntu-dev"
+ubuntu_vm_id          = 100
+ubuntu_cpu_cores      = 4
+ubuntu_memory         = 8192   # MB
+ubuntu_disk_size      = 40     # GB
+ubuntu_disk_storage   = "local-zfs"
+ubuntu_ip_address     = "dhcp"  # Or "192.168.1.100/24" for static
+ubuntu_on_boot        = true
+
+# Debian VM
+# ----------------------------------------------------------------------------
+
+deploy_debian_vm      = false  # Set to true to deploy
+debian_template_name  = "debian-12-golden-template-20251118"  # Update with actual template name
+debian_vm_name        = "debian-prod"
+debian_vm_id          = 200
+debian_cpu_cores      = 4
+debian_memory         = 8192   # MB
+debian_disk_size      = 40     # GB
+debian_disk_storage   = "local-zfs"
+debian_ip_address     = "dhcp"  # Or "192.168.1.101/24" for static
+debian_on_boot        = true
+
+# Arch Linux VM
+# ----------------------------------------------------------------------------
+
+deploy_arch_vm      = false  # Set to true to deploy
+arch_template_name  = "arch-golden-template-20251118"  # Update with actual template name
+arch_vm_name        = "arch-dev"
+arch_vm_id          = 300
+arch_cpu_cores      = 2
+arch_memory         = 4096   # MB
+arch_disk_size      = 30     # GB
+arch_disk_storage   = "local-zfs"
+arch_ip_address     = "dhcp"  # Or "192.168.1.102/24" for static
+arch_on_boot        = true
+
+# NixOS VM
+# ----------------------------------------------------------------------------
+
+deploy_nixos_vm      = false  # Set to true to deploy
+nixos_template_name  = "nixos-golden-template-20251118"  # Update with actual template name
+nixos_vm_name        = "nixos-lab"
+nixos_vm_id          = 400
+nixos_cpu_cores      = 2
+nixos_memory         = 4096   # MB
+nixos_disk_size      = 30     # GB
+nixos_disk_storage   = "local-zfs"
+nixos_ip_address     = "dhcp"  # Or "192.168.1.103/24" for static
+nixos_on_boot        = true
+
+# Windows Server 2022 VM
+# ----------------------------------------------------------------------------
+
+deploy_windows_vm           = false  # Set to true to deploy
+windows_template_name       = "windows-server-2022-golden-template-20251118"  # Update with actual template name
+windows_vm_name             = "windows-server"
+windows_vm_id               = 500
+windows_cpu_cores           = 4
+windows_memory              = 8192   # MB
+windows_disk_size           = 100    # GB
+windows_disk_storage        = "local-zfs"
+windows_ip_address          = "dhcp"  # Or "192.168.1.104/24" for static
+windows_cloud_init_user     = "Administrator"
+windows_cloud_init_password = "ChangeMe123!"  # Change this!
+windows_on_boot             = true
+
+# ============================================================================
+# Traditional VMs Notes
+# ============================================================================
+#
+# Template Names:
+# - Update template names after running Packer builds
+# - Packer adds timestamps: "ubuntu-24.04-golden-template-20251118-1234"
+# - Find templates in Proxmox UI or via: qm list
+#
+# VM IDs:
+# - Must be unique across entire Proxmox cluster
+# - Talos typically uses VM ID from Packer (e.g., 10000)
+# - Traditional VMs use ranges: Ubuntu 100-199, Debian 200-299, etc.
+#
+# Resource Allocation:
+# - Total available: ~76GB RAM, 10-11 cores (after Proxmox + Talos)
+# - Example: Talos=32GB+8c, Ubuntu=16GB+4c, Debian=16GB+4c, Arch=4GB+2c
+# - Adjust based on workload requirements
+# - See CLAUDE.md for detailed allocation examples
+#
+# IP Addresses:
+# - DHCP: Automatic (requires DHCP server)
+# - Static: "192.168.1.100/24" format (update gateway and netmask)
+# - Ensure IPs don't conflict with existing devices
+#
+# Deployment:
+# - Deploy all: terraform apply
+# - Deploy specific VM: terraform apply -target=module.ubuntu_vm
+# - Skip VM: Set deploy_*_vm = false
+#
+# Cloud-init:
+# - All Linux templates have cloud-init pre-installed
+# - Windows uses Cloudbase-Init (Windows equivalent)
+# - SSH keys recommended for Linux (password auth less secure)
+# - Passwords are temporary - change after first login
