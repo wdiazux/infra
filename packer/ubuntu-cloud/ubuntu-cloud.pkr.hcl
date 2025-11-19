@@ -16,7 +16,7 @@ packer {
 
 # Local variables
 locals {
-  timestamp = formatdate("YYYYMMDD-hhmm", timestamp())
+  timestamp = formatdate("YYYYMMDD", timestamp())
   template_name = "${var.template_name}-${local.timestamp}"
 
   # Cloud image URL and checksum

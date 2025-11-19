@@ -106,8 +106,6 @@ data "talos_machine_configuration" "node" {
             validSubnets = ["${var.node_ip}/${var.node_netmask}"]
           }
         }
-        # NVIDIA GPU configuration (if enabled)
-        ${var.enable_gpu_passthrough ? "sysctls: { \"net.core.bpf_jit_harden\": \"0\" }" : ""}
       }
     }),
     # Enable KubePrism (local caching proxy for Kubernetes API)
@@ -121,6 +119,14 @@ data "talos_machine_configuration" "node" {
         }
       }
     }),
+    # NVIDIA GPU sysctls (if GPU passthrough is enabled)
+    var.enable_gpu_passthrough ? yamlencode({
+      machine = {
+        sysctls = {
+          "net.core.bpf_jit_harden" = "0"
+        }
+      }
+    }) : "",
     # Allow scheduling on control plane (required for single-node)
     var.allow_scheduling_on_control_plane ? yamlencode({
       cluster = {
@@ -200,6 +206,13 @@ resource "proxmox_virtual_environment_vm" "talos_node" {
   # BIOS/EFI configuration
   bios = "ovmf"
 
+  efi_disk {
+    datastore_id      = var.node_disk_storage
+    file_format       = "raw"
+    type              = "4m"
+    pre_enrolled_keys = true
+  }
+
   # Boot order
   boot_order = ["scsi0"]
 
@@ -221,6 +234,11 @@ resource "proxmox_virtual_environment_vm" "talos_node" {
 
   # Lifecycle
   lifecycle {
+    precondition {
+      condition     = length(data.proxmox_virtual_environment_vms.talos_template.vms) > 0
+      error_message = "Talos template '${var.talos_template_name}' not found on Proxmox node '${var.proxmox_node}'. Build the template with Packer first."
+    }
+
     ignore_changes = [
       # Ignore changes to template-derived attributes
       clone,
