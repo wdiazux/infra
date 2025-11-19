@@ -52,17 +52,17 @@
     # ==========================================================================
 
     - name: Include Debian/Ubuntu package installation tasks
-      ansible.builtin.include_tasks: tasks/debian-packages.yml
+      ansible.builtin.include_tasks: tasks/debian_packages.yml
       when: ansible_os_family == "Debian"
       tags: [debian, ubuntu]
 
     - name: Include Arch Linux package installation tasks
-      ansible.builtin.include_tasks: tasks/archlinux-packages.yml
+      ansible.builtin.include_tasks: tasks/archlinux_packages.yml
       when: ansible_os_family == "Archlinux"
       tags: [arch]
 
     - name: Include Windows package installation tasks
-      ansible.builtin.include_tasks: tasks/windows-packages.yml
+      ansible.builtin.include_tasks: tasks/windows_packages.yml
       when: ansible_os_family == "Windows"
       tags: [windows]
 

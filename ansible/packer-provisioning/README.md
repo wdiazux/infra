@@ -6,11 +6,11 @@ This directory contains Ansible playbooks and tasks used during Packer image bui
 
 ```
 ansible/packer-provisioning/
-├── install-baseline-packages.yml    # Main orchestration playbook
+├── install_baseline_packages.yml    # Main orchestration playbook
 ├── tasks/                            # Modular OS-specific tasks
-│   ├── debian-packages.yml           # Debian/Ubuntu package installation
-│   ├── archlinux-packages.yml        # Arch Linux package installation
-│   └── windows-packages.yml          # Windows package installation (Chocolatey)
+│   ├── debian_packages.yml           # Debian/Ubuntu package installation
+│   ├── archlinux_packages.yml        # Arch Linux package installation
+│   └── windows_packages.yml          # Windows package installation (Chocolatey)
 └── README.md                         # This file
 ```
 
@@ -39,7 +39,7 @@ Layer 2: TERRAFORM
 ├─ Deploy VMs from golden images
 └─ Configure VM resources (CPU, RAM, disk)
 
-Layer 3: ANSIBLE DAY 1 (../playbooks/day1-*.yml)
+Layer 3: ANSIBLE DAY 1 (../playbooks/day1_*.yml)
 ├─ Instance-specific configuration ONLY
 └─ No package installation (already in golden image)
 ```
@@ -51,7 +51,7 @@ All Packer templates reference the main playbook:
 ```hcl
 # Debian/Ubuntu example
 provisioner "ansible" {
-  playbook_file = "../../ansible/packer-provisioning/install-baseline-packages.yml"
+  playbook_file = "../../ansible/packer-provisioning/install_baseline_packages.yml"
   user          = "ubuntu"
   use_proxy     = false
   extra_arguments = [
@@ -61,7 +61,7 @@ provisioner "ansible" {
 
 # Arch Linux example
 provisioner "ansible" {
-  playbook_file = "../../ansible/packer-provisioning/install-baseline-packages.yml"
+  playbook_file = "../../ansible/packer-provisioning/install_baseline_packages.yml"
   user          = "root"
   use_proxy     = false
   extra_arguments = [
@@ -71,7 +71,7 @@ provisioner "ansible" {
 
 # Windows example
 provisioner "ansible" {
-  playbook_file = "../../ansible/packer-provisioning/install-baseline-packages.yml"
+  playbook_file = "../../ansible/packer-provisioning/install_baseline_packages.yml"
   user          = "Administrator"
   use_proxy     = false
   extra_arguments = [
@@ -106,7 +106,7 @@ provisioner "ansible" {
 
 ### Option 1: Add to Common Packages (All OS)
 
-Edit `install-baseline-packages.yml`:
+Edit `install_baseline_packages.yml`:
 
 ```yaml
 common_packages:
@@ -122,7 +122,7 @@ common_packages:
 
 Edit the appropriate task file:
 
-**Debian/Ubuntu:** `tasks/debian-packages.yml`
+**Debian/Ubuntu:** `tasks/debian_packages.yml`
 ```yaml
 - name: Install baseline packages (Debian/Ubuntu)
   ansible.builtin.apt:
@@ -130,7 +130,7 @@ Edit the appropriate task file:
     state: present
 ```
 
-**Arch Linux:** `tasks/archlinux-packages.yml`
+**Arch Linux:** `tasks/archlinux_packages.yml`
 ```yaml
 - name: Install baseline packages (Arch Linux)
   community.general.pacman:
@@ -138,7 +138,7 @@ Edit the appropriate task file:
     state: present
 ```
 
-**Windows:** `tasks/windows-packages.yml`
+**Windows:** `tasks/windows_packages.yml`
 ```yaml
 - name: Install baseline packages (Windows)
   ansible.windows.win_chocolatey:
@@ -153,12 +153,12 @@ Edit the appropriate task file:
 
 ### Syntax Check
 ```bash
-ansible-playbook --syntax-check install-baseline-packages.yml
+ansible-playbook --syntax-check install_baseline_packages.yml
 ```
 
 ### Lint
 ```bash
-ansible-lint install-baseline-packages.yml
+ansible-lint install_baseline_packages.yml
 ansible-lint tasks/*.yml
 ```
 
@@ -223,7 +223,7 @@ winrm_insecure = true
 
 - **Packer Templates:** `../../packer/*/README.md`
 - **Ansible Baseline Role:** `../roles/baseline/README.md`
-- **Day 1 Playbooks:** `../playbooks/day1-*.yml`
+- **Day 1 Playbooks:** `../playbooks/day1_*.yml`
 - **Duplication Audit:** `../../docs/DUPLICATION-AUDIT-2025.md`
 - **Ansible Best Practices:** https://docs.ansible.com/ansible/latest/tips_tricks/ansible_tips_tricks.html
 - **Packer Ansible Provisioner:** https://developer.hashicorp.com/packer/integrations/hashicorp/ansible/latest/components/provisioner/ansible

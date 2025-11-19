@@ -90,7 +90,7 @@ build {
 
   # Install baseline packages with Ansible
   provisioner "ansible" {
-    playbook_file = "../../ansible/packer-provisioning/install-baseline-packages.yml"
+    playbook_file = "../../ansible/packer-provisioning/install_baseline_packages.yml"
     user          = "ubuntu"
     use_proxy     = false
 

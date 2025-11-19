@@ -1,6 +1,6 @@
 ---
 # Arch Linux Package Installation Tasks
-# This file is included by install-baseline-packages.yml for Arch Linux systems
+# This file is included by install_baseline_packages.yml for Arch Linux systems
 
 - name: Update package database (Arch Linux)
   community.general.pacman:

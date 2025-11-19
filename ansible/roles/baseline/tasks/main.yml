@@ -90,22 +90,22 @@
 # ==============================================================================
 
 - name: Include Debian/Ubuntu tasks
-  ansible.builtin.include_tasks: Debian.yml
+  ansible.builtin.include_tasks: debian.yml
   when: ansible_os_family == "Debian"
   tags: [debian, ubuntu]
 
 - name: Include Arch Linux tasks
-  ansible.builtin.include_tasks: Archlinux.yml
+  ansible.builtin.include_tasks: archlinux.yml
   when: ansible_os_family == "Archlinux"
   tags: [arch]
 
 - name: Include NixOS tasks
-  ansible.builtin.include_tasks: NixOS.yml
+  ansible.builtin.include_tasks: nixos.yml
   when: ansible_distribution == "NixOS"
   tags: [nixos]
 
 - name: Include Windows tasks
-  ansible.builtin.include_tasks: Windows.yml
+  ansible.builtin.include_tasks: windows.yml
   when: ansible_os_family == "Windows"
   tags: [windows]
 
