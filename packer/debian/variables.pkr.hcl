@@ -51,8 +51,8 @@ variable "debian_iso_url" {
 
 variable "debian_iso_checksum" {
   type        = string
-  description = "SHA256 checksum of Debian ISO"
-  default     = "sha256:c0a63f94e5b8c7c8e7fb7ddfcbe2c9c51f0b54b5"  # Update with actual checksum
+  description = "SHA256 checksum of Debian ISO (file: reference auto-validates against official checksums)"
+  default     = "file:https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/SHA256SUMS"
 }
 
 # Template Configuration

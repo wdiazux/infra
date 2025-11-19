@@ -13,7 +13,7 @@ proxmox_skip_tls_verify = true
 # Ubuntu Version and ISO
 ubuntu_version = "24.04"  # Noble Numbat LTS
 ubuntu_iso_url = "https://releases.ubuntu.com/24.04/ubuntu-24.04.1-live-server-amd64.iso"
-ubuntu_iso_checksum = "sha256:e240e4b801f7bb68c20d1356b60968ad0c33a41d00d828e74ceb3364a0317be9"  # Get from releases.ubuntu.com
+ubuntu_iso_checksum = "file:https://releases.ubuntu.com/24.04/SHA256SUMS"  # Auto-validates against official checksums
 
 # Template Configuration
 template_name        = "ubuntu-24.04-golden-template"

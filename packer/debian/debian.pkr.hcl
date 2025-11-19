@@ -71,8 +71,13 @@ source "proxmox-iso" "debian" {
   # QEMU Agent
   qemu_agent = true
 
-  # BIOS (legacy boot for Debian)
-  bios = "seabios"
+  # UEFI boot configuration
+  bios = "ovmf"
+  efi_config {
+    efi_storage_pool  = var.vm_disk_storage
+    efi_type          = "4m"
+    pre_enrolled_keys = true
+  }
 
   # Boot configuration
   boot_wait = "5s"
