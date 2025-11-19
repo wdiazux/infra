@@ -31,7 +31,7 @@ vm_disk_storage = "local-zfs"
 vm_network_bridge = "vmbr0"
 
 # SSH (for Packer provisioning only)
-ssh_username = "ubuntu"
+ssh_username = "wdiaz"
 ssh_password = "ubuntu"
 ssh_timeout  = "20m"
 

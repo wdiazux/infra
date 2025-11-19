@@ -63,7 +63,7 @@ source "proxmox-clone" "debian-cloud" {
   cloud_init_storage_pool = var.vm_disk_storage
 
   # SSH configuration
-  ssh_username = "debian"
+  ssh_username = "wdiaz"
   ssh_password = var.ssh_password
   ssh_timeout  = "10m"
 
@@ -87,7 +87,7 @@ build {
   # Install baseline packages with Ansible
   provisioner "ansible" {
     playbook_file = "../../ansible/packer-provisioning/install_baseline_packages.yml"
-    user          = "debian"
+    user          = "wdiaz"
     use_proxy     = false
 
     # Ansible variables passed to playbook
