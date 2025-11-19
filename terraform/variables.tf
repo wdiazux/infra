@@ -364,7 +364,7 @@ variable "enable_cloud_init" {
 variable "cloud_init_user" {
   description = "Default cloud-init username for traditional VMs"
   type        = string
-  default     = "admin"
+  default     = "wdiaz"
 }
 
 variable "cloud_init_password" {
