@@ -21,7 +21,7 @@ packer {
 # Local variables
 locals {
   timestamp = formatdate("YYYYMMDD", timestamp())
-  template_name = "${var.template_name}-${local.timestamp}"
+  template_name = var.template_name
 }
 
 # Proxmox ISO Builder
