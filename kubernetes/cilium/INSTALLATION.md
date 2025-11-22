@@ -2,6 +2,20 @@
 
 This guide provides step-by-step instructions for installing and configuring Cilium as the CNI (Container Network Interface) and kube-proxy replacement for your Talos Linux cluster.
 
+## ⚠️ CRITICAL PREREQUISITES
+
+**BEFORE installing Cilium, ensure:**
+
+1. **Talos cluster is deployed and bootstrapped** via Terraform (`terraform apply` completed successfully)
+2. **Kubernetes API is accessible** via `kubectl --kubeconfig=./kubeconfig get nodes`
+3. **NO OTHER CNI IS INSTALLED** - Cilium must be the first and only CNI
+4. **Talos machine config has `cni.name: none`** and `proxy.disabled: true` (already configured in Terraform)
+5. **KubePrism is enabled** on port 7445 (already configured in Terraform)
+
+**IMPORTANT**: Nodes will show `NotReady` until Cilium is installed. This is expected behavior.
+
+---
+
 ## Table of Contents
 
 1. [Prerequisites](#prerequisites)

@@ -2,6 +2,29 @@
 
 This document explains how Longhorn storage manager is integrated into the Terraform configuration for Talos Linux on Proxmox.
 
+## ⚠️ CRITICAL PREREQUISITES
+
+**BEFORE running `terraform apply`, you MUST:**
+
+1. **Generate Talos Factory Schematic ID** with required system extensions:
+   - `siderolabs/iscsi-tools` (required for Longhorn)
+   - `siderolabs/util-linux-tools` (required for Longhorn)
+   - `siderolabs/qemu-guest-agent` (recommended for Proxmox)
+   - Visit: https://factory.talos.dev/
+
+2. **Set `talos_schematic_id` in `terraform.tfvars`**:
+   ```hcl
+   talos_schematic_id = "your-64-character-hex-schematic-id"
+   ```
+
+3. **Ensure data path consistency**: Longhorn uses `/var/lib/longhorn` (matches Terraform kubelet mount)
+
+**Without these prerequisites, your cluster will boot but Longhorn will FAIL to initialize!**
+
+See [Step 1: Generate Talos Factory Schematic ID](#step-1-generate-talos-factory-schematic-id) for detailed instructions.
+
+---
+
 ## Overview
 
 Longhorn is configured as the **primary storage manager** for almost all services in the Talos Kubernetes cluster. The Terraform configuration automatically includes all necessary Talos machine config patches for Longhorn to function properly.

@@ -8,9 +8,9 @@
 
 # Default Settings
 defaultSettings:
-  # Talos-specific: Use /var/mnt/longhorn instead of /var/lib/longhorn
-  # This follows Talos conventions for ephemeral storage
-  defaultDataPath: /var/mnt/longhorn
+  # CRITICAL: Must match Terraform kubelet extraMounts configuration
+  # Terraform mounts /var/lib/longhorn with rshared propagation (main.tf line 120)
+  defaultDataPath: /var/lib/longhorn
 
   # Single-node configuration: Use 1 replica
   # IMPORTANT: When expanding to 3 nodes, change this to 3
