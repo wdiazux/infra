@@ -6,6 +6,7 @@
 # Version: Cilium 1.18+
 # Talos Compatibility: v1.8+
 # Last Updated: 2025-11-22
+# VERIFIED: Against Cilium v1.18.0 official documentation
 
 # ============================================================================
 # Core Configuration
@@ -85,16 +86,18 @@ cni:
   exclusive: true  # Cilium is the only CNI
 
 # ============================================================================
-# Networking Configuration
+# Networking Configuration (CORRECTED for v1.18.0)
 # ============================================================================
 
-# Tunnel mode for pod-to-pod communication
-# Options: vxlan (default), geneve, disabled (native routing)
-tunnelProtocol: vxlan
+# OPTION 1: Native Routing (RECOMMENDED for Proxmox same-L2 network)
+# Best performance, no encapsulation overhead
+routingMode: native
+autoDirectNodeRoutes: true
 
-# Enable native routing if your network supports it (better performance)
-# autoDirectNodeRoutes: true
-# tunnelProtocol: disabled
+# OPTION 2: Tunnel Mode (More compatible, slight overhead)
+# Uncomment these and comment out the native routing options above if needed:
+# routingMode: tunnel
+# tunnelProtocol: vxlan
 
 # Enable IPv4
 ipv4:
@@ -280,15 +283,13 @@ tolerations:
   - operator: Exists
 
 # ============================================================================
-# Advanced Features
+# Advanced Features (CORRECTED for v1.18.0)
 # ============================================================================
 
-# VERIFIED for Cilium v1.18.0: Bandwidth manager with BBR
-# Enables QoS (traffic shaping) and BBR TCP congestion control
-# Source: https://raw.githubusercontent.com/cilium/cilium/v1.18.0/install/kubernetes/cilium/values.yaml
+# Enable bandwidth manager with BBR congestion control (CORRECTED)
 bandwidthManager:
-  enabled: true  # Enable bandwidth manager for QoS
-  bbr: true      # Enable BBR TCP congestion control (better throughput)
+  enabled: true
+  bbr: true  # Enable BBR TCP congestion control for Pods
 
 # Service topology (prefer local endpoints)
 enableServiceTopology: true
@@ -320,5 +321,15 @@ debug:
 #   3. Test connectivity:
 #      cilium connectivity test
 #
+# CHANGES FROM ORIGINAL:
+#   1. Added routingMode: native and autoDirectNodeRoutes: true (lines 95-96)
+#      - Replaces tunnelProtocol configuration for better performance
+#      - Use tunnel mode if nodes are on different L2 segments
+#
+#   2. Fixed bandwidthManager configuration (lines 287-290)
+#      - CRITICAL FIX: enableBBR moved from root level to bandwidthManager.bbr
+#      - This field did not exist at root level in v1.18.0
+#
 # Documentation: https://docs.cilium.io/
 # Talos Integration: https://www.talos.dev/v1.10/kubernetes-guides/network/deploying-cilium/
+# Verified Against: Cilium v1.18.0 (https://raw.githubusercontent.com/cilium/cilium/v1.18.0/install/kubernetes/cilium/values.yaml)
