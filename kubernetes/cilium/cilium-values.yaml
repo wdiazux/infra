@@ -6,6 +6,11 @@
 # Version: Cilium 1.18+
 # Talos Compatibility: v1.8+
 # Last Updated: 2025-11-22
+#
+# CROSS-REFERENCES:
+# - Installation guide: kubernetes/cilium/INSTALLATION.md
+# - L2 IP pool config: kubernetes/cilium/l2-ippool.yaml
+# - Terraform Talos config: terraform/main.tf (CNI disabled, kube-proxy disabled)
 
 # ============================================================================
 # Core Configuration
@@ -34,6 +39,11 @@ ipam:
   mode: kubernetes
   operator:
     clusterPoolIPv4PodCIDRList:
+      # IMPORTANT: Verify this doesn't conflict with:
+      # - Your LAN network (e.g., 192.168.1.0/24)
+      # - Kubernetes service CIDR (typically 10.96.0.0/12)
+      # - Proxmox host network
+      # Default 10.244.0.0/16 is safe for most networks
       - "10.244.0.0/16"  # Default pod CIDR, adjust if different
 
 # ============================================================================

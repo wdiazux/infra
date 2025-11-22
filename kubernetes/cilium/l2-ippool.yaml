@@ -49,6 +49,10 @@ spec:
   loadBalancerIPs: true
 
   # Network interfaces to use for L2 announcements
+  # IMPORTANT: Verify your interface name before applying!
+  # Run: talosctl -n <node-ip> get links
+  # Or: kubectl -n kube-system exec ds/cilium -- ip link show
+  #
   # Common interface names:
   # - eth0 (most common)
   # - ens18 (Proxmox default)

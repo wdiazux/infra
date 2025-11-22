@@ -682,8 +682,8 @@ This section provides a comprehensive list of tools specifically for Talos Linux
 
 **Terraform Stack:**
 - **Providers**:
-  - `siderolabs/talos` (~> 0.7.1) - Talos configuration and bootstrapping
-  - `bpg/proxmox` (~> 0.75.0) - Proxmox VM provisioning
+  - `siderolabs/talos` (~> 0.9.0) - Talos configuration and bootstrapping
+  - `bpg/proxmox` (~> 0.86.0) - Proxmox VM provisioning
 
 **Talos Kubernetes Stack:**
 - **Networking**: Cilium (eBPF-based CNI with L2 load balancing)
@@ -742,14 +742,14 @@ This section provides a comprehensive list of tools specifically for Talos Linux
    - Purpose: Official HashiCorp-verified Terraform provider for Talos
    - Registry: https://registry.terraform.io/providers/siderolabs/talos/latest
    - Use: Configure nodes, apply patches, install Kubernetes, bootstrap etcd
-   - Version: ~> 0.7.1 (as of 2025)
+   - Version: ~> 0.9.0 (as of 2025)
    - **Why chosen**: Official provider with best support and features
 
 2. **bpg/proxmox** (latest version) - **CHOSEN**
    - Purpose: Proxmox VE provider for Terraform
    - Registry: https://registry.terraform.io/providers/bpg/proxmox/latest
    - Use: Provision VMs, manage templates, configure hardware
-   - Version: ~> 0.75.0 (as of 2025)
+   - Version: ~> 0.86.0 (as of 2025)
    - **Why chosen**: Most maintained and feature-complete Proxmox provider
 
 **Recommended Modules:**
@@ -1050,8 +1050,8 @@ This section provides a comprehensive list of tools specifically for Talos Linux
 | talosctl | Match Talos version | Client-server compatibility |
 | kubectl | Match K8s version | Within 1 minor version |
 | Terraform | v1.9+ | Latest stable |
-| siderolabs/talos provider | ~> 0.7.1 | As of April 2025 |
-| bpg/proxmox provider | ~> 0.75.0 | As of April 2025 |
+| siderolabs/talos provider | ~> 0.9.0 | As of April 2025 |
+| bpg/proxmox provider | ~> 0.86.0 | As of April 2025 |
 | Cilium | v1.18+ | Current stable |
 | FluxCD | v2.4+ | Current stable |
 | kube-prometheus-stack | Latest | Helm chart |
@@ -2171,7 +2171,7 @@ atlantis unlock                            # Unlock state (via PR comment)
 - **2025-11-18**: Talos Linux recommended tools and ecosystem
   - Added comprehensive "Talos Linux Recommended Tools" section
   - Documented core Talos tools (talosctl, kubectl, Talos Image Factory)
-  - Added Terraform providers for Talos (siderolabs/talos ~> 0.7.1, bpg/proxmox ~> 0.75.0)
+  - Added Terraform providers for Talos (siderolabs/talos ~> 0.9.0, bpg/proxmox ~> 0.86.0)
   - Documented Terraform modules (bbtechsys/talos/proxmox)
   - Added Ansible roles (mgrzybek/talos-ansible-playbooks, sergelogvinov/ansible-role-talos-boot)
   - Documented Proxmox integration tools (QEMU Guest Agent extension)

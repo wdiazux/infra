@@ -377,7 +377,7 @@ resource "local_file" "talosconfig" {
 
 # Wait for Kubernetes API to be ready
 resource "null_resource" "wait_for_kubernetes" {
-  count = var.auto_bootstrap ? 1 : 0
+  count = var.auto_bootstrap && var.generate_kubeconfig ? 1 : 0
 
   provisioner "local-exec" {
     command = <<-EOT
@@ -388,7 +388,8 @@ resource "null_resource" "wait_for_kubernetes" {
   }
 
   depends_on = [
-    local_file.kubeconfig
+    local_file.kubeconfig,
+    talos_machine_bootstrap.cluster
   ]
 }
 

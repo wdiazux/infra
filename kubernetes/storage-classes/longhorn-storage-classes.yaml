@@ -48,7 +48,7 @@ parameters:
   fsType: "ext4"
   dataLocality: "strict-local"  # Ensure data is on same node as workload
   migratable: "false"
-  diskSelector: "ssd"  # Only use if you label disks with 'ssd' tag
+  diskSelector: "ssd,nvme"  # Comma-separated disk tags
   # Uncomment if using specific disk tags:
   # nodeSelector: "storage,fast"
 

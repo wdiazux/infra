@@ -5,6 +5,12 @@
 # Version: Longhorn 1.7.x+
 # Talos Compatibility: v1.8+
 # Last Updated: 2025-11-22
+#
+# CROSS-REFERENCES:
+# - Installation guide: kubernetes/longhorn/INSTALLATION.md
+# - Storage classes: kubernetes/storage-classes/longhorn-storage-classes.yaml
+# - Terraform Talos config: terraform/main.tf (lines 105-125 for Longhorn requirements)
+# - Talos patch: talos/patches/longhorn-requirements.yaml
 
 # Default Settings
 defaultSettings:
