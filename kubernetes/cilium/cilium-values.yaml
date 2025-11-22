@@ -1,0 +1,293 @@
+# Cilium Helm Values for Talos Linux Single-Node Cluster
+#
+# This configuration optimizes Cilium as the CNI and kube-proxy replacement
+# for a single-node Talos cluster on Proxmox.
+#
+# Version: Cilium 1.18+
+# Talos Compatibility: v1.8+
+# Last Updated: 2025-11-22
+
+# ============================================================================
+# Core Configuration
+# ============================================================================
+
+# Cluster configuration
+cluster:
+  name: homelab-k8s
+  id: 0  # Set to unique ID if running multiple clusters
+
+# ============================================================================
+# Kubernetes API Server Configuration
+# ============================================================================
+
+# CRITICAL for Talos: Use KubePrism for API server access
+# KubePrism runs on port 7445 on each node
+k8sServiceHost: localhost
+k8sServicePort: 7445
+
+# ============================================================================
+# IPAM Configuration
+# ============================================================================
+
+# Use Kubernetes IPAM (recommended for Talos)
+ipam:
+  mode: kubernetes
+  operator:
+    clusterPoolIPv4PodCIDRList:
+      - "10.244.0.0/16"  # Default pod CIDR, adjust if different
+
+# ============================================================================
+# kube-proxy Replacement
+# ============================================================================
+
+# CRITICAL: Enable kube-proxy replacement
+# This allows Cilium to fully replace kube-proxy
+kubeProxyReplacement: true
+
+# Socket LB for direct routing (best performance)
+socketLB:
+  enabled: true
+
+# Node port range
+nodePort:
+  enabled: true
+  range: "30000-32767"
+
+# ============================================================================
+# L2 Load Balancing (LB IPAM)
+# ============================================================================
+
+# Enable L2 announcements for LoadBalancer services
+# This allows you to use LoadBalancer type without external load balancer
+l2announcements:
+  enabled: true
+
+# LB IPAM for assigning IPs to LoadBalancer services
+# Configure IP pools in a separate CRD after installation
+externalIPs:
+  enabled: true
+
+# ============================================================================
+# BGP (Optional - Disabled for Simple Homelab)
+# ============================================================================
+
+# Disable BGP for homelab (use L2 instead)
+bgpControlPlane:
+  enabled: false
+
+# ============================================================================
+# CNI Configuration
+# ============================================================================
+
+# CNI installation mode
+cni:
+  install: true
+  exclusive: true  # Cilium is the only CNI
+
+# ============================================================================
+# Networking Configuration
+# ============================================================================
+
+# Tunnel mode for pod-to-pod communication
+# Options: vxlan (default), geneve, disabled (native routing)
+tunnelProtocol: vxlan
+
+# Enable native routing if your network supports it (better performance)
+# autoDirectNodeRoutes: true
+# tunnelProtocol: disabled
+
+# Enable IPv4
+ipv4:
+  enabled: true
+
+# Disable IPv6 (enable if needed)
+ipv6:
+  enabled: false
+
+# ============================================================================
+# eBPF Configuration
+# ============================================================================
+
+# Enable eBPF-based masquerading (better performance than iptables)
+bpf:
+  masquerade: true
+  # Enable host routing for better performance
+  hostRouting: true
+  # Tproxy for transparent proxying
+  tproxy: true
+
+# eBPF map sizes (adjust for single node)
+bpfMapDynamicSizeRatio: 0.0025
+
+# ============================================================================
+# Security & Encryption
+# ============================================================================
+
+# Encryption (disabled by default for performance)
+# Enable if you need pod-to-pod encryption
+encryption:
+  enabled: false
+  type: wireguard  # or ipsec
+
+# Enable network policies
+policyEnforcementMode: default
+
+# ============================================================================
+# Operator Configuration
+# ============================================================================
+
+operator:
+  enabled: true
+  replicas: 1  # Single node, so 1 replica
+
+  # Resource limits for operator
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# ============================================================================
+# Agent Configuration (Runs on Each Node)
+# ============================================================================
+
+# Single node, so some settings are adjusted
+resources:
+  limits:
+    cpu: 4000m
+    memory: 4Gi
+  requests:
+    cpu: 100m
+    memory: 512Mi
+
+# ============================================================================
+# Hubble (Observability) - Optional
+# ============================================================================
+
+# Hubble for network observability and flow visualization
+hubble:
+  enabled: true
+
+  # Hubble relay for aggregating flows
+  relay:
+    enabled: true
+    replicas: 1
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+
+  # Hubble UI for web-based visualization
+  ui:
+    enabled: true
+    replicas: 1
+    ingress:
+      enabled: false  # Set to true if using ingress
+      # hosts:
+      #   - hubble-ui.yourdomain.com
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+
+# ============================================================================
+# Monitoring & Metrics
+# ============================================================================
+
+# Prometheus metrics
+prometheus:
+  enabled: true
+  serviceMonitor:
+    enabled: false  # Set to true if kube-prometheus-stack is installed
+
+# Grafana integration
+grafana:
+  enabled: false  # Set to true if using Grafana
+
+# ============================================================================
+# Device Detection (Talos-Specific)
+# ============================================================================
+
+# Auto-detect devices (important for Talos)
+devices: ""  # Leave empty for auto-detection
+
+# ============================================================================
+# Rolling Update Strategy
+# ============================================================================
+
+# Update strategy for agent DaemonSet
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
+
+# ============================================================================
+# Security Context
+# ============================================================================
+
+# Talos requires specific security contexts
+securityContext:
+  privileged: true
+
+# ============================================================================
+# Node Selector & Tolerations
+# ============================================================================
+
+# No node selector needed for single node
+nodeSelector: {}
+
+# Tolerate all taints (including control-plane)
+tolerations:
+  - operator: Exists
+
+# ============================================================================
+# Advanced Features
+# ============================================================================
+
+# Enable bandwidth manager (traffic shaping)
+bandwidthManager:
+  enabled: false  # Enable if you need QoS
+
+# Enable BBR congestion control (better performance)
+enableBBR: false
+
+# Service topology (prefer local endpoints)
+enableServiceTopology: true
+
+# ============================================================================
+# Debug & Development
+# ============================================================================
+
+# Enable debug mode (for troubleshooting)
+debug:
+  enabled: false
+
+# ============================================================================
+# Notes
+# ============================================================================
+#
+# Installation:
+#   helm install cilium cilium/cilium \
+#     --namespace kube-system \
+#     --values cilium-values.yaml
+#
+# Post-Installation:
+#   1. Verify Cilium is running:
+#      cilium status
+#      kubectl get pods -n kube-system -l k8s-app=cilium
+#
+#   2. Configure L2 IP pools (see INSTALLATION.md)
+#
+#   3. Test connectivity:
+#      cilium connectivity test
+#
+# Documentation: https://docs.cilium.io/
+# Talos Integration: https://www.talos.dev/v1.10/kubernetes-guides/network/deploying-cilium/

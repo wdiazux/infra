@@ -1,0 +1,122 @@
+# Cilium L2 Load Balancer IP Pool Configuration
+#
+# This configures Cilium to announce LoadBalancer service IPs on Layer 2
+# without requiring an external load balancer like MetalLB.
+#
+# Usage:
+#   1. Update the CIDR range to match your network
+#   2. kubectl apply -f l2-ippool.yaml
+#
+# Last Updated: 2025-11-22
+
+---
+# IP Pool for LoadBalancer Services
+apiVersion: "cilium.io/v2alpha1"
+kind: CiliumLoadBalancerIPPool
+metadata:
+  name: homelab-pool
+spec:
+  # IMPORTANT: Adjust this CIDR to your network!
+  # Choose IPs that:
+  # - Are in your LAN subnet
+  # - Do NOT conflict with DHCP range
+  # - Are NOT used by other devices
+  #
+  # Examples:
+  # - 192.168.1.240/28 gives you 192.168.1.241-254 (14 IPs)
+  # - 192.168.1.200/29 gives you 192.168.1.201-206 (6 IPs)
+  # - 10.0.0.240/28 gives you 10.0.0.241-254 (14 IPs)
+  blocks:
+    - cidr: "192.168.1.240/28"  # CHANGE ME to your IP range
+
+  # Service selector (which services can use this pool)
+  # Empty matchLabels means all LoadBalancer services can use this pool
+  serviceSelector:
+    matchLabels: {}
+
+  # Optional: Disable this pool (set to true to enable)
+  # disabled: false
+
+---
+# L2 Announcement Policy
+# This tells Cilium how to announce IPs on Layer 2
+apiVersion: "cilium.io/v2alpha1"
+kind: CiliumL2AnnouncementPolicy
+metadata:
+  name: homelab-l2-policy
+spec:
+  # Announce LoadBalancer IPs
+  loadBalancerIPs: true
+
+  # Network interfaces to use for L2 announcements
+  # Common interface names:
+  # - eth0 (most common)
+  # - ens18 (Proxmox default)
+  # - ens192 (some systems)
+  #
+  # Use regex to match interface name
+  interfaces:
+    - ^eth0  # CHANGE ME if your interface is different
+
+  # Optional: Specific interface by name
+  # interfaces:
+  #   - eth0
+  #   - ens18
+
+  # Node selector (which nodes can announce IPs)
+  # Empty matchLabels means all nodes
+  nodeSelector:
+    matchLabels: {}
+
+  # Optional: Only announce from control plane nodes
+  # nodeSelector:
+  #   matchLabels:
+  #     node-role.kubernetes.io/control-plane: ""
+
+---
+# Example: How to find your network interface name
+#
+# On Talos node:
+#   talosctl -n <node-ip> get links
+#
+# Or via kubectl:
+#   kubectl -n kube-system exec ds/cilium -- ip link show
+#
+# Common outputs:
+#   - eth0: Most common, used in examples
+#   - ens18: Proxmox VMs often use this
+#   - ens192: VMware VMs often use this
+#   - enp0s3: Some bare metal systems
+#
+# ---
+# Example: How to choose IP range
+#
+# If your network is 192.168.1.0/24:
+# - Router/Gateway: 192.168.1.1
+# - DHCP range: 192.168.1.100-200 (example)
+# - Static devices: 192.168.1.1-99 (example)
+# - LoadBalancer pool: 192.168.1.240-254 (safe, high range)
+#
+# Choose IPs OUTSIDE your DHCP range!
+#
+# ---
+# Testing after applying:
+#
+# 1. Apply this file:
+#    kubectl apply -f l2-ippool.yaml
+#
+# 2. Create a test LoadBalancer service:
+#    kubectl create deployment nginx --image=nginx
+#    kubectl expose deployment nginx --port=80 --type=LoadBalancer
+#
+# 3. Check for external IP:
+#    kubectl get svc nginx
+#    # Should show EXTERNAL-IP from your pool (e.g., 192.168.1.241)
+#
+# 4. Test access:
+#    curl http://192.168.1.241
+#    # Or visit in browser
+#
+# 5. Cleanup:
+#    kubectl delete svc nginx
+#    kubectl delete deployment nginx
