@@ -15,7 +15,7 @@
 # Default Settings
 defaultSettings:
   # CRITICAL: Must match Terraform kubelet extraMounts configuration
-  # Terraform mounts /var/lib/longhorn with rshared propagation (main.tf line 120)
+  # Terraform mounts /var/lib/longhorn with rshared propagation (main.tf line 123)
   defaultDataPath: /var/lib/longhorn
 
   # Single-node configuration: Use 1 replica

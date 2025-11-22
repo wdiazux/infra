@@ -98,10 +98,9 @@ output "access_instructions" {
        talosctl --nodes ${var.node_ip} dashboard
 
     Next steps:
-    - Install Cilium CNI: kubectl apply -f ../k8s/cilium/
-    - Install NFS CSI Driver: kubectl apply -f ../k8s/nfs-csi/
-    - Install local-path-provisioner: kubectl apply -f ../k8s/local-path/
-    - Install NVIDIA GPU Operator: kubectl apply -f ../k8s/gpu-operator/
+    - Install Cilium CNI: kubectl apply -f ../kubernetes/cilium/
+    - Install NFS CSI Driver: kubectl apply -f ../kubernetes/nfs-csi/
+    - Install NVIDIA GPU Operator: kubectl apply -f ../kubernetes/gpu-operator/
     - Install FluxCD: flux bootstrap github ...
 
     Documentation:
