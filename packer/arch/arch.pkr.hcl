@@ -9,7 +9,7 @@ packer {
   required_plugins {
     proxmox = {
       source  = "github.com/hashicorp/proxmox"
-      version = "~> 1.2.0"
+      version = ">= 1.2.2"  # Fixed: CPU bug in 1.2.0, use 1.2.2+
     }
   }
 }

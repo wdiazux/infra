@@ -111,13 +111,26 @@ ipv6:
 # Enable eBPF-based masquerading (better performance than iptables)
 bpf:
   masquerade: true
-  # Enable host routing for better performance
-  hostRouting: true
+  # CRITICAL for Talos 1.8+: Use legacy host routing for DNS compatibility
+  # Without this, DNS resolution will FAIL completely
+  # Reference: https://www.talos.dev/v1.10/kubernetes-guides/network/deploying-cilium/
+  hostLegacyRouting: true
   # Tproxy for transparent proxying
   tproxy: true
 
 # eBPF map sizes (adjust for single node)
 bpfMapDynamicSizeRatio: 0.0025
+
+# ============================================================================
+# Cgroup Configuration (Talos-Specific)
+# ============================================================================
+
+# CRITICAL for Talos: Disable cgroup auto-mounting
+# Talos manages cgroups differently than traditional Linux
+cgroup:
+  autoMount:
+    enabled: false
+  hostRoot: /sys/fs/cgroup
 
 # ============================================================================
 # Security & Encryption
@@ -233,9 +246,27 @@ updateStrategy:
 # Security Context
 # ============================================================================
 
-# Talos requires specific security contexts
+# CRITICAL for Talos: Drop SYS_MODULE capability
+# Talos doesn't allow Kubernetes workloads to load kernel modules
+# Specify exact capabilities instead of privileged: true
 securityContext:
-  privileged: true
+  capabilities:
+    ciliumAgent:
+      - CHOWN
+      - KILL
+      - NET_ADMIN
+      - NET_RAW
+      - IPC_LOCK
+      - SYS_ADMIN
+      - SYS_RESOURCE
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
+    cleanCiliumState:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - SYS_RESOURCE
 
 # ============================================================================
 # Node Selector & Tolerations
