@@ -1,0 +1,149 @@
+# Longhorn Storage Classes for Single-Node Talos Cluster
+# These storage classes provide different characteristics for various workloads
+#
+# Usage:
+#   kubectl apply -f longhorn-storage-classes.yaml
+#
+# Last Updated: 2025-11-22
+
+---
+# Default Storage Class: General Purpose
+# Use this for most workloads - databases, application data, etc.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: longhorn
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+provisioner: driver.longhorn.io
+allowVolumeExpansion: true
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+parameters:
+  numberOfReplicas: "1"
+  staleReplicaTimeout: "30"
+  fromBackup: ""
+  fsType: "ext4"
+  dataLocality: "best-effort"
+  migratable: "false"
+
+---
+# High-Performance Storage Class
+# Optimized for databases and high-IOPS workloads
+# Uses best-effort data locality for local disk performance
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: longhorn-fast
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+provisioner: driver.longhorn.io
+allowVolumeExpansion: true
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+parameters:
+  numberOfReplicas: "1"
+  staleReplicaTimeout: "30"
+  fromBackup: ""
+  fsType: "ext4"
+  dataLocality: "strict-local"  # Ensure data is on same node as workload
+  migratable: "false"
+  diskSelector: "ssd"  # Only use if you label disks with 'ssd' tag
+  # Uncomment if using specific disk tags:
+  # nodeSelector: "storage,fast"
+
+---
+# Retain Storage Class
+# For critical data that should NOT be deleted when PVC is removed
+# Use for databases, user data, anything you want to keep
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: longhorn-retain
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+provisioner: driver.longhorn.io
+allowVolumeExpansion: true
+reclaimPolicy: Retain  # PV is retained when PVC is deleted
+volumeBindingMode: Immediate
+parameters:
+  numberOfReplicas: "1"
+  staleReplicaTimeout: "30"
+  fromBackup: ""
+  fsType: "ext4"
+  dataLocality: "best-effort"
+  migratable: "false"
+
+---
+# Backup-Enabled Storage Class
+# Automatically creates recurring snapshots for disaster recovery
+# Requires recurring job configuration in Longhorn UI
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: longhorn-backup
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+provisioner: driver.longhorn.io
+allowVolumeExpansion: true
+reclaimPolicy: Retain
+volumeBindingMode: Immediate
+parameters:
+  numberOfReplicas: "1"
+  staleReplicaTimeout: "30"
+  fromBackup: ""
+  fsType: "ext4"
+  dataLocality: "best-effort"
+  migratable: "false"
+  recurringJobSelector: |
+    [
+      {
+        "name": "daily-backup",
+        "isGroup": false
+      }
+    ]
+
+---
+# XFS Filesystem Storage Class
+# Alternative filesystem - better for large files and high concurrency
+# Use for media servers, large file storage
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: longhorn-xfs
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+provisioner: driver.longhorn.io
+allowVolumeExpansion: true
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+parameters:
+  numberOfReplicas: "1"
+  staleReplicaTimeout: "30"
+  fromBackup: ""
+  fsType: "xfs"
+  dataLocality: "best-effort"
+  migratable: "false"
+
+---
+# Future: 3-Replica Storage Class
+# DO NOT USE until you expand to 3 nodes
+# Uncomment and apply when you have 3-node HA cluster
+# apiVersion: storage.k8s.io/v1
+# kind: StorageClass
+# metadata:
+#   name: longhorn-ha
+#   annotations:
+#     storageclass.kubernetes.io/is-default-class: "false"
+# provisioner: driver.longhorn.io
+# allowVolumeExpansion: true
+# reclaimPolicy: Delete
+# volumeBindingMode: Immediate
+# parameters:
+#   numberOfReplicas: "3"
+#   staleReplicaTimeout: "30"
+#   fromBackup: ""
+#   fsType: "ext4"
+#   dataLocality: "best-effort"
+#   migratable: "true"
+#   replicaAutoBalance: "best-effort"

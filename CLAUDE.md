@@ -687,7 +687,7 @@ This section provides a comprehensive list of tools specifically for Talos Linux
 
 **Talos Kubernetes Stack:**
 - **Networking**: Cilium (eBPF-based CNI with L2 load balancing)
-- **Storage**: Local path provisioner for ephemeral data + NFS from external NAS for persistent data
+- **Storage**: Longhorn (primary storage manager for almost all services)
 - **GitOps**: FluxCD (Kubernetes continuous delivery)
 
 **Container Runtime:**
@@ -702,9 +702,15 @@ This section provides a comprehensive list of tools specifically for Talos Linux
 - **Forgejo**: Self-hosted, community-driven fork of Gitea, lightweight, full control over infrastructure
 - **FluxCD**: Better Helm integration with hooks, more popular with Talos community
 - **Cilium**: Modern eBPF-based networking with advanced features
-- **Storage strategy**: Local-path-provisioner for ephemeral workloads, NFS from external NAS for persistent data needing durability
+- **Longhorn**: Full-featured storage manager with snapshots, backups, resize, web UI, and smooth 3-node HA expansion path
 - **siderolabs/talos + bpg/proxmox**: Official providers with best support
 - **Podman**: Daemonless, rootless containers, drop-in Docker replacement, better security model
+
+**Storage Strategy:**
+- **Primary**: Longhorn for almost all service storage (databases, applications, persistent data)
+- **Backup**: External NAS via NFS for Longhorn backup target and large media files
+- **Configuration**: Single-replica mode for single node, expandable to 3-replica HA when adding nodes
+- **Benefits**: Snapshots, volume cloning, automated backups, web UI management, volume resize
 
 **Note**: Traditional VMs (Debian, Ubuntu, Arch, NixOS, Windows) may also mount NAS storage via NFS or Samba as needed.
 
@@ -860,41 +866,53 @@ This section provides a comprehensive list of tools specifically for Talos Linux
 
 ### Kubernetes Storage
 
-**Selected for This Project: Hybrid Storage Strategy**
+**Selected for This Project: Longhorn (Primary Storage Manager)**
 
-1. **NFS CSI Driver** (latest version) - **CHOSEN FOR PERSISTENT DATA**
-   - Purpose: Mount external NAS storage in Kubernetes
-   - GitHub: https://github.com/kubernetes-csi/csi-driver-nfs
-   - Use: Persistent volumes for databases, media, important application data
-   - Installation: Via Helm chart
-   - **Why chosen**: External NAS provides durability, backups, and shared access across VMs
-   - **Benefits**: Data survives node failures, can be accessed by multiple pods, centralized backups
-
-2. **local-path-provisioner** (latest version) - **CHOSEN FOR EPHEMERAL DATA**
-   - Purpose: Dynamic local path provisioning for temporary/cache data
-   - GitHub: https://github.com/rancher/local-path-provisioner
-   - Use: Fast local storage for caches, temp files, build artifacts
-   - Installation: Single kubectl apply
-   - **Why chosen**: Fast local performance for data that doesn't need durability
-   - **Trade-off**: Data lost if node fails (acceptable for ephemeral workloads)
-
-3. **hostPath** (built-in Kubernetes) - **FOR SPECIFIC USE CASES**
-   - Purpose: Direct host directory mounting
-   - Use: When you need specific host paths (e.g., GPU drivers, device access)
-   - **Trade-off**: Manual path management, no dynamic provisioning
-
-**Alternative Storage (not used for single-node, but available for expansion):**
-
-4. **Longhorn** (latest version)
-   - Purpose: Distributed block storage for Kubernetes
+1. **Longhorn** (latest version) - **CHOSEN AS PRIMARY STORAGE**
+   - Purpose: Cloud-native distributed block storage for Kubernetes
    - Official docs: https://longhorn.io/
-   - **Why not used now**: Requires 3 nodes for proper redundancy
-   - **When to use**: When expanding to 3-node cluster for replicated block storage
+   - Use: **Almost all services** - databases, applications, persistent data
+   - Installation: Via Helm chart
+   - **Why chosen**: Full-featured storage manager with snapshots, backups, resize, web UI, and smooth expansion path to 3-node HA
+   - **Benefits**:
+     - Snapshots and cloning for disaster recovery
+     - Volume resize support
+     - Backup to S3/NFS (external NAS)
+     - Web UI for management
+     - Single-replica mode for single node, easy expansion to 3-replica HA
+     - Advanced features (migration, monitoring, automated backups)
+   - **Single-node configuration**: Runs with 1 replica, no redundancy (data lost if node fails)
+   - **Talos requirements**:
+     - System extensions: `iscsi-tools`, `util-linux-tools`
+     - Kernel modules: `nbd`, `iscsi_tcp`, `iscsi_generic`, `configfs`
+     - Kubelet extra mounts: `/var/lib/longhorn` with `rshared` propagation
+   - **Migration path**: When expanding to 3 nodes, simply change replica count from 1 to 3
+   - **Documentation**: See `kubernetes/longhorn/INSTALLATION.md`
 
-5. **Ceph** (latest version)
-   - Purpose: Distributed storage system
-   - **Why not used**: Overkill for homelab, complex setup
-   - **When to use**: Large multi-node deployments with high performance requirements
+2. **NFS CSI Driver** (latest version) - **OPTIONAL BACKUP TARGET**
+   - Purpose: Mount external NAS for Longhorn backups
+   - GitHub: https://github.com/kubernetes-csi/csi-driver-nfs
+   - Use: Backup target for Longhorn volumes, large media files
+   - Installation: Via Helm chart
+   - **Why chosen**: External NAS provides off-cluster backup durability
+   - **Benefits**: Longhorn can backup volumes to NAS for disaster recovery
+
+**Alternative Storage (not used in this project):**
+
+3. **OpenEBS LocalPV** (latest version)
+   - Purpose: Local storage with snapshots and resize
+   - **Why not used**: Longhorn provides more features with similar overhead
+   - **When to use**: If you want lighter alternative to Longhorn without distributed features
+
+4. **local-path-provisioner** (latest version)
+   - Purpose: Simple local path provisioning
+   - **Why not used**: Longhorn provides more features (snapshots, backups, UI)
+   - **When to use**: Extremely minimal setups where Longhorn overhead is too much
+
+5. **Rook-Ceph** (latest version)
+   - Purpose: Enterprise-grade distributed storage
+   - **Why not used**: Massive overkill for single-node homelab, high resource usage
+   - **When to use**: Large multi-node clusters (10+ nodes) with enterprise requirements
 
 ### GPU Workload Management
 
@@ -2106,6 +2124,36 @@ atlantis unlock                            # Unlock state (via PR comment)
 ```
 
 ## Version History
+
+- **2025-11-22**: Longhorn storage manager implementation
+  - **MAJOR DECISION**: Changed primary storage from NFS CSI + local-path to Longhorn
+  - **Rationale**: User requirement to store almost all data locally on Talos cluster
+  - **Storage Strategy**:
+    - **Primary**: Longhorn for databases, applications, persistent data (single-replica mode)
+    - **Backup**: External NAS via NFS for Longhorn backup target and large media files
+    - **Configuration**: Single-replica for single node, expandable to 3-replica HA later
+  - **Implementation**:
+    - Created `kubernetes/longhorn/` directory with Helm values and installation guide
+    - Created `kubernetes/storage-classes/` with 5 storage class definitions (default, fast, retain, backup, xfs)
+    - Created `talos/patches/longhorn-requirements.yaml` for Talos machine config
+    - Documented Talos requirements: iscsi-tools, util-linux-tools system extensions
+    - Documented kernel modules: nbd, iscsi_tcp, iscsi_generic, configfs
+    - Documented kubelet extra mounts for /var/lib/longhorn with rshared propagation
+  - **Benefits over previous approach**:
+    - Snapshots and volume cloning for disaster recovery
+    - Volume resize support
+    - Web UI for management
+    - Automated backups to external NAS
+    - Smooth expansion path to 3-node HA (just change replica count)
+  - Updated CLAUDE.md sections:
+    - "Project-Specific Tool Decisions" - updated storage strategy
+    - "Kubernetes Storage" - marked Longhorn as chosen, moved NFS to optional backup
+    - Added comprehensive installation documentation
+  - **Files created**:
+    - `kubernetes/longhorn/longhorn-values.yaml` - Helm values for single-node
+    - `kubernetes/longhorn/INSTALLATION.md` - Complete installation guide
+    - `kubernetes/storage-classes/longhorn-storage-classes.yaml` - Storage class definitions
+    - `talos/patches/longhorn-requirements.yaml` - Talos machine config patch
 
 - **2025-11-18**: Project-specific tool decisions and clarifications
   - Added "Project-Specific Tool Decisions" section documenting chosen tools

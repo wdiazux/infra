@@ -1,0 +1,52 @@
+# Talos Machine Config Patch for Longhorn Storage Manager
+#
+# This patch adds all necessary configurations for Longhorn to work on Talos Linux:
+# 1. System extensions (iscsi-tools, util-linux-tools)
+# 2. Kernel modules (nbd, iscsi_tcp, iscsi_generic, configfs)
+# 3. Kubelet extra mounts for Longhorn data path
+#
+# Usage:
+#   Apply this patch when generating or updating Talos machine configuration:
+#   talosctl gen config ... --config-patch @talos/patches/longhorn-requirements.yaml
+#   OR
+#   talosctl patch machineconfig --patch @talos/patches/longhorn-requirements.yaml
+#
+# Talos Version: v1.8+
+# Longhorn Version: v1.7+
+# Last Updated: 2025-11-22
+
+machine:
+  # Kernel modules required by Longhorn
+  kernel:
+    modules:
+      # Network Block Device - used by Longhorn for volume access
+      - name: nbd
+      # iSCSI modules - required for persistent volume operations
+      - name: iscsi_tcp
+      - name: iscsi_generic
+      # ConfigFS - required for iSCSI target configuration
+      - name: configfs
+
+  # Kubelet extra mounts - critical for Longhorn volume attachment
+  kubelet:
+    extraMounts:
+      # Longhorn data path with propagation mode 'rshared'
+      # This allows volume mounts to propagate between host and containers
+      - destination: /var/lib/longhorn
+        type: bind
+        source: /var/lib/longhorn
+        options:
+          - bind
+          - rshared
+          - rw
+
+# System extensions required by Longhorn
+# These must be included in your Talos image via Talos Factory
+# or added to your schematic configuration
+customization:
+  systemExtensions:
+    officialExtensions:
+      # Provides iscsid daemon and iscsiadm tools
+      - siderolabs/iscsi-tools
+      # Provides fstrim and other utilities for volume management
+      - siderolabs/util-linux-tools
