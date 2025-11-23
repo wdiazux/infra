@@ -100,23 +100,49 @@ If missing, rebuild your image using Option A.
 
 ## Talos Configuration
 
-### Step 1: Apply Machine Config Patch
+### ✅ If You Deployed with Terraform (Recommended)
 
-Apply the Longhorn requirements patch to your Talos nodes:
+**No manual configuration needed!** The Longhorn requirements are already configured in `terraform/main.tf` (lines 130-149):
 
-```bash
-# If generating new machine config:
-talosctl gen config my-cluster https://<endpoint>:6443 \
-  --config-patch @talos/patches/longhorn-requirements.yaml \
-  --output-dir ./talos-config
+- ✅ Kernel modules: `nbd`, `iscsi_tcp`, `iscsi_generic`, `configfs`
+- ✅ Kubelet extra mounts: `/var/lib/longhorn` with `rshared` propagation
 
-# If updating existing nodes:
-talosctl patch machineconfig \
-  --nodes <node-ip> \
-  --patch @talos/patches/longhorn-requirements.yaml
+**Skip to verification steps below** to confirm they're loaded.
+
+---
+
+### ⚠️ If You Deployed Manually with talosctl
+
+If you deployed Talos manually (NOT with Terraform), you need to add these configurations to your machine config:
+
+```yaml
+machine:
+  kernel:
+    modules:
+      - name: nbd
+      - name: iscsi_tcp
+      - name: iscsi_generic
+      - name: configfs
+
+  kubelet:
+    extraMounts:
+      - destination: /var/lib/longhorn
+        type: bind
+        source: /var/lib/longhorn
+        options:
+          - bind
+          - rshared
+          - rw
 ```
 
-### Step 2: Verify Kernel Modules
+Apply with:
+```bash
+talosctl patch machineconfig --nodes <node-ip> --patch @/path/to/patch.yaml
+```
+
+---
+
+### Step 1: Verify Kernel Modules
 
 After applying the patch and rebooting (if necessary), verify the kernel modules are loaded:
 
