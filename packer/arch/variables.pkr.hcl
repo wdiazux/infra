@@ -53,7 +53,7 @@ variable "arch_iso_checksum" {
 variable "template_name" {
   type        = string
   description = "Name for the Proxmox template"
-  default     = "arch-linux-golden-template"
+  default     = "arch-golden-template"  # Must match Terraform variable
 }
 
 variable "template_description" {

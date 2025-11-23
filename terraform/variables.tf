@@ -275,35 +275,21 @@ variable "install_disk" {
 }
 
 # ============================================================================
-# External Storage Configuration
+# External Storage Configuration (Optional - for Longhorn backups)
 # ============================================================================
 
 variable "nfs_server" {
-  description = "NFS server IP or hostname for persistent storage"
+  description = "NFS server IP or hostname for Longhorn backup target (optional)"
   type        = string
   default     = ""  # Set to your NAS IP (e.g., "192.168.1.100")
+  # Note: Primary storage is Longhorn. NFS is only used for backup destination.
 }
 
 variable "nfs_path" {
-  description = "NFS export path for Kubernetes persistent volumes"
+  description = "NFS export path for Longhorn backup target (optional)"
   type        = string
-  default     = "/mnt/tank/k8s-storage"
-}
-
-# ============================================================================
-# Cilium CNI Configuration
-# ============================================================================
-
-variable "install_cilium" {
-  description = "Install Cilium CNI after cluster bootstrap"
-  type        = bool
-  default     = true
-}
-
-variable "cilium_version" {
-  description = "Cilium version to install"
-  type        = string
-  default     = "1.18.0"
+  default     = "/mnt/tank/longhorn-backups"
+  # Note: This is for Longhorn backups, not for persistent volume provisioning.
 }
 
 # ============================================================================

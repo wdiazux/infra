@@ -14,10 +14,10 @@ packer {
   }
 }
 
-# Local variables
+# Local variables for computed values
 locals {
-  timestamp = formatdate("YYYYMMDD", timestamp())
-  template_name = "${var.template_name}-${local.timestamp}"
+  # Template name (no timestamp - Terraform expects exact name)
+  template_name = var.template_name
 
   # Cloud image URL and checksum
   cloud_image_url = "https://cloud-images.ubuntu.com/releases/24.04/release/ubuntu-24.04-server-cloudimg-amd64.img"
