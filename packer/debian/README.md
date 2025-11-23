@@ -19,15 +19,11 @@ This directory contains configuration for building Debian 12 (Bookworm) golden i
 | **Cloud Image** | 5-10 min | Low | High | **Production (Recommended)** |
 | ISO Build | 20-30 min | High | Medium | Custom partitioning, learning |
 
-### When to Use ISO Build Instead
+### Note About ISO Templates
 
-Use the ISO-based template (`../debian/`) only if you need:
-- Custom disk partitioning schemes
-- Non-standard filesystem layouts
-- Full control over installation process
-- Specific Debian installation options
+**ISO-based Debian templates have been removed** in favor of this cloud image approach. The cloud image method is faster, simpler, and follows industry best practices.
 
-For 95% of use cases, **use cloud images**.
+If you absolutely need custom disk partitioning or non-standard filesystem layouts, you can create a custom ISO template, but for 95% of use cases, **cloud images are the better choice**.
 
 ## Prerequisites
 
@@ -79,13 +75,13 @@ This creates a base VM (`debian-12-cloud-base`) that Packer will clone and custo
 ### Step 2: Configure Packer
 
 ```bash
-cd packer/debian-cloud
+cd packer/debian
 
 # Copy example configuration
-cp debian-cloud.auto.pkrvars.hcl.example debian-cloud.auto.pkrvars.hcl
+cp debian.auto.pkrvars.hcl.example debian.auto.pkrvars.hcl
 
 # Edit configuration
-vim debian-cloud.auto.pkrvars.hcl
+vim debian.auto.pkrvars.hcl
 ```
 
 Key settings:
@@ -189,7 +185,7 @@ runcmd:
 
 ### Add Packages to Template
 
-Edit `debian-cloud.pkr.hcl` provisioner:
+Edit `debian.pkr.hcl` provisioner:
 
 ```hcl
 provisioner "shell" {
@@ -205,7 +201,7 @@ provisioner "shell" {
 
 ### Run Ansible Playbook
 
-Add ansible provisioner to `debian-cloud.pkr.hcl`:
+Add ansible provisioner to `debian.pkr.hcl`:
 
 ```hcl
 provisioner "ansible" {
@@ -295,4 +291,4 @@ template_name = "debian-12-cloud-template-v${formatdate("YYYYMMDD", timestamp())
 4. Create Ansible baseline playbook
 5. Set up automated monthly rebuilds
 
-See `../ubuntu-cloud/` for Ubuntu cloud image template (same approach).
+See `../ubuntu/` for Ubuntu cloud image template (same approach).

@@ -154,7 +154,7 @@ build {
 # 3. Set cloud_image_vm_id = 9000 in variables
 #
 # BUILD:
-# 1. Set variables in ubuntu-cloud.auto.pkrvars.hcl
+# 1. Set variables in ubuntu.auto.pkrvars.hcl
 # 2. Run: packer init .
 # 3. Run: packer validate .
 # 4. Run: packer build .

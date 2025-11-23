@@ -138,7 +138,7 @@ build {
 #    ./import-cloud-image.sh 9110
 #
 # BUILD:
-# 1. Set variables in debian-cloud.auto.pkrvars.hcl
+# 1. Set variables in debian.auto.pkrvars.hcl
 # 2. Run: packer init .
 # 3. Run: packer validate .
 # 4. Run: packer build .

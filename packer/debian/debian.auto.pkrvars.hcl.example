@@ -1,8 +1,8 @@
 # Debian Cloud Image Packer Variables Example
 # PREFERRED METHOD - Uses official cloud image (5-10 min build time)
 #
-# Copy this file to debian-cloud.auto.pkrvars.hcl and fill in your values
-# cp debian-cloud.auto.pkrvars.hcl.example debian-cloud.auto.pkrvars.hcl
+# Copy this file to debian.auto.pkrvars.hcl and fill in your values
+# cp debian.auto.pkrvars.hcl.example debian.auto.pkrvars.hcl
 
 # Proxmox Connection
 proxmox_url      = "https://proxmox.local:8006/api2/json"
