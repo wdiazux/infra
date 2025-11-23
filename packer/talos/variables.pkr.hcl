@@ -40,7 +40,7 @@ variable "proxmox_skip_tls_verify" {
 variable "talos_version" {
   type        = string
   description = "Talos Linux version to download"
-  default     = "v1.11.4"
+  default     = "v1.11.5"
 }
 
 variable "talos_schematic_id" {
@@ -73,13 +73,13 @@ variable "talos_iso_checksum" {
 variable "template_name" {
   type        = string
   description = "Name for the resulting Proxmox template"
-  default     = "talos-1.11.4-nvidia-template"
+  default     = "talos-1.11.5-nvidia-template"
 }
 
 variable "template_description" {
   type        = string
   description = "Description for the Proxmox template"
-  default     = "Talos Linux v1.11.4 with NVIDIA GPU support and qemu-guest-agent"
+  default     = "Talos Linux v1.11.5 with NVIDIA GPU support and qemu-guest-agent"
 }
 
 # VM Hardware Resources

@@ -434,6 +434,30 @@ Before implementing ZFS, determine:
    - **Traditional VMs**: Static IPs recommended for infrastructure VMs
    - **NAS**: Static IP for reliable NFS/Samba connectivity
 
+**IP Allocation Table (Network: 10.10.2.0/24):**
+
+| Component | IP Address | Purpose | Status |
+|-----------|------------|---------|--------|
+| **Gateway** | 10.10.2.1 | Router/gateway | REQUIRED |
+| **Proxmox Host** | 10.10.2.2 | Hypervisor host | REQUIRED |
+| **NAS** | 10.10.2.5 | External NAS for Longhorn backups | OPTIONAL |
+| **Talos Node** | 10.10.2.10 | Primary Kubernetes node | REQUIRED |
+| **Ubuntu VM** | 10.10.2.11 | Traditional VM | OPTIONAL |
+| **Debian VM** | 10.10.2.12 | Traditional VM | OPTIONAL |
+| **Arch VM** | 10.10.2.13 | Traditional VM | OPTIONAL |
+| **NixOS VM** | 10.10.2.14 | Traditional VM | OPTIONAL |
+| **Windows VM** | 10.10.2.15 | Traditional VM | OPTIONAL |
+| **DHCP Range** | 10.10.2.100-200 | For other devices if using DHCP | OPTIONAL |
+| **Cilium LoadBalancer Pool** | 10.10.2.240-254 | Kubernetes LoadBalancer services (15 IPs) | REQUIRED |
+
+**Important Notes:**
+- **Network Subnet**: 10.10.2.0/24 (Class C private network, 254 usable IPs)
+- **Gateway**: Must be reachable from all VMs (typically your router)
+- **NAS**: User's NAS is at 10.10.2.5 for Longhorn backup target
+- **LoadBalancer Pool**: 10.10.2.240/28 provides 15 usable IPs (10.10.2.241-254) for Cilium L2
+- **Avoid Conflicts**: Ensure static IPs don't overlap with DHCP range
+- **DNS Servers**: Default to Google DNS (8.8.8.8, 8.8.4.4) unless using internal DNS
+
 3. **DNS Configuration:**
    - Configure DNS servers in Proxmox and VMs
    - Ensure Talos node can resolve external domains (for pulling container images)
@@ -711,6 +735,25 @@ This section provides a comprehensive list of tools specifically for Talos Linux
 - **Backup**: External NAS via NFS for Longhorn backup target and large media files
 - **Configuration**: Single-replica mode for single node, expandable to 3-replica HA when adding nodes
 - **Benefits**: Snapshots, volume cloning, automated backups, web UI management, volume resize
+
+**Secrets Management:**
+- **Primary**: SOPS with FluxCD + Age encryption
+- **Baseline**: Talos disk encryption (TPM-anchored) + Kubernetes secrets encryption at rest (secretbox)
+- **Key Storage**: Age private key in Kubernetes (sops-age secret in flux-system namespace)
+- **Backup**: Age private key in password manager (1Password, Bitwarden, etc.)
+- **Rationale**:
+  - Native FluxCD integration (no additional operators)
+  - Zero infrastructure overhead
+  - GitOps-native with full audit trail in Git
+  - Simple Age key management for homelab scale
+  - Defense-in-depth: Talos disk encryption + K8s encryption at rest + SOPS GitOps layer
+- **Documentation**: See `docs/KUBERNETES_SECRETS_MANAGEMENT_GUIDE.md` (comprehensive 40+ page guide)
+- **Quick Start**: See `docs/SECRETS_MANAGEMENT_QUICK_START.md` (5-minute setup guide)
+- **Alternatives Evaluated**: External Secrets Operator, Sealed Secrets, HashiCorp Vault, SOPS Secrets Operator
+  - ESO: Better for multi-cloud with existing secret backends (overkill for homelab)
+  - Sealed Secrets: Good alternative for ArgoCD users (but we use FluxCD)
+  - Vault: Enterprise-grade but massive operational overhead (overkill for homelab)
+  - SOPS Secrets Operator: Redundant when FluxCD has native SOPS support
 
 **Note**: Traditional VMs (Debian, Ubuntu, Arch, NixOS, Windows) may also mount NAS storage via NFS or Samba as needed.
 
@@ -1652,6 +1695,15 @@ source "proxmox-iso" "d12" {
 - Baseline packages should be defined in variables
 - Keep sensible defaults that can be overridden
 
+**User and Environment Configuration:**
+- **Timezone**: America/El_Salvador
+- **Default non-root username**: wdiaz
+- **User UID/GID**: Use default Linux OS UUID (typically 1000:1000 for first user)
+- **User home directory**: /home/wdiaz
+- **User shell**: /bin/bash (or OS default)
+
+**Note**: These defaults apply to traditional VMs (Debian, Ubuntu, Arch, NixOS, Windows). Talos Linux does not have SSH access or traditional user accounts.
+
 ### Cloud-init Integration
 
 - Use cloud-init for:
@@ -2124,6 +2176,67 @@ atlantis unlock                            # Unlock state (via PR comment)
 ```
 
 ## Version History
+
+- **2025-11-23**: Network configuration documentation update
+  - **NAS IP correction**: Updated NAS IP from examples (10.10.2.20) to actual value (10.10.2.5)
+  - **Files updated**:
+    - `INFRASTRUCTURE-ASSUMPTIONS.md` - Added comprehensive IP allocation table
+    - `NETWORK-UPDATE-REPORT.md` - Updated all IP references
+    - `CLAUDE.md` - Added IP allocation table to Networking Prerequisites section
+  - **IP Allocation Table added**:
+    - Network: 10.10.2.0/24 (254 usable IPs)
+    - Gateway: 10.10.2.1 (router)
+    - Proxmox: 10.10.2.2 (hypervisor host)
+    - **NAS: 10.10.2.5** (external storage for Longhorn backups)
+    - Talos: 10.10.2.10 (Kubernetes node)
+    - Traditional VMs: 10.10.2.11-15 (optional)
+    - DHCP Range: 10.10.2.100-200 (optional)
+    - Cilium LoadBalancer Pool: 10.10.2.240-254 (15 IPs for K8s services)
+  - **Documentation improvements**:
+    - Clear REQUIRED vs OPTIONAL designation for all IPs
+    - Added purpose and status for each IP allocation
+    - Included notes on avoiding conflicts and network planning
+    - Cross-referenced between CLAUDE.md and INFRASTRUCTURE-ASSUMPTIONS.md
+
+- **2025-11-23**: Comprehensive Kubernetes secrets management research
+  - **Research completed**: Evaluated 6 secrets management solutions for Talos/Kubernetes
+  - **Solutions analyzed**:
+    1. SOPS with FluxCD + Age encryption (recommended for this project)
+    2. External Secrets Operator (ESO) - for multi-cloud/existing backends
+    3. Sealed Secrets (Bitnami) - ArgoCD alternative
+    4. Native Kubernetes secrets + Talos encryption at rest - baseline security
+    5. HashiCorp Vault integration - enterprise solution
+    6. SOPS Secrets Operator - standalone SOPS without FluxCD
+  - **Decision made**: SOPS with FluxCD + Age encryption
+    - Zero additional infrastructure required (FluxCD native integration)
+    - Perfect for homelab scale with simple Age key management
+    - GitOps-native with full audit trail in Git
+    - Defense-in-depth: Talos disk encryption + K8s encryption at rest + SOPS layer
+  - **Documentation created**:
+    - `docs/KUBERNETES_SECRETS_MANAGEMENT_GUIDE.md` - Comprehensive 40+ page guide with:
+      - Executive summary and detailed comparison matrix
+      - In-depth analysis of all 6 solutions
+      - Top 3 recommendations with step-by-step implementation
+      - Homelab vs enterprise recommendations
+      - Migration strategies between solutions
+      - 90+ reference sources from 2024-2025
+    - `docs/SECRETS_MANAGEMENT_QUICK_START.md` - Quick reference guide with:
+      - 5-minute SOPS setup for FluxCD users
+      - Common operations cheat sheet
+      - Troubleshooting guide
+      - Security best practices
+      - Migration paths
+  - **CLAUDE.md updates**:
+    - Added "Secrets Management" subsection to "Project-Specific Tool Decisions"
+    - Documented chosen solution (SOPS + FluxCD + Age)
+    - Documented baseline security (Talos disk encryption + K8s encryption at rest)
+    - Added rationale and alternatives evaluated
+    - Cross-referenced comprehensive documentation
+  - **Research sources**: 90+ official docs and tutorials from 2024-2025
+    - FluxCD Mozilla SOPS Guide, External Secrets Operator docs
+    - Sealed Secrets GitHub, HashiCorp Vault Kubernetes integration
+    - Talos disk encryption, multiple 2024-2025 tutorials
+    - Homelab comparison guides and best practices
 
 - **2025-11-22**: Longhorn storage manager implementation
   - **MAJOR DECISION**: Changed primary storage from NFS CSI + local-path to Longhorn

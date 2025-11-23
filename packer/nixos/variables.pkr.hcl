@@ -39,20 +39,20 @@ variable "proxmox_skip_tls_verify" {
 # NixOS Version
 variable "nixos_version" {
   type        = string
-  description = "NixOS version (24.05 = latest stable)"
-  default     = "24.05"
+  description = "NixOS version (25.05 = latest stable)"
+  default     = "25.05"
 }
 
 variable "nixos_iso_url" {
   type        = string
   description = "URL to NixOS ISO"
-  default     = "https://channels.nixos.org/nixos-24.05/latest-nixos-minimal-x86_64-linux.iso"
+  default     = "https://channels.nixos.org/nixos-25.05/latest-nixos-minimal-x86_64-linux.iso"
 }
 
 variable "nixos_iso_checksum" {
   type        = string
   description = "SHA256 checksum of NixOS ISO"
-  default     = "file:https://channels.nixos.org/nixos-24.05/latest-nixos-minimal-x86_64-linux.iso.sha256"
+  default     = "file:https://channels.nixos.org/nixos-25.05/latest-nixos-minimal-x86_64-linux.iso.sha256"
 }
 
 # Template Configuration
@@ -65,7 +65,7 @@ variable "template_name" {
 variable "template_description" {
   type        = string
   description = "Description for the template"
-  default     = "NixOS 24.05 golden image with cloud-init"
+  default     = "NixOS 25.05 golden image with cloud-init"
 }
 
 # VM Configuration

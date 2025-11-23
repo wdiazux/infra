@@ -4,13 +4,13 @@
 # for deploying Talos Linux on Proxmox VE 9.0
 
 terraform {
-  required_version = ">= 1.9.0"
+  required_version = ">= 1.14.0"
 
   required_providers {
     # Proxmox provider for VM management
     proxmox = {
       source  = "bpg/proxmox"
-      version = "~> 0.86.0"
+      version = "~> 0.87.0"
     }
 
     # Talos provider for machine configuration and cluster bootstrapping

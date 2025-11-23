@@ -239,14 +239,35 @@ resource "proxmox_virtual_environment_vm" "talos_node" {
   # GPU Passthrough (if enabled)
   # NOTE: This works together with the NVIDIA GPU sysctls in machine config above
   # to enable GPU passthrough for AI/ML workloads
+  #
+  # CRITICAL AUTHENTICATION REQUIREMENT:
+  # The 'id' parameter is NOT compatible with API token authentication.
+  # You MUST use ONE of the following methods:
+  #
+  # METHOD 1 (RECOMMENDED): Use 'mapping' parameter with resource mapping
+  #   1. Create GPU resource mapping in Proxmox UI:
+  #      Datacenter → Resource Mappings → Add → PCI Device
+  #      Name: "gpu" (or your choice)
+  #      Path: 0000:XX:YY.0 (your GPU PCI ID)
+  #   2. Uncomment 'mapping = var.gpu_mapping' below
+  #   3. Comment out or remove 'id' parameter
+  #   4. Set gpu_mapping variable to "gpu" (or your mapping name)
+  #
+  # METHOD 2: Use password authentication instead of API token
+  #   1. In versions.tf, uncomment password auth and comment out api_token
+  #   2. Keep 'id' parameter as-is below
+  #
+  # See: https://registry.terraform.io/providers/bpg/proxmox/latest/docs/resources/virtual_environment_vm#hostpci
+  #
   dynamic "hostpci" {
     for_each = var.enable_gpu_passthrough ? [1] : []
     content {
       device  = "hostpci0"
-      id      = "0000:${var.gpu_pci_id}.0"  # Full PCI format required: 0000:XX:YY.0
+      # Choose ONE of the following (see comments above):
+      # id      = "0000:${var.gpu_pci_id}.0"  # METHOD 2: Requires password auth
+      mapping = var.gpu_mapping               # METHOD 1: Works with API token (RECOMMENDED)
       pcie    = var.gpu_pcie
       rombar  = var.gpu_rombar  # Boolean: true enables ROM bar, false disables
-      mapping = null
     }
   }
 
@@ -352,7 +373,7 @@ locals {
 
   # Talos installer image
   # Official Factory format: SCHEMATIC_ID:VERSION or just VERSION for default
-  # Example: "376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba:v1.11.4"
+  # Example: "376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba:v1.11.5"
   # See: https://www.talos.dev/v1.10/talos-guides/install/boot-assets/
   talos_installer_image = var.talos_schematic_id != "" ? "${var.talos_schematic_id}:${var.talos_version}" : "${var.talos_version}"
 

@@ -10,7 +10,7 @@ set -e
 VM_ID=${1:-9110}
 VM_NAME="debian-12-cloud-base"
 DEBIAN_VERSION="12"
-DEBIAN_RELEASE="bookworm"
+DEBIAN_RELEASE="trixie"
 STORAGE_POOL="local-zfs"
 BRIDGE="vmbr0"
 

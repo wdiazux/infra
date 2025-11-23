@@ -101,5 +101,5 @@
   nixpkgs.config.allowUnfree = true;
 
   # System state version (don't change after installation)
-  system.stateVersion = "24.05";
+  system.stateVersion = "25.05";
 }

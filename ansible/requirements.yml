@@ -1,6 +1,12 @@
 # Ansible Requirements for Infrastructure Automation
 #
+# Ansible Version: 13.0.0+ (ansible-core 2.20.0+)
 # Install with: ansible-galaxy install -r requirements.yml
+#
+# Installation:
+#   pip install ansible==13.0.0
+#   # OR for latest
+#   pip install ansible --upgrade
 
 ---
 # Ansible Collections

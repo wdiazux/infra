@@ -40,7 +40,7 @@ variable "proxmox_skip_tls_verify" {
 variable "debian_version" {
   type        = string
   description = "Debian version"
-  default     = "12"
+  default     = "13"
 }
 
 # Cloud Image Base VM
@@ -54,13 +54,13 @@ variable "cloud_image_vm_id" {
 variable "template_name" {
   type        = string
   description = "Name for the Proxmox template"
-  default     = "debian-12-cloud-template"
+  default     = "debian-13-cloud-template"
 }
 
 variable "template_description" {
   type        = string
   description = "Description for the template"
-  default     = "Debian 12 (Bookworm) cloud image with customizations"
+  default     = "Debian 13 (Trixie) cloud image with customizations"
 }
 
 # VM Configuration

@@ -1,11 +1,11 @@
 # NixOS Golden Image Packer Template
 
-This directory contains Packer configuration to build a NixOS 24.05 golden image for Proxmox VE 9.0 with cloud-init and QEMU guest agent support.
+This directory contains Packer configuration to build a NixOS 25.05 golden image for Proxmox VE 9.0 with cloud-init and QEMU guest agent support.
 
 ## Overview
 
 Creates a production-ready NixOS template with:
-- **NixOS 24.05** - Latest stable release
+- **NixOS 25.05** - Latest stable release
 - **Declarative configuration** - Entire system defined in configuration.nix
 - **Cloud-init** - For automated VM customization
 - **QEMU Guest Agent** - For Proxmox integration
@@ -55,10 +55,10 @@ Visit https://nixos.org/download and get:
 1. **ISO URL** - Minimal ISO recommended for templates
 2. **SHA256 checksum** - Automatically verified
 
-Example for NixOS 24.05:
+Example for NixOS 25.05:
 ```
-URL: https://channels.nixos.org/nixos-24.05/latest-nixos-minimal-x86_64-linux.iso
-Checksum: file:https://channels.nixos.org/nixos-24.05/latest-nixos-minimal-x86_64-linux.iso.sha256
+URL: https://channels.nixos.org/nixos-25.05/latest-nixos-minimal-x86_64-linux.iso
+Checksum: file:https://channels.nixos.org/nixos-25.05/latest-nixos-minimal-x86_64-linux.iso.sha256
 ```
 
 ## Quick Start
@@ -81,8 +81,8 @@ proxmox_token = "PVEAPIToken=user@pam!token=secret"
 proxmox_node = "pve"
 
 # NixOS ISO
-nixos_iso_url = "https://channels.nixos.org/nixos-24.05/latest-nixos-minimal-x86_64-linux.iso"
-nixos_iso_checksum = "file:https://channels.nixos.org/nixos-24.05/latest-nixos-minimal-x86_64-linux.iso.sha256"
+nixos_iso_url = "https://channels.nixos.org/nixos-25.05/latest-nixos-minimal-x86_64-linux.iso"
+nixos_iso_checksum = "file:https://channels.nixos.org/nixos-25.05/latest-nixos-minimal-x86_64-linux.iso.sha256"
 
 # Storage
 vm_disk_storage = "local-zfs"  # Your Proxmox storage pool
@@ -190,7 +190,7 @@ After deployment, edit `/etc/nixos/configuration.nix`:
     docker
   ];
 
-  system.stateVersion = "24.05";
+  system.stateVersion = "25.05";
 }
 ```
 
@@ -426,7 +426,7 @@ NixOS channels are release branches:
 nix-channel --list
 
 # Add a channel
-nix-channel --add https://nixos.org/channels/nixos-24.05 nixos
+nix-channel --add https://nixos.org/channels/nixos-25.05 nixos
 
 # Update channels
 nix-channel --update

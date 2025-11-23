@@ -1,0 +1,195 @@
+---
+# Group Variables for Proxmox Hosts
+# Override default playbook variables here
+#
+# Location: ansible/group_vars/proxmox_hosts.yml
+#
+# These variables control the behavior of day0_proxmox_prep.yml playbook
+# Adjust values based on your environment and requirements
+
+# ============================================================================
+# Repository Management
+# ============================================================================
+
+# Disable enterprise repository (requires Proxmox subscription)
+# Set to true for homelab/non-production (default: true)
+proxmox_disable_enterprise_repo: true
+
+# Enable no-subscription repository (free updates)
+# Set to true for homelab/non-production (default: true)
+proxmox_enable_no_subscription_repo: true
+
+# Remove subscription nag from web UI
+# Set to true to patch proxmoxlib.js (default: true)
+proxmox_remove_subscription_nag: true
+
+# Enable Ceph repository (only if using Ceph storage)
+# Set to true if deploying Ceph cluster (default: false)
+proxmox_enable_ceph_repo: false
+
+# Enable pvetest repository (beta/testing features)
+# Set to true only for testing environments (default: false)
+proxmox_enable_pvetest_repo: false
+
+# ============================================================================
+# System Configuration
+# ============================================================================
+
+# Perform system update (apt dist-upgrade)
+# Set to true to update all packages (default: true)
+proxmox_update_system: true
+
+# Install essential packages for Ansible automation
+# Includes python3-proxmoxer, python3-requests, curl, wget, vim, git, htop
+# Set to true for complete automation support (default: true)
+proxmox_install_essential_packages: true
+
+# Configure UFW firewall with Proxmox rules
+# Allows: SSH (22), Web UI (8006), SPICE (3128), VNC (5900-5999)
+# Set to true for basic security (default: true)
+proxmox_configure_firewall: true
+
+# Configure time synchronization with chrony
+# Critical for VM time accuracy and cluster synchronization
+# Set to true for production environments (default: true)
+proxmox_configure_ntp: true
+
+# ============================================================================
+# High Availability (HA) Services
+# ============================================================================
+
+# Disable HA services for single-node setups
+# Services: pve-ha-lrm, pve-ha-crm, corosync
+# Set to true for single-node, false for clusters (default: true)
+proxmox_disable_ha_services: true
+
+# ============================================================================
+# GPU Passthrough Configuration
+# ============================================================================
+
+# Enable GPU passthrough configuration
+# Set to true if passing through NVIDIA GPU to VMs
+has_gpu: false
+
+# GRUB kernel parameters (automatically set based on CPU vendor)
+# AMD: "quiet amd_iommu=on iommu=pt"
+# Intel: "quiet intel_iommu=on iommu=pt"
+
+# VFIO kernel modules (loaded automatically if has_gpu=true)
+# - vfio
+# - vfio_iommu_type1
+# - vfio_pci
+# - vfio_virqfd
+
+# GPU driver blacklist (prevents host from using GPU)
+# - nvidia
+# - nouveau
+# - nvidiafb
+
+# ============================================================================
+# ZFS Storage Configuration
+# ============================================================================
+
+# ZFS ARC maximum memory (GB)
+# Recommended: 10% of total system RAM, max 16GB for 96GB system
+# Calculation: 2GB base + 1GB per TiB of storage
+# Default: 16GB
+zfs_arc_max_gb: 16
+
+# ============================================================================
+# Network Configuration
+# ============================================================================
+
+# Network bridge name (default Proxmox bridge)
+# Default: vmbr0
+# Note: This is verified but not automatically created by the playbook
+
+# ============================================================================
+# Essential Packages List
+# ============================================================================
+
+# You can override the default package list if needed
+# essential_packages:
+#   - python3-proxmoxer
+#   - python3-requests
+#   - libsasl2-modules
+#   - curl
+#   - wget
+#   - vim
+#   - git
+#   - htop
+#   - Additional packages can be added here
+
+# ============================================================================
+# SSH Configuration (Inventory Level)
+# ============================================================================
+
+# These are typically set in inventory, but can be overridden here
+# ansible_user: root
+# ansible_ssh_private_key_file: ~/.ssh/proxmox_ed25519
+# ansible_port: 22
+
+# ============================================================================
+# Example Configurations by Use Case
+# ============================================================================
+
+# Single-Node Homelab (Default):
+# proxmox_disable_enterprise_repo: true
+# proxmox_enable_no_subscription_repo: true
+# proxmox_remove_subscription_nag: true
+# proxmox_disable_ha_services: true
+# proxmox_update_system: true
+# has_gpu: false
+
+# Single-Node with GPU Passthrough:
+# proxmox_disable_enterprise_repo: true
+# proxmox_enable_no_subscription_repo: true
+# proxmox_remove_subscription_nag: true
+# proxmox_disable_ha_services: true
+# proxmox_update_system: true
+# has_gpu: true
+# zfs_arc_max_gb: 16
+
+# Multi-Node Cluster (Production):
+# proxmox_disable_enterprise_repo: false
+# proxmox_enable_no_subscription_repo: false
+# proxmox_remove_subscription_nag: false
+# proxmox_disable_ha_services: false
+# proxmox_update_system: true
+# proxmox_configure_firewall: true
+# proxmox_configure_ntp: true
+
+# Multi-Node with Ceph Storage:
+# proxmox_enable_ceph_repo: true
+# proxmox_disable_ha_services: false
+# proxmox_configure_ntp: true
+
+# ============================================================================
+# Tags Reference for Selective Execution
+# ============================================================================
+#
+# Run specific sections with --tags:
+#
+# ansible-playbook playbooks/day0_proxmox_prep.yml --tags "repos"
+# ansible-playbook playbooks/day0_proxmox_prep.yml --tags "updates"
+# ansible-playbook playbooks/day0_proxmox_prep.yml --tags "gpu,iommu"
+# ansible-playbook playbooks/day0_proxmox_prep.yml --tags "zfs,storage"
+#
+# Available tags:
+# - always:    Always executed (system info, prerequisites)
+# - repos:     Repository management
+# - packages:  Essential packages installation
+# - nag:       Subscription nag removal
+# - ha:        HA services configuration
+# - updates:   System updates
+# - firewall:  Firewall configuration
+# - ntp:       Time synchronization
+# - iommu:     IOMMU configuration
+# - gpu:       GPU passthrough configuration
+# - vfio:      VFIO kernel modules
+# - zfs:       ZFS configuration
+# - storage:   Storage configuration
+# - network:   Network configuration
+# - info:      Information gathering
+# - ceph:      Ceph repository configuration
+# - testing:   pvetest repository configuration

@@ -181,7 +181,7 @@ build {
 #    proxmox_username    = "root@pam"
 #    proxmox_token       = "PVEAPIToken=user@pam!token=secret"
 #    proxmox_node        = "pve"
-#    talos_version       = "v1.11.4"
+#    talos_version       = "v1.11.5"
 #    talos_schematic_id  = "your-schematic-id-here"  # Must include required extensions!
 #
 # 3. Initialize Packer:
@@ -195,7 +195,7 @@ build {
 #    packer build .
 #
 # After Building:
-# - Template will be available in Proxmox with name: talos-1.11.4-nvidia-template-YYYYMMDD-hhmm
+# - Template will be available in Proxmox with name: talos-1.11.5-nvidia-template-YYYYMMDD-hhmm
 # - Use Terraform to deploy VMs from this template
 # - Apply Talos machine configuration via talosctl
 # - Configure GPU passthrough in Terraform (IOMMU, PCI device passthrough)

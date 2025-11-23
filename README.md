@@ -660,10 +660,10 @@ cat ansible/inventory/proxmox.ini
 **Cluster bootstrap fails:**
 ```bash
 # Check Talos API connectivity
-talosctl --talosconfig=./talosconfig --nodes=192.168.1.100 version
+talosctl --talosconfig=./talosconfig --nodes=10.10.2.10 version
 
 # View Talos logs
-talosctl --talosconfig=./talosconfig --nodes=192.168.1.100 logs controller-runtime
+talosctl --talosconfig=./talosconfig --nodes=10.10.2.10 logs controller-runtime
 ```
 
 **Pods not scheduling:**

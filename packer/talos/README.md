@@ -67,7 +67,7 @@ Choose **"Metal"** (for Talos 1.8.0+)
 
 #### Step 3: Select Talos Version
 
-Choose **v1.11.4** (or latest stable from https://github.com/siderolabs/talos/releases)
+Choose **v1.11.5** (or latest stable from https://github.com/siderolabs/talos/releases)
 
 #### Step 4: Add System Extensions
 
@@ -115,7 +115,7 @@ If you prefer to download the image manually:
 ```bash
 # Construct URL (replace with your schematic ID and version)
 SCHEMATIC_ID="your-schematic-id-here"
-VERSION="v1.11.4"
+VERSION="v1.11.5"
 IMAGE_URL="https://factory.talos.dev/image/${SCHEMATIC_ID}/${VERSION}/metal-amd64.iso"
 
 # Download ISO
@@ -147,7 +147,7 @@ proxmox_token    = "PVEAPIToken=terraform@pam!terraform-token=xxxxxxxx-xxxx-xxxx
 proxmox_node     = "pve"
 
 # Talos configuration
-talos_version      = "v1.11.4"
+talos_version      = "v1.11.5"
 talos_schematic_id = "abc123def456..."  # Your schematic ID from Factory
 
 # VM configuration
@@ -240,7 +240,7 @@ Check Proxmox web UI:
 Proxmox Web UI → Node → VM Templates
 ```
 
-You should see: `talos-1.11.4-nvidia-template-YYYYMMDD-hhmm`
+You should see: `talos-1.11.5-nvidia-template-YYYYMMDD-hhmm`
 
 Verify template properties:
 - CPU type: host
@@ -435,7 +435,7 @@ Change platform at factory.talos.dev when generating schematic.
    - Use SOPS for encrypted credentials
 
 2. **Template Naming**:
-   - Include version number: `talos-1.11.4-nvidia-template`
+   - Include version number: `talos-1.11.5-nvidia-template`
    - Include timestamp for rebuilds
    - Use consistent naming across environments
 

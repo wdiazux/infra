@@ -1,6 +1,6 @@
 # Debian Cloud Image Packer Template (PREFERRED METHOD)
 
-This directory contains configuration for building Debian 12 (Bookworm) golden images from **official Debian cloud images**. This is the **preferred and recommended approach** for creating Debian templates in Proxmox.
+This directory contains configuration for building Debian 13 (Trixie) golden images from **official Debian cloud images**. This is the **preferred and recommended approach** for creating Debian templates in Proxmox.
 
 ## Why Cloud Images? (Preferred Method)
 
@@ -62,10 +62,10 @@ chmod +x import-cloud-image.sh
 ./import-cloud-image.sh 9110
 ```
 
-This creates a base VM (`debian-12-cloud-base`) that Packer will clone and customize.
+This creates a base VM (`debian-13-cloud-base`) that Packer will clone and customize.
 
 **What the script does:**
-1. Downloads official Debian 12 cloud image
+1. Downloads official Debian 13 cloud image
 2. Verifies SHA512 checksum
 3. Imports to Proxmox as VM disk
 4. Configures VM with cloud-init
@@ -116,7 +116,7 @@ Check Proxmox UI:
 Datacenter → Node → VM Templates
 ```
 
-Should see: `debian-12-cloud-template-YYYYMMDD-hhmm`
+Should see: `debian-13-cloud-template-YYYYMMDD-hhmm`
 
 ## Using the Template
 
@@ -267,7 +267,7 @@ packer build .
 Tag templates with date/version:
 
 ```hcl
-template_name = "debian-12-cloud-template-v${formatdate("YYYYMMDD", timestamp())}"
+template_name = "debian-13-cloud-template-v${formatdate("YYYYMMDD", timestamp())}"
 ```
 
 ### 3. Separate Base from Customization

@@ -25,7 +25,8 @@
   ansible.builtin.apt:
     name:
       - ufw
-      - fail2ban
+      - crowdsec
+      - crowdsec-firewall-bouncer-iptables
       - unattended-upgrades
     state: present
   tags: [debian, ubuntu]

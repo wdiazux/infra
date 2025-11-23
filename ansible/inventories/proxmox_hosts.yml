@@ -1,0 +1,55 @@
+---
+# Ansible Inventory for Proxmox Hosts
+# This inventory defines all Proxmox VE hosts to be managed
+#
+# Usage:
+#   ansible-playbook -i inventories/proxmox_hosts.yml playbooks/day0_proxmox_prep.yml
+#
+# Best Practices:
+# - Use SSH key authentication (configure in group_vars)
+# - One inventory per Proxmox cluster
+# - Use descriptive host names
+
+all:
+  children:
+    proxmox:
+      hosts:
+        # ========================================================================
+        # Proxmox Hosts Configuration
+        # ========================================================================
+        #
+        # REPLACE THESE VALUES WITH YOUR ACTUAL PROXMOX HOST DETAILS
+        #
+        # Example single host:
+        pve1:
+          ansible_host: 10.10.2.2
+          ansible_user: root
+          # ansible_ssh_private_key_file: ~/.ssh/proxmox_ed25519
+
+        # Example multiple hosts (cluster):
+        # pve1:
+        #   ansible_host: 10.10.2.2
+        #   ansible_user: root
+        #
+        # pve2:
+        #   ansible_host: 10.10.2.3
+        #   ansible_user: root
+        #
+        # pve3:
+        #   ansible_host: 10.10.2.4
+        #   ansible_user: root
+
+      # ========================================================================
+      # Group Variables (can be overridden in group_vars/proxmox_hosts.yml)
+      # ========================================================================
+      vars:
+        # Ansible connection settings
+        ansible_connection: ssh
+        ansible_port: 22
+
+        # GPU passthrough configuration
+        has_gpu: false  # Set to true if this host has NVIDIA GPU for passthrough
+
+        # ZFS ARC memory limit (GB) - adjust based on total system RAM
+        # Recommended: 16GB for 96GB system
+        zfs_arc_max_gb: 16

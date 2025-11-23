@@ -57,14 +57,14 @@ variable "proxmox_node" {
 variable "talos_template_name" {
   description = "Name of the Talos template created by Packer"
   type        = string
-  default     = "talos-1.11.4-nvidia-template"
+  default     = "talos-1.11.5-nvidia-template"
   # Note: If you used timestamped template name, adjust this
 }
 
 variable "talos_version" {
   description = "Talos Linux version (must match template version)"
   type        = string
-  default     = "v1.11.4"
+  default     = "v1.11.5"
 }
 
 variable "talos_schematic_id" {
@@ -152,23 +152,23 @@ variable "node_vm_id" {
 variable "node_ip" {
   description = "Static IP address for the Talos node (REQUIRED)"
   type        = string
-  # Example: "192.168.1.100"
+  # Example: "10.10.2.10"
   default = ""  # Must be set by user
 
   validation {
     condition     = var.node_ip != "" && can(regex("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$", var.node_ip))
-    error_message = "node_ip is REQUIRED and must be a valid IPv4 address (e.g., '192.168.1.100'). Set in terraform.tfvars or via -var flag."
+    error_message = "node_ip is REQUIRED and must be a valid IPv4 address (e.g., '10.10.2.10'). Set in terraform.tfvars or via -var flag."
   }
 }
 
 variable "node_gateway" {
   description = "Network gateway for the Talos node"
   type        = string
-  default     = "192.168.1.1"
+  default     = "10.10.2.1"
 
   validation {
     condition     = can(regex("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$", var.node_gateway))
-    error_message = "node_gateway must be a valid IPv4 address (e.g., '192.168.1.1')."
+    error_message = "node_gateway must be a valid IPv4 address (e.g., '10.10.2.1')."
   }
 }
 
@@ -244,9 +244,15 @@ variable "enable_gpu_passthrough" {
 }
 
 variable "gpu_pci_id" {
-  description = "PCI ID of the GPU to passthrough (e.g., '01:00')"
+  description = "PCI ID of the GPU to passthrough (e.g., '01:00'). Used with METHOD 2 (password auth). Find with: lspci | grep -i nvidia"
   type        = string
   default     = "01:00"  # Adjust based on your system (lspci output)
+}
+
+variable "gpu_mapping" {
+  description = "GPU resource mapping name from Proxmox (e.g., 'gpu'). Used with METHOD 1 (API token). Create in: Datacenter → Resource Mappings"
+  type        = string
+  default     = ""  # Set to your mapping name if using METHOD 1
 }
 
 variable "gpu_pcie" {
@@ -330,7 +336,7 @@ variable "install_disk" {
 variable "nfs_server" {
   description = "NFS server IP or hostname for Longhorn backup target (optional)"
   type        = string
-  default     = ""  # Set to your NAS IP (e.g., "192.168.1.100")
+  default     = ""  # Set to your NAS IP (e.g., "10.10.2.5")
   # Note: Primary storage is Longhorn. NFS is only used for backup destination.
 }
 
@@ -431,7 +437,7 @@ variable "cloud_init_ssh_keys" {
 variable "default_gateway" {
   description = "Default gateway for static IP configurations"
   type        = string
-  default     = "192.168.1.1"
+  default     = "10.10.2.1"
 }
 
 # Ubuntu VM Configuration
@@ -492,7 +498,7 @@ variable "ubuntu_disk_storage" {
 }
 
 variable "ubuntu_ip_address" {
-  description = "Ubuntu IP address (e.g., '192.168.1.100/24' or 'dhcp')"
+  description = "Ubuntu IP address (e.g., '10.10.2.11/24' or 'dhcp')"
   type        = string
   default     = "dhcp"
 }
@@ -515,7 +521,7 @@ variable "deploy_debian_vm" {
 variable "debian_template_name" {
   description = "Debian Packer template name"
   type        = string
-  default     = "debian-12-cloud-template"
+  default     = "debian-13-cloud-template"
 }
 
 variable "debian_vm_name" {
@@ -561,7 +567,7 @@ variable "debian_disk_storage" {
 }
 
 variable "debian_ip_address" {
-  description = "Debian IP address (e.g., '192.168.1.101/24' or 'dhcp')"
+  description = "Debian IP address (e.g., '10.10.2.12/24' or 'dhcp')"
   type        = string
   default     = "dhcp"
 }
@@ -630,7 +636,7 @@ variable "arch_disk_storage" {
 }
 
 variable "arch_ip_address" {
-  description = "Arch Linux IP address (e.g., '192.168.1.102/24' or 'dhcp')"
+  description = "Arch Linux IP address (e.g., '10.10.2.13/24' or 'dhcp')"
   type        = string
   default     = "dhcp"
 }
@@ -699,7 +705,7 @@ variable "nixos_disk_storage" {
 }
 
 variable "nixos_ip_address" {
-  description = "NixOS IP address (e.g., '192.168.1.103/24' or 'dhcp')"
+  description = "NixOS IP address (e.g., '10.10.2.14/24' or 'dhcp')"
   type        = string
   default     = "dhcp"
 }
@@ -768,7 +774,7 @@ variable "windows_disk_storage" {
 }
 
 variable "windows_ip_address" {
-  description = "Windows 11 IP address (e.g., '192.168.1.104/24' or 'dhcp')"
+  description = "Windows 11 IP address (e.g., '10.10.2.15/24' or 'dhcp')"
   type        = string
   default     = "dhcp"
 }

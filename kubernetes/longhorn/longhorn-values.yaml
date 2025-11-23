@@ -33,7 +33,7 @@ defaultSettings:
   createDefaultDiskLabeledNodes: true
 
   # Backup configuration (configure later with NAS or S3)
-  # backupTarget: "nfs://192.168.1.100:/longhorn-backups"
+  # backupTarget: "nfs://10.10.2.5:/longhorn-backups"
   # backupTargetCredentialSecret: "longhorn-backup-secret"
 
   # Snapshot settings

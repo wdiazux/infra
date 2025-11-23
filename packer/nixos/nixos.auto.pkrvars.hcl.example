@@ -11,13 +11,13 @@ proxmox_node     = "pve"
 proxmox_skip_tls_verify = true
 
 # NixOS Version and ISO
-nixos_version = "24.05"  # Current stable release
-nixos_iso_url = "https://channels.nixos.org/nixos-24.05/latest-nixos-minimal-x86_64-linux.iso"
-nixos_iso_checksum = "file:https://channels.nixos.org/nixos-24.05/latest-nixos-minimal-x86_64-linux.iso.sha256"
+nixos_version = "25.05"  # Current stable release
+nixos_iso_url = "https://channels.nixos.org/nixos-25.05/latest-nixos-minimal-x86_64-linux.iso"
+nixos_iso_checksum = "file:https://channels.nixos.org/nixos-25.05/latest-nixos-minimal-x86_64-linux.iso.sha256"
 
 # Template Configuration
 template_name        = "nixos-golden-template"
-template_description = "NixOS 24.05 golden image with cloud-init and qemu-guest-agent"
+template_description = "NixOS 25.05 golden image with cloud-init and qemu-guest-agent"
 vm_id                = 9004
 
 # VM Hardware
