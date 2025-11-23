@@ -1,0 +1,83 @@
+---
+# Ansible Playbook for Packer Provisioning
+# Install baseline packages during golden image creation
+#
+# This playbook is run during Packer builds to install packages into golden images.
+# Post-deployment instance-specific configuration is handled by the baseline role.
+#
+# Architecture: Modular task files per OS for better maintainability
+
+- name: Install Baseline Packages (Packer Provisioning)
+  hosts: default
+  become: yes
+  gather_facts: yes
+
+  vars:
+    # Common packages to install (OS-specific names will be mapped)
+    common_packages:
+      - vim
+      - git
+      - htop
+      - curl
+      - wget
+      - tmux
+      - rsync
+      - zip
+      - unzip
+      - tree
+      - python3
+      - python3-pip
+
+  tasks:
+    # ==========================================================================
+    # Display Build Information
+    # ==========================================================================
+
+    - name: Display Packer build information
+      ansible.builtin.debug:
+        msg: |
+          ============================================================
+          Packer Provisioning - Baseline Package Installation
+          ============================================================
+          Builder: {{ packer_builder_type | default('unknown') }}
+          Build Name: {{ packer_build_name | default('unknown') }}
+          OS Family: {{ ansible_os_family }}
+          Distribution: {{ ansible_distribution }} {{ ansible_distribution_version }}
+          Architecture: {{ ansible_architecture }}
+          ============================================================
+      tags: [always]
+
+    # ==========================================================================
+    # Include OS-Specific Package Installation Tasks
+    # ==========================================================================
+
+    - name: Include Debian/Ubuntu package installation tasks
+      ansible.builtin.include_tasks: tasks/debian_packages.yml
+      when: ansible_os_family == "Debian"
+      tags: [debian, ubuntu]
+
+    - name: Include Arch Linux package installation tasks
+      ansible.builtin.include_tasks: tasks/archlinux_packages.yml
+      when: ansible_os_family == "Archlinux"
+      tags: [arch]
+
+    - name: Include Windows package installation tasks
+      ansible.builtin.include_tasks: tasks/windows_packages.yml
+      when: ansible_os_family == "Windows"
+      tags: [windows]
+
+    # ==========================================================================
+    # Post-Installation Summary
+    # ==========================================================================
+
+    - name: Display completion message
+      ansible.builtin.debug:
+        msg: |
+          ============================================================
+          Baseline Package Installation Complete
+          ============================================================
+          OS: {{ ansible_distribution }} {{ ansible_distribution_version }}
+          Packages installed successfully
+          Golden image ready for cloning
+          ============================================================
+      tags: [always]

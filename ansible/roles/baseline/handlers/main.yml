@@ -1,0 +1,57 @@
+---
+# Baseline Role - Handlers
+# Service restart handlers for configuration changes
+
+# ==============================================================================
+# SSH Service
+# ==============================================================================
+
+- name: restart ssh
+  ansible.builtin.service:
+    name: "{{ 'ssh' if ansible_os_family == 'Debian' else 'sshd' }}"
+    state: restarted
+  listen: restart ssh
+
+# ==============================================================================
+# Fail2ban Service
+# ==============================================================================
+
+- name: restart fail2ban
+  ansible.builtin.service:
+    name: fail2ban
+    state: restarted
+  listen: restart fail2ban
+
+# ==============================================================================
+# Firewall Services
+# ==============================================================================
+
+- name: restart ufw
+  ansible.builtin.service:
+    name: ufw
+    state: restarted
+  listen: restart ufw
+  when: ansible_os_family != "Windows"
+
+- name: reload firewalld
+  ansible.builtin.service:
+    name: firewalld
+    state: reloaded
+  listen: reload firewalld
+  when: ansible_os_family == "RedHat"
+
+# ==============================================================================
+# System Services
+# ==============================================================================
+
+- name: restart systemd-resolved
+  ansible.builtin.service:
+    name: systemd-resolved
+    state: restarted
+  listen: restart systemd-resolved
+  when: ansible_service_mgr == "systemd"
+
+- name: reload sysctl
+  ansible.builtin.command: sysctl -p
+  listen: reload sysctl
+  when: ansible_os_family != "Windows"

@@ -1,0 +1,85 @@
+# Ansible managed: fail2ban jail configuration for {{ ansible_hostname }}
+# Generated on {{ ansible_date_time.iso8601 }}
+#
+# This file configures fail2ban service bans for failed authentication attempts
+# Baseline role configuration - instance-specific settings
+
+[DEFAULT]
+# Ban hosts for {{ baseline_fail2ban_bantime | default(3600) }} seconds (1 hour default)
+bantime = {{ baseline_fail2ban_bantime | default(3600) }}
+
+# A host is banned if it has generated {{ baseline_fail2ban_maxretry | default(5) }} failures in {{ baseline_fail2ban_findtime | default(600) }} seconds
+findtime = {{ baseline_fail2ban_findtime | default(600) }}
+maxretry = {{ baseline_fail2ban_maxretry | default(5) }}
+
+# Email settings (if enabled)
+{% if baseline_fail2ban_email_enabled | default(false) %}
+destemail = {{ baseline_fail2ban_email | default('root@localhost') }}
+sendername = Fail2Ban-{{ ansible_hostname }}
+action = %(action_mwl)s
+{% else %}
+action = %(action_)s
+{% endif %}
+
+# ==============================================================================
+# SSH Protection (Primary)
+# ==============================================================================
+
+[sshd]
+enabled = true
+port = {{ baseline_ssh_port | default(22) }}
+filter = sshd
+logpath = {{ '/var/log/auth.log' if ansible_os_family == 'Debian' else '/var/log/secure' }}
+maxretry = {{ baseline_fail2ban_ssh_maxretry | default(3) }}
+bantime = {{ baseline_fail2ban_ssh_bantime | default(7200) }}
+
+# ==============================================================================
+# Additional Services (Optional)
+# ==============================================================================
+
+{% if baseline_fail2ban_enable_http | default(false) %}
+[nginx-http-auth]
+enabled = true
+filter = nginx-http-auth
+port = http,https
+logpath = /var/log/nginx/error.log
+maxretry = {{ baseline_fail2ban_http_maxretry | default(5) }}
+
+[nginx-botsearch]
+enabled = true
+filter = nginx-botsearch
+port = http,https
+logpath = /var/log/nginx/access.log
+maxretry = {{ baseline_fail2ban_http_maxretry | default(2) }}
+{% endif %}
+
+{% if baseline_fail2ban_enable_ftp | default(false) %}
+[vsftpd]
+enabled = true
+filter = vsftpd
+port = ftp,ftp-data,ftps,ftps-data
+logpath = /var/log/vsftpd.log
+maxretry = {{ baseline_fail2ban_ftp_maxretry | default(3) }}
+{% endif %}
+
+{% if baseline_fail2ban_enable_smtp | default(false) %}
+[postfix]
+enabled = true
+filter = postfix
+port = smtp,ssmtp,submission
+logpath = /var/log/mail.log
+maxretry = {{ baseline_fail2ban_smtp_maxretry | default(5) }}
+{% endif %}
+
+# ==============================================================================
+# Recidive Jail (Repeat Offenders)
+# ==============================================================================
+
+[recidive]
+enabled = true
+filter = recidive
+logpath = /var/log/fail2ban.log
+action = %(action_mwl)s
+bantime = {{ baseline_fail2ban_recidive_bantime | default(604800) }}  # 1 week
+findtime = {{ baseline_fail2ban_recidive_findtime | default(86400) }}  # 1 day
+maxretry = {{ baseline_fail2ban_recidive_maxretry | default(3) }}

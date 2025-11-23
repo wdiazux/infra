@@ -16,7 +16,9 @@ packer {
 
 # Local variables for computed values
 locals {
-  # Template name (no timestamp - Terraform expects exact name)
+  timestamp = formatdate("YYYYMMDD", timestamp())
+  # Use static template name for homelab simplicity (no timestamp)
+  # This ensures Terraform always finds the template without manual updates
   template_name = var.template_name
 }
 
