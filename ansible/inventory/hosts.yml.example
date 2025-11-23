@@ -89,19 +89,19 @@ traditional_vms:
       hosts:
         # debian-vm:
         #   ansible_host: 192.168.1.110
-        #   ansible_user: admin
+        #   ansible_user: wdiaz
 
     ubuntu_vms:
       hosts:
         # ubuntu-vm:
         #   ansible_host: 192.168.1.111
-        #   ansible_user: admin
+        #   ansible_user: wdiaz
 
     arch_vms:
       hosts:
         # arch-vm:
         #   ansible_host: 192.168.1.112
-        #   ansible_user: admin
+        #   ansible_user: wdiaz
 
   vars:
     ansible_ssh_private_key_file: ~/.ssh/id_rsa
@@ -111,7 +111,7 @@ nas:
   hosts:
     nas-server:
       ansible_host: 192.168.1.200  # Your NAS IP
-      ansible_user: admin  # Or appropriate user
+      ansible_user: wdiaz  # Or appropriate user for your NAS
 
       # NFS configuration
       nfs_exports:

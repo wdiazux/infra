@@ -1,0 +1,364 @@
+# Day 1: Windows Server VM Baseline Configuration
+#
+# This playbook configures newly deployed Windows Server VMs with instance-specific
+# settings. Baseline packages are pre-installed in the Packer golden image.
+#
+# Run with: ansible-playbook playbooks/day1-windows-baseline.yml
+#
+# Prerequisites:
+# - Windows Server VM deployed from Packer golden image (with baseline packages)
+# - WinRM configured via Cloudbase-Init
+# - User has Administrator privileges
+# - Ansible control node has pywinrm installed: pip install pywinrm
+#
+# Architecture (3-Layer):
+# - Layer 1 (Packer): Baseline packages installed in golden image via Chocolatey
+# - Layer 2 (Terraform): Deploy VMs from golden image
+# - Layer 3 (Ansible): Instance-specific configuration ONLY
+
+---
+- name: Configure Windows Server VM Baseline
+  hosts: windows_vms
+  gather_facts: yes
+
+  vars:
+    # Timezone configuration
+    timezone: "Eastern Standard Time"
+
+    # Windows Features to install (instance-specific)
+    windows_features:
+      - NET-Framework-45-Core
+      - Telnet-Client
+      - RSAT-AD-Tools
+
+    # Note: Baseline packages are pre-installed in Packer golden image:
+    # - Chocolatey (package manager)
+    # - vim, git, curl, wget, 7zip, python
+    # - sysinternals, putty, winscp
+    #
+    # Only install instance-specific packages here
+
+    # Optional: Docker installation
+    install_docker: false
+
+    # Firewall allowed ports (in addition to defaults)
+    firewall_allowed_ports:
+      - 3389   # RDP
+      - 5985   # WinRM HTTP
+      - 5986   # WinRM HTTPS
+
+    # Windows Update settings
+    enable_windows_update: true
+    windows_update_categories:
+      - SecurityUpdates
+      - CriticalUpdates
+
+    # Optional: SMB shares configuration
+    smb_shares: []
+
+  tasks:
+    # ========================================================================
+    # System Information
+    # ========================================================================
+
+    - name: Display system information
+      ansible.builtin.debug:
+        msg: |
+          Hostname: {{ ansible_hostname }}
+          OS: {{ ansible_os_name }}
+          Version: {{ ansible_distribution_version }}
+          Architecture: {{ ansible_architecture }}
+          CPU Cores: {{ ansible_processor_vcpus }}
+          Memory: {{ ansible_memtotal_mb }}MB
+
+    # ========================================================================
+    # Hostname Configuration
+    # ========================================================================
+
+    - name: Set computer name
+      ansible.windows.win_hostname:
+        name: "{{ inventory_hostname.split('.')[0] }}"
+      when: ansible_hostname != inventory_hostname.split('.')[0]
+      register: hostname_changed
+
+    - name: Reboot if hostname changed
+      ansible.windows.win_reboot:
+        msg: "Rebooting to apply hostname change"
+        pre_reboot_delay: 10
+        post_reboot_delay: 30
+      when: hostname_changed.changed
+
+    # ========================================================================
+    # Timezone Configuration
+    # ========================================================================
+
+    - name: Set timezone
+      community.windows.win_timezone:
+        timezone: "{{ timezone }}"
+
+    # ========================================================================
+    # Windows Features
+    # ========================================================================
+
+    - name: Install Windows Features
+      ansible.windows.win_feature:
+        name: "{{ item }}"
+        state: present
+      loop: "{{ windows_features }}"
+      register: feature_install
+
+    - name: Reboot if features require it
+      ansible.windows.win_reboot:
+        msg: "Rebooting to complete Windows Features installation"
+      when: feature_install.results | selectattr('reboot_required', 'equalto', true) | list | length > 0
+
+    # ========================================================================
+    # Instance-Specific Package Installation
+    # ========================================================================
+    # Note: Chocolatey and baseline packages are pre-installed in Packer golden image.
+    # Only install instance-specific packages here if needed.
+    #
+    # Example for instance-specific package:
+    # - name: Install instance-specific package
+    #   ansible.windows.win_chocolatey:
+    #     name: specific-package-name
+    #     state: present
+
+    # ========================================================================
+    # Windows Firewall Configuration
+    # ========================================================================
+
+    - name: Enable Windows Firewall for all profiles
+      community.windows.win_firewall:
+        state: enabled
+        profiles:
+          - Domain
+          - Private
+          - Public
+
+    - name: Configure firewall rules
+      community.windows.win_firewall_rule:
+        name: "Allow {{ item }} inbound"
+        localport: "{{ item }}"
+        action: allow
+        direction: in
+        protocol: tcp
+        state: present
+        enabled: yes
+      loop: "{{ firewall_allowed_ports }}"
+
+    - name: Block all other inbound traffic
+      community.windows.win_firewall_rule:
+        name: "Block all other inbound"
+        action: block
+        direction: in
+        state: present
+        enabled: yes
+
+    # ========================================================================
+    # Security Hardening
+    # ========================================================================
+
+    - name: Disable SMBv1
+      ansible.windows.win_feature:
+        name: FS-SMB1
+        state: absent
+
+    - name: Configure password policy
+      ansible.windows.win_security_policy:
+        section: "System Access"
+        key: "{{ item.key }}"
+        value: "{{ item.value }}"
+      loop:
+        - { key: 'MinimumPasswordLength', value: '12' }
+        - { key: 'PasswordComplexity', value: '1' }
+        - { key: 'MaximumPasswordAge', value: '90' }
+        - { key: 'MinimumPasswordAge', value: '1' }
+        - { key: 'PasswordHistorySize', value: '24' }
+
+    - name: Configure account lockout policy
+      ansible.windows.win_security_policy:
+        section: "System Access"
+        key: "{{ item.key }}"
+        value: "{{ item.value }}"
+      loop:
+        - { key: 'LockoutBadCount', value: '5' }
+        - { key: 'ResetLockoutCount', value: '30' }
+        - { key: 'LockoutDuration', value: '30' }
+
+    - name: Configure audit policy
+      ansible.windows.win_audit_policy_system:
+        subcategory: "{{ item.subcategory }}"
+        audit_type: "{{ item.type }}"
+      loop:
+        - { subcategory: 'Logon', type: 'success, failure' }
+        - { subcategory: 'Logoff', type: 'success' }
+        - { subcategory: 'Account Lockout', type: 'success, failure' }
+        - { subcategory: 'Other Account Management Events', type: 'success, failure' }
+        - { subcategory: 'Process Creation', type: 'success' }
+
+    # ========================================================================
+    # Remote Desktop Configuration
+    # ========================================================================
+
+    - name: Enable Remote Desktop
+      ansible.windows.win_regedit:
+        path: 'HKLM:\System\CurrentControlSet\Control\Terminal Server'
+        name: fDenyTSConnections
+        data: 0
+        type: dword
+
+    - name: Require Network Level Authentication for RDP
+      ansible.windows.win_regedit:
+        path: 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp'
+        name: UserAuthentication
+        data: 1
+        type: dword
+
+    # ========================================================================
+    # Windows Update Configuration
+    # ========================================================================
+
+    - name: Install Windows Updates
+      ansible.windows.win_updates:
+        category_names: "{{ windows_update_categories }}"
+        reboot: yes
+        reboot_timeout: 3600
+      when: enable_windows_update
+      register: update_result
+
+    - name: Display update summary
+      ansible.builtin.debug:
+        msg: |
+          Updates installed: {{ update_result.installed_update_count | default(0) }}
+          Reboot required: {{ update_result.reboot_required | default(false) }}
+      when: enable_windows_update
+
+    # ========================================================================
+    # Docker Installation (Optional)
+    # ========================================================================
+
+    - name: Install Docker via Chocolatey
+      ansible.windows.win_chocolatey:
+        name: docker-desktop
+        state: present
+      when: install_docker
+
+    - name: Start Docker service
+      ansible.windows.win_service:
+        name: docker
+        start_mode: auto
+        state: started
+      when: install_docker
+
+    # ========================================================================
+    # Performance Tuning
+    # ========================================================================
+
+    - name: Disable unnecessary services
+      ansible.windows.win_service:
+        name: "{{ item }}"
+        start_mode: disabled
+      loop:
+        - WSearch  # Windows Search (if not needed)
+        - SysMain  # Superfetch (may impact VMs)
+      ignore_errors: yes
+
+    - name: Set power plan to High Performance
+      ansible.windows.win_power_plan:
+        name: high performance
+
+    # ========================================================================
+    # SMB Shares (Optional)
+    # ========================================================================
+
+    - name: Create SMB shares
+      ansible.windows.win_share:
+        name: "{{ item.name }}"
+        path: "{{ item.path }}"
+        state: present
+        full: "{{ item.full | default('Administrators') }}"
+        read: "{{ item.read | default('Users') }}"
+      loop: "{{ smb_shares }}"
+      when: smb_shares | length > 0
+
+    # ========================================================================
+    # Cleanup
+    # ========================================================================
+
+    - name: Clean Windows Update cache
+      ansible.windows.win_shell: |
+        Stop-Service wuauserv
+        Remove-Item C:\Windows\SoftwareDistribution\Download\* -Recurse -Force
+        Start-Service wuauserv
+      args:
+        executable: powershell.exe
+      ignore_errors: yes
+
+    - name: Clean temp files
+      ansible.windows.win_file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - C:\Windows\Temp
+        - C:\Users\*\AppData\Local\Temp
+      ignore_errors: yes
+
+    # ========================================================================
+    # Final Status
+    # ========================================================================
+
+    - name: Display configuration summary
+      ansible.builtin.debug:
+        msg: |
+          ============================================================
+          Windows Server VM Baseline Configuration Complete
+          ============================================================
+
+          System:
+          - Hostname: {{ inventory_hostname }}
+          - OS: {{ ansible_os_name }}
+          - Timezone: {{ timezone }}
+
+          Security:
+          - Windows Firewall: Enabled
+          - SMBv1: Disabled
+          - Password policy: Enforced
+          - Account lockout: Configured
+          - Audit policy: Configured
+          - RDP NLA: Required
+
+          Software:
+          - Windows Features: {{ windows_features | length }} installed
+          - Chocolatey packages: {{ chocolatey_packages | length }} installed
+          - Docker: {{ 'Installed' if install_docker else 'Not installed' }}
+
+          Updates:
+          - Windows Updates: {{ 'Applied' if enable_windows_update else 'Skipped' }}
+
+          Network:
+          - SMB shares: {{ smb_shares | length }} configured
+
+          ============================================================
+          Next Steps:
+          ============================================================
+          1. Verify RDP access
+          2. Test firewall rules
+          3. Configure application-specific settings
+          4. Set up backup solution
+          5. Configure monitoring (SNMP, WMI, etc.)
+          6. Join domain (if applicable)
+
+          ============================================================
+
+# Notes:
+# - This playbook uses WinRM for communication (not SSH)
+# - Requires pywinrm on Ansible control node: pip install pywinrm
+# - Ansible inventory must have:
+#   ansible_connection: winrm
+#   ansible_winrm_transport: ntlm (or kerberos/credssp)
+#   ansible_port: 5985 (HTTP) or 5986 (HTTPS)
+# - Multiple reboots may occur during execution
+# - Test in development environment first
+# - Windows Updates can take significant time
+# - Firewall rules should be reviewed before production deployment

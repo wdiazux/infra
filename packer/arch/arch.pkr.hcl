@@ -11,13 +11,19 @@ packer {
       source  = "github.com/hashicorp/proxmox"
       version = ">= 1.2.2"  # Fixed: CPU bug in 1.2.0, use 1.2.2+
     }
+    ansible = {
+      source  = "github.com/hashicorp/ansible"
+      version = "~> 1"
+    }
   }
 }
 
-# Local variables
+# Local variables for computed values
 locals {
   timestamp = formatdate("YYYYMMDD", timestamp())
-  template_name = "${var.template_name}-${local.timestamp}"
+  # Use static template name for homelab simplicity (no timestamp)
+  # This ensures Terraform always finds the template without manual updates
+  template_name = var.template_name
 }
 
 # Proxmox ISO Builder
@@ -139,6 +145,18 @@ build {
     ]
   }
 
+  # Install baseline packages with Ansible
+  provisioner "ansible" {
+    playbook_file = "../../ansible/packer-provisioning/install_baseline_packages.yml"
+    user          = "root"
+    use_proxy     = false
+
+    # Ansible variables passed to playbook
+    extra_arguments = [
+      "--extra-vars", "ansible_python_interpreter=/usr/bin/python"
+    ]
+  }
+
   # Configure cloud-init
   provisioner "shell" {
     inline = [
@@ -181,17 +199,28 @@ build {
 
 # Usage Notes:
 #
+# PREREQUISITES:
+# - Ansible 2.16+ installed on Packer build machine
+# - Ansible collections: ansible-galaxy collection install -r ../../ansible/requirements.yml
+#
+# BUILD:
 # 1. Ensure http/install.sh exists with installation script
 # 2. Set variables in arch.auto.pkrvars.hcl
 # 3. Run: packer init .
 # 4. Run: packer validate .
 # 5. Run: packer build .
 #
+# Architecture:
+# - install.sh: Installs essential packages needed for boot (openssh, qemu-guest-agent, cloud-init)
+# - Packer + Ansible provisioner: Installs baseline packages in golden image
+# - Terraform: Deploys VMs from golden image
+# - Ansible baseline role: Instance-specific configuration (hostnames, IPs, secrets)
+#
 # After building:
-# - Template available in Proxmox
+# - Template available in Proxmox with baseline packages pre-installed
 # - Clone VMs from template
 # - Customize with cloud-init (user-data, network-config)
-# - Configure with Ansible for baseline setup
+# - Configure with Ansible baseline role for instance-specific settings
 #
 # Note: Arch Linux is a rolling release - rebuild template regularly
 # to keep up with latest packages and security updates

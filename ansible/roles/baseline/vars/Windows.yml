@@ -1,0 +1,38 @@
+---
+# OS-Specific Variables for Windows
+# This file is automatically loaded based on ansible_os_family
+
+# Package name mappings (common name → Chocolatey package name)
+os_package_map:
+  vim: vim
+  git: git
+  htop: procexp        # Process Explorer (Windows equivalent)
+  curl: curl
+  wget: wget
+  tmux: null           # Not available on Windows
+  rsync: rsync
+  zip: 7zip
+  unzip: 7zip
+  tree: tree
+  net_tools: null      # Built into Windows
+  bind_utils: bind-toolsonly
+  gcc: mingw
+  make: make
+  python3: python
+  python_pip: null     # Included with python
+  nfs_client: null     # Built into Windows
+
+# Additional Windows-specific packages
+os_windows_packages:
+  - sysinternals
+  - putty
+  - winscp
+
+# Package manager specific settings
+os_package_manager: chocolatey
+os_update_command: "choco upgrade all -y"
+
+# Service names (OS-specific)
+os_ssh_service: null        # Windows doesn't use SSH by default
+os_firewall_service: null   # Windows Firewall managed differently
+os_rdp_service: TermService

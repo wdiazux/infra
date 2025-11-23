@@ -14,10 +14,12 @@ packer {
   }
 }
 
-# Local variables
+# Local variables for computed values
 locals {
   timestamp = formatdate("YYYYMMDD", timestamp())
-  template_name = "${var.template_name}-${local.timestamp}"
+  # Use static template name for homelab simplicity (no timestamp)
+  # This ensures Terraform always finds the template without manual updates
+  template_name = var.template_name
 }
 
 # Proxmox ISO Builder

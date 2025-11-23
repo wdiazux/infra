@@ -11,13 +11,17 @@ packer {
       source  = "github.com/hashicorp/proxmox"
       version = ">= 1.2.2"  # Fixed: CPU bug in 1.2.0, use 1.2.2+
     }
+    ansible = {
+      source  = "github.com/hashicorp/ansible"
+      version = "~> 1"
+    }
   }
 }
 
-# Local variables
+# Local variables for computed values
 locals {
-  timestamp = formatdate("YYYYMMDD", timestamp())
-  template_name = "${var.template_name}-${local.timestamp}"
+  # Template name (no timestamp - Terraform expects exact name)
+  template_name = var.template_name
 }
 
 # Proxmox clone builder
@@ -80,28 +84,15 @@ build {
     ]
   }
 
-  # Update system
-  provisioner "shell" {
-    inline = [
-      "sudo apt-get update",
-      "sudo apt-get upgrade -y",
-      "sudo apt-get dist-upgrade -y"
-    ]
-  }
+  # Install baseline packages with Ansible
+  provisioner "ansible" {
+    playbook_file = "../../ansible/packer-provisioning/install_baseline_packages.yml"
+    user          = "debian"
+    use_proxy     = false
 
-  # Install additional packages (cloud-init and qemu-guest-agent already installed)
-  provisioner "shell" {
-    inline = [
-      "sudo apt-get install -y",
-      "  vim",
-      "  curl",
-      "  wget",
-      "  git",
-      "  htop",
-      "  net-tools",
-      "  dnsutils",
-      "  python3",
-      "  python3-pip"
+    # Ansible variables passed to playbook
+    extra_arguments = [
+      "--extra-vars", "ansible_python_interpreter=/usr/bin/python3"
     ]
   }
 
@@ -138,6 +129,10 @@ build {
 
 # Usage Notes:
 #
+# PREREQUISITES:
+# - Ansible 2.16+ installed on Packer build machine
+# - Ansible collections: ansible-galaxy collection install -r ../../ansible/requirements.yml
+#
 # SETUP (One-time):
 # 1. Run import-cloud-image.sh on Proxmox host to create base VM
 #    ./import-cloud-image.sh 9110
@@ -150,8 +145,13 @@ build {
 #
 # Build time: 5-10 minutes (much faster than ISO!)
 #
+# Architecture:
+# - Packer + Ansible provisioner: Installs baseline packages in golden image
+# - Terraform: Deploys VMs from golden image
+# - Ansible baseline role: Instance-specific configuration (hostnames, IPs, secrets)
+#
 # After building:
-# - Template available in Proxmox
+# - Template available in Proxmox with baseline packages pre-installed
 # - Clone VMs from template
 # - Customize with cloud-init (user-data, network-config)
-# - Configure with Ansible for baseline setup
+# - Configure with Ansible baseline role for instance-specific settings

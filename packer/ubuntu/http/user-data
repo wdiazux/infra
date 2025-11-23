@@ -30,12 +30,12 @@ autoinstall:
       match:
         size: largest
 
-  # Identity (temporary user for Packer provisioning)
+  # Identity (user for Packer provisioning and default user)
   identity:
     hostname: ubuntu
     username: ubuntu
     password: $6$rounds=4096$saltsalt$YhXjWx6mPLH3wXmPDqH2qM0zBEDNF8gOJNpQx9DVFM4LlJ7wKEUxLx.oGXjJj0yp0FBkKJj4LHDN8oGXjJj0yp0
-    # Password: ubuntu (hashed with mkpasswd -m sha-512)
+    # Password: ubuntu (hashed with mkpasswd -m sha-512) - CHANGE IN PRODUCTION
 
   # SSH configuration
   ssh:

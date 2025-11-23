@@ -1,0 +1,118 @@
+# Day 1: All VMs Configuration Orchestration
+#
+# This playbook orchestrates instance-specific configuration of all traditional VMs
+# by running the appropriate OS-specific playbook for each VM type.
+# Baseline packages are pre-installed in Packer golden images.
+#
+# Run with: ansible-playbook playbooks/day1-all-vms.yml
+#
+# Prerequisites:
+# - All VMs deployed from Packer golden images via Terraform
+# - SSH access configured via cloud-init (Linux VMs)
+# - WinRM configured via Cloudbase-Init (Windows VMs)
+# - Ansible inventory configured with all hosts
+#
+# Architecture (3-Layer):
+# - Layer 1 (Packer): Baseline packages in golden images
+# - Layer 2 (Terraform): Deploy VMs from golden images
+# - Layer 3 (Ansible): Instance-specific configuration ONLY
+
+---
+- name: Day 1 Configuration Orchestration
+  hosts: localhost
+  gather_facts: no
+
+  tasks:
+    - name: Display orchestration start
+      ansible.builtin.debug:
+        msg: |
+          ============================================================
+          Day 1: All VMs Configuration Orchestration
+          ============================================================
+
+          This playbook configures instance-specific settings for all VMs.
+          Baseline packages are pre-installed in Packer golden images.
+
+          Configuration includes:
+          - System updates (post-deployment)
+          - Timezone and locale
+          - Hostname configuration
+          - Security hardening (SSH, firewall, fail2ban)
+          - NFS mounts (if configured)
+          - Optional Docker/Podman (instance-specific)
+
+          VMs will be configured in parallel by OS type.
+
+          ============================================================
+
+- name: Configure Ubuntu VMs
+  ansible.builtin.import_playbook: day1_ubuntu_baseline.yml
+  when: groups['ubuntu_vms'] is defined and groups['ubuntu_vms'] | length > 0
+
+- name: Configure Debian VMs
+  ansible.builtin.import_playbook: day1_debian_baseline.yml
+  when: groups['debian_vms'] is defined and groups['debian_vms'] | length > 0
+
+- name: Configure Arch Linux VMs
+  ansible.builtin.import_playbook: day1_arch_baseline.yml
+  when: groups['arch_vms'] is defined and groups['arch_vms'] | length > 0
+
+- name: Configure NixOS VMs
+  ansible.builtin.import_playbook: day1_nixos_baseline.yml
+  when: groups['nixos_vms'] is defined and groups['nixos_vms'] | length > 0
+
+- name: Configure Windows VMs
+  ansible.builtin.import_playbook: day1_windows_baseline.yml
+  when: groups['windows_vms'] is defined and groups['windows_vms'] | length > 0
+
+- name: Display orchestration complete
+  hosts: localhost
+  gather_facts: no
+
+  tasks:
+    - name: Display completion summary
+      ansible.builtin.debug:
+        msg: |
+          ============================================================
+          Day 1: All VMs Configuration Complete
+          ============================================================
+
+          Configured VM Types:
+          {% if groups['ubuntu_vms'] is defined and groups['ubuntu_vms'] | length > 0 %}
+          - Ubuntu: {{ groups['ubuntu_vms'] | length }} VM(s)
+          {% endif %}
+          {% if groups['debian_vms'] is defined and groups['debian_vms'] | length > 0 %}
+          - Debian: {{ groups['debian_vms'] | length }} VM(s)
+          {% endif %}
+          {% if groups['arch_vms'] is defined and groups['arch_vms'] | length > 0 %}
+          - Arch Linux: {{ groups['arch_vms'] | length }} VM(s)
+          {% endif %}
+          {% if groups['nixos_vms'] is defined and groups['nixos_vms'] | length > 0 %}
+          - NixOS: {{ groups['nixos_vms'] | length }} VM(s)
+          {% endif %}
+          {% if groups['windows_vms'] is defined and groups['windows_vms'] | length > 0 %}
+          - Windows: {{ groups['windows_vms'] | length }} VM(s)
+          {% endif %}
+
+          ============================================================
+          Next Steps:
+          ============================================================
+          1. Verify SSH/RDP access to all VMs
+          2. Test application deployments
+          3. Configure monitoring and alerting
+          4. Set up backup procedures
+          5. Deploy applications via Ansible roles
+
+          ============================================================
+
+# Notes:
+# - This playbook imports OS-specific playbooks
+# - VMs are configured in parallel by OS type
+# - Each playbook is idempotent - safe to rerun
+# - Skips VM types with no hosts in inventory
+# - For individual OS configuration, run specific playbook:
+#   - ansible-playbook playbooks/day1_ubuntu_baseline.yml
+#   - ansible-playbook playbooks/day1_debian_baseline.yml
+#   - ansible-playbook playbooks/day1_arch_baseline.yml
+#   - ansible-playbook playbooks/day1_nixos_baseline.yml
+#   - ansible-playbook playbooks/day1_windows_baseline.yml

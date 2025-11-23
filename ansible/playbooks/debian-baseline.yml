@@ -1,0 +1,104 @@
+---
+# Debian Baseline Configuration Playbook
+#
+# This playbook configures a baseline Debian 12 (Bookworm) VM deployed from Packer template.
+# Run after Terraform creates the VM and cloud-init completes.
+#
+# Usage:
+#   ansible-playbook -i inventories/terraform-managed.yml playbooks/debian-baseline.yml
+
+- name: Configure Debian Baseline
+  hosts: debian_vms
+  become: true
+  gather_facts: true
+
+  vars:
+    baseline_packages:
+      - vim
+      - curl
+      - wget
+      - git
+      - htop
+      - net-tools
+      - dnsutils
+      - ca-certificates
+      - gnupg
+      - python3-pip
+      - qemu-guest-agent
+
+    optional_packages:
+      - tmux
+      - jq
+      - unzip
+      - tree
+
+  pre_tasks:
+    - name: Wait for cloud-init to complete
+      ansible.builtin.wait_for:
+        path: /var/lib/cloud/instance/boot-finished
+        timeout: 300
+      tags: always
+
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+      tags: packages
+
+    - name: Upgrade all packages
+      ansible.builtin.apt:
+        upgrade: dist
+        autoremove: true
+        autoclean: true
+      tags: packages
+
+    - name: Install baseline packages
+      ansible.builtin.apt:
+        name: "{{ baseline_packages }}"
+        state: present
+      tags: packages
+
+    - name: Install optional packages
+      ansible.builtin.apt:
+        name: "{{ optional_packages }}"
+        state: present
+      when: optional_packages is defined
+      tags: packages
+
+    - name: Set timezone
+      community.general.timezone:
+        name: UTC
+      tags: config
+
+    - name: Ensure QEMU guest agent is running
+      ansible.builtin.systemd:
+        name: qemu-guest-agent
+        enabled: true
+        state: started
+      tags: services
+
+    - name: Configure unattended-upgrades
+      ansible.builtin.apt:
+        name: unattended-upgrades
+        state: present
+      tags: security
+
+    - name: Disable root login via SSH
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PermitRootLogin'
+        line: 'PermitRootLogin no'
+      notify: restart sshd
+      tags: security
+
+  handlers:
+    - name: restart sshd
+      ansible.builtin.systemd:
+        name: sshd
+        state: restarted
+
+  post_tasks:
+    - name: Display completion message
+      ansible.builtin.debug:
+        msg: "Debian baseline configuration complete for {{ ansible_hostname }}"

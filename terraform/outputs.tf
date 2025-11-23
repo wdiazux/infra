@@ -98,9 +98,9 @@ output "access_instructions" {
        talosctl --nodes ${var.node_ip} dashboard
 
     Next steps:
-    - Install Cilium CNI: kubectl apply -f ../kubernetes/cilium/
-    - Install NFS CSI Driver: kubectl apply -f ../kubernetes/nfs-csi/
-    - Install NVIDIA GPU Operator: kubectl apply -f ../kubernetes/gpu-operator/
+    - Install Cilium CNI: helm install cilium cilium/cilium --namespace kube-system -f ../kubernetes/cilium/cilium-values.yaml
+    - Install Longhorn Storage: helm install longhorn longhorn/longhorn --namespace longhorn-system -f ../kubernetes/longhorn/longhorn-values.yaml
+    - Install NVIDIA GPU Operator (if GPU enabled): helm install gpu-operator nvidia/gpu-operator --namespace gpu-operator
     - Install FluxCD: flux bootstrap github ...
 
     Documentation:
@@ -161,13 +161,15 @@ output "gpu_verification_command" {
 output "storage_configuration" {
   description = "Storage configuration summary"
   value = {
-    local_disk = "${var.node_disk_size}GB (ephemeral storage)"
-    nfs_server = var.nfs_server != "" ? var.nfs_server : "Not configured"
-    nfs_path   = var.nfs_server != "" ? var.nfs_path : "Not configured"
+    local_disk = "${var.node_disk_size}GB"
+    primary_storage = "Longhorn v1.7.x (install via Helm - see kubernetes/longhorn/)"
+    backup_target = var.nfs_server != "" ? "NFS backup to ${var.nfs_server}:${var.nfs_path}" : "Not configured (optional)"
     storage_classes = [
-      "local-path (ephemeral, fast)",
-      var.nfs_server != "" ? "nfs-external (persistent, durable)" : "nfs-external (not configured)"
+      "longhorn-default (1-replica for single node, expandable to 3-replica for HA)",
+      "longhorn-retain (for persistent data that survives PVC deletion)",
+      "longhorn-fast (performance optimized)"
     ]
+    installation_notes = "Longhorn requires iscsi-tools and util-linux-tools system extensions in Talos image"
   }
 }
 
