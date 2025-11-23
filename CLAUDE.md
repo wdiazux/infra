@@ -712,6 +712,25 @@ This section provides a comprehensive list of tools specifically for Talos Linux
 - **Configuration**: Single-replica mode for single node, expandable to 3-replica HA when adding nodes
 - **Benefits**: Snapshots, volume cloning, automated backups, web UI management, volume resize
 
+**Secrets Management:**
+- **Primary**: SOPS with FluxCD + Age encryption
+- **Baseline**: Talos disk encryption (TPM-anchored) + Kubernetes secrets encryption at rest (secretbox)
+- **Key Storage**: Age private key in Kubernetes (sops-age secret in flux-system namespace)
+- **Backup**: Age private key in password manager (1Password, Bitwarden, etc.)
+- **Rationale**:
+  - Native FluxCD integration (no additional operators)
+  - Zero infrastructure overhead
+  - GitOps-native with full audit trail in Git
+  - Simple Age key management for homelab scale
+  - Defense-in-depth: Talos disk encryption + K8s encryption at rest + SOPS GitOps layer
+- **Documentation**: See `docs/KUBERNETES_SECRETS_MANAGEMENT_GUIDE.md` (comprehensive 40+ page guide)
+- **Quick Start**: See `docs/SECRETS_MANAGEMENT_QUICK_START.md` (5-minute setup guide)
+- **Alternatives Evaluated**: External Secrets Operator, Sealed Secrets, HashiCorp Vault, SOPS Secrets Operator
+  - ESO: Better for multi-cloud with existing secret backends (overkill for homelab)
+  - Sealed Secrets: Good alternative for ArgoCD users (but we use FluxCD)
+  - Vault: Enterprise-grade but massive operational overhead (overkill for homelab)
+  - SOPS Secrets Operator: Redundant when FluxCD has native SOPS support
+
 **Note**: Traditional VMs (Debian, Ubuntu, Arch, NixOS, Windows) may also mount NAS storage via NFS or Samba as needed.
 
 ### Core Talos Tools (Required)
@@ -2133,6 +2152,46 @@ atlantis unlock                            # Unlock state (via PR comment)
 ```
 
 ## Version History
+
+- **2025-11-23**: Comprehensive Kubernetes secrets management research
+  - **Research completed**: Evaluated 6 secrets management solutions for Talos/Kubernetes
+  - **Solutions analyzed**:
+    1. SOPS with FluxCD + Age encryption (recommended for this project)
+    2. External Secrets Operator (ESO) - for multi-cloud/existing backends
+    3. Sealed Secrets (Bitnami) - ArgoCD alternative
+    4. Native Kubernetes secrets + Talos encryption at rest - baseline security
+    5. HashiCorp Vault integration - enterprise solution
+    6. SOPS Secrets Operator - standalone SOPS without FluxCD
+  - **Decision made**: SOPS with FluxCD + Age encryption
+    - Zero additional infrastructure required (FluxCD native integration)
+    - Perfect for homelab scale with simple Age key management
+    - GitOps-native with full audit trail in Git
+    - Defense-in-depth: Talos disk encryption + K8s encryption at rest + SOPS layer
+  - **Documentation created**:
+    - `docs/KUBERNETES_SECRETS_MANAGEMENT_GUIDE.md` - Comprehensive 40+ page guide with:
+      - Executive summary and detailed comparison matrix
+      - In-depth analysis of all 6 solutions
+      - Top 3 recommendations with step-by-step implementation
+      - Homelab vs enterprise recommendations
+      - Migration strategies between solutions
+      - 90+ reference sources from 2024-2025
+    - `docs/SECRETS_MANAGEMENT_QUICK_START.md` - Quick reference guide with:
+      - 5-minute SOPS setup for FluxCD users
+      - Common operations cheat sheet
+      - Troubleshooting guide
+      - Security best practices
+      - Migration paths
+  - **CLAUDE.md updates**:
+    - Added "Secrets Management" subsection to "Project-Specific Tool Decisions"
+    - Documented chosen solution (SOPS + FluxCD + Age)
+    - Documented baseline security (Talos disk encryption + K8s encryption at rest)
+    - Added rationale and alternatives evaluated
+    - Cross-referenced comprehensive documentation
+  - **Research sources**: 90+ official docs and tutorials from 2024-2025
+    - FluxCD Mozilla SOPS Guide, External Secrets Operator docs
+    - Sealed Secrets GitHub, HashiCorp Vault Kubernetes integration
+    - Talos disk encryption, multiple 2024-2025 tutorials
+    - Homelab comparison guides and best practices
 
 - **2025-11-22**: Longhorn storage manager implementation
   - **MAJOR DECISION**: Changed primary storage from NFS CSI + local-path to Longhorn
