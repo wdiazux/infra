@@ -1,6 +1,6 @@
-# Packer Variables for Windows Server Golden Image
+# Packer Variables for Windows 11 Golden Image
 #
-# This file defines variables for building Windows Server 2022 golden image
+# This file defines variables for building Windows 11 golden image
 # for Proxmox VE 9.0
 
 # Proxmox Connection
@@ -39,14 +39,14 @@ variable "proxmox_skip_tls_verify" {
 # Windows ISO
 variable "windows_iso_url" {
   type        = string
-  description = "URL to Windows Server ISO"
-  default     = "https://software-download.microsoft.com/download/sg/20348.169.210806-2348.fe_release_svc_refresh_SERVER_EVAL_x64FRE_en-us.iso"
+  description = "URL to Windows 11 ISO"
+  default     = "https://software-download.microsoft.com/download/pr/Win11_24H2_English_x64.iso"
 }
 
 variable "windows_iso_checksum" {
   type        = string
-  description = "SHA256 checksum of Windows ISO"
-  default     = "sha256:3e4fa6d8507b554856fc9ca6079cc402df11a8b79344871669f0251535255e31"
+  description = "SHA256 checksum of Windows 11 ISO"
+  default     = "sha256:ebbc79106715f44f5020f77bd90721b17c5a877cbc15a3535b99155493a1bb3f"
 }
 
 # VirtIO drivers ISO
@@ -66,13 +66,13 @@ variable "virtio_iso_checksum" {
 variable "template_name" {
   type        = string
   description = "Name for the Proxmox template"
-  default     = "windows-server-2022-golden-template"
+  default     = "windows-11-golden-template"
 }
 
 variable "template_description" {
   type        = string
   description = "Description for the template"
-  default     = "Windows Server 2022 golden image with Cloudbase-Init"
+  default     = "Windows 11 (24H2) golden image with Cloudbase-Init"
 }
 
 # VM Configuration

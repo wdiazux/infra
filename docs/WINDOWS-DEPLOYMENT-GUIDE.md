@@ -1,14 +1,14 @@
-# Windows Server 2022 Golden Image: Complete Deployment Guide
+# Windows 11 Golden Image: Complete Deployment Guide
 
 **Date**: 2025-11-23
-**Purpose**: Step-by-step guide for creating Windows Server 2022 golden images with Packer and deploying VMs with Terraform
+**Purpose**: Step-by-step guide for creating Windows 11 golden images with Packer and deploying VMs with Terraform
 
 ---
 
 ## Overview
 
 This guide walks through the complete workflow:
-1. **Day 0**: Prepare Windows Server 2022 ISO, VirtIO drivers, and answer file
+1. **Day 0**: Prepare Windows 11 ISO, VirtIO drivers, and answer file
 2. **Day 1**: Build golden image template with Packer (automated installation)
 3. **Day 2**: Deploy production VMs from template with Terraform
 
@@ -36,7 +36,7 @@ ansible --version # Should be 2.16+ (optional, for provisioning)
 
 ### Windows Server Requirements
 
-- **Windows Server 2022 ISO**: Evaluation or licensed version
+- **Windows 11 ISO**: Evaluation or licensed version
 - **VirtIO Drivers ISO**: Required for Proxmox virtio-scsi and virtio-net
 - **Product Key** (optional for evaluation, required for licensed versions)
 - **License** (evaluation provides 180-day trial)
@@ -51,10 +51,10 @@ ansible --version # Should be 2.16+ (optional, for provisioning)
 
 ## Part 1: Day 0 - Prepare Windows ISO and Drivers
 
-### Step 1: Get Windows Server 2022 ISO
+### Step 1: Get Windows 11 ISO
 
 **Option A: Evaluation Version (Free 180-day trial)**
-1. Visit: https://www.microsoft.com/en-us/evalcenter/evaluate-windows-server-2022
+1. Visit: https://www.microsoft.com/en-us/evalcenter/evaluate-windows-11
 2. Register and download ISO (Standard or Datacenter evaluation)
 3. No product key required for evaluation
 
@@ -65,7 +65,7 @@ ansible --version # Should be 2.16+ (optional, for provisioning)
 
 **ISO Details**:
 - Size: ~5-6 GB
-- Filename: `windows-server-2022.iso` (rename for simplicity)
+- Filename: `windows-11.iso` (rename for simplicity)
 - Format: x86_64 / amd64
 
 ### Step 2: Get VirtIO Drivers
@@ -91,7 +91,7 @@ cd /var/lib/vz/template/iso
 
 # Upload ISOs from local machine
 # On your local machine:
-scp windows-server-2022.iso root@proxmox:/var/lib/vz/template/iso/
+scp windows-11.iso root@proxmox:/var/lib/vz/template/iso/
 scp virtio-win.iso root@proxmox:/var/lib/vz/template/iso/
 
 # Verify ISOs are uploaded
@@ -162,16 +162,16 @@ proxmox_node     = "pve"
 proxmox_skip_tls_verify = true
 
 # Windows Configuration
-windows_edition  = "Windows Server 2022 Standard (Desktop Experience)"
+windows_edition  = "Windows 11 Standard (Desktop Experience)"
 # Options:
-# - "Windows Server 2022 Standard (Desktop Experience)"  # GUI
-# - "Windows Server 2022 Standard"                       # Server Core
-# - "Windows Server 2022 Datacenter (Desktop Experience)" # GUI
-# - "Windows Server 2022 Datacenter"                     # Server Core
+# - "Windows 11 Standard (Desktop Experience)"  # GUI
+# - "Windows 11 Standard"                       # Server Core
+# - "Windows 11 Datacenter (Desktop Experience)" # GUI
+# - "Windows 11 Datacenter"                     # Server Core
 
 # Template Configuration
-template_name        = "windows-server-2022-golden-template"
-template_description = "Windows Server 2022 Standard with Cloudbase-Init"
+template_name        = "windows-11-golden-template"
+template_description = "Windows 11 Standard with Cloudbase-Init"
 vm_id                = 9500
 
 # VM Hardware (Windows needs more resources)
@@ -277,7 +277,7 @@ ssh root@proxmox
 
 # List templates
 qm list | grep -i template
-# Should show: windows-server-2022-golden-template
+# Should show: windows-11-golden-template
 
 # Check template configuration
 qm config 9500
@@ -318,7 +318,7 @@ proxmox_node     = "pve"
 
 # Windows VM Configuration
 deploy_windows_vm     = true
-windows_template_name = "windows-server-2022-golden-template"
+windows_template_name = "windows-11-golden-template"
 windows_vm_name       = "windows-prod-01"
 windows_vm_id         = 500
 
@@ -351,7 +351,7 @@ terraform apply
 ```
 
 **Terraform will**:
-1. Look up template "windows-server-2022-golden-template" on Proxmox
+1. Look up template "windows-11-golden-template" on Proxmox
 2. Clone template → create new VM (ID 500)
 3. Configure resources (4 cores, 8GB RAM)
 4. Apply Cloudbase-Init configuration (hostname, IP, user)
@@ -567,7 +567,7 @@ Sysprep was not able to validate your Windows installation
 ┌─────────────────────────────────────────────────────────────┐
 │     Day 0: Prepare Windows ISO, VirtIO, Answer File        │
 ├─────────────────────────────────────────────────────────────┤
-│ 1. Download Windows Server 2022 ISO (eval or licensed)      │
+│ 1. Download Windows 11 ISO (eval or licensed)      │
 │ 2. Download VirtIO drivers ISO                              │
 │ 3. Upload both ISOs to Proxmox: /var/lib/vz/template/iso/  │
 │ 4. Verify autounattend.xml exists                           │
@@ -592,7 +592,7 @@ Sysprep was not able to validate your Windows installation
 │   - Installs Windows Updates (optional)                     │
 │   - Optimizes Windows                                       │
 │ → Runs Sysprep to generalize image                          │
-│ → Creates template "windows-server-2022-golden-template"    │
+│ → Creates template "windows-11-golden-template"    │
 └─────────────────────────────────────────────────────────────┘
                             ↓
 ┌─────────────────────────────────────────────────────────────┐
@@ -632,7 +632,7 @@ Sysprep was not able to validate your Windows installation
 
 ```hcl
 # In windows.auto.pkrvars.hcl
-windows_edition = "Windows Server 2022 Standard"  # Server Core (no GUI)
+windows_edition = "Windows 11 Standard"  # Server Core (no GUI)
 ```
 
 **Benefits**:

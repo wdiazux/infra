@@ -22,10 +22,6 @@ packer {
 locals {
   # Template name (no timestamp - Terraform expects exact name)
   template_name = var.template_name
-
-  # Cloud image URL and checksum
-  cloud_image_url = "https://cloud-images.ubuntu.com/releases/24.04/release/ubuntu-24.04-server-cloudimg-amd64.img"
-  cloud_image_checksum = "file:https://cloud-images.ubuntu.com/releases/24.04/release/SHA256SUMS"
 }
 
 # Download and import cloud image
