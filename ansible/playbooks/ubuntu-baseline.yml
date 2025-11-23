@@ -1,0 +1,220 @@
+---
+# Ubuntu Baseline Configuration Playbook
+#
+# This playbook configures a baseline Ubuntu 24.04 VM deployed from Packer template.
+# Run after Terraform creates the VM and cloud-init completes.
+#
+# Usage:
+#   ansible-playbook -i inventories/terraform-managed.yml playbooks/ubuntu-baseline.yml
+#
+# Requirements:
+#   - VM accessible via SSH
+#   - cloud-init user (admin) created
+#   - SSH key injected via cloud-init
+
+- name: Configure Ubuntu Baseline
+  hosts: ubuntu_vms
+  become: true
+  gather_facts: true
+
+  vars:
+    # Package lists
+    baseline_packages:
+      - vim
+      - curl
+      - wget
+      - git
+      - htop
+      - net-tools
+      - dnsutils
+      - ca-certificates
+      - gnupg
+      - lsb-release
+      - software-properties-common
+      - python3-pip
+      - qemu-guest-agent  # Should already be installed from Packer
+
+    # Optional packages (comment out if not needed)
+    optional_packages:
+      - tmux
+      - jq
+      - unzip
+      - tree
+
+  pre_tasks:
+    - name: Wait for cloud-init to complete
+      ansible.builtin.wait_for:
+        path: /var/lib/cloud/instance/boot-finished
+        timeout: 300
+      tags: always
+
+    - name: Gather facts after cloud-init
+      ansible.builtin.setup:
+      tags: always
+
+  tasks:
+    # ========================================================================
+    # System Updates
+    # ========================================================================
+
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+      tags:
+        - packages
+        - updates
+
+    - name: Upgrade all packages
+      ansible.builtin.apt:
+        upgrade: dist
+        autoremove: true
+        autoclean: true
+      tags:
+        - packages
+        - updates
+
+    # ========================================================================
+    # Package Installation
+    # ========================================================================
+
+    - name: Install baseline packages
+      ansible.builtin.apt:
+        name: "{{ baseline_packages }}"
+        state: present
+      tags:
+        - packages
+
+    - name: Install optional packages
+      ansible.builtin.apt:
+        name: "{{ optional_packages }}"
+        state: present
+      when: optional_packages is defined
+      tags:
+        - packages
+        - optional
+
+    # ========================================================================
+    # System Configuration
+    # ========================================================================
+
+    - name: Set timezone
+      community.general.timezone:
+        name: UTC
+      tags:
+        - config
+
+    - name: Configure /etc/hosts
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        line: "{{ ansible_default_ipv4.address }} {{ ansible_hostname }} {{ ansible_fqdn }}"
+        state: present
+      tags:
+        - config
+
+    - name: Ensure QEMU guest agent is enabled and started
+      ansible.builtin.systemd:
+        name: qemu-guest-agent
+        enabled: true
+        state: started
+      tags:
+        - services
+
+    # ========================================================================
+    # Security Hardening
+    # ========================================================================
+
+    - name: Configure unattended-upgrades
+      ansible.builtin.apt:
+        name: unattended-upgrades
+        state: present
+      tags:
+        - security
+
+    - name: Enable unattended-upgrades
+      ansible.builtin.copy:
+        dest: /etc/apt/apt.conf.d/20auto-upgrades
+        content: |
+          APT::Periodic::Update-Package-Lists "1";
+          APT::Periodic::Unattended-Upgrade "1";
+          APT::Periodic::AutocleanInterval "7";
+        mode: '0644'
+      tags:
+        - security
+
+    - name: Disable root login via SSH
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PermitRootLogin'
+        line: 'PermitRootLogin no'
+        state: present
+      notify: restart sshd
+      tags:
+        - security
+        - ssh
+
+    - name: Disable password authentication (SSH keys only)
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PasswordAuthentication'
+        line: 'PasswordAuthentication no'
+        state: present
+      notify: restart sshd
+      tags:
+        - security
+        - ssh
+
+    # ========================================================================
+    # Monitoring & Logging
+    # ========================================================================
+
+    - name: Configure rsyslog
+      ansible.builtin.lineinfile:
+        path: /etc/rsyslog.conf
+        regexp: '{{ item.regexp }}'
+        line: '{{ item.line }}'
+        state: present
+      loop:
+        - regexp: '^\$FileCreateMode'
+          line: '$FileCreateMode 0640'
+      notify: restart rsyslog
+      tags:
+        - logging
+
+  handlers:
+    - name: restart sshd
+      ansible.builtin.systemd:
+        name: sshd
+        state: restarted
+
+    - name: restart rsyslog
+      ansible.builtin.systemd:
+        name: rsyslog
+        state: restarted
+
+  post_tasks:
+    - name: Display completion message
+      ansible.builtin.debug:
+        msg: |
+          Ubuntu baseline configuration complete for {{ ansible_hostname }}
+          IP Address: {{ ansible_default_ipv4.address }}
+          OS Version: {{ ansible_distribution }} {{ ansible_distribution_version }}
+          Kernel: {{ ansible_kernel }}
+      tags: always
+
+# Notes:
+# - This playbook assumes cloud-init has created the 'admin' user with sudo access
+# - SSH keys should be injected via cloud-init during VM creation
+# - QEMU guest agent is required for Proxmox integration
+# - Unattended upgrades are enabled for security patches
+# - SSH is hardened (no root login, no password auth)
+#
+# Customization:
+# - Add/remove packages in baseline_packages and optional_packages
+# - Adjust security settings as needed
+# - Add application-specific configuration as needed
+#
+# Next steps after running this playbook:
+# - Deploy application-specific playbooks
+# - Configure monitoring agents (Prometheus node exporter, etc.)
+# - Set up backup agents if needed

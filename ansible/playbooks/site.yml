@@ -1,0 +1,56 @@
+---
+# Site-wide Ansible Playbook
+#
+# This is the main entry point for configuring all infrastructure VMs.
+# It delegates to OS-specific playbooks based on inventory groups.
+#
+# Usage:
+#   # Configure all VMs
+#   ansible-playbook -i inventories/terraform-managed.yml playbooks/site.yml
+#
+#   # Configure specific group
+#   ansible-playbook -i inventories/terraform-managed.yml playbooks/site.yml --limit ubuntu_vms
+#
+#   # Dry run
+#   ansible-playbook -i inventories/terraform-managed.yml playbooks/site.yml --check
+
+- name: Apply baseline configuration to all traditional VMs
+  hosts: traditional_vms
+  become: true
+  gather_facts: true
+  tags: always
+
+  tasks:
+    - name: Include Ubuntu baseline
+      ansible.builtin.include_tasks: ubuntu-baseline.yml
+      when: "'ubuntu_vms' in group_names"
+      tags: ubuntu
+
+    - name: Include Debian baseline
+      ansible.builtin.include_tasks: debian-baseline.yml
+      when: "'debian_vms' in group_names"
+      tags: debian
+
+    - name: Display message for unsupported OS
+      ansible.builtin.debug:
+        msg: "Baseline playbook for {{ os_name }} is not yet implemented. See docs/ANSIBLE_RESEARCH_REPORT.md for guidance."
+      when: os_name not in ['ubuntu', 'debian']
+      tags: always
+
+# Notes:
+# - Talos Linux management is done via talosctl, not Ansible SSH
+# - For Talos operations, see talos/ subdirectory playbooks
+# - Windows VMs require separate WinRM-based playbooks
+# - Additional OS playbooks (Arch, NixOS) can be added as needed
+#
+# Project structure:
+#   ansible/playbooks/
+#   ├── site.yml                  # This file - main entry point
+#   ├── ubuntu-baseline.yml       # Ubuntu-specific configuration
+#   ├── debian-baseline.yml       # Debian-specific configuration
+#   ├── talos/                    # Talos-specific playbooks
+#   │   ├── day-0-prerequisites.yml
+#   │   ├── day-1-deploy.yml
+#   │   └── day-2-operations.yml
+#   └── windows/                  # Windows-specific playbooks (WinRM)
+#       └── baseline.yml

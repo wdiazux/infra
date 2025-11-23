@@ -1,0 +1,132 @@
+# Ansible Inventory for Terraform-Managed VMs
+#
+# This inventory file should be generated from Terraform outputs.
+# Copy this file to terraform-managed.yml and update with actual values.
+#
+# Generate dynamically using Terraform outputs:
+#   cd terraform && terraform output -json > ../ansible/inventories/terraform_output.json
+#   # Then parse JSON to populate this inventory
+#
+# Or manually update after `terraform apply`
+
+---
+all:
+  children:
+    # Talos Linux Cluster
+    talos_cluster:
+      hosts:
+        talos-node:
+          ansible_host: 192.168.1.100  # Replace with actual node_ip from Terraform output
+          ansible_connection: local  # Talos uses talosctl, not SSH
+          ansible_python_interpreter: /usr/bin/python3
+      vars:
+        # Talos-specific variables
+        talos_version: v1.11.4
+        kubernetes_version: v1.31.0
+        cluster_name: homelab-k8s
+        talosconfig_path: "{{ playbook_dir }}/../../terraform/talosconfig"
+        kubeconfig_path: "{{ playbook_dir }}/../../terraform/kubeconfig"
+
+    # Traditional Linux VMs
+    traditional_vms:
+      children:
+        # Ubuntu VMs
+        ubuntu_vms:
+          hosts:
+            ubuntu-dev:
+              ansible_host: 192.168.1.101  # Replace with actual IP (from Terraform output or DHCP)
+              ansible_user: admin  # From cloud-init config
+              ansible_become: true
+              ansible_python_interpreter: /usr/bin/python3
+          vars:
+            os_family: debian
+            os_name: ubuntu
+            os_version: "24.04"
+
+        # Debian VMs
+        debian_vms:
+          hosts:
+            debian-prod:
+              ansible_host: 192.168.1.102  # Replace with actual IP
+              ansible_user: admin
+              ansible_become: true
+              ansible_python_interpreter: /usr/bin/python3
+          vars:
+            os_family: debian
+            os_name: debian
+            os_version: "12"
+
+        # Arch Linux VMs
+        arch_vms:
+          hosts:
+            arch-dev:
+              ansible_host: 192.168.1.103  # Replace with actual IP
+              ansible_user: admin
+              ansible_become: true
+              ansible_python_interpreter: /usr/bin/python3
+          vars:
+            os_family: archlinux
+            os_name: arch
+            os_version: "rolling"
+
+        # NixOS VMs
+        nixos_vms:
+          hosts:
+            nixos-lab:
+              ansible_host: 192.168.1.104  # Replace with actual IP
+              ansible_user: admin
+              ansible_become: true
+              ansible_python_interpreter: /usr/bin/python3
+          vars:
+            os_family: nixos
+            os_name: nixos
+            os_version: "unstable"
+
+      # Common variables for all traditional VMs
+      vars:
+        ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+        ansible_ssh_retries: 3
+
+    # Windows VMs
+    windows_vms:
+      hosts:
+        windows-server:
+          ansible_host: 192.168.1.105  # Replace with actual IP
+          ansible_user: Administrator  # From Cloudbase-Init
+          ansible_connection: winrm
+          ansible_winrm_transport: ntlm
+          ansible_winrm_server_cert_validation: ignore
+          ansible_port: 5985
+      vars:
+        os_family: windows
+        os_name: windows_server
+        os_version: "2022"
+
+# Global variables for all hosts
+vars:
+  proxmox_node: pve
+  dns_servers:
+    - 8.8.8.8
+    - 8.8.4.4
+  ntp_servers:
+    - time.cloudflare.com
+
+# Notes:
+# - This is an EXAMPLE file. Copy to terraform-managed.yml and customize.
+# - Update IP addresses from Terraform outputs after deployment.
+# - For DHCP-assigned IPs, check Proxmox UI or QEMU guest agent output.
+# - Talos node uses talosctl instead of SSH - set ansible_connection: local.
+# - Windows VMs require WinRM configuration (ansible.windows collection).
+# - SSH keys should be injected via cloud-init during Packer/Terraform provisioning.
+#
+# Generating from Terraform outputs (example script):
+# #!/bin/bash
+# cd terraform
+# TALOS_IP=$(terraform output -raw node_ip)
+# UBUNTU_IP=$(terraform output -json ubuntu_ip_addresses | jq -r '.[0][0]')
+# # ... extract other IPs ...
+# # Generate YAML inventory programmatically
+#
+# Testing inventory:
+# ansible-inventory -i inventories/terraform-managed.yml --list
+# ansible all -i inventories/terraform-managed.yml -m ping

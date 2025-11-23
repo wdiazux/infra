@@ -43,6 +43,11 @@ variable "proxmox_node" {
   description = "Proxmox node name where VMs will be created"
   type        = string
   default     = "pve"
+
+  validation {
+    condition     = var.proxmox_node != ""
+    error_message = "Proxmox node name cannot be empty. Common values: 'pve', 'proxmox', or your custom node name."
+  }
 }
 
 # ============================================================================
@@ -73,6 +78,11 @@ variable "talos_schematic_id" {
   # - siderolabs/qemu-guest-agent (recommended for Proxmox)
   # - nonfree-kmod-nvidia-production (optional, for GPU)
   # - nvidia-container-toolkit-production (optional, for GPU)
+
+  validation {
+    condition     = var.talos_schematic_id == "" || can(regex("^[a-f0-9]{64}$", var.talos_schematic_id))
+    error_message = "Talos schematic ID must be empty or a 64-character hexadecimal string. Generate at https://factory.talos.dev/"
+  }
 }
 
 variable "kubernetes_version" {
@@ -118,19 +128,34 @@ variable "node_vm_id" {
   description = "Proxmox VM ID for the Talos node (changed from 100 to avoid conflict with traditional VMs)"
   type        = number
   default     = 1000
+
+  validation {
+    condition     = var.node_vm_id >= 100 && var.node_vm_id <= 999999999
+    error_message = "VM ID must be between 100 and 999999999. Reserved ranges: Talos=1000-1999, Ubuntu=100-199, Debian=200-299, Arch=300-399, NixOS=400-499, Windows=500-599."
+  }
 }
 
 variable "node_ip" {
-  description = "Static IP address for the Talos node"
+  description = "Static IP address for the Talos node (REQUIRED)"
   type        = string
   # Example: "192.168.1.100"
   default = ""  # Must be set by user
+
+  validation {
+    condition     = var.node_ip != "" && can(regex("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$", var.node_ip))
+    error_message = "node_ip is REQUIRED and must be a valid IPv4 address (e.g., '192.168.1.100'). Set in terraform.tfvars or via -var flag."
+  }
 }
 
 variable "node_gateway" {
   description = "Network gateway for the Talos node"
   type        = string
   default     = "192.168.1.1"
+
+  validation {
+    condition     = can(regex("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$", var.node_gateway))
+    error_message = "node_gateway must be a valid IPv4 address (e.g., '192.168.1.1')."
+  }
 }
 
 variable "node_netmask" {
