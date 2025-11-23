@@ -244,9 +244,15 @@ variable "enable_gpu_passthrough" {
 }
 
 variable "gpu_pci_id" {
-  description = "PCI ID of the GPU to passthrough (e.g., '01:00')"
+  description = "PCI ID of the GPU to passthrough (e.g., '01:00'). Used with METHOD 2 (password auth). Find with: lspci | grep -i nvidia"
   type        = string
   default     = "01:00"  # Adjust based on your system (lspci output)
+}
+
+variable "gpu_mapping" {
+  description = "GPU resource mapping name from Proxmox (e.g., 'gpu'). Used with METHOD 1 (API token). Create in: Datacenter → Resource Mappings"
+  type        = string
+  default     = ""  # Set to your mapping name if using METHOD 1
 }
 
 variable "gpu_pcie" {
