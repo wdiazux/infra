@@ -152,23 +152,23 @@ variable "node_vm_id" {
 variable "node_ip" {
   description = "Static IP address for the Talos node (REQUIRED)"
   type        = string
-  # Example: "192.168.1.100"
+  # Example: "10.10.2.10"
   default = ""  # Must be set by user
 
   validation {
     condition     = var.node_ip != "" && can(regex("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$", var.node_ip))
-    error_message = "node_ip is REQUIRED and must be a valid IPv4 address (e.g., '192.168.1.100'). Set in terraform.tfvars or via -var flag."
+    error_message = "node_ip is REQUIRED and must be a valid IPv4 address (e.g., '10.10.2.10'). Set in terraform.tfvars or via -var flag."
   }
 }
 
 variable "node_gateway" {
   description = "Network gateway for the Talos node"
   type        = string
-  default     = "192.168.1.1"
+  default     = "10.10.2.1"
 
   validation {
     condition     = can(regex("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$", var.node_gateway))
-    error_message = "node_gateway must be a valid IPv4 address (e.g., '192.168.1.1')."
+    error_message = "node_gateway must be a valid IPv4 address (e.g., '10.10.2.1')."
   }
 }
 
@@ -336,7 +336,7 @@ variable "install_disk" {
 variable "nfs_server" {
   description = "NFS server IP or hostname for Longhorn backup target (optional)"
   type        = string
-  default     = ""  # Set to your NAS IP (e.g., "192.168.1.100")
+  default     = ""  # Set to your NAS IP (e.g., "10.10.2.5")
   # Note: Primary storage is Longhorn. NFS is only used for backup destination.
 }
 
@@ -437,7 +437,7 @@ variable "cloud_init_ssh_keys" {
 variable "default_gateway" {
   description = "Default gateway for static IP configurations"
   type        = string
-  default     = "192.168.1.1"
+  default     = "10.10.2.1"
 }
 
 # Ubuntu VM Configuration
@@ -498,7 +498,7 @@ variable "ubuntu_disk_storage" {
 }
 
 variable "ubuntu_ip_address" {
-  description = "Ubuntu IP address (e.g., '192.168.1.100/24' or 'dhcp')"
+  description = "Ubuntu IP address (e.g., '10.10.2.11/24' or 'dhcp')"
   type        = string
   default     = "dhcp"
 }
@@ -567,7 +567,7 @@ variable "debian_disk_storage" {
 }
 
 variable "debian_ip_address" {
-  description = "Debian IP address (e.g., '192.168.1.101/24' or 'dhcp')"
+  description = "Debian IP address (e.g., '10.10.2.12/24' or 'dhcp')"
   type        = string
   default     = "dhcp"
 }
@@ -636,7 +636,7 @@ variable "arch_disk_storage" {
 }
 
 variable "arch_ip_address" {
-  description = "Arch Linux IP address (e.g., '192.168.1.102/24' or 'dhcp')"
+  description = "Arch Linux IP address (e.g., '10.10.2.13/24' or 'dhcp')"
   type        = string
   default     = "dhcp"
 }
@@ -705,7 +705,7 @@ variable "nixos_disk_storage" {
 }
 
 variable "nixos_ip_address" {
-  description = "NixOS IP address (e.g., '192.168.1.103/24' or 'dhcp')"
+  description = "NixOS IP address (e.g., '10.10.2.14/24' or 'dhcp')"
   type        = string
   default     = "dhcp"
 }
@@ -774,7 +774,7 @@ variable "windows_disk_storage" {
 }
 
 variable "windows_ip_address" {
-  description = "Windows 11 IP address (e.g., '192.168.1.104/24' or 'dhcp')"
+  description = "Windows 11 IP address (e.g., '10.10.2.15/24' or 'dhcp')"
   type        = string
   default     = "dhcp"
 }

@@ -260,9 +260,9 @@ node_memory  = 32768  # 32GB RAM (adjust based on your hardware)
 node_disk_size = 200  # 200GB for OS + Longhorn storage
 
 # Networking
-node_ip      = "192.168.1.100"
+node_ip      = "10.10.2.10"
 node_netmask = "24"
-node_gateway = "192.168.1.1"
+node_gateway = "10.10.2.1"
 dns_servers  = ["8.8.8.8", "1.1.1.1"]
 ntp_servers  = ["time.cloudflare.com"]
 
@@ -328,10 +328,10 @@ terraform output -raw talosconfig > ~/.talos/config
 export TALOSCONFIG=~/.talos/config
 
 # Verify Talos API access
-talosctl -n 192.168.1.100 version
+talosctl -n 10.10.2.10 version
 
 # Check cluster health
-talosctl -n 192.168.1.100 health
+talosctl -n 10.10.2.10 health
 ```
 
 ---
@@ -394,7 +394,7 @@ kubectl delete pod test-pod
 **Prerequisites Check**:
 ```bash
 # Verify system extensions are present
-talosctl -n 192.168.1.100 get extensions
+talosctl -n 10.10.2.10 get extensions
 
 # Should show:
 # - iscsi-tools
@@ -639,10 +639,10 @@ Events:
 ```
 
 **Solutions**:
-1. **Verify system extensions**: `talosctl -n 192.168.1.100 get extensions`
+1. **Verify system extensions**: `talosctl -n 10.10.2.10 get extensions`
    - Must show: `iscsi-tools`, `util-linux-tools`
 2. **If missing**: Rebuild Talos image with correct schematic ID (Part 1)
-3. **Check kernel modules**: `talosctl -n 192.168.1.100 get systemextensions`
+3. **Check kernel modules**: `talosctl -n 10.10.2.10 get systemextensions`
 4. **Verify kubelet extra mounts**: See `talos/patches/longhorn-requirements.yaml`
 
 ### Issue: Longhorn pods stuck in Pending
@@ -671,11 +671,11 @@ error: failed to connect: connection refused
 ```
 
 **Solutions**:
-1. Verify Talos node is running: `ssh root@proxmox 'qm list | grep 100'`
-2. Check Talos API port 50000: `nc -zv 192.168.1.100 50000`
+1. Verify Talos node is running: `ssh root@proxmox 'qm list | grep 1000'`
+2. Check Talos API port 50000: `nc -zv 10.10.2.10 50000`
 3. Verify firewall allows port 50000
 4. Check talosconfig: `cat ~/.talos/config | grep endpoints`
-5. Try with explicit node: `talosctl -n 192.168.1.100 version`
+5. Try with explicit node: `talosctl -n 10.10.2.10 version`
 
 ### Issue: GPU not detected in Kubernetes
 
@@ -690,7 +690,7 @@ kubectl describe node talos-01 | grep -i gpu
 2. Check GPU passthrough in Proxmox: `ssh root@proxmox 'qm config 100 | grep hostpci'`
 3. Verify IOMMU enabled: `ssh root@proxmox 'dmesg | grep -i iommu'`
 4. Install NVIDIA GPU Operator: See Part 5, Test 3
-5. Check GPU driver loaded: `talosctl -n 192.168.1.100 dmesg | grep nvidia`
+5. Check GPU driver loaded: `talosctl -n 10.10.2.10 dmesg | grep nvidia`
 
 ---
 
@@ -799,17 +799,17 @@ Keep Talos and Kubernetes up-to-date:
 
 ```bash
 # Upgrade Talos
-talosctl -n 192.168.1.100 upgrade --image factory.talos.dev/installer/YOUR_SCHEMATIC_ID:v1.12.0
+talosctl -n 10.10.2.10 upgrade --image factory.talos.dev/installer/YOUR_SCHEMATIC_ID:v1.12.0
 
 # Upgrade Kubernetes
-talosctl -n 192.168.1.100 upgrade-k8s --to v1.32.0
+talosctl -n 10.10.2.10 upgrade-k8s --to v1.32.0
 ```
 
 ### 3. Backup Etcd Regularly
 
 ```bash
 # Create etcd snapshot
-talosctl -n 192.168.1.100 etcd snapshot etcd-backup.db
+talosctl -n 10.10.2.10 etcd snapshot etcd-backup.db
 
 # Store backup securely
 ```

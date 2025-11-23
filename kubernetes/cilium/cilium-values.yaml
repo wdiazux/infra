@@ -40,7 +40,7 @@ ipam:
   operator:
     clusterPoolIPv4PodCIDRList:
       # IMPORTANT: Verify this doesn't conflict with:
-      # - Your LAN network (e.g., 192.168.1.0/24)
+      # - Your LAN network (e.g., 10.10.2.0/24)
       # - Kubernetes service CIDR (typically 10.96.0.0/12)
       # - Proxmox host network
       # Default 10.244.0.0/16 is safe for most networks

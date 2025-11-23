@@ -23,11 +23,11 @@ spec:
   # - Are NOT used by other devices
   #
   # Examples:
+  # - 10.10.2.240/28 gives you 10.10.2.241-254 (14 IPs)
+  # - 10.10.2.200/29 gives you 10.10.2.201-206 (6 IPs)
   # - 192.168.1.240/28 gives you 192.168.1.241-254 (14 IPs)
-  # - 192.168.1.200/29 gives you 192.168.1.201-206 (6 IPs)
-  # - 10.0.0.240/28 gives you 10.0.0.241-254 (14 IPs)
   blocks:
-    - cidr: "192.168.1.240/28"  # CHANGE ME to your IP range
+    - cidr: "10.10.2.240/28"  # CHANGE ME to your IP range
 
   # Service selector (which services can use this pool)
   # Empty matchLabels means all LoadBalancer services can use this pool
@@ -95,11 +95,12 @@ spec:
 # ---
 # Example: How to choose IP range
 #
-# If your network is 192.168.1.0/24:
-# - Router/Gateway: 192.168.1.1
-# - DHCP range: 192.168.1.100-200 (example)
-# - Static devices: 192.168.1.1-99 (example)
-# - LoadBalancer pool: 192.168.1.240-254 (safe, high range)
+# If your network is 10.10.2.0/24:
+# - Router/Gateway: 10.10.2.1
+# - Proxmox host: 10.10.2.2
+# - Static VMs: 10.10.2.10-20 (Talos, traditional VMs)
+# - DHCP range: 10.10.2.100-200 (example, if using DHCP)
+# - LoadBalancer pool: 10.10.2.240-254 (safe, high range)
 #
 # Choose IPs OUTSIDE your DHCP range!
 #
@@ -115,10 +116,10 @@ spec:
 #
 # 3. Check for external IP:
 #    kubectl get svc nginx
-#    # Should show EXTERNAL-IP from your pool (e.g., 192.168.1.241)
+#    # Should show EXTERNAL-IP from your pool (e.g., 10.10.2.241)
 #
 # 4. Test access:
-#    curl http://192.168.1.241
+#    curl http://10.10.2.241
 #    # Or visit in browser
 #
 # 5. Cleanup:

@@ -434,6 +434,30 @@ Before implementing ZFS, determine:
    - **Traditional VMs**: Static IPs recommended for infrastructure VMs
    - **NAS**: Static IP for reliable NFS/Samba connectivity
 
+**IP Allocation Table (Network: 10.10.2.0/24):**
+
+| Component | IP Address | Purpose | Status |
+|-----------|------------|---------|--------|
+| **Gateway** | 10.10.2.1 | Router/gateway | REQUIRED |
+| **Proxmox Host** | 10.10.2.2 | Hypervisor host | REQUIRED |
+| **NAS** | 10.10.2.5 | External NAS for Longhorn backups | OPTIONAL |
+| **Talos Node** | 10.10.2.10 | Primary Kubernetes node | REQUIRED |
+| **Ubuntu VM** | 10.10.2.11 | Traditional VM | OPTIONAL |
+| **Debian VM** | 10.10.2.12 | Traditional VM | OPTIONAL |
+| **Arch VM** | 10.10.2.13 | Traditional VM | OPTIONAL |
+| **NixOS VM** | 10.10.2.14 | Traditional VM | OPTIONAL |
+| **Windows VM** | 10.10.2.15 | Traditional VM | OPTIONAL |
+| **DHCP Range** | 10.10.2.100-200 | For other devices if using DHCP | OPTIONAL |
+| **Cilium LoadBalancer Pool** | 10.10.2.240-254 | Kubernetes LoadBalancer services (15 IPs) | REQUIRED |
+
+**Important Notes:**
+- **Network Subnet**: 10.10.2.0/24 (Class C private network, 254 usable IPs)
+- **Gateway**: Must be reachable from all VMs (typically your router)
+- **NAS**: User's NAS is at 10.10.2.5 for Longhorn backup target
+- **LoadBalancer Pool**: 10.10.2.240/28 provides 15 usable IPs (10.10.2.241-254) for Cilium L2
+- **Avoid Conflicts**: Ensure static IPs don't overlap with DHCP range
+- **DNS Servers**: Default to Google DNS (8.8.8.8, 8.8.4.4) unless using internal DNS
+
 3. **DNS Configuration:**
    - Configure DNS servers in Proxmox and VMs
    - Ensure Talos node can resolve external domains (for pulling container images)
@@ -2152,6 +2176,27 @@ atlantis unlock                            # Unlock state (via PR comment)
 ```
 
 ## Version History
+
+- **2025-11-23**: Network configuration documentation update
+  - **NAS IP correction**: Updated NAS IP from examples (10.10.2.20) to actual value (10.10.2.5)
+  - **Files updated**:
+    - `INFRASTRUCTURE-ASSUMPTIONS.md` - Added comprehensive IP allocation table
+    - `NETWORK-UPDATE-REPORT.md` - Updated all IP references
+    - `CLAUDE.md` - Added IP allocation table to Networking Prerequisites section
+  - **IP Allocation Table added**:
+    - Network: 10.10.2.0/24 (254 usable IPs)
+    - Gateway: 10.10.2.1 (router)
+    - Proxmox: 10.10.2.2 (hypervisor host)
+    - **NAS: 10.10.2.5** (external storage for Longhorn backups)
+    - Talos: 10.10.2.10 (Kubernetes node)
+    - Traditional VMs: 10.10.2.11-15 (optional)
+    - DHCP Range: 10.10.2.100-200 (optional)
+    - Cilium LoadBalancer Pool: 10.10.2.240-254 (15 IPs for K8s services)
+  - **Documentation improvements**:
+    - Clear REQUIRED vs OPTIONAL designation for all IPs
+    - Added purpose and status for each IP allocation
+    - Included notes on avoiding conflicts and network planning
+    - Cross-referenced between CLAUDE.md and INFRASTRUCTURE-ASSUMPTIONS.md
 
 - **2025-11-23**: Comprehensive Kubernetes secrets management research
   - **Research completed**: Evaluated 6 secrets management solutions for Talos/Kubernetes

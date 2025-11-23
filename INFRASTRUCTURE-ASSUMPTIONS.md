@@ -99,21 +99,22 @@ brctl show  # or: bridge link
 ### Network Settings
 
 **Assumptions:**
-- **Gateway:** `192.168.1.1`
+- **Gateway:** `10.10.2.1`
+- **Proxmox Host:** `10.10.2.2`
 - **DNS Servers:** `8.8.8.8`, `8.8.4.4` (Google DNS)
-- **Subnet:** `192.168.1.0/24` (Class C private network)
+- **Subnet:** `10.10.2.0/24` (Class C private network)
 - **DHCP:** Available for traditional VMs (optional)
 
 **Your network may differ!**
 - Corporate networks often use `10.0.0.0/8` or `172.16.0.0/12`
 - Gateway might be `.254` or `.1` depending on router
-- DNS servers might be internal (e.g., `10.0.0.1`)
+- DNS servers might be internal (e.g., `10.10.2.1`)
 
 **To customize:**
 1. Terraform variables: `terraform/variables.tf`
    ```hcl
    variable "node_gateway" {
-     default = "YOUR-GATEWAY"  # e.g., "10.0.0.1"
+     default = "YOUR-GATEWAY"  # e.g., "10.10.2.1"
    }
 
    variable "dns_servers" {
@@ -133,17 +134,38 @@ brctl show  # or: bridge link
 
 ## 🔢 IP Address Allocation
 
+### Network: 10.10.2.0/24
+
+**Complete IP allocation table for this infrastructure:**
+
+| Component | IP Address | Notes |
+|-----------|------------|-------|
+| **Gateway** | 10.10.2.1 | Router/gateway (REQUIRED) |
+| **Proxmox Host** | 10.10.2.2 | Hypervisor host (REQUIRED) |
+| **NAS** | 10.10.2.5 | External NAS for Longhorn backups (OPTIONAL) |
+| **Talos Node** | 10.10.2.10 | Primary Kubernetes node (REQUIRED) |
+| **Ubuntu VM** | 10.10.2.11 | Traditional VM (OPTIONAL) |
+| **Debian VM** | 10.10.2.12 | Traditional VM (OPTIONAL) |
+| **Arch VM** | 10.10.2.13 | Traditional VM (OPTIONAL) |
+| **NixOS VM** | 10.10.2.14 | Traditional VM (OPTIONAL) |
+| **Windows VM** | 10.10.2.15 | Traditional VM (OPTIONAL) |
+| **DHCP Range** | 10.10.2.100-200 | If using DHCP for other devices |
+| **Cilium LoadBalancer Pool** | 10.10.2.240-254 | For Kubernetes LoadBalancer services |
+
 ### Talos Node
 
 **Required:** Static IP address must be set manually.
 
 **Default:** EMPTY (must be configured in `terraform.tfvars`)
 
-**Example IP ranges for homelab:**
-- **Talos Cluster:** `192.168.1.100` - `192.168.1.109`
-- **Ubuntu VMs:** `192.168.1.101` - `192.168.1.119`
-- **Debian VMs:** `192.168.1.120` - `192.168.1.139`
-- **Other VMs:** Assign as needed
+**Example allocation:**
+- **Gateway:** `10.10.2.1` (REQUIRED - your router)
+- **Proxmox:** `10.10.2.2` (REQUIRED - hypervisor host)
+- **NAS:** `10.10.2.5` (OPTIONAL - for Longhorn backups)
+- **Talos Node:** `10.10.2.10` (REQUIRED - Kubernetes node)
+- **Traditional VMs:** `10.10.2.11-15` (OPTIONAL)
+- **DHCP Range:** `10.10.2.100-200` (if using DHCP)
+- **LoadBalancer Pool:** `10.10.2.240-254` (Cilium L2)
 
 **IMPORTANT:** Ensure IP addresses don't conflict with:
 - DHCP pool range
@@ -153,7 +175,7 @@ brctl show  # or: bridge link
 **To set:**
 ```hcl
 # terraform/terraform.tfvars
-node_ip = "192.168.1.100"  # Your chosen static IP
+node_ip = "10.10.2.10"  # Your chosen static IP
 ```
 
 ### Traditional VMs
@@ -162,8 +184,11 @@ node_ip = "192.168.1.100"  # Your chosen static IP
 - **DHCP:** Default behavior (VM gets IP from router)
 - **Static:** Set in `terraform/terraform.tfvars`
   ```hcl
-  ubuntu_ip_address = "192.168.1.101/24"
-  debian_ip_address = "192.168.1.102/24"
+  ubuntu_ip_address = "10.10.2.11/24"
+  debian_ip_address = "10.10.2.12/24"
+  arch_ip_address   = "10.10.2.13/24"
+  nixos_ip_address  = "10.10.2.14/24"
+  windows_ip_address = "10.10.2.15/24"
   ```
 
 ---
@@ -326,7 +351,7 @@ ubuntu_memory = 4096      # 4GB instead of 8GB
 **If you have a NAS:**
 ```hcl
 # terraform/terraform.tfvars
-nfs_server = "192.168.1.50"  # Your NAS IP
+nfs_server = "10.10.2.5"  # Your NAS IP
 nfs_path = "/volume1/backups/longhorn"  # Your NFS export
 ```
 
@@ -386,9 +411,9 @@ Before deploying, verify these assumptions match your environment:
 - [ ] Storage pool `local-zfs` exists OR updated in configs
 
 ### Network
-- [ ] Gateway IP confirmed (default: `192.168.1.1`)
+- [ ] Gateway IP confirmed (default: `10.10.2.1`)
 - [ ] DNS servers confirmed (default: `8.8.8.8`, `8.8.4.4`)
-- [ ] Subnet confirmed (default: `192.168.1.0/24`)
+- [ ] Subnet confirmed (default: `10.10.2.0/24`)
 - [ ] Static IPs chosen and not conflicting
 
 ### Resources
@@ -416,14 +441,14 @@ Before deploying, verify these assumptions match your environment:
 1. **Create `terraform/terraform.tfvars`:**
    ```hcl
    # REQUIRED
-   node_ip = "192.168.1.100"  # Your Talos node IP
+   node_ip = "10.10.2.10"  # Your Talos node IP
 
    # REQUIRED if using custom Talos image
    talos_schematic_id = "your-64-char-hex-id-from-factory"
 
    # OPTIONAL (only if your environment differs from defaults)
    proxmox_node = "your-node-name"  # if not 'pve'
-   node_gateway = "your-gateway"    # if not 192.168.1.1
+   node_gateway = "your-gateway"    # if not 10.10.2.1
    dns_servers = ["dns1", "dns2"]   # if not using Google DNS
    ```
 

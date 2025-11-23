@@ -171,7 +171,7 @@ packer build .  # Takes ~20-30 minutes
 - [ ] **Created `terraform.tfvars`** with required variables:
   ```hcl
   # REQUIRED
-  node_ip = "192.168.1.100"  # Your static IP for Talos
+  node_ip = "10.10.2.10"  # Your static IP for Talos
 
   # REQUIRED if using custom Talos image
   talos_schematic_id = "your-64-char-hex-id"
@@ -182,7 +182,7 @@ packer build .  # Takes ~20-30 minutes
   proxmox_node = "pve"  # Or your node name
 
   # OPTIONAL (only if different from defaults)
-  node_gateway = "192.168.1.1"
+  node_gateway = "10.10.2.1"
   dns_servers = ["8.8.8.8", "8.8.4.4"]
   ```
 

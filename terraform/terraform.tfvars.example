@@ -9,7 +9,7 @@
 # Proxmox Connection (Required)
 # ============================================================================
 
-proxmox_url      = "https://proxmox.local:8006/api2/json"
+proxmox_url      = "https://10.10.2.2:8006/api2/json"
 proxmox_username = "root@pam"
 proxmox_node     = "pve"
 
@@ -66,7 +66,7 @@ talos_schematic_id = ""  # CHANGE ME - paste your schematic ID here
 cluster_name = "homelab-k8s"
 
 # Cluster endpoint will be set to node_ip if not specified
-# cluster_endpoint = "https://192.168.1.100:6443"
+# cluster_endpoint = "https://10.10.2.10:6443"
 
 # ============================================================================
 # Node Configuration (Required)
@@ -76,8 +76,8 @@ node_name = "talos-node"
 node_vm_id = 1000  # Talos VMs use range 1000-1999 (avoid conflict with traditional VMs)
 
 # Static IP configuration (MUST match your network)
-node_ip      = "192.168.1.100"  # Change to your desired IP
-node_gateway = "192.168.1.1"    # Your router/gateway
+node_ip      = "10.10.2.10"  # Change to your desired IP
+node_gateway = "10.10.2.1"    # Your router/gateway
 node_netmask = 24               # Usually 24 for 255.255.255.0
 
 # ============================================================================
@@ -137,7 +137,7 @@ ntp_servers = ["time.cloudflare.com"]
 
 # External NAS for Longhorn backup target
 # Leave empty to configure later via Longhorn UI
-nfs_server = ""  # Your NAS IP (e.g., "192.168.1.200")
+nfs_server = ""  # Your NAS IP (e.g., "10.10.2.5")
 nfs_path   = ""  # NFS export path (e.g., "/mnt/tank/longhorn-backups")
 
 # You can add NFS backups later:
@@ -247,8 +247,8 @@ cloud_init_password = "changeme"  # Change this!
 # cloud_init_ssh_keys = ["ssh-rsa AAAA... user@host"]
 
 # Network configuration
-default_gateway = "192.168.1.1"
-dns_servers     = ["192.168.1.1", "8.8.8.8", "8.8.4.4"]
+default_gateway = "10.10.2.1"
+dns_servers     = ["10.10.2.1", "8.8.8.8", "8.8.4.4"]
 dns_domain      = "local"
 
 # Ubuntu VM
@@ -262,7 +262,7 @@ ubuntu_cpu_cores      = 4
 ubuntu_memory         = 8192   # MB
 ubuntu_disk_size      = 40     # GB
 ubuntu_disk_storage   = "local-zfs"
-ubuntu_ip_address     = "dhcp"  # Or "192.168.1.100/24" for static
+ubuntu_ip_address     = "dhcp"  # Or "10.10.2.11/24" for static
 ubuntu_on_boot        = true
 
 # Debian VM
@@ -276,7 +276,7 @@ debian_cpu_cores      = 4
 debian_memory         = 8192   # MB
 debian_disk_size      = 40     # GB
 debian_disk_storage   = "local-zfs"
-debian_ip_address     = "dhcp"  # Or "192.168.1.101/24" for static
+debian_ip_address     = "dhcp"  # Or "10.10.2.12/24" for static
 debian_on_boot        = true
 
 # Arch Linux VM
@@ -290,7 +290,7 @@ arch_cpu_cores      = 2
 arch_memory         = 4096   # MB
 arch_disk_size      = 30     # GB
 arch_disk_storage   = "local-zfs"
-arch_ip_address     = "dhcp"  # Or "192.168.1.102/24" for static
+arch_ip_address     = "dhcp"  # Or "10.10.2.13/24" for static
 arch_on_boot        = true
 
 # NixOS VM
@@ -304,7 +304,7 @@ nixos_cpu_cores      = 2
 nixos_memory         = 4096   # MB
 nixos_disk_size      = 30     # GB
 nixos_disk_storage   = "local-zfs"
-nixos_ip_address     = "dhcp"  # Or "192.168.1.103/24" for static
+nixos_ip_address     = "dhcp"  # Or "10.10.2.14/24" for static
 nixos_on_boot        = true
 
 # Windows Server 2022 VM
@@ -318,7 +318,7 @@ windows_cpu_cores           = 4
 windows_memory              = 8192   # MB
 windows_disk_size           = 100    # GB
 windows_disk_storage        = "local-zfs"
-windows_ip_address          = "dhcp"  # Or "192.168.1.104/24" for static
+windows_ip_address          = "dhcp"  # Or "10.10.2.15/24" for static
 windows_cloud_init_user     = "Administrator"
 windows_cloud_init_password = "ChangeMe123!"  # Change this!
 windows_on_boot             = true
@@ -345,7 +345,7 @@ windows_on_boot             = true
 #
 # IP Addresses:
 # - DHCP: Automatic (requires DHCP server)
-# - Static: "192.168.1.100/24" format (update gateway and netmask)
+# - Static: "10.10.2.10/24" format (update gateway and netmask)
 # - Ensure IPs don't conflict with existing devices
 #
 # Deployment:
