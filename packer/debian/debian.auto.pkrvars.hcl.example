@@ -1,4 +1,5 @@
-# Debian Packer Variables Example
+# Debian Cloud Image Packer Variables Example
+# PREFERRED METHOD - Uses official cloud image (5-10 min build time)
 #
 # Copy this file to debian.auto.pkrvars.hcl and fill in your values
 # cp debian.auto.pkrvars.hcl.example debian.auto.pkrvars.hcl
@@ -10,33 +11,31 @@ proxmox_token    = "PVEAPIToken=terraform@pam!terraform-token=xxxxxxxx"
 proxmox_node     = "pve"
 proxmox_skip_tls_verify = true
 
-# Debian Version and ISO
-debian_version = "12"  # Bookworm
-debian_iso_url = "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-12.8.0-amd64-netinst.iso"
-debian_iso_checksum = "file:https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/SHA256SUMS"  # Auto-validates against official checksums
+# Debian Version
+debian_version = "12"
+
+# Cloud Image Base VM (created by import-cloud-image.sh)
+cloud_image_vm_id = 9110
 
 # Template Configuration
-template_name        = "debian-12-golden-template"
-template_description = "Debian 12 (Bookworm) golden image with cloud-init and qemu-guest-agent"
-vm_id                = 9001
+template_name        = "debian-12-cloud-template"
+template_description = "Debian 12 (Bookworm) from official cloud image with customizations"
+vm_id                = 9112
 
 # VM Hardware
-vm_cpu_type = "host"
 vm_cores    = 2
 vm_memory   = 2048
-vm_disk_size    = "20G"
 vm_disk_storage = "local-zfs"
 
 # Network
 vm_network_bridge = "vmbr0"
 
-# SSH (for Packer provisioning only)
-ssh_username = "debian"
+# SSH (default from cloud image)
 ssh_password = "debian"
-ssh_timeout  = "20m"
 
 # Notes:
-# - Get latest ISO URL and checksum from: https://www.debian.org/CD/netinst/
-# - ssh_username/password are temporary, only used during build
-# - Final VMs will use cloud-init for user creation
-# - Template will have cloud-init and qemu-guest-agent installed
+# - Run import-cloud-image.sh FIRST to create base VM (one-time setup)
+# - This template clones and customizes the base cloud image
+# - Much faster than ISO-based build (5-10 min vs 20-30 min)
+# - Cloud image already includes cloud-init and qemu-guest-agent
+# - Use this method for production templates

@@ -1,7 +1,7 @@
-# Packer Variables for Ubuntu Golden Image
+# Packer Variables for Ubuntu Cloud Image Template
 #
-# This file defines variables for building Ubuntu LTS golden image
-# for Proxmox VE 9.0
+# This uses official Ubuntu cloud image (PREFERRED METHOD)
+# Much faster than building from ISO (5-10 min vs 20-30 min)
 
 # Proxmox Connection
 variable "proxmox_url" {
@@ -39,52 +39,41 @@ variable "proxmox_skip_tls_verify" {
 # Ubuntu Version
 variable "ubuntu_version" {
   type        = string
-  description = "Ubuntu version (24.04 = Noble, 22.04 = Jammy)"
+  description = "Ubuntu version"
   default     = "24.04"
 }
 
-variable "ubuntu_iso_url" {
-  type        = string
-  description = "URL to Ubuntu ISO"
-  default     = "https://releases.ubuntu.com/24.04/ubuntu-24.04.1-live-server-amd64.iso"
-}
-
-variable "ubuntu_iso_checksum" {
-  type        = string
-  description = "SHA256 checksum of Ubuntu ISO (file: reference auto-validates against official checksums)"
-  default     = "file:https://releases.ubuntu.com/24.04/SHA256SUMS"
+# Cloud Image Base VM
+variable "cloud_image_vm_id" {
+  type        = number
+  description = "VM ID of imported cloud image (created by import-cloud-image.sh)"
+  default     = 9100
 }
 
 # Template Configuration
 variable "template_name" {
   type        = string
   description = "Name for the Proxmox template"
-  default     = "ubuntu-24.04-golden-template"
+  default     = "ubuntu-2404-cloud-template"
 }
 
 variable "template_description" {
   type        = string
   description = "Description for the template"
-  default     = "Ubuntu 24.04 LTS (Noble) golden image with cloud-init"
+  default     = "Ubuntu 24.04 LTS cloud image with customizations"
 }
 
 # VM Configuration
 variable "vm_id" {
   type        = number
   description = "VM ID for the template"
-  default     = 9002
+  default     = 9102
 }
 
 variable "vm_name" {
   type        = string
   description = "Temporary VM name during build"
-  default     = "ubuntu-build"
-}
-
-variable "vm_cpu_type" {
-  type        = string
-  description = "CPU type"
-  default     = "host"
+  default     = "ubuntu-cloud-build"
 }
 
 variable "vm_cores" {
@@ -97,12 +86,6 @@ variable "vm_memory" {
   type        = number
   description = "RAM in MB"
   default     = 2048
-}
-
-variable "vm_disk_size" {
-  type        = string
-  description = "Disk size"
-  default     = "20G"
 }
 
 variable "vm_disk_storage" {
@@ -118,21 +101,9 @@ variable "vm_network_bridge" {
 }
 
 # SSH Configuration
-variable "ssh_username" {
-  type        = string
-  description = "SSH username for provisioning"
-  default     = "ubuntu"
-}
-
 variable "ssh_password" {
   type        = string
-  description = "SSH password for provisioning"
+  description = "SSH password (default from cloud image)"
   default     = "ubuntu"
   sensitive   = true
-}
-
-variable "ssh_timeout" {
-  type        = string
-  description = "SSH timeout"
-  default     = "20m"
 }

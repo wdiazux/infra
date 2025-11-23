@@ -101,6 +101,31 @@ data "talos_machine_configuration" "node" {
           bootloader = true
           wipe = false
         }
+
+        # ═══════════════════════════════════════════════════════════════
+        # LONGHORN STORAGE REQUIREMENTS
+        # ═══════════════════════════════════════════════════════════════
+        # Longhorn is the primary storage manager for this infrastructure.
+        # It requires THREE components configured across different layers:
+        #
+        # 1. SYSTEM EXTENSIONS (configured in Packer template):
+        #    - siderolabs/iscsi-tools (provides iscsid daemon and iscsiadm)
+        #    - siderolabs/util-linux-tools (provides fstrim, nsenter, etc.)
+        #    These MUST be included in the Talos Factory schematic when
+        #    building the image with Packer. See packer/talos/README.md
+        #
+        # 2. KERNEL MODULES (configured below in this machine config):
+        #    - nbd: Network Block Device for Longhorn volume access
+        #    - iscsi_tcp, iscsi_generic: iSCSI for persistent volumes
+        #    - configfs: iSCSI target configuration
+        #
+        # 3. KUBELET EXTRA MOUNTS (configured below in this machine config):
+        #    - /var/lib/longhorn with rshared propagation
+        #    - Allows volume mounts to propagate between host and containers
+        #
+        # Without ALL three components, Longhorn will fail to create volumes.
+        # ═══════════════════════════════════════════════════════════════
+
         # Longhorn requirements: kernel modules
         kernel = {
           modules = [
@@ -138,6 +163,8 @@ data "talos_machine_configuration" "node" {
       }
     }),
     # NVIDIA GPU sysctls (if GPU passthrough is enabled)
+    # NOTE: These sysctls work together with the hostpci configuration below
+    # to enable GPU passthrough for AI/ML workloads
     var.enable_gpu_passthrough ? yamlencode({
       machine = {
         sysctls = {
@@ -210,6 +237,8 @@ resource "proxmox_virtual_environment_vm" "talos_node" {
   }
 
   # GPU Passthrough (if enabled)
+  # NOTE: This works together with the NVIDIA GPU sysctls in machine config above
+  # to enable GPU passthrough for AI/ML workloads
   dynamic "hostpci" {
     for_each = var.enable_gpu_passthrough ? [1] : []
     content {

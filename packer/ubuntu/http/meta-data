@@ -1,4 +1,0 @@
-# Ubuntu Autoinstall Meta-data
-# Minimal metadata for cloud-init autoinstall
-instance-id: ubuntu-packer-build
-local-hostname: ubuntu

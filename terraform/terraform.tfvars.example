@@ -73,7 +73,7 @@ cluster_name = "homelab-k8s"
 # ============================================================================
 
 node_name = "talos-node"
-node_vm_id = 100
+node_vm_id = 1000  # Talos VMs use range 1000-1999 (avoid conflict with traditional VMs)
 
 # Static IP configuration (MUST match your network)
 node_ip      = "192.168.1.100"  # Change to your desired IP
@@ -255,7 +255,7 @@ dns_domain      = "local"
 # ----------------------------------------------------------------------------
 
 deploy_ubuntu_vm      = false  # Set to true to deploy
-ubuntu_template_name  = "ubuntu-24.04-golden-template-20251118"  # Update with actual template name
+ubuntu_template_name  = "ubuntu-2404-cloud-template"  # Cloud image template (5-10 min builds)
 ubuntu_vm_name        = "ubuntu-dev"
 ubuntu_vm_id          = 100
 ubuntu_cpu_cores      = 4
@@ -269,7 +269,7 @@ ubuntu_on_boot        = true
 # ----------------------------------------------------------------------------
 
 deploy_debian_vm      = false  # Set to true to deploy
-debian_template_name  = "debian-12-golden-template-20251118"  # Update with actual template name
+debian_template_name  = "debian-12-cloud-template"  # Cloud image template (5-10 min builds)
 debian_vm_name        = "debian-prod"
 debian_vm_id          = 200
 debian_cpu_cores      = 4

@@ -7,8 +7,10 @@ This directory contains Packer configuration to build a customized Talos Linux t
 Talos Linux is an immutable, minimal Linux distribution designed specifically for running Kubernetes. This Packer template creates a Proxmox VM template from a custom Talos Factory image that includes:
 
 - **siderolabs/qemu-guest-agent**: Proxmox integration for better VM management
-- **nonfree-kmod-nvidia-production**: NVIDIA GPU drivers for GPU passthrough
-- **nvidia-container-toolkit-production**: NVIDIA container runtime for Kubernetes GPU workloads
+- **siderolabs/iscsi-tools**: iSCSI support for Longhorn storage (**REQUIRED**)
+- **siderolabs/util-linux-tools**: Volume management for Longhorn storage (**REQUIRED**)
+- **nonfree-kmod-nvidia-production**: NVIDIA GPU drivers for GPU passthrough (optional)
+- **nvidia-container-toolkit-production**: NVIDIA container runtime for Kubernetes GPU workloads (optional)
 
 ## Prerequisites
 
@@ -85,6 +87,20 @@ Click **"+ Add Extension"** and add the following:
    - Purpose: NVIDIA container runtime
    - Enables: GPU workloads in Kubernetes
    - Required: Only if using NVIDIA GPU
+
+4. **siderolabs/iscsi-tools**
+   - Purpose: iSCSI initiator daemon and tools
+   - Enables: Longhorn storage persistent volumes via iSCSI
+   - Required: **YES (for Longhorn storage)**
+   - Note: Longhorn is the primary storage solution for this infrastructure
+
+5. **siderolabs/util-linux-tools**
+   - Purpose: Volume management utilities (fstrim, nsenter, etc.)
+   - Enables: Disk optimization and management for Longhorn
+   - Required: **YES (for Longhorn storage)**
+   - Note: Required for Longhorn volume operations
+
+**IMPORTANT FOR LONGHORN:** Extensions #4 and #5 are **REQUIRED** if you plan to use Longhorn as your primary storage (which is the recommended configuration). Without these extensions, Longhorn will fail to create volumes.
 
 #### Step 5: Copy Schematic ID
 

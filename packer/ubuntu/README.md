@@ -1,16 +1,29 @@
-# Ubuntu Golden Image Packer Template
+# Ubuntu Cloud Image Packer Template (PREFERRED METHOD)
 
-This directory contains Packer configuration to build an Ubuntu 24.04 LTS (Noble Numbat) golden image for Proxmox VE 9.0 with cloud-init and QEMU guest agent support.
+This directory contains configuration for building Ubuntu 24.04 LTS golden images from **official Ubuntu cloud images**. This is the **preferred and recommended approach** for creating Ubuntu templates in Proxmox.
 
-## Overview
+## Why Cloud Images? (Preferred Method)
 
-Creates a production-ready Ubuntu template with:
-- **Ubuntu 24.04 LTS (Noble)** - Latest LTS release
-- **Cloud-init** - For automated VM customization
-- **QEMU Guest Agent** - For Proxmox integration
-- **SSH Server** - Pre-configured and enabled
-- **Baseline packages** - Common utilities and tools
-- **Minimal footprint** - ~20GB disk, 2GB RAM during build
+### ✅ Advantages over ISO Build
+- **⚡ Much faster**: 5-10 minutes vs 20-30 minutes
+- **🎯 Simpler**: No autoinstall/preseed complexity
+- **✅ More reliable**: Official pre-built images
+- **🔄 Industry standard**: How production environments work
+- **📦 Pre-configured**: cloud-init and qemu-guest-agent already installed
+- **🔒 Security**: Regular official updates, minimal attack surface
+
+### 📊 Comparison
+
+| Method | Build Time | Complexity | Reliability | Use Case |
+|--------|------------|------------|-------------|----------|
+| **Cloud Image** | 5-10 min | Low | High | **Production (Recommended)** |
+| ISO Build | 20-30 min | High | Medium | Custom partitioning, learning |
+
+### Note About ISO Templates
+
+**ISO-based Ubuntu templates have been removed** in favor of this cloud image approach. The cloud image method is faster, simpler, and follows industry best practices.
+
+If you absolutely need custom disk partitioning or non-standard filesystem layouts, you can create a custom ISO template, but for 95% of use cases, **cloud images are the better choice**.
 
 ## Prerequisites
 
@@ -23,48 +36,67 @@ packer --version
 
 ### Proxmox Setup
 
-Same as Talos template - see [main Packer README](../../packer/talos/README.md#proxmox-setup).
-
-### Get Ubuntu ISO Information
-
-Visit https://releases.ubuntu.com/ and get:
-1. **ISO URL** - Direct link to live-server ISO
-2. **SHA256 checksum** - For verification
-
-Example for Ubuntu 24.04.1:
-```
-URL: https://releases.ubuntu.com/24.04/ubuntu-24.04.1-live-server-amd64.iso
-SHA256: e240e4b801f7bb68c20d1356b60968ad0c33a41d00d828e74ceb3364a0317be9
-```
+Access to Proxmox VE 9.0 host with:
+- API token or password authentication
+- Storage pool (e.g., local-zfs)
+- Network bridge (e.g., vmbr0)
 
 ## Quick Start
 
-### 1. Copy Example Configuration
+### Step 1: Import Cloud Image (One-Time Setup)
+
+Run the import script **on your Proxmox host**:
+
+```bash
+# Copy script to Proxmox host
+scp import-cloud-image.sh root@proxmox:/root/
+
+# SSH to Proxmox
+ssh root@proxmox
+
+# Run import script (creates base VM with ID 9100)
+chmod +x import-cloud-image.sh
+./import-cloud-image.sh
+
+# Or specify custom VM ID
+./import-cloud-image.sh 9100
+```
+
+This creates a base VM (`ubuntu-2404-cloud-base`) that Packer will clone and customize.
+
+**What the script does:**
+1. Downloads official Ubuntu 24.04 cloud image
+2. Verifies SHA256 checksum
+3. Imports to Proxmox as VM disk
+4. Configures VM with cloud-init
+5. Enables QEMU guest agent
+6. Sets up default user (ubuntu/ubuntu)
+
+### Step 2: Configure Packer
 
 ```bash
 cd packer/ubuntu
+
+# Copy example configuration
 cp ubuntu.auto.pkrvars.hcl.example ubuntu.auto.pkrvars.hcl
+
+# Edit configuration
+vim ubuntu.auto.pkrvars.hcl
 ```
 
-### 2. Edit Configuration
-
-Edit `ubuntu.auto.pkrvars.hcl`:
-
+Key settings:
 ```hcl
-# Proxmox connection
 proxmox_url  = "https://your-proxmox:8006/api2/json"
 proxmox_token = "PVEAPIToken=user@pam!token=secret"
 proxmox_node = "pve"
 
-# Ubuntu ISO (get latest from releases.ubuntu.com)
-ubuntu_iso_url = "https://releases.ubuntu.com/24.04/ubuntu-24.04.1-live-server-amd64.iso"
-ubuntu_iso_checksum = "sha256:your-checksum-here"
+cloud_image_vm_id = 9100  # Base VM created by import script
+vm_id             = 9102  # Template VM ID (must be different)
 
-# Storage
-vm_disk_storage = "local-zfs"  # Your Proxmox storage pool
+vm_disk_storage = "local-zfs"
 ```
 
-### 3. Initialize and Build
+### Step 3: Build Template
 
 ```bash
 # Initialize Packer plugins
@@ -73,40 +105,30 @@ packer init .
 # Validate configuration
 packer validate .
 
-# Build template
+# Build template (5-10 minutes)
 packer build .
 ```
 
-**Build time**: 10-20 minutes depending on network speed and storage.
+### Step 4: Verify Template
 
-### 4. Verify Template
-
-Check in Proxmox UI:
+Check Proxmox UI:
 ```
 Datacenter → Node → VM Templates
 ```
 
-Should see: `ubuntu-24.04-golden-template-YYYYMMDD-hhmm`
+Should see: `ubuntu-2404-cloud-template-YYYYMMDD-hhmm`
 
 ## Using the Template
 
-### Option 1: Clone Manually in Proxmox UI
-
-1. Right-click template → Clone
-2. Full clone (not linked)
-3. Set VM name and resources
-4. Start VM
-5. Access via console or SSH (user: ubuntu, password: ubuntu - change immediately!)
-
-### Option 2: Clone with Terraform (Recommended)
+### Clone with Terraform (Recommended)
 
 ```hcl
-resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
-  name      = "ubuntu-vm-01"
+resource "proxmox_virtual_environment_vm" "ubuntu" {
+  name      = "ubuntu-prod-01"
   node_name = "pve"
 
   clone {
-    vm_id = 9002  # Template ID
+    vm_id = 9102  # Cloud image template
     full  = true
   }
 
@@ -124,7 +146,7 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
 
     ip_config {
       ipv4 {
-        address = "192.168.1.120/24"
+        address = "192.168.1.100/24"
         gateway = "192.168.1.1"
       }
     }
@@ -132,14 +154,22 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
 }
 ```
 
-### Option 3: Customize with Cloud-init
+### Clone Manually in Proxmox UI
 
-Create `user-data.yaml`:
+1. Right-click template → Clone
+2. Full clone (not linked)
+3. Set VM resources
+4. Configure cloud-init (user-data, network)
+5. Start VM
+
+### Customize with Cloud-init
+
+The template includes cloud-init pre-configured. Create `user-data`:
 
 ```yaml
 #cloud-config
-hostname: my-ubuntu-vm
-fqdn: my-ubuntu-vm.localdomain
+hostname: production-server
+fqdn: production-server.domain.local
 
 users:
   - name: admin
@@ -150,251 +180,275 @@ users:
       - ssh-rsa AAAAB3NzaC1yc2E... your-key
 
 packages:
-  - vim
-  - htop
+  - nginx
   - docker.io
+  - postgresql
 
 runcmd:
-  - systemctl enable docker
-  - systemctl start docker
+  - systemctl enable --now docker
+  - systemctl enable --now postgresql
 ```
-
-Upload to Proxmox and assign to VM during clone.
 
 ## Customization
 
-### Modify Autoinstall File
+### Add Packages to Template
 
-Edit `http/user-data` to change:
-- **Partitioning scheme** - Change from `direct` to custom
-- **Package selection** - Add/remove packages
-- **Locale/timezone** - Change from en_US/UTC
-- **User credentials** - Change default user/password
-
-### Add Provisioning Steps
-
-Edit `ubuntu.pkr.hcl` and add provisioner blocks:
-
-```hcl
-# Install Docker
-provisioner "shell" {
-  inline = [
-    "sudo apt-get install -y docker.io",
-    "sudo systemctl enable docker"
-  ]
-}
-
-# Run Ansible
-provisioner "ansible" {
-  playbook_file = "../../ansible/playbooks/ubuntu-baseline.yml"
-}
-```
-
-### Change Disk Size
-
-In `ubuntu.auto.pkrvars.hcl`:
-
-```hcl
-vm_disk_size = "50G"  # Increase to 50GB
-```
-
-### Add Additional Packages
-
-In `ubuntu.pkr.hcl`, modify the baseline packages provisioner:
+Edit `ubuntu.pkr.hcl` provisioner:
 
 ```hcl
 provisioner "shell" {
   inline = [
     "sudo apt-get install -y",
-    "  # ... existing packages ...",
     "  docker.io",
     "  nginx",
-    "  postgresql"
+    "  postgresql",
+    "  redis-server"
   ]
 }
 ```
 
-## Post-Build Configuration
+### Run Ansible Playbook
 
-After deploying VMs from this template:
+Add ansible provisioner to `ubuntu.pkr.hcl`:
 
-### 1. Run Ansible Baseline Playbook
-
-```bash
-# From ansible/ directory
-ansible-playbook -i inventory/hosts.yml playbooks/ubuntu-baseline.yml
+```hcl
+provisioner "ansible" {
+  playbook_file = "../../ansible/playbooks/ubuntu-baseline.yml"
+  user          = "ubuntu"
+}
 ```
 
-This configures:
-- Security hardening
-- Additional packages
-- User accounts and SSH keys
-- Service configuration
+### Change Base Cloud Image
 
-### 2. Update and Harden
+Edit `import-cloud-image.sh` to use different version:
 
 ```bash
-# On the VM
-sudo apt update
-sudo apt upgrade -y
-sudo apt autoremove -y
+# For Ubuntu 22.04
+UBUNTU_VERSION="22.04"
+
+# For daily builds (testing)
+CLOUD_IMAGE_URL="https://cloud-images.ubuntu.com/daily/server/releases/24.04/release/..."
 ```
 
-### 3. Configure Firewall
+## Comparison: Cloud Image vs ISO
 
-```bash
-sudo apt install ufw
-sudo ufw allow 22/tcp
-sudo ufw enable
+### Build Time Breakdown
+
+**Cloud Image Method:**
 ```
+Download cloud image:     1-2 min (one-time)
+Import to Proxmox:        1 min   (one-time)
+Packer customization:     5-10 min
+----------------------------------------
+Total first time:         7-13 min
+Total subsequent builds:  5-10 min
+```
+
+**ISO Method:**
+```
+Download ISO:             2-3 min (one-time)
+OS installation:          10-15 min
+Package installation:     3-5 min
+Configuration:            2-3 min
+----------------------------------------
+Total every build:        15-23 min
+```
+
+### Features Comparison
+
+| Feature | Cloud Image | ISO Build |
+|---------|-------------|-----------|
+| cloud-init | ✅ Pre-installed | ⚠️ Need to install |
+| qemu-guest-agent | ✅ Pre-installed | ⚠️ Need to install |
+| Minimal packages | ✅ Yes | ⚠️ Depends on selection |
+| Custom partitioning | ❌ Fixed layout | ✅ Full control |
+| Learning value | Low | High |
+| Production use | ✅ Recommended | ⚠️ Overkill |
 
 ## Troubleshooting
 
-### Issue: Autoinstall file not found
+### Issue: Import script fails
 
 ```
-Error: Could not retrieve autoinstall configuration
-```
-
-**Solution**: Ensure HTTP server starts correctly:
-- Check `http_directory = "http"` path is correct
-- Verify `http/user-data` and `http/meta-data` exist
-- Try running with `PACKER_LOG=1 packer build .` for verbose output
-
-### Issue: Installation hangs
-
-```
-Installation appears stuck at partitioning
+Error: Cannot download cloud image
 ```
 
 **Solution**:
-- Check autoinstall storage configuration
-- Ensure disk size is adequate (minimum 10G)
-- Verify no prompts are waiting for input
+- Check internet connectivity on Proxmox host
+- Verify URL is correct
+- Try manual download: `wget <url>`
 
-### Issue: Can't SSH to VM after build
+### Issue: Packer can't find base VM
+
+```
+Error: VM with ID 9100 not found
+```
+
+**Solution**:
+- Verify import script completed successfully
+- Check VM exists: `qm list | grep 9100`
+- Verify `cloud_image_vm_id` matches in variables
+
+### Issue: SSH timeout during Packer build
 
 ```
 Timeout waiting for SSH
 ```
 
 **Solution**:
-- Verify `ssh_username` and `ssh_password` match autoinstall config
-- Check firewall allows SSH (port 22)
-- Ensure SSH server installed and enabled in late_command
+- Start base VM manually to test: `qm start 9100`
+- Check it gets IP: `qm guest cmd 9100 network-get-interfaces`
+- Test SSH: `ssh ubuntu@<ip>` (password: ubuntu)
+- Check firewall allows port 22
 
-### Issue: Cloud-init not working
+### Issue: Cloud-init not working after clone
 
 ```
 Cloud-init configuration not applied
 ```
 
 **Solution**:
-- Verify cloud-init installed: `dpkg -l | grep cloud-init`
-- Check cloud-init services enabled: `systemctl status cloud-init`
-- Review logs: `sudo cloud-init status --long`
-
-### Issue: QEMU guest agent not responding
-
-```
-qm agent <vmid> ping
-# Returns: connection failed
-```
-
-**Solution**:
-- Verify installed: `dpkg -l | grep qemu-guest-agent`
-- Check service: `systemctl status qemu-guest-agent`
-- Ensure enabled in VM config: `qm config <vmid> | grep agent`
-
-### Issue: UEFI boot problems
-
-```
-VM fails to boot after template creation
-```
-
-**Solution**:
-- Verify OVMF/UEFI firmware is installed on Proxmox
-- Check EFI disk was created: `qm config <vmid> | grep efidisk`
-- Ensure `pre_enrolled_keys = true` in Packer template
-
-## Template Details
-
-### Installed Packages
-
-**Base System**:
-- `qemu-guest-agent` - Proxmox integration
-- `cloud-init` - Automated configuration
-- `cloud-initramfs-growroot` - Root filesystem expansion
-- `sudo` - Privilege escalation
-- `openssh-server` - SSH access
-
-**Utilities**:
-- `vim` - Text editor
-- `curl`, `wget` - Download tools
-- `git` - Version control
-- `htop` - Process monitor
-- `net-tools` - Network utilities
-- `dnsutils` - DNS tools
-- `python3`, `python3-pip` - Python runtime
-
-### Cloud-init Configuration
-
-The template includes cloud-init with:
-- Network configuration support (DHCP or static)
-- User and SSH key management
-- Package installation on first boot
-- Custom scripts execution
-
-### QEMU Guest Agent
-
-Enabled and configured for:
-- VM status reporting to Proxmox
-- Graceful shutdown/reboot
-- IP address discovery
-- Filesystem quiescing for snapshots
+- Verify cloud-init drive exists: `qm config <vmid> | grep ide2`
+- Check cloud-init logs: `cloud-init status --long`
+- Ensure user-data provided during VM clone
+- Review Proxmox cloud-init configuration
 
 ## Best Practices
 
-1. **Update Template Regularly**
-   - Rebuild monthly with latest Ubuntu updates
-   - Update ISO URL to latest point release
-   - Test new template before replacing production
+### 1. Keep Base Image Updated
 
-2. **Use Cloud-init for Customization**
-   - Don't modify template directly
-   - Use cloud-init user-data for VM-specific config
-   - Keep template generic and reusable
+Rebuild monthly to include latest security updates:
 
-3. **Baseline Configuration with Ansible**
-   - Use Ansible for consistent configuration
-   - Version control playbooks
-   - Test in dev before production
+```bash
+# On Proxmox host, update base image
+qm destroy 9100
+./import-cloud-image.sh 9100
 
-4. **Security Hardening**
-   - Change default passwords immediately
-   - Disable password authentication (use SSH keys)
-   - Enable automatic security updates
-   - Configure firewall
+# Then rebuild template
+packer build .
+```
 
-5. **Documentation**
-   - Document custom provisioning steps
-   - Track template versions
-   - Note security considerations
+### 2. Use Version Tags
+
+Tag templates with date/version:
+
+```hcl
+template_name = "ubuntu-2404-cloud-template-v${formatdate("YYYYMMDD", timestamp())}"
+```
+
+### 3. Separate Base from Customization
+
+- **Base VM** (9100): Official cloud image, rarely changes
+- **Template** (9102): Customized with packages, updated frequently
+- **Production VMs**: Cloned from template
+
+### 4. Test Before Production
+
+```bash
+# Test template
+qm clone 9102 999 --name test-vm --full
+qm start 999
+# Test functionality
+qm destroy 999
+```
+
+### 5. Document Customizations
+
+Keep list of:
+- Packages installed
+- Configuration changes
+- Ansible playbooks applied
+- Last rebuild date
+
+## Advanced Usage
+
+### Automated Monthly Rebuilds
+
+Create cron job on Proxmox host:
+
+```bash
+# /etc/cron.d/packer-rebuild
+0 2 1 * * root cd /root/packer/ubuntu-cloud && ./import-cloud-image.sh 9100 && packer build .
+```
+
+### Multiple Ubuntu Versions
+
+Create separate base VMs for different versions:
+
+```bash
+./import-cloud-image.sh 9100  # 24.04 LTS
+./import-cloud-image.sh 9101  # 22.04 LTS
+```
+
+Update Packer variables for each version.
+
+### Integration with CI/CD
+
+```yaml
+# .github/workflows/build-template.yml
+name: Build Ubuntu Template
+on:
+  schedule:
+    - cron: '0 2 1 * *'  # Monthly
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build template
+        run: |
+          cd packer/ubuntu-cloud
+          packer build .
+```
 
 ## Resources
 
-- **Ubuntu Documentation**: https://ubuntu.com/server/docs
+- **Ubuntu Cloud Images**: https://cloud-images.ubuntu.com/
 - **Cloud-init Docs**: https://cloudinit.readthedocs.io/
-- **Ubuntu Autoinstall**: https://ubuntu.com/server/docs/install/autoinstall
-- **Packer Proxmox Builder**: https://www.packer.io/plugins/builders/proxmox
+- **Proxmox Cloud-Init**: https://pve.proxmox.com/wiki/Cloud-Init_Support
+- **Packer Proxmox Plugin**: https://www.packer.io/plugins/builders/proxmox/clone
+
+## Migration from ISO Build
+
+If you're currently using ISO-based templates:
+
+### 1. Build Cloud Image Template
+
+```bash
+# Import cloud image
+./import-cloud-image.sh 9100
+
+# Build template
+packer build .
+```
+
+### 2. Test Side-by-Side
+
+Deploy test VMs from both templates and compare:
+- Boot time
+- Package versions
+- Functionality
+- Cloud-init behavior
+
+### 3. Gradual Migration
+
+- **New deployments**: Use cloud image template
+- **Existing VMs**: Keep ISO template as fallback
+- **After validation**: Deprecate ISO template
+
+### 4. Update Documentation
+
+Update deployment docs to reference new template ID and cloud-init configuration.
 
 ## Next Steps
 
-After building the Ubuntu template:
+1. ✅ Import cloud image to Proxmox
+2. ✅ Build customized template with Packer
+3. Test deployment with cloud-init
+4. Create Ansible baseline playbook
+5. Set up automated monthly rebuilds
+6. Create similar template for Debian
 
-1. Test deployment with cloud-init
-2. Create Ansible baseline playbook
-3. Document custom configurations
-4. Build templates for other OSes (Arch, NixOS, etc.)
-
-See `../../terraform/` for deploying VMs from this template.
+See `../debian/` for Debian cloud image template.

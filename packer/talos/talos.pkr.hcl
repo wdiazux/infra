@@ -1,16 +1,24 @@
 # Talos Linux Packer Template for Proxmox VE 9.0
 #
 # This template creates a Proxmox template from a custom Talos Factory image
-# with NVIDIA GPU support and qemu-guest-agent extensions.
+# with Longhorn storage support, Proxmox integration, and optional GPU support.
 #
 # Build process:
 # 1. Generate schematic at https://factory.talos.dev/ with extensions:
-#    - siderolabs/qemu-guest-agent
-#    - nonfree-kmod-nvidia-production
-#    - nvidia-container-toolkit-production
+#    REQUIRED EXTENSIONS:
+#    - siderolabs/qemu-guest-agent (REQUIRED for Proxmox VM integration)
+#    - siderolabs/iscsi-tools (REQUIRED for Longhorn storage)
+#    - siderolabs/util-linux-tools (REQUIRED for Longhorn storage)
+#
+#    OPTIONAL EXTENSIONS (for GPU workloads):
+#    - nonfree-kmod-nvidia-production (optional, for NVIDIA GPU passthrough)
+#    - nvidia-container-toolkit-production (optional, for GPU in Kubernetes)
+#
 # 2. Set your schematic ID and Proxmox credentials in variables or .auto.pkrvars.hcl
 # 3. Run: packer init .
 # 4. Run: packer build .
+#
+# CRITICAL: Without iscsi-tools and util-linux-tools, Longhorn will fail to create volumes!
 
 packer {
   required_version = "~> 1.14.0"
@@ -159,10 +167,13 @@ build {
 # 1. Generate Talos Factory schematic:
 #    - Go to https://factory.talos.dev/
 #    - Select platform: "Metal" (for Talos 1.8.0+)
-#    - Add extensions:
-#      * siderolabs/qemu-guest-agent (Proxmox integration)
-#      * nonfree-kmod-nvidia-production (NVIDIA GPU drivers)
-#      * nvidia-container-toolkit-production (NVIDIA container runtime)
+#    - Add REQUIRED extensions:
+#      * siderolabs/qemu-guest-agent (REQUIRED - Proxmox integration)
+#      * siderolabs/iscsi-tools (REQUIRED - Longhorn storage)
+#      * siderolabs/util-linux-tools (REQUIRED - Longhorn storage)
+#    - Add OPTIONAL extensions (for GPU workloads):
+#      * nonfree-kmod-nvidia-production (optional - NVIDIA GPU drivers)
+#      * nvidia-container-toolkit-production (optional - NVIDIA container runtime)
 #    - Copy the schematic ID (format: abc123def456...)
 #
 # 2. Set variables in talos.auto.pkrvars.hcl:
@@ -171,7 +182,7 @@ build {
 #    proxmox_token       = "PVEAPIToken=user@pam!token=secret"
 #    proxmox_node        = "pve"
 #    talos_version       = "v1.11.4"
-#    talos_schematic_id  = "your-schematic-id-here"
+#    talos_schematic_id  = "your-schematic-id-here"  # Must include required extensions!
 #
 # 3. Initialize Packer:
 #    cd packer/talos
@@ -197,8 +208,8 @@ build {
 # - GPU passthrough configured in Terraform, not in this Packer template
 # - Single GPU can only be assigned to ONE VM at a time
 # - For single-node cluster: kubectl taint nodes --all node-role.kubernetes.io/control-plane-
-# - Use NFS CSI driver for persistent storage (external NAS)
-# - Use local-path-provisioner for ephemeral/cache storage
+# - PRIMARY STORAGE: Longhorn v1.7+ (requires iscsi-tools and util-linux-tools extensions)
+# - BACKUP STORAGE: NFS CSI driver for Longhorn backup target (external NAS)
 #
 # Troubleshooting:
 # - If Packer times out waiting for SSH: This is expected - Talos doesn't have SSH

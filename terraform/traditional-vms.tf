@@ -67,6 +67,8 @@ module "ubuntu_vm" {
   enable_qemu_agent = true
 
   # Startup configuration
+  # NOTE: startup_order starts at 20 to leave room for Talos node (startup_order=1)
+  # and any other infrastructure VMs that should start before traditional workload VMs
   on_boot            = var.ubuntu_on_boot
   startup_order      = 20
   startup_up_delay   = 30
@@ -284,7 +286,7 @@ module "nixos_vm" {
 }
 
 # ============================================================================
-# Windows Server VM
+# Windows 11 VM
 # ============================================================================
 
 module "windows_vm" {
@@ -300,8 +302,8 @@ module "windows_vm" {
   # VM identification
   vm_name     = var.windows_vm_name
   vm_id       = var.windows_vm_id
-  description = "Windows Server 2022 VM - Windows workloads"
-  tags        = concat(["windows", "server2022"], var.common_tags)
+  description = "Windows 11 (24H2) VM - Windows workloads and desktop applications"
+  tags        = concat(["windows", "windows11", "desktop"], var.common_tags)
 
   # Hardware configuration
   cpu_type   = var.windows_cpu_type

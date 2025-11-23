@@ -1,7 +1,7 @@
-# Ubuntu Golden Image Packer Template for Proxmox VE 9.0
+# Ubuntu Cloud Image Packer Template for Proxmox VE 9.0
+# PREFERRED METHOD - Uses official Ubuntu cloud image (much faster than ISO)
 #
-# This template creates an Ubuntu 24.04 LTS golden image with cloud-init
-# for use as a template in Proxmox
+# This template downloads Ubuntu cloud image and customizes it for Proxmox
 
 packer {
   required_version = "~> 1.14.0"
@@ -20,14 +20,12 @@ packer {
 
 # Local variables for computed values
 locals {
-  timestamp = formatdate("YYYYMMDD", timestamp())
-  # Use static template name for homelab simplicity (no timestamp)
-  # This ensures Terraform always finds the template without manual updates
+  # Template name (no timestamp - Terraform expects exact name)
   template_name = var.template_name
 }
 
-# Proxmox ISO Builder
-source "proxmox-iso" "ubuntu" {
+# Download and import cloud image
+source "proxmox-clone" "ubuntu" {
   # Proxmox connection
   proxmox_url              = var.proxmox_url
   username                 = var.proxmox_username
@@ -35,35 +33,21 @@ source "proxmox-iso" "ubuntu" {
   node                     = var.proxmox_node
   insecure_skip_tls_verify = var.proxmox_skip_tls_verify
 
+  # Clone from uploaded cloud image VM
+  clone_vm_id = var.cloud_image_vm_id
+
   # VM configuration
   vm_id                = var.vm_id
   vm_name              = var.vm_name
   template_name        = local.template_name
   template_description = "${var.template_description} (built ${formatdate("YYYY-MM-DD", timestamp())})"
 
-  # ISO configuration
-  iso_url          = var.ubuntu_iso_url
-  iso_checksum     = var.ubuntu_iso_checksum
-  iso_storage_pool = "local"
-  unmount_iso      = true
-
   # CPU configuration
-  cpu_type = var.vm_cpu_type
-  cores    = var.vm_cores
-  sockets  = 1
+  cores   = var.vm_cores
+  sockets = 1
 
   # Memory
   memory = var.vm_memory
-
-  # Disk configuration
-  disks {
-    type         = "scsi"
-    storage_pool = var.vm_disk_storage
-    disk_size    = var.vm_disk_size
-    format       = "raw"
-    cache_mode   = "writethrough"
-    io_thread    = true
-  }
 
   # Network configuration
   network_adapters {
@@ -71,80 +55,32 @@ source "proxmox-iso" "ubuntu" {
     bridge = var.vm_network_bridge
   }
 
-  # SCSI controller
-  scsi_controller = "virtio-scsi-single"
-
-  # QEMU Agent
+  # QEMU Agent (already in cloud image)
   qemu_agent = true
 
-  # BIOS (UEFI for Ubuntu 24.04)
-  bios = "ovmf"
-  efi_config {
-    efi_storage_pool  = var.vm_disk_storage
-    efi_type          = "4m"
-    pre_enrolled_keys = true
-  }
-
-  # Boot configuration for Ubuntu autoinstall
-  boot_wait = "5s"
-  boot_command = [
-    "<esc><wait>",
-    "e<wait>",
-    "<down><down><down><end>",
-    "<bs><bs><bs><bs><wait>",
-    "autoinstall ds=nocloud-net\\;s=http://{{ .HTTPIP }}:{{ .HTTPPort }}/ ---<wait>",
-    "<f10><wait>"
-  ]
-
-  # HTTP server for autoinstall files
-  http_directory = "http"
-  http_port_min  = 8101
-  http_port_max  = 8101
-
-  # SSH configuration
-  ssh_username = var.ssh_username
-  ssh_password = var.ssh_password
-  ssh_timeout  = var.ssh_timeout
-
-  # Cloud-init
+  # Cloud-init (already in cloud image)
   cloud_init              = true
   cloud_init_storage_pool = var.vm_disk_storage
 
+  # SSH configuration
+  ssh_username = "ubuntu"
+  ssh_password = var.ssh_password
+  ssh_timeout  = "10m"
+
   # Template settings
-  os = "l26"  # Linux 2.6+ kernel
+  os = "l26"
 }
 
 # Build configuration
 build {
-  name    = "ubuntu-proxmox-template"
-  sources = ["source.proxmox-iso.ubuntu"]
+  name    = "ubuntu-cloud-proxmox-template"
+  sources = ["source.proxmox-clone.ubuntu"]
 
   # Wait for cloud-init to be ready
   provisioner "shell" {
     inline = [
-      "while [ ! -f /var/lib/cloud/instance/boot-finished ]; do echo 'Waiting for cloud-init...'; sleep 1; done",
-      "echo 'Cloud-init finished!'"
-    ]
-  }
-
-  # Update system
-  provisioner "shell" {
-    inline = [
-      "sudo apt-get update",
-      "sudo apt-get upgrade -y",
-      "sudo apt-get dist-upgrade -y"
-    ]
-  }
-
-  # Install essential packages (needed for boot and provisioning)
-  provisioner "shell" {
-    inline = [
-      "sudo apt-get install -y",
-      "  qemu-guest-agent",
-      "  cloud-init",
-      "  cloud-initramfs-growroot",
-      "  sudo",
-      "  openssh-server"
+      "cloud-init status --wait",
+      "echo 'Cloud-init ready!'"
     ]
   }
 
@@ -157,24 +93,6 @@ build {
     # Ansible variables passed to playbook
     extra_arguments = [
       "--extra-vars", "ansible_python_interpreter=/usr/bin/python3"
-    ]
-  }
-
-  # Configure QEMU guest agent
-  provisioner "shell" {
-    inline = [
-      "sudo systemctl enable qemu-guest-agent",
-      "sudo systemctl start qemu-guest-agent"
-    ]
-  }
-
-  # Configure cloud-init
-  provisioner "shell" {
-    inline = [
-      "sudo systemctl enable cloud-init",
-      "sudo systemctl enable cloud-init-local",
-      "sudo systemctl enable cloud-config",
-      "sudo systemctl enable cloud-final"
     ]
   }
 
@@ -202,7 +120,7 @@ build {
       build_time       = timestamp()
       template_name    = local.template_name
       proxmox_node     = var.proxmox_node
-      disk_size        = var.vm_disk_size
+      cloud_image      = true
       cloud_init       = true
       qemu_agent       = true
     }
@@ -215,15 +133,31 @@ build {
 # - Ansible 2.16+ installed on Packer build machine
 # - Ansible collections: ansible-galaxy collection install -r ../../ansible/requirements.yml
 #
+# SETUP (One-time):
+# 1. Download Ubuntu cloud image:
+#    wget https://cloud-images.ubuntu.com/releases/24.04/release/ubuntu-24.04-server-cloudimg-amd64.img
+#
+# 2. Import to Proxmox (run on Proxmox host):
+#    qm create 9000 --name ubuntu-cloud-base --memory 2048 --cores 2 --net0 virtio,bridge=vmbr0
+#    qm importdisk 9000 ubuntu-24.04-server-cloudimg-amd64.img local-zfs
+#    qm set 9000 --scsihw virtio-scsi-single --scsi0 local-zfs:vm-9000-disk-0
+#    qm set 9000 --boot order=scsi0
+#    qm set 9000 --ide2 local-zfs:cloudinit
+#    qm set 9000 --serial0 socket --vga serial0
+#    qm set 9000 --agent enabled=1
+#    qm set 9000 --ciuser ubuntu --cipassword ubuntu
+#
+# 3. Set cloud_image_vm_id = 9000 in variables
+#
 # BUILD:
-# 1. Create autoinstall files in http/ directory (user-data, meta-data)
-# 2. Set variables in ubuntu.auto.pkrvars.hcl
-# 3. Run: packer init .
-# 4. Run: packer validate .
-# 5. Run: packer build .
+# 1. Set variables in ubuntu.auto.pkrvars.hcl
+# 2. Run: packer init .
+# 3. Run: packer validate .
+# 4. Run: packer build .
+#
+# Build time: 5-10 minutes (much faster than ISO!)
 #
 # Architecture:
-# - ISO install: Installs essential packages (qemu-guest-agent, cloud-init, openssh-server)
 # - Packer + Ansible provisioner: Installs baseline packages in golden image
 # - Terraform: Deploys VMs from golden image
 # - Ansible baseline role: Instance-specific configuration (hostnames, IPs, secrets)
@@ -233,9 +167,3 @@ build {
 # - Clone VMs from template
 # - Customize with cloud-init (user-data, network-config)
 # - Configure with Ansible baseline role for instance-specific settings
-# - Configure with Ansible for baseline setup
-#
-# Cloud-init customization example:
-# - Set hostname, users, SSH keys via cloud-init
-# - Network configuration via cloud-init
-# - Run baseline Ansible playbook after first boot

@@ -165,11 +165,19 @@ output "storage_configuration" {
     primary_storage = "Longhorn v1.7.x (install via Helm - see kubernetes/longhorn/)"
     backup_target = var.nfs_server != "" ? "NFS backup to ${var.nfs_server}:${var.nfs_path}" : "Not configured (optional)"
     storage_classes = [
-      "longhorn-default (1-replica for single node, expandable to 3-replica for HA)",
-      "longhorn-retain (for persistent data that survives PVC deletion)",
-      "longhorn-fast (performance optimized)"
+      "longhorn (default, 1-replica for single node, expandable to 3-replica for HA)",
+      "longhorn-retain (persistent data survives PVC deletion)",
+      "longhorn-fast (performance optimized, SSD/NVMe selector)",
+      "longhorn-backup (automated snapshots)",
+      "longhorn-xfs (XFS filesystem support)"
     ]
-    installation_notes = "Longhorn requires iscsi-tools and util-linux-tools system extensions in Talos image"
+    installation_notes = <<-EOT
+      CRITICAL: Longhorn requires system extensions in Talos image:
+      - siderolabs/iscsi-tools (REQUIRED)
+      - siderolabs/util-linux-tools (REQUIRED)
+      Generate schematic at https://factory.talos.dev/
+      See packer/talos/README.md for instructions
+    EOT
   }
 }
 

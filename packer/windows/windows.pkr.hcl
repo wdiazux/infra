@@ -1,6 +1,6 @@
-# Windows Server 2022 Golden Image Packer Template for Proxmox VE 9.0
+# Windows 11 Golden Image Packer Template for Proxmox VE 9.0
 #
-# This template creates a Windows Server 2022 golden image with Cloudbase-Init
+# This template creates a Windows 11 golden image with Cloudbase-Init
 # for use as a template in Proxmox
 
 packer {
@@ -42,7 +42,7 @@ source "proxmox-iso" "windows" {
   template_description = "${var.template_description} (built ${formatdate("YYYY-MM-DD", timestamp())})"
 
   # ISO configuration
-  iso_file         = "local:iso/windows-server-2022.iso"  # Upload manually to Proxmox
+  iso_file         = "local:iso/windows-11.iso"  # Upload manually to Proxmox
   iso_storage_pool = "local"
   unmount_iso      = true
 
@@ -170,7 +170,7 @@ build {
     output     = "manifest.json"
     strip_path = true
     custom_data = {
-      windows_version  = "Server 2022"
+      windows_version  = "Windows 11"
       build_time       = timestamp()
       template_name    = local.template_name
       proxmox_node     = var.proxmox_node
@@ -183,7 +183,7 @@ build {
 
 # Usage Notes:
 #
-# 1. Upload Windows Server 2022 ISO to Proxmox storage (local:iso/)
+# 1. Upload Windows 11 ISO to Proxmox storage (local:iso/)
 # 2. Upload VirtIO drivers ISO to Proxmox storage (local:iso/)
 # 3. Create autounattend.xml in http/ directory
 # 4. Set variables in windows.auto.pkrvars.hcl
@@ -197,5 +197,5 @@ build {
 # - Customize with Cloudbase-Init (similar to cloud-init)
 # - Configure with PowerShell DSC or Ansible for baseline setup
 #
-# Note: Windows builds take significantly longer than Linux (30-90 minutes)
+# Note: Windows builds take significantly longer than Linux (40-90 minutes)
 # Consider enabling Windows Update provisioner for production templates
