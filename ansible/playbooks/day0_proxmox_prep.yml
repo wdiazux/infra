@@ -65,6 +65,9 @@
       - git
       - htop
 
+    # GPU passthrough configuration (override in inventory or group_vars)
+    has_gpu: false  # Set to true if this Proxmox host has NVIDIA GPU for passthrough
+
   tasks:
     # ========================================================================
     # System Information

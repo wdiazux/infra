@@ -1652,6 +1652,15 @@ source "proxmox-iso" "d12" {
 - Baseline packages should be defined in variables
 - Keep sensible defaults that can be overridden
 
+**User and Environment Configuration:**
+- **Timezone**: America/El_Salvador
+- **Default non-root username**: wdiaz
+- **User UID/GID**: Use default Linux OS UUID (typically 1000:1000 for first user)
+- **User home directory**: /home/wdiaz
+- **User shell**: /bin/bash (or OS default)
+
+**Note**: These defaults apply to traditional VMs (Debian, Ubuntu, Arch, NixOS, Windows). Talos Linux does not have SSH access or traditional user accounts.
+
 ### Cloud-init Integration
 
 - Use cloud-init for:
