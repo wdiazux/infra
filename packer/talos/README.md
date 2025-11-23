@@ -312,8 +312,8 @@ After deploying VMs from the template, you need to:
 2. **Bootstrap Kubernetes Cluster**
 3. **Install Cilium CNI** (networking)
 4. **Install NVIDIA GPU Operator** (if using GPU)
-5. **Install NFS CSI Driver** (persistent storage)
-6. **Install local-path-provisioner** (ephemeral storage)
+5. **Install Longhorn Storage Manager** (primary persistent storage for almost all services)
+6. **Install NFS CSI Driver** (optional - Longhorn backup target to external NAS)
 7. **Install FluxCD** (GitOps)
 
 See `ansible/` directory for Day 0/1/2 automation.

@@ -17,6 +17,8 @@
 | [Secrets Management](#secrets-management) | Security setup | 30 min |
 | [Reference & Comparison](#reference-and-comparison) | Best practices validation | 1 hour |
 
+**Documentation Hub:** [docs/README.md](docs/README.md) - Central navigation for all guides
+
 ---
 
 ## 🚀 Getting Started
@@ -148,13 +150,39 @@
 
 ## 🔧 Implementation Guides
 
+**Guide Hub:** [docs/guides/README.md](docs/guides/README.md) - Overview of all implementation guides
+
+### Talos Getting Started ⭐ NEW
+
+- **[docs/guides/getting-started/TALOS-GETTING-STARTED.md](docs/guides/getting-started/TALOS-GETTING-STARTED.md)** - Complete beginner's guide (12KB)
+  - Initial setup verification
+  - Essential talosctl & kubectl commands
+  - NGINX deployment example (ClusterIP + LoadBalancer)
+  - Troubleshooting guide
+  - Quick reference cheat sheet
+
 ### Deployment Guides
 
-- **[docs/TALOS-DEPLOYMENT-GUIDE.md](docs/TALOS-DEPLOYMENT-GUIDE.md)** - Talos Linux deployment (150+ lines)
-- **[docs/DEBIAN-DEPLOYMENT-GUIDE.md](docs/DEBIAN-DEPLOYMENT-GUIDE.md)** - Debian 13 deployment
-- **[docs/ARCH-DEPLOYMENT-GUIDE.md](docs/ARCH-DEPLOYMENT-GUIDE.md)** - Arch Linux deployment
-- **[docs/NIXOS-DEPLOYMENT-GUIDE.md](docs/NIXOS-DEPLOYMENT-GUIDE.md)** - NixOS deployment
-- **[docs/WINDOWS-DEPLOYMENT-GUIDE.md](docs/WINDOWS-DEPLOYMENT-GUIDE.md)** - Windows Server deployment
+**Guide Hub:** [docs/guides/deployment/](docs/guides/deployment/)
+
+- **[docs/guides/deployment/TALOS-DEPLOYMENT-GUIDE.md](docs/guides/deployment/TALOS-DEPLOYMENT-GUIDE.md)** - Talos Linux deployment (150+ lines)
+- **[docs/guides/deployment/DEBIAN-DEPLOYMENT-GUIDE.md](docs/guides/deployment/DEBIAN-DEPLOYMENT-GUIDE.md)** - Debian 13 deployment
+- **[docs/guides/deployment/ARCH-DEPLOYMENT-GUIDE.md](docs/guides/deployment/ARCH-DEPLOYMENT-GUIDE.md)** - Arch Linux deployment
+- **[docs/guides/deployment/NIXOS-DEPLOYMENT-GUIDE.md](docs/guides/deployment/NIXOS-DEPLOYMENT-GUIDE.md)** - NixOS deployment
+- **[docs/guides/deployment/WINDOWS-DEPLOYMENT-GUIDE.md](docs/guides/deployment/WINDOWS-DEPLOYMENT-GUIDE.md)** - Windows Server deployment
+
+### Service Stack ⭐ ENHANCED
+
+- **[docs/guides/services/RECOMMENDED-SERVICES-GUIDE.md](docs/guides/services/RECOMMENDED-SERVICES-GUIDE.md)** - Production service stack (42KB)
+  - Complete Forgejo deployment with PostgreSQL (6 steps)
+  - GitOps (FluxCD + SOPS) with full workflow
+  - Storage (Longhorn) - Single-node configuration
+  - Networking (Cilium) - L2 LoadBalancer
+  - Monitoring stack (kube-prometheus-stack + Loki + Grafana)
+  - GPU workloads (NVIDIA GPU Operator + Ollama LLM)
+  - Application examples (PostgreSQL StatefulSet, Jellyfin)
+  - Production best practices (backups, alerts, health checks)
+  - Database backup CronJob to NAS
 
 ### Step-by-Step Workflows
 
@@ -167,6 +195,8 @@
 
 ## 📊 Research and Analysis
 
+**Research Hub:** [docs/research/README.md](docs/research/README.md) - Overview of all research reports
+
 ### Comprehensive Audits
 
 - **[INFRASTRUCTURE-AUDIT-REPORT.md](INFRASTRUCTURE-AUDIT-REPORT.md)** - Complete code audit (Nov 2025)
@@ -174,6 +204,19 @@
   - Security and best practices review
   - Code quality metrics (9.9/10)
   - Production readiness assessment
+
+- **[INFRASTRUCTURE-ORGANIZATION-REVIEW.md](INFRASTRUCTURE-ORGANIZATION-REVIEW.md)** ⭐ NEW - Organization assessment
+  - File structure analysis
+  - Best practices compliance
+  - Code quality assessment
+  - Workflow verification
+  - Maintenance recommendations
+
+- **[NETWORK-UPDATE-REPORT.md](NETWORK-UPDATE-REPORT.md)** ⭐ NEW - Network configuration update
+  - Network migration (192.168.1.0/24 → 10.10.2.0/24)
+  - Complete IP allocation table
+  - All files modified (16 files)
+  - Verification checklist
 
 ### Integration Analysis
 
@@ -183,43 +226,70 @@
   - Package installation strategy
   - Version compatibility matrix
 
-### Research Reports
+### Research Reports (90+ Official Sources)
 
-- **[docs/packer-proxmox-research-report.md](docs/packer-proxmox-research-report.md)** - Packer best practices (33 sources)
-- **[docs/ANSIBLE_RESEARCH_REPORT.md](docs/ANSIBLE_RESEARCH_REPORT.md)** - Ansible best practices (31 sources)
-- **[docs/talos-research-report.md](docs/talos-research-report.md)** - Talos Linux research (30+ sources)
+- **[docs/research/packer-proxmox-research-report.md](docs/research/packer-proxmox-research-report.md)** - Packer best practices (33 sources)
+  - Cloud images vs ISO builds
+  - QEMU Guest Agent integration
+  - Template optimization
+  - Multi-OS support strategies
+
+- **[docs/research/ANSIBLE_RESEARCH_REPORT.md](docs/research/ANSIBLE_RESEARCH_REPORT.md)** - Ansible best practices (31 sources)
+  - Day 0/1/2 operations patterns
+  - FQCN usage (Ansible 13.0+)
+  - Proxmox and Talos integration
+  - Role-based automation
+
+- **[docs/research/talos-research-report.md](docs/research/talos-research-report.md)** - Talos Linux research (30+ sources)
+  - Single-node architecture
+  - GPU passthrough configuration
+  - System extensions
+  - Kubernetes integration
 
 ---
 
 ## 🔐 Secrets Management
 
-### SOPS and Age Encryption
+**Secrets Hub:** [docs/secrets/README.md](docs/secrets/README.md) - Complete secrets management navigation
 
-- **[docs/KUBERNETES_SECRETS_MANAGEMENT_GUIDE.md](docs/KUBERNETES_SECRETS_MANAGEMENT_GUIDE.md)** - Complete secrets guide (40+ pages)
+### SOPS + FluxCD Implementation ⭐ SELECTED SOLUTION
+
+- **[docs/secrets/SOPS-FLUXCD-IMPLEMENTATION-GUIDE.md](docs/secrets/SOPS-FLUXCD-IMPLEMENTATION-GUIDE.md)** - Production implementation guide (18KB)
+  - Complete SOPS + FluxCD + Age setup (step-by-step)
+  - Real-world examples (database, Docker registry, API tokens)
+  - Day-to-day workflow (encrypt, edit, rotate keys)
+  - Troubleshooting and disaster recovery
+  - Quick reference commands
+
+### Complete Analysis & Quick Start
+
+- **[docs/secrets/KUBERNETES_SECRETS_MANAGEMENT_GUIDE.md](docs/secrets/KUBERNETES_SECRETS_MANAGEMENT_GUIDE.md)** - Complete secrets guide (40+ pages)
   - 6 solutions compared (SOPS, ESO, Sealed Secrets, Vault, etc.)
-  - Step-by-step implementation
-  - Security best practices
-  - 90+ references
+  - Step-by-step implementation for each solution
+  - Security best practices and defense-in-depth
+  - 90+ official references (2024-2025)
 
-- **[docs/SECRETS_MANAGEMENT_QUICK_START.md](docs/SECRETS_MANAGEMENT_QUICK_START.md)** - 5-minute setup guide
+- **[docs/secrets/SECRETS_MANAGEMENT_QUICK_START.md](docs/secrets/SECRETS_MANAGEMENT_QUICK_START.md)** - 5-minute setup guide
   - SOPS + FluxCD + Age setup
   - Common operations cheat sheet
   - Troubleshooting guide
+  - Key rotation procedures
 
-- **[docs/SECRETS_MANAGEMENT_EXECUTIVE_SUMMARY.md](docs/SECRETS_MANAGEMENT_EXECUTIVE_SUMMARY.md)** - Decision summary
+- **[docs/secrets/SECRETS_MANAGEMENT_EXECUTIVE_SUMMARY.md](docs/secrets/SECRETS_MANAGEMENT_EXECUTIVE_SUMMARY.md)** - Decision summary
   - Why SOPS + FluxCD won
   - Implementation timeline
   - Risk assessment
+  - Alternatives evaluated
 
-### Talos-Specific
+### Talos-Specific Integration
 
-- **[docs/TALOS-SOPS-INTEGRATION-REPORT.md](docs/TALOS-SOPS-INTEGRATION-REPORT.md)** - Talos secrets integration
+- **[docs/secrets/TALOS-SOPS-INTEGRATION-REPORT.md](docs/secrets/TALOS-SOPS-INTEGRATION-REPORT.md)** - Talos secrets integration
   - Current state analysis
   - Community best practices
   - Security gap analysis
-  - Migration paths
+  - Migration paths from other solutions
 
-- **[docs/SOPS-ACTION-CHECKLIST.md](docs/SOPS-ACTION-CHECKLIST.md)** - Implementation checklist
+- **[docs/secrets/SOPS-ACTION-CHECKLIST.md](docs/secrets/SOPS-ACTION-CHECKLIST.md)** - Implementation checklist
   - Critical fixes (30-60 minutes)
   - Short-term improvements
   - Long-term enhancements
@@ -228,32 +298,34 @@
 
 ## 📈 Reference and Comparison
 
+**Comparison Hub:** [docs/comparisons/README.md](docs/comparisons/README.md) - Analysis vs community homelab projects
+
 ### GitHub Projects Comparison
 
-- **[docs/COMPARISON-EXECUTIVE-SUMMARY.md](docs/COMPARISON-EXECUTIVE-SUMMARY.md)** - Start here! (5 min read)
+- **[docs/comparisons/COMPARISON-EXECUTIVE-SUMMARY.md](docs/comparisons/COMPARISON-EXECUTIVE-SUMMARY.md)** - Start here! (5 min read)
   - Overall rating: Top 20% of projects
   - What you're doing better than 80%
   - What's missing vs top 10%
   - 3-week enhancement plan
 
-- **[docs/INFRASTRUCTURE-COMPARISON-REPORT.md](docs/INFRASTRUCTURE-COMPARISON-REPORT.md)** - Detailed analysis (30 min)
+- **[docs/comparisons/INFRASTRUCTURE-COMPARISON-REPORT.md](docs/comparisons/INFRASTRUCTURE-COMPARISON-REPORT.md)** - Detailed analysis (30 min)
   - 10 reference projects compared
   - Feature-by-feature matrix
   - Technology stack validation
   - Community best practices
 
-- **[docs/ACTION-PLAN-FROM-COMPARISON.md](docs/ACTION-PLAN-FROM-COMPARISON.md)** - Implementation plan (15 min)
+- **[docs/comparisons/ACTION-PLAN-FROM-COMPARISON.md](docs/comparisons/ACTION-PLAN-FROM-COMPARISON.md)** - Implementation plan (15 min)
   - Phase 1: FluxCD + Taskfile (Week 1)
   - Phase 2: Monitoring Stack (Week 2)
   - Phase 3: CI/CD Pipeline (Week 3)
   - Complete code examples
 
-- **[docs/COMPARISON-VISUAL-SUMMARY.md](docs/COMPARISON-VISUAL-SUMMARY.md)** - Visual charts (3 min)
+- **[docs/comparisons/COMPARISON-VISUAL-SUMMARY.md](docs/comparisons/COMPARISON-VISUAL-SUMMARY.md)** - Visual charts (3 min)
   - Progress bars and metrics
   - Before/after comparison
   - Community trend graphs
 
-- **[docs/README-COMPARISON-REPORTS.md](docs/README-COMPARISON-REPORTS.md)** - Navigation guide
+- **[docs/comparisons/README-COMPARISON-REPORTS.md](docs/comparisons/README-COMPARISON-REPORTS.md)** - Navigation guide
   - Which report to read when
   - Document index
   - Quick reference
@@ -311,8 +383,8 @@ Located in `docs/archive/`:
 |----------|-------------------|-------|
 | **New Contributors** | 1. README.md<br>2. CLAUDE.md<br>3. INFRASTRUCTURE-ASSUMPTIONS.md | → → → |
 | **Deploying Infrastructure** | 1. PROXMOX-SETUP.md<br>2. DEPLOYMENT-CHECKLIST.md<br>3. OS-specific deployment guides | → → → |
-| **Learning Talos** | 1. docs/talos-research-report.md<br>2. TALOS-DEPLOYMENT-GUIDE.md<br>3. KUBERNETES_SECRETS_MANAGEMENT_GUIDE.md | → → → |
-| **Improving Project** | 1. COMPARISON-EXECUTIVE-SUMMARY.md<br>2. ACTION-PLAN-FROM-COMPARISON.md<br>3. INFRASTRUCTURE-COMPARISON-REPORT.md | → → → |
+| **Learning Talos** | 1. docs/research/talos-research-report.md<br>2. docs/guides/deployment/TALOS-DEPLOYMENT-GUIDE.md<br>3. docs/secrets/KUBERNETES_SECRETS_MANAGEMENT_GUIDE.md | → → → |
+| **Improving Project** | 1. docs/comparisons/COMPARISON-EXECUTIVE-SUMMARY.md<br>2. docs/comparisons/ACTION-PLAN-FROM-COMPARISON.md<br>3. docs/comparisons/INFRASTRUCTURE-COMPARISON-REPORT.md | → → → |
 | **Understanding Architecture** | 1. CLAUDE.md<br>2. INFRASTRUCTURE-AUDIT-REPORT.md<br>3. DEEP-INTEGRATION-ANALYSIS-REPORT.md | → → → |
 
 ---
@@ -357,13 +429,13 @@ Located in `docs/archive/`:
 → Start with [CLAUDE.md](CLAUDE.md)
 
 **"I want to set up secrets management"**
-→ Start with [docs/SECRETS_MANAGEMENT_QUICK_START.md](docs/SECRETS_MANAGEMENT_QUICK_START.md)
+→ Start with [docs/secrets/SECRETS_MANAGEMENT_QUICK_START.md](docs/secrets/SECRETS_MANAGEMENT_QUICK_START.md)
 
 **"I want to improve the infrastructure"**
-→ Start with [docs/COMPARISON-EXECUTIVE-SUMMARY.md](docs/COMPARISON-EXECUTIVE-SUMMARY.md)
+→ Start with [docs/comparisons/COMPARISON-EXECUTIVE-SUMMARY.md](docs/comparisons/COMPARISON-EXECUTIVE-SUMMARY.md)
 
 **"I want to deploy Talos"**
-→ Start with [docs/TALOS-DEPLOYMENT-GUIDE.md](docs/TALOS-DEPLOYMENT-GUIDE.md)
+→ Start with [docs/guides/deployment/TALOS-DEPLOYMENT-GUIDE.md](docs/guides/deployment/TALOS-DEPLOYMENT-GUIDE.md)
 
 **"I want to understand GPU passthrough"**
 → See [CLAUDE.md](CLAUDE.md) sections on GPU Passthrough Configuration
@@ -374,11 +446,11 @@ Located in `docs/archive/`:
 ### By Technology
 
 - **Terraform:** `terraform/README.md` + `CLAUDE.md` Terraform sections
-- **Packer:** `packer/README.md` + `docs/packer-proxmox-research-report.md`
-- **Ansible:** `ansible/README.md` + `docs/ANSIBLE_RESEARCH_REPORT.md`
-- **Talos:** `docs/TALOS-DEPLOYMENT-GUIDE.md` + `docs/talos-research-report.md`
+- **Packer:** `packer/README.md` + `docs/research/packer-proxmox-research-report.md`
+- **Ansible:** `ansible/README.md` + `docs/research/ANSIBLE_RESEARCH_REPORT.md`
+- **Talos:** `docs/guides/deployment/TALOS-DEPLOYMENT-GUIDE.md` + `docs/research/talos-research-report.md`
 - **Kubernetes:** `kubernetes/*/INSTALLATION.md` + secrets management guides
-- **SOPS:** All files in "Secrets Management" section above
+- **SOPS:** All files in `docs/secrets/` directory (see Secrets Hub)
 
 ---
 
@@ -439,11 +511,11 @@ See [CLAUDE.md](CLAUDE.md) Version History section for detailed changelog.
 ### Community Resources
 
 See research reports for comprehensive community resource lists:
-- packer-proxmox-research-report.md (33 sources)
-- ANSIBLE_RESEARCH_REPORT.md (31 sources)
-- talos-research-report.md (30+ sources)
-- KUBERNETES_SECRETS_MANAGEMENT_GUIDE.md (90+ sources)
-- INFRASTRUCTURE-COMPARISON-REPORT.md (10 reference projects)
+- docs/research/packer-proxmox-research-report.md (33 sources)
+- docs/research/ANSIBLE_RESEARCH_REPORT.md (31 sources)
+- docs/research/talos-research-report.md (30+ sources)
+- docs/secrets/KUBERNETES_SECRETS_MANAGEMENT_GUIDE.md (90+ sources)
+- docs/comparisons/INFRASTRUCTURE-COMPARISON-REPORT.md (10 reference projects)
 
 ---
 

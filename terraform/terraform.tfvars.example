@@ -30,8 +30,8 @@ proxmox_insecure = true
 # Talos Template (Required - created by Packer)
 # ============================================================================
 
-talos_template_name = "talos-1.11.4-nvidia-template"
-talos_version       = "v1.11.4"
+talos_template_name = "talos-1.11.5-nvidia-template"
+talos_version       = "v1.11.5"
 kubernetes_version  = "v1.31.0"
 
 # CRITICAL FOR LONGHORN: Talos Factory Schematic ID
@@ -269,7 +269,7 @@ ubuntu_on_boot        = true
 # ----------------------------------------------------------------------------
 
 deploy_debian_vm      = false  # Set to true to deploy
-debian_template_name  = "debian-12-cloud-template"  # Cloud image template (5-10 min builds)
+debian_template_name  = "debian-13-cloud-template"  # Cloud image template (5-10 min builds)
 debian_vm_name        = "debian-prod"
 debian_vm_id          = 200
 debian_cpu_cores      = 4
@@ -283,7 +283,7 @@ debian_on_boot        = true
 # ----------------------------------------------------------------------------
 
 deploy_arch_vm      = false  # Set to true to deploy
-arch_template_name  = "arch-golden-template-20251118"  # Update with actual template name
+arch_template_name  = "arch-golden-template"  # Packer template name (no timestamp)
 arch_vm_name        = "arch-dev"
 arch_vm_id          = 300
 arch_cpu_cores      = 2
@@ -297,7 +297,7 @@ arch_on_boot        = true
 # ----------------------------------------------------------------------------
 
 deploy_nixos_vm      = false  # Set to true to deploy
-nixos_template_name  = "nixos-golden-template-20251118"  # Update with actual template name
+nixos_template_name  = "nixos-golden-template"  # Packer template name (no timestamp)
 nixos_vm_name        = "nixos-lab"
 nixos_vm_id          = 400
 nixos_cpu_cores      = 2
@@ -311,7 +311,7 @@ nixos_on_boot        = true
 # ----------------------------------------------------------------------------
 
 deploy_windows_vm           = false  # Set to true to deploy
-windows_template_name       = "windows-server-2022-golden-template-20251118"  # Update with actual template name
+windows_template_name       = "windows-11-golden-template"  # Packer template name (no timestamp)
 windows_vm_name             = "windows-server"
 windows_vm_id               = 500
 windows_cpu_cores           = 4

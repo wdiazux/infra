@@ -11,7 +11,7 @@
 
 ---
 # IP Pool for LoadBalancer Services
-apiVersion: "cilium.io/v2alpha1"
+apiVersion: "cilium.io/v2"
 kind: CiliumLoadBalancerIPPool
 metadata:
   name: homelab-pool
@@ -40,7 +40,7 @@ spec:
 ---
 # L2 Announcement Policy
 # This tells Cilium how to announce IPs on Layer 2
-apiVersion: "cilium.io/v2alpha1"
+apiVersion: "cilium.io/v2"
 kind: CiliumL2AnnouncementPolicy
 metadata:
   name: homelab-l2-policy
