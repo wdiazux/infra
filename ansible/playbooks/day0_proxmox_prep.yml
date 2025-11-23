@@ -1,13 +1,18 @@
 # Day 0: Proxmox Host Preparation for Talos Linux
 #
 # This playbook prepares the Proxmox VE host for deploying Talos with GPU passthrough
+# Based on best practices from:
+# - lae.proxmox Ansible role
+# - Proxmox VE Helper-Scripts (community-scripts/ProxmoxVE)
+# - Official Proxmox documentation
 #
-# Run with: ansible-playbook playbooks/day0-proxmox-prep.yml
+# Run with: ansible-playbook playbooks/day0_proxmox_prep.yml
+# Run specific sections: ansible-playbook playbooks/day0_proxmox_prep.yml --tags "repos,updates"
 #
 # Prerequisites:
-# - Proxmox VE 9.0 installed
+# - Proxmox VE 8.x or 9.0+ installed
 # - SSH access to Proxmox host as root
-# - IOMMU support in BIOS (VT-d for Intel, AMD-Vi for AMD)
+# - IOMMU support in BIOS (VT-d for Intel, AMD-Vi for AMD) if using GPU passthrough
 
 ---
 - name: Prepare Proxmox Host for Talos with GPU Passthrough
@@ -33,6 +38,33 @@
       - nouveau
       - nvidiafb
 
+    # Repository configuration (override in group_vars)
+    proxmox_disable_enterprise_repo: true
+    proxmox_enable_no_subscription_repo: true
+    proxmox_remove_subscription_nag: true
+    proxmox_enable_ceph_repo: false
+    proxmox_enable_pvetest_repo: false
+
+    # HA services configuration
+    proxmox_disable_ha_services: true  # Set to false for clustered setups
+
+    # System configuration
+    proxmox_update_system: true
+    proxmox_install_essential_packages: true
+    proxmox_configure_firewall: true
+    proxmox_configure_ntp: true
+
+    # Essential packages for Ansible automation
+    essential_packages:
+      - python3-proxmoxer
+      - python3-requests
+      - libsasl2-modules
+      - curl
+      - wget
+      - vim
+      - git
+      - htop
+
   tasks:
     # ========================================================================
     # System Information
@@ -47,6 +79,7 @@
           Memory: {{ ansible_memtotal_mb }}MB
           Kernel: {{ ansible_kernel }}
           Distribution: {{ ansible_distribution }} {{ ansible_distribution_version }}
+      tags: [always]
 
     # ========================================================================
     # Prerequisites Check
@@ -76,6 +109,260 @@
           - detected_cpu_vendor != 'unknown'
         fail_msg: "Could not detect CPU vendor (AMD or Intel required)"
         success_msg: "Detected CPU vendor: {{ detected_cpu_vendor }}"
+      tags: [always]
+
+    - name: Detect Proxmox version (8.x or 9.x)
+      ansible.builtin.set_fact:
+        proxmox_major_version: "{{ pve_version.stdout.split('/')[1].split('.')[0] }}"
+      tags: [always]
+
+    - name: Display Proxmox major version
+      ansible.builtin.debug:
+        msg: "Proxmox VE major version: {{ proxmox_major_version }}"
+      tags: [always]
+
+    # ========================================================================
+    # Repository Management (Proxmox 8.x and 9.x)
+    # ========================================================================
+
+    - name: Disable pve-enterprise repository (Proxmox 8.x .list format)
+      ansible.builtin.lineinfile:
+        path: /etc/apt/sources.list.d/pve-enterprise.list
+        regexp: '^deb https://enterprise.proxmox.com'
+        line: '# deb https://enterprise.proxmox.com/debian/pve bookworm pve-enterprise'
+        backup: yes
+      when:
+        - proxmox_disable_enterprise_repo | bool
+        - proxmox_major_version == "8"
+      tags: [repos]
+
+    - name: Disable pve-enterprise repository (Proxmox 9.x .sources format)
+      ansible.builtin.lineinfile:
+        path: /etc/apt/sources.list.d/pve-enterprise.sources
+        regexp: '^Enabled:'
+        line: 'Enabled: no'
+        backup: yes
+      when:
+        - proxmox_disable_enterprise_repo | bool
+        - proxmox_major_version == "9"
+      failed_when: false
+      tags: [repos]
+
+    - name: Enable pve-no-subscription repository (Proxmox 8.x)
+      ansible.builtin.copy:
+        dest: /etc/apt/sources.list.d/pve-no-subscription.list
+        content: |
+          # Proxmox VE No-Subscription Repository (free updates)
+          deb http://download.proxmox.com/debian/pve bookworm pve-no-subscription
+        mode: '0644'
+        backup: yes
+      when:
+        - proxmox_enable_no_subscription_repo | bool
+        - proxmox_major_version == "8"
+      tags: [repos]
+
+    - name: Enable pve-no-subscription repository (Proxmox 9.x)
+      ansible.builtin.copy:
+        dest: /etc/apt/sources.list.d/pve-no-subscription.sources
+        content: |
+          # Proxmox VE No-Subscription Repository (free updates)
+          Types: deb
+          URIs: http://download.proxmox.com/debian/pve
+          Suites: bookworm
+          Components: pve-no-subscription
+          Enabled: yes
+        mode: '0644'
+        backup: yes
+      when:
+        - proxmox_enable_no_subscription_repo | bool
+        - proxmox_major_version == "9"
+      tags: [repos]
+
+    - name: Enable Ceph repository (Proxmox 8.x)
+      ansible.builtin.copy:
+        dest: /etc/apt/sources.list.d/ceph.list
+        content: |
+          # Ceph Reef Repository
+          deb http://download.proxmox.com/debian/ceph-reef bookworm no-subscription
+        mode: '0644'
+        backup: yes
+      when:
+        - proxmox_enable_ceph_repo | bool
+        - proxmox_major_version == "8"
+      tags: [repos, ceph]
+
+    - name: Enable Ceph repository (Proxmox 9.x)
+      ansible.builtin.copy:
+        dest: /etc/apt/sources.list.d/ceph.sources
+        content: |
+          # Ceph Squid Repository
+          Types: deb
+          URIs: http://download.proxmox.com/debian/ceph-squid
+          Suites: bookworm
+          Components: no-subscription
+          Enabled: yes
+        mode: '0644'
+        backup: yes
+      when:
+        - proxmox_enable_ceph_repo | bool
+        - proxmox_major_version == "9"
+      tags: [repos, ceph]
+
+    - name: Configure pvetest repository (disabled by default)
+      ansible.builtin.copy:
+        dest: /etc/apt/sources.list.d/pvetest.list
+        content: |
+          # Proxmox VE Testing Repository (disabled by default)
+          # deb http://download.proxmox.com/debian/pve bookworm pvetest
+        mode: '0644'
+        backup: yes
+      when: proxmox_enable_pvetest_repo | bool
+      tags: [repos, testing]
+
+    - name: Update APT cache after repository changes
+      ansible.builtin.apt:
+        update_cache: yes
+      when: proxmox_disable_enterprise_repo | bool or proxmox_enable_no_subscription_repo | bool
+      tags: [repos]
+
+    # ========================================================================
+    # Essential Packages Installation
+    # ========================================================================
+
+    - name: Install essential packages for Ansible automation
+      ansible.builtin.apt:
+        name: "{{ essential_packages }}"
+        state: present
+        update_cache: yes
+      when: proxmox_install_essential_packages | bool
+      tags: [packages]
+
+    # ========================================================================
+    # Subscription Nag Removal
+    # ========================================================================
+
+    - name: Check if proxmox-widget-toolkit is installed
+      ansible.builtin.command: dpkg -l proxmox-widget-toolkit
+      register: widget_toolkit_check
+      changed_when: false
+      failed_when: false
+      when: proxmox_remove_subscription_nag | bool
+      tags: [nag]
+
+    - name: Remove subscription nag from web UI
+      ansible.builtin.replace:
+        path: /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js
+        regexp: "Ext\\.Msg\\.show\\(\\{[\\s\\S]*?checked_command: function"
+        replace: "void({ //Ext.Msg.show({\nchecked_command: function"
+        backup: yes
+      when:
+        - proxmox_remove_subscription_nag | bool
+        - widget_toolkit_check.rc == 0
+      notify: Restart pveproxy
+      tags: [nag]
+
+    # ========================================================================
+    # HA Services Configuration
+    # ========================================================================
+
+    - name: Disable HA services for single-node setup
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        enabled: no
+        state: stopped
+      loop:
+        - pve-ha-lrm
+        - pve-ha-crm
+        - corosync
+      when: proxmox_disable_ha_services | bool
+      failed_when: false  # Don't fail if services don't exist
+      tags: [ha]
+
+    - name: Enable HA services for clustered setup
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        enabled: yes
+        state: started
+      loop:
+        - pve-ha-lrm
+        - pve-ha-crm
+        - corosync
+      when: not (proxmox_disable_ha_services | bool)
+      failed_when: false
+      tags: [ha]
+
+    # ========================================================================
+    # System Updates
+    # ========================================================================
+
+    - name: Perform system update (apt upgrade)
+      ansible.builtin.apt:
+        upgrade: dist
+        update_cache: yes
+        autoremove: yes
+        autoclean: yes
+      when: proxmox_update_system | bool
+      tags: [updates]
+
+    # ========================================================================
+    # Firewall Configuration
+    # ========================================================================
+
+    - name: Configure UFW firewall
+      block:
+        - name: Install UFW if not present
+          ansible.builtin.apt:
+            name: ufw
+            state: present
+
+        - name: Allow SSH through firewall
+          community.general.ufw:
+            rule: allow
+            port: '22'
+            proto: tcp
+
+        - name: Allow Proxmox web interface
+          community.general.ufw:
+            rule: allow
+            port: '8006'
+            proto: tcp
+
+        - name: Allow SPICE proxy
+          community.general.ufw:
+            rule: allow
+            port: '3128'
+            proto: tcp
+
+        - name: Allow VNC connections
+          community.general.ufw:
+            rule: allow
+            port: '5900:5999'
+            proto: tcp
+
+        - name: Enable UFW
+          community.general.ufw:
+            state: enabled
+      when: proxmox_configure_firewall | bool
+      tags: [firewall]
+
+    # ========================================================================
+    # Time Synchronization
+    # ========================================================================
+
+    - name: Configure chrony for time synchronization
+      block:
+        - name: Install chrony
+          ansible.builtin.apt:
+            name: chrony
+            state: present
+
+        - name: Ensure chrony is running and enabled
+          ansible.builtin.systemd:
+            name: chronyd
+            enabled: yes
+            state: started
+      when: proxmox_configure_ntp | bool
+      tags: [ntp]
 
     # ========================================================================
     # IOMMU Configuration
@@ -86,23 +373,28 @@
       register: iommu_check
       changed_when: false
       failed_when: false
+      tags: [iommu, gpu]
 
     - name: Display current IOMMU status
       ansible.builtin.debug:
         msg: "IOMMU Status: {{ 'Enabled' if iommu_check.rc == 0 else 'Not Enabled' }}"
+      tags: [iommu, gpu]
 
     - name: Read current GRUB configuration
       ansible.builtin.slurp:
         src: /etc/default/grub
       register: grub_config
+      tags: [iommu, gpu]
 
     - name: Parse GRUB cmdline
       ansible.builtin.set_fact:
         current_grub_cmdline: "{{ (grub_config['content'] | b64decode | regex_search('GRUB_CMDLINE_LINUX_DEFAULT=\"(.*)\"', '\\1') | first) if grub_config['content'] is defined else '' }}"
+      tags: [iommu, gpu]
 
     - name: Set target GRUB cmdline based on CPU vendor
       ansible.builtin.set_fact:
         target_grub_cmdline: "{{ grub_cmdline_amd if detected_cpu_vendor == 'amd' else grub_cmdline_intel }}"
+      tags: [iommu, gpu]
 
     - name: Update GRUB configuration for IOMMU
       ansible.builtin.lineinfile:
@@ -112,10 +404,12 @@
         backup: yes
       register: grub_updated
       notify: Update GRUB
+      tags: [iommu, gpu]
 
     - name: Display GRUB update status
       ansible.builtin.debug:
         msg: "GRUB configuration {{ 'updated' if grub_updated.changed else 'already correct' }}"
+      tags: [iommu, gpu]
 
     # ========================================================================
     # VFIO Kernel Modules
@@ -127,6 +421,7 @@
         state: present
       loop: "{{ vfio_modules }}"
       when: has_gpu | default(false)
+      tags: [vfio, gpu]
 
     - name: Configure VFIO modules to load at boot
       ansible.builtin.lineinfile:
@@ -135,6 +430,7 @@
         create: yes
       loop: "{{ vfio_modules }}"
       when: has_gpu | default(false)
+      tags: [vfio, gpu]
 
     # ========================================================================
     # Blacklist GPU Drivers on Host
@@ -152,6 +448,7 @@
         mode: '0644'
       when: has_gpu | default(false)
       notify: Update initramfs
+      tags: [vfio, gpu]
 
     # ========================================================================
     # ZFS Configuration
@@ -162,6 +459,7 @@
       register: zfs_check
       changed_when: false
       failed_when: false
+      tags: [zfs, storage]
 
     - name: Configure ZFS ARC memory limit
       ansible.builtin.lineinfile:
@@ -171,11 +469,13 @@
         regexp: '^options zfs zfs_arc_max='
       when: zfs_check.rc == 0
       notify: Update initramfs
+      tags: [zfs, storage]
 
     - name: Display ZFS configuration
       ansible.builtin.debug:
         msg: "ZFS ARC max: {{ zfs_arc_max_gb | default(16) }}GB"
       when: zfs_check.rc == 0
+      tags: [zfs, storage]
 
     # ========================================================================
     # Network Configuration
@@ -186,10 +486,12 @@
       register: bridge_check
       changed_when: false
       failed_when: false
+      tags: [network]
 
     - name: Display bridge status
       ansible.builtin.debug:
         msg: "Network bridge vmbr0: {{ 'Present' if bridge_check.rc == 0 else 'Not Found - create manually in Proxmox' }}"
+      tags: [network]
 
     # ========================================================================
     # GPU Information
@@ -201,11 +503,13 @@
       changed_when: false
       failed_when: false
       when: has_gpu | default(false)
+      tags: [gpu, info]
 
     - name: Display GPU information
       ansible.builtin.debug:
         msg: "GPU detected: {{ gpu_info.stdout if gpu_info.rc == 0 else 'No NVIDIA GPU found' }}"
       when: has_gpu | default(false)
+      tags: [gpu, info]
 
     - name: Get GPU PCI ID
       ansible.builtin.shell: lspci | grep -i nvidia | awk '{print $1}'
@@ -213,6 +517,7 @@
       changed_when: false
       failed_when: false
       when: has_gpu | default(false)
+      tags: [gpu, info]
 
     - name: Display GPU PCI ID for Terraform
       ansible.builtin.debug:
@@ -220,6 +525,7 @@
           GPU PCI ID for Terraform configuration: {{ gpu_pci.stdout.split('.')[0] if gpu_pci.rc == 0 else 'Not detected' }}
           Use this in terraform/terraform.tfvars: gpu_pci_id = "{{ gpu_pci.stdout.split('.')[0] }}"
       when: has_gpu | default(false)
+      tags: [gpu, info]
 
     # ========================================================================
     # Verify IOMMU Groups
@@ -230,10 +536,12 @@
       register: iommu_groups
       changed_when: false
       failed_when: false
+      tags: [iommu, gpu, info]
 
     - name: Display IOMMU group count
       ansible.builtin.debug:
         msg: "IOMMU groups found: {{ iommu_groups.stdout_lines | length if iommu_groups.rc == 0 else '0 (IOMMU not enabled or requires reboot)' }}"
+      tags: [iommu, gpu, info]
 
     # ========================================================================
     # Post-Configuration Summary
@@ -248,9 +556,26 @@
 
           System Information:
           - Host: {{ ansible_hostname }}
-          - Proxmox Version: {{ pve_version.stdout }}
+          - Proxmox Version: {{ pve_version.stdout }} ({{ proxmox_major_version }}.x)
           - CPU Vendor: {{ detected_cpu_vendor }}
           - Memory: {{ ansible_memtotal_mb }}MB
+
+          Repository Configuration:
+          - Enterprise repo disabled: {{ proxmox_disable_enterprise_repo }}
+          - No-subscription repo enabled: {{ proxmox_enable_no_subscription_repo }}
+          - Subscription nag removed: {{ proxmox_remove_subscription_nag }}
+          - Ceph repo enabled: {{ proxmox_enable_ceph_repo }}
+
+          System Updates:
+          - System updated: {{ proxmox_update_system }}
+          - Essential packages installed: {{ proxmox_install_essential_packages }}
+
+          HA Services:
+          - HA services disabled: {{ proxmox_disable_ha_services }}
+
+          Security:
+          - Firewall configured: {{ proxmox_configure_firewall }}
+          - NTP configured: {{ proxmox_configure_ntp }}
 
           IOMMU Configuration:
           - Target GRUB cmdline: {{ target_grub_cmdline }}
@@ -276,27 +601,34 @@
           ============================================================
           IMPORTANT: Reboot Required!
           ============================================================
+          {% if grub_updated.changed or proxmox_remove_subscription_nag %}
           {% if grub_updated.changed %}
           GRUB configuration was updated. Reboot Proxmox host to apply changes:
+          {% endif %}
+          {% if proxmox_remove_subscription_nag %}
+          Subscription nag was removed. Clear browser cache and reboot:
+          {% endif %}
 
             ssh root@{{ ansible_host }} reboot
 
-          After reboot, verify IOMMU is enabled:
-
-            ssh root@{{ ansible_host }} "dmesg | grep -i iommu | grep -i enabled"
+          After reboot:
+          - Verify IOMMU is enabled: dmesg | grep -i iommu | grep -i enabled
+          - Clear browser cache before accessing Proxmox web UI
 
           {% else %}
-          No GRUB changes made. Verify IOMMU status after reboot (if not already enabled).
+          No critical changes requiring reboot were made.
           {% endif %}
 
           Next Steps:
-          1. Reboot Proxmox host (if GRUB was updated)
-          2. Verify IOMMU is enabled
-          3. Run Packer to build Talos template: cd packer/talos && packer build .
-          4. Run Terraform to deploy Talos VM: cd terraform && terraform apply
-          5. Run Day 1 playbook for post-deployment tasks
+          1. Reboot Proxmox host (if required)
+          2. Verify IOMMU is enabled (if using GPU passthrough)
+          3. Clear browser cache (if subscription nag was removed)
+          4. Run Packer to build Talos template: cd packer/talos && packer build .
+          5. Run Terraform to deploy Talos VM: cd terraform && terraform apply
+          6. Run Day 1 playbook for post-deployment tasks
 
           ============================================================
+      tags: [always]
 
   handlers:
     - name: Update GRUB
@@ -306,6 +638,12 @@
     - name: Update initramfs
       ansible.builtin.command: update-initramfs -u
       listen: Update initramfs
+
+    - name: Restart pveproxy
+      ansible.builtin.systemd:
+        name: pveproxy
+        state: restarted
+      listen: Restart pveproxy
 
 # Notes:
 # - This playbook is IDEMPOTENT - safe to run multiple times
