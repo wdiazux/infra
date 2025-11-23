@@ -75,7 +75,7 @@ The `rshared` propagation mode ensures volume mounts work correctly between the 
 
 1. Visit **[Talos Factory](https://factory.talos.dev/)**
 
-2. Select your Talos version (e.g., v1.11.4)
+2. Select your Talos version (e.g., v1.11.5)
 
 3. **Add required extensions**:
    - ✅ `siderolabs/iscsi-tools` (required)
@@ -307,5 +307,5 @@ When ready to expand your single-node cluster to 3-node HA:
 
 **Last Updated**: 2025-11-22
 **Terraform Version**: >= 1.9
-**Talos Version**: v1.11.4+
+**Talos Version**: v1.11.5+
 **Longhorn Version**: v1.7+

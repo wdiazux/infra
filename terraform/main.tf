@@ -352,7 +352,7 @@ locals {
 
   # Talos installer image
   # Official Factory format: SCHEMATIC_ID:VERSION or just VERSION for default
-  # Example: "376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba:v1.11.4"
+  # Example: "376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba:v1.11.5"
   # See: https://www.talos.dev/v1.10/talos-guides/install/boot-assets/
   talos_installer_image = var.talos_schematic_id != "" ? "${var.talos_schematic_id}:${var.talos_version}" : "${var.talos_version}"
 

@@ -57,14 +57,14 @@ variable "proxmox_node" {
 variable "talos_template_name" {
   description = "Name of the Talos template created by Packer"
   type        = string
-  default     = "talos-1.11.4-nvidia-template"
+  default     = "talos-1.11.5-nvidia-template"
   # Note: If you used timestamped template name, adjust this
 }
 
 variable "talos_version" {
   description = "Talos Linux version (must match template version)"
   type        = string
-  default     = "v1.11.4"
+  default     = "v1.11.5"
 }
 
 variable "talos_schematic_id" {
@@ -515,7 +515,7 @@ variable "deploy_debian_vm" {
 variable "debian_template_name" {
   description = "Debian Packer template name"
   type        = string
-  default     = "debian-12-cloud-template"
+  default     = "debian-13-cloud-template"
 }
 
 variable "debian_vm_name" {

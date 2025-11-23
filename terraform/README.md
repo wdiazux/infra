@@ -46,7 +46,7 @@ This Terraform configuration:
 This configuration also supports deploying traditional VMs from Packer golden images:
 
 - **Ubuntu 24.04 LTS**: General purpose, cloud-init enabled
-- **Debian 12 (Bookworm)**: Stable server workloads, cloud-init enabled
+- **Debian 13 (Trixie)**: Stable server workloads, cloud-init enabled
 - **Arch Linux**: Rolling release, bleeding edge packages
 - **NixOS**: Declarative configuration management
 - **Windows 11 (24H2)**: Windows desktop workloads, Cloudbase-Init enabled
@@ -129,9 +129,9 @@ cd packer/windows && packer build .
 **Step 2: Update Template Names in terraform.tfvars**
 ```hcl
 # Template names with timestamps from Packer builds
-talos_template_name   = "talos-1.11.4-nvidia-template"
+talos_template_name   = "talos-1.11.5-nvidia-template"
 ubuntu_template_name  = "ubuntu-2404-cloud-template-20251119"
-debian_template_name  = "debian-12-cloud-template-20251119"
+debian_template_name  = "debian-13-cloud-template-20251119"
 arch_template_name    = "arch-linux-golden-template-20251119"
 nixos_template_name   = "nixos-golden-template-20251119"
 windows_template_name = "windows-11-golden-template-20251119"
@@ -329,7 +329,7 @@ proxmox_api_token = "PVEAPIToken=terraform@pam!terraform-token=your-secret"
 proxmox_node     = "pve"
 
 # Talos template (from Packer)
-talos_template_name = "talos-1.11.4-nvidia-template"
+talos_template_name = "talos-1.11.5-nvidia-template"
 
 # Node configuration
 node_name = "talos-node"
@@ -781,7 +781,7 @@ kubectl get cs  # Component status
 
 If you see an error like:
 ```
-Talos template 'talos-1.11.4-nvidia-template' not found on Proxmox node 'pve'.
+Talos template 'talos-1.11.5-nvidia-template' not found on Proxmox node 'pve'.
 Build the template with Packer first.
 ```
 
@@ -1012,7 +1012,7 @@ In addition to Talos Linux, this Terraform configuration can deploy traditional 
 ### Supported Operating Systems
 
 - **Ubuntu 24.04 LTS** - General purpose development
-- **Debian 12 (Bookworm)** - Stable server workloads
+- **Debian 13 (Trixie)** - Stable server workloads
 - **Arch Linux** - Rolling release, bleeding edge
 - **NixOS** - Declarative configuration management
 - **Windows 11 (24H2)** - Windows desktop workloads
