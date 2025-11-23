@@ -286,7 +286,7 @@ module "nixos_vm" {
 }
 
 # ============================================================================
-# Windows Server VM
+# Windows 11 VM
 # ============================================================================
 
 module "windows_vm" {
@@ -302,8 +302,8 @@ module "windows_vm" {
   # VM identification
   vm_name     = var.windows_vm_name
   vm_id       = var.windows_vm_id
-  description = "Windows Server 2022 VM - Windows workloads"
-  tags        = concat(["windows", "server2022"], var.common_tags)
+  description = "Windows 11 (24H2) VM - Windows workloads and desktop applications"
+  tags        = concat(["windows", "windows11", "desktop"], var.common_tags)
 
   # Hardware configuration
   cpu_type   = var.windows_cpu_type

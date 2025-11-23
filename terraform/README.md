@@ -49,7 +49,7 @@ This configuration also supports deploying traditional VMs from Packer golden im
 - **Debian 12 (Bookworm)**: Stable server workloads, cloud-init enabled
 - **Arch Linux**: Rolling release, bleeding edge packages
 - **NixOS**: Declarative configuration management
-- **Windows Server 2022**: Windows workloads, Cloudbase-Init enabled
+- **Windows 11 (24H2)**: Windows desktop workloads, Cloudbase-Init enabled
 
 **Features:**
 - Modular `proxmox-vm` module for consistent deployment
@@ -134,7 +134,7 @@ ubuntu_template_name  = "ubuntu-2404-cloud-template-20251119"
 debian_template_name  = "debian-12-cloud-template-20251119"
 arch_template_name    = "arch-linux-golden-template-20251119"
 nixos_template_name   = "nixos-golden-template-20251119"
-windows_template_name = "windows-server-2022-golden-template-20251119"
+windows_template_name = "windows-11-golden-template-20251119"
 ```
 
 **Step 3: Configure VMs (CPU, memory, IPs, etc.)**
@@ -1015,7 +1015,7 @@ In addition to Talos Linux, this Terraform configuration can deploy traditional 
 - **Debian 12 (Bookworm)** - Stable server workloads
 - **Arch Linux** - Rolling release, bleeding edge
 - **NixOS** - Declarative configuration management
-- **Windows Server 2022** - Windows workloads
+- **Windows 11 (24H2)** - Windows desktop workloads
 
 ### Module Architecture
 

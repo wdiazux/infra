@@ -446,7 +446,7 @@ variable "deploy_ubuntu_vm" {
 variable "ubuntu_template_name" {
   description = "Ubuntu Packer template name"
   type        = string
-  default     = "ubuntu-24.04-golden-template"
+  default     = "ubuntu-2404-cloud-template"
 }
 
 variable "ubuntu_vm_name" {
@@ -515,7 +515,7 @@ variable "deploy_debian_vm" {
 variable "debian_template_name" {
   description = "Debian Packer template name"
   type        = string
-  default     = "debian-12-golden-template"
+  default     = "debian-12-cloud-template"
 }
 
 variable "debian_vm_name" {
@@ -710,84 +710,84 @@ variable "nixos_on_boot" {
   default     = true
 }
 
-# Windows Server VM Configuration
+# Windows 11 VM Configuration
 # ----------------------------------------------------------------------------
 
 variable "deploy_windows_vm" {
-  description = "Deploy Windows Server VM"
+  description = "Deploy Windows 11 VM"
   type        = bool
   default     = false
 }
 
 variable "windows_template_name" {
-  description = "Windows Server Packer template name"
+  description = "Windows 11 Packer template name"
   type        = string
-  default     = "windows-server-2022-golden-template"
+  default     = "windows-11-golden-template"
 }
 
 variable "windows_vm_name" {
-  description = "Windows Server VM name"
+  description = "Windows 11 VM name"
   type        = string
-  default     = "windows-server"
+  default     = "windows-11"
 }
 
 variable "windows_vm_id" {
-  description = "Windows Server VM ID"
+  description = "Windows 11 VM ID"
   type        = number
   default     = 500
 }
 
 variable "windows_cpu_type" {
-  description = "Windows Server CPU type"
+  description = "Windows 11 CPU type"
   type        = string
   default     = "host"
 }
 
 variable "windows_cpu_cores" {
-  description = "Windows Server CPU cores"
+  description = "Windows 11 CPU cores"
   type        = number
   default     = 4
 }
 
 variable "windows_memory" {
-  description = "Windows Server memory in MB"
+  description = "Windows 11 memory in MB"
   type        = number
   default     = 8192
 }
 
 variable "windows_disk_size" {
-  description = "Windows Server disk size in GB"
+  description = "Windows 11 disk size in GB"
   type        = number
   default     = 100
 }
 
 variable "windows_disk_storage" {
-  description = "Windows Server disk storage pool"
+  description = "Windows 11 disk storage pool"
   type        = string
   default     = "local-zfs"
 }
 
 variable "windows_ip_address" {
-  description = "Windows Server IP address (e.g., '192.168.1.104/24' or 'dhcp')"
+  description = "Windows 11 IP address (e.g., '192.168.1.104/24' or 'dhcp')"
   type        = string
   default     = "dhcp"
 }
 
 variable "windows_cloud_init_user" {
-  description = "Windows Server cloud-init (Cloudbase-Init) username"
+  description = "Windows 11 cloud-init (Cloudbase-Init) username"
   type        = string
   default     = "Administrator"
 }
 
 variable "windows_cloud_init_password" {
-  description = "Windows Server cloud-init (Cloudbase-Init) password"
+  description = "Windows 11 cloud-init (Cloudbase-Init) password"
   type        = string
   default     = "ChangeMe123!"
   sensitive   = true
 }
 
 variable "windows_on_boot" {
-  description = "Start Windows Server VM on boot"
+  description = "Start Windows 11 VM on boot"
   type        = bool
   default     = true
 }
