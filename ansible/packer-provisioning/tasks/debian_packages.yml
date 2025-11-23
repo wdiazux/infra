@@ -25,8 +25,10 @@
   ansible.builtin.apt:
     name:
       - ufw
-      - crowdsec
-      - crowdsec-firewall-bouncer-iptables
+      # CrowdSec removed - requires external repository setup
+      # To add CrowdSec, first run: curl -s https://packagecloud.io/install/repositories/crowdsec/crowdsec/script.deb.sh | bash
+      # - crowdsec
+      # - crowdsec-firewall-bouncer-iptables
       - unattended-upgrades
     state: present
   tags: [debian, ubuntu]
