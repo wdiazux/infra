@@ -1,0 +1,243 @@
+---
+# Ansible Playbook: Import Cloud Images to Proxmox
+#
+# This playbook automates the import of official cloud images (Debian, Ubuntu)
+# to Proxmox, creating base VMs that Packer cloud templates will clone.
+#
+# This is a ONE-TIME setup required before using Packer cloud templates.
+#
+# Usage:
+#   ansible-playbook -i inventory/proxmox.ini playbooks/day0_import_cloud_images.yml
+#
+# What it does:
+# 1. Downloads official cloud images (Debian 12, Ubuntu 24.04)
+# 2. Verifies checksums
+# 3. Imports to Proxmox as base VMs
+# 4. Configures cloud-init and QEMU guest agent
+# 5. Creates base VMs that Packer will clone
+#
+# After running this playbook:
+# - Use packer/debian-cloud/ for Debian templates (5-10 min builds)
+# - Use packer/ubuntu-cloud/ for Ubuntu templates (5-10 min builds)
+#
+# Prerequisites:
+# - SSH access to Proxmox host
+# - Proxmox storage pool configured (e.g., local-zfs)
+# - Internet access on Proxmox host
+
+- name: Import Official Cloud Images to Proxmox
+  hosts: proxmox
+  become: true
+  gather_facts: true
+
+  vars:
+    # Debian 12 (Bookworm) Cloud Image
+    debian_cloud_image_url: "https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2"
+    debian_cloud_image_checksum_url: "https://cloud.debian.org/images/cloud/bookworm/latest/SHA512SUMS"
+    debian_vm_id: 9110
+    debian_vm_name: "debian-12-cloud-base"
+    debian_vm_description: "Debian 12 official cloud image (base for Packer cloning)"
+
+    # Ubuntu 24.04 (Noble) Cloud Image
+    ubuntu_cloud_image_url: "https://cloud-images.ubuntu.com/releases/24.04/release/ubuntu-24.04-server-cloudimg-amd64.img"
+    ubuntu_cloud_image_checksum_url: "https://cloud-images.ubuntu.com/releases/24.04/release/SHA256SUMS"
+    ubuntu_vm_id: 9100
+    ubuntu_vm_name: "ubuntu-2404-cloud-base"
+    ubuntu_vm_description: "Ubuntu 24.04 LTS official cloud image (base for Packer cloning)"
+
+    # Proxmox settings
+    proxmox_storage: "local-zfs"
+    proxmox_bridge: "vmbr0"
+    temp_dir: "/tmp/cloud-images"
+
+  tasks:
+    # ========================================================================
+    # Pre-flight Checks
+    # ========================================================================
+
+    - name: Check if qm command exists
+      ansible.builtin.command: which qm
+      register: qm_check
+      changed_when: false
+      failed_when: qm_check.rc != 0
+
+    - name: Create temporary directory for cloud images
+      ansible.builtin.file:
+        path: "{{ temp_dir }}"
+        state: directory
+        mode: '0755'
+
+    # ========================================================================
+    # Debian 12 Cloud Image Import
+    # ========================================================================
+
+    - name: Check if Debian base VM already exists
+      ansible.builtin.shell: qm list | grep -q "{{ debian_vm_id }}"
+      register: debian_vm_exists
+      changed_when: false
+      failed_when: false
+
+    - name: Import Debian cloud image
+      when: debian_vm_exists.rc != 0
+      block:
+        - name: Download Debian cloud image
+          ansible.builtin.get_url:
+            url: "{{ debian_cloud_image_url }}"
+            dest: "{{ temp_dir }}/debian-12-generic-amd64.qcow2"
+            checksum: "sha512:{{ debian_cloud_image_checksum_url }}"
+            mode: '0644'
+          register: debian_download
+
+        - name: Create Debian base VM
+          ansible.builtin.command: >
+            qm create {{ debian_vm_id }}
+            --name {{ debian_vm_name }}
+            --description "{{ debian_vm_description }}"
+            --ostype l26
+            --memory 2048
+            --cores 2
+            --cpu host
+            --net0 virtio,bridge={{ proxmox_bridge }}
+            --scsihw virtio-scsi-single
+            --agent enabled=1
+          changed_when: true
+
+        - name: Import disk to Proxmox storage
+          ansible.builtin.command: >
+            qm importdisk {{ debian_vm_id }}
+            {{ temp_dir }}/debian-12-generic-amd64.qcow2
+            {{ proxmox_storage }}
+          changed_when: true
+
+        - name: Attach imported disk to VM
+          ansible.builtin.command: >
+            qm set {{ debian_vm_id }}
+            --scsi0 {{ proxmox_storage }}:vm-{{ debian_vm_id }}-disk-0,discard=on,ssd=1
+          changed_when: true
+
+        - name: Configure Debian VM boot and cloud-init
+          ansible.builtin.command: >
+            qm set {{ debian_vm_id }}
+            --boot order=scsi0
+            --serial0 socket
+            --vga serial0
+            --ide2 {{ proxmox_storage }}:cloudinit
+            --ipconfig0 ip=dhcp
+            --ciuser debian
+            --cipassword debian
+          changed_when: true
+
+        - name: Set Debian VM as template (DO NOT - Packer needs to clone a VM, not template)
+          ansible.builtin.debug:
+            msg: "Debian base VM {{ debian_vm_id }} created (not converted to template - Packer will clone it)"
+
+    # ========================================================================
+    # Ubuntu 24.04 Cloud Image Import
+    # ========================================================================
+
+    - name: Check if Ubuntu base VM already exists
+      ansible.builtin.shell: qm list | grep -q "{{ ubuntu_vm_id }}"
+      register: ubuntu_vm_exists
+      changed_when: false
+      failed_when: false
+
+    - name: Import Ubuntu cloud image
+      when: ubuntu_vm_exists.rc != 0
+      block:
+        - name: Download Ubuntu cloud image
+          ansible.builtin.get_url:
+            url: "{{ ubuntu_cloud_image_url }}"
+            dest: "{{ temp_dir }}/ubuntu-24.04-server-cloudimg-amd64.img"
+            checksum: "sha256:{{ ubuntu_cloud_image_checksum_url }}"
+            mode: '0644'
+          register: ubuntu_download
+
+        - name: Create Ubuntu base VM
+          ansible.builtin.command: >
+            qm create {{ ubuntu_vm_id }}
+            --name {{ ubuntu_vm_name }}
+            --description "{{ ubuntu_vm_description }}"
+            --ostype l26
+            --memory 2048
+            --cores 2
+            --cpu host
+            --net0 virtio,bridge={{ proxmox_bridge }}
+            --scsihw virtio-scsi-single
+            --agent enabled=1
+          changed_when: true
+
+        - name: Import Ubuntu disk to Proxmox storage
+          ansible.builtin.command: >
+            qm importdisk {{ ubuntu_vm_id }}
+            {{ temp_dir }}/ubuntu-24.04-server-cloudimg-amd64.img
+            {{ proxmox_storage }}
+          changed_when: true
+
+        - name: Attach imported disk to Ubuntu VM
+          ansible.builtin.command: >
+            qm set {{ ubuntu_vm_id }}
+            --scsi0 {{ proxmox_storage }}:vm-{{ ubuntu_vm_id }}-disk-0,discard=on,ssd=1
+          changed_when: true
+
+        - name: Configure Ubuntu VM boot and cloud-init
+          ansible.builtin.command: >
+            qm set {{ ubuntu_vm_id }}
+            --boot order=scsi0
+            --serial0 socket
+            --vga serial0
+            --ide2 {{ proxmox_storage }}:cloudinit
+            --ipconfig0 ip=dhcp
+            --ciuser ubuntu
+            --cipassword ubuntu
+          changed_when: true
+
+        - name: Set Ubuntu VM as template (DO NOT - Packer needs to clone a VM, not template)
+          ansible.builtin.debug:
+            msg: "Ubuntu base VM {{ ubuntu_vm_id }} created (not converted to template - Packer will clone it)"
+
+    # ========================================================================
+    # Cleanup
+    # ========================================================================
+
+    - name: Clean up downloaded cloud images
+      ansible.builtin.file:
+        path: "{{ temp_dir }}"
+        state: absent
+      when: debian_download is defined or ubuntu_download is defined
+
+    # ========================================================================
+    # Summary
+    # ========================================================================
+
+    - name: Display import summary
+      ansible.builtin.debug:
+        msg:
+          - "=============================================="
+          - "Cloud Image Import Complete!"
+          - "=============================================="
+          - ""
+          - "Base VMs created:"
+          - "  - Debian 12: VM ID {{ debian_vm_id }} ({{ debian_vm_name }})"
+          - "  - Ubuntu 24.04: VM ID {{ ubuntu_vm_id }} ({{ ubuntu_vm_name }})"
+          - ""
+          - "Next steps:"
+          - "  1. Use Packer cloud templates for fast builds:"
+          - "     cd packer/debian-cloud && packer build ."
+          - "     cd packer/ubuntu-cloud && packer build ."
+          - ""
+          - "  2. Build time: 5-10 minutes (vs 20-30 min for ISO)"
+          - ""
+          - "  3. Templates will be production-ready with:"
+          - "     - Official cloud images (pre-hardened)"
+          - "     - cloud-init configured"
+          - "     - QEMU guest agent installed"
+          - ""
+          - "=============================================="
+
+# Notes:
+# - This is a one-time setup per Proxmox host
+# - Base VMs are NOT templates (Packer proxmox-clone needs VMs, not templates)
+# - Cloud images are downloaded from official sources with checksum verification
+# - Default credentials: debian/debian for Debian, ubuntu/ubuntu for Ubuntu
+# - These credentials will be changed during Packer build via cloud-init
+# - For Arch, NixOS, Windows: Use ISO-based Packer templates (no official cloud images)
