@@ -1,0 +1,174 @@
+# Longhorn Helm Values for Talos Linux Single-Node Cluster
+# This configuration optimizes Longhorn as the PRIMARY storage solution
+# for almost all services in the cluster.
+#
+# Version: Longhorn 1.7.x+
+# Talos Compatibility: v1.8+
+# Last Updated: 2025-11-22
+#
+# CROSS-REFERENCES:
+# - Installation guide: kubernetes/longhorn/INSTALLATION.md
+# - Storage classes: kubernetes/storage-classes/longhorn-storage-classes.yaml
+# - Terraform Talos config: terraform/main.tf (lines 105-125 for Longhorn requirements)
+# - Talos patch: talos/patches/longhorn-requirements.yaml
+
+# Default Settings
+defaultSettings:
+  # CRITICAL: Must match Terraform kubelet extraMounts configuration
+  # Terraform mounts /var/lib/longhorn with rshared propagation (main.tf line 123)
+  defaultDataPath: /var/lib/longhorn
+
+  # Single-node configuration: Use 1 replica
+  # IMPORTANT: When expanding to 3 nodes, change this to 3
+  defaultReplicaCount: 1
+
+  # Storage reservation: Keep 25% free for system operations
+  storageReservedPercentageForDefaultDisk: 25
+
+  # Disable replica soft anti-affinity for single-node
+  # This allows multiple replicas on the same node (when expanding)
+  replicaSoftAntiAffinity: "false"
+
+  # Automatically create default disk on labeled nodes
+  createDefaultDiskLabeledNodes: true
+
+  # Backup configuration (configure later with NAS or S3)
+  # backupTarget: "nfs://192.168.1.100:/longhorn-backups"
+  # backupTargetCredentialSecret: "longhorn-backup-secret"
+
+  # Snapshot settings
+  snapshotDataIntegrity: "enabled"
+  snapshotMaxCount: 10
+
+  # Automatic volume cleanup
+  orphanAutoDeletion: true
+
+  # Performance tuning
+  storageMinimalAvailablePercentage: 10
+  guaranteedInstanceManagerCPU: 5
+
+  # Volume attachment settings
+  disableSchedulingOnCordonedNode: true
+  replicaAutoBalance: "best-effort"
+
+  # Allow node drain with attached volumes (useful for single node)
+  nodeDownPodDeletionPolicy: "delete-both-statefulset-and-deployment-pod"
+
+  # Upgrade strategy
+  concurrentAutomaticEngineUpgradePerNodeLimit: 1
+
+  # VERIFIED for Longhorn v1.7.x: Performance tuning for single-node
+  # Source: https://longhorn.io/docs/1.7.2/references/settings/
+  concurrentReplicaRebuildPerNodeLimit: 2  # Limit concurrent rebuilds (prevent I/O saturation)
+  concurrentVolumeBackupRestorePerNodeLimit: 2  # Limit concurrent backup/restore
+  replicaReplenishmentWaitInterval: 300  # Wait 5 minutes before reusing failed replica data
+
+# Persistence settings
+persistence:
+  # Make Longhorn the default storage class
+  defaultClass: true
+  defaultFsType: ext4
+  defaultMkfsParams: ""
+  defaultClassReplicaCount: 1
+  defaultDataLocality: best-effort
+  reclaimPolicy: Delete
+  migratable: false
+  recurringJobSelector:
+    enable: false
+
+# Ingress for Longhorn UI (optional - configure if using ingress controller)
+ingress:
+  enabled: false
+  # Enable and configure if you have Cilium ingress or nginx-ingress
+  # host: longhorn.yourdomain.com
+  # ingressClassName: cilium
+  # tls: true
+  # tlsSecret: longhorn-tls
+
+# Service configuration
+service:
+  ui:
+    type: ClusterIP
+    nodePort: null
+  manager:
+    type: ClusterIP
+    nodePort: null
+
+# Enable CSI Driver (required for dynamic provisioning)
+csi:
+  attacherReplicaCount: 1
+  provisionerReplicaCount: 1
+  resizerReplicaCount: 1
+  snapshotterReplicaCount: 1
+
+# Longhorn Manager (controls Longhorn operations)
+longhornManager:
+  priorityClass: ~
+  tolerations: []
+  nodeSelector: {}
+
+# Longhorn Driver (CSI driver pods)
+longhornDriver:
+  priorityClass: ~
+  tolerations: []
+  nodeSelector: {}
+
+# Longhorn UI
+longhornUI:
+  replicas: 1
+  priorityClass: ~
+  tolerations: []
+  nodeSelector: {}
+
+# Resource limits (adjust based on your 96GB RAM system)
+# These are conservative defaults - can be increased if needed
+resources:
+  limits:
+    cpu: 1000m
+    memory: 2Gi
+  requests:
+    cpu: 500m
+    memory: 1Gi
+
+# Enable metrics for Prometheus monitoring
+metrics:
+  serviceMonitor:
+    enabled: false
+    # Set to true if you have kube-prometheus-stack installed
+
+# Private registry settings (if using private registry)
+privateRegistry:
+  createSecret: false
+
+# Upgrade strategy
+upgradeStrategy:
+  type: RollingUpdate
+
+# Network policies (optional - enable if using network policies)
+networkPolicies:
+  enabled: false
+  type: ""
+
+# Enable OpenShift-specific features (keep disabled for Talos)
+enablePSP: false
+enableGoCoverDir: false
+
+# Annotations for all resources
+annotations: {}
+
+# Global node selector (leave empty for single node)
+global:
+  nodeSelector: {}
+  tolerations: []
+
+# Default StorageClass parameters
+# These apply to the default storage class created by Longhorn
+defaultStorageClass:
+  parameters:
+    numberOfReplicas: "1"
+    staleReplicaTimeout: "30"
+    fromBackup: ""
+    fsType: "ext4"
+    dataLocality: "best-effort"
+    # For single node, disable migration
+    migratable: "false"

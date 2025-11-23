@@ -43,7 +43,7 @@
         msg: |
           Proxmox Host: {{ ansible_hostname }}
           CPU: {{ ansible_processor[2] if ansible_processor is defined else 'Unknown' }}
-          Vendor: {{ cpu_vendor }}
+          Vendor: {{ detected_cpu_vendor | default('Unknown') }}
           Memory: {{ ansible_memtotal_mb }}MB
           Kernel: {{ ansible_kernel }}
           Distribution: {{ ansible_distribution }} {{ ansible_distribution_version }}
@@ -102,7 +102,7 @@
 
     - name: Set target GRUB cmdline based on CPU vendor
       ansible.builtin.set_fact:
-        target_grub_cmdline: "{{ grub_cmdline_amd if cpu_vendor == 'amd' else grub_cmdline_intel }}"
+        target_grub_cmdline: "{{ grub_cmdline_amd if detected_cpu_vendor == 'amd' else grub_cmdline_intel }}"
 
     - name: Update GRUB configuration for IOMMU
       ansible.builtin.lineinfile:

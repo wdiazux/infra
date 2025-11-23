@@ -101,10 +101,28 @@ data "talos_machine_configuration" "node" {
           bootloader = true
           wipe = false
         }
+        # Longhorn requirements: kernel modules
+        kernel = {
+          modules = [
+            { name = "nbd" }
+            { name = "iscsi_tcp" }
+            { name = "iscsi_generic" }
+            { name = "configfs" }
+          ]
+        }
         kubelet = {
           nodeIP = {
             validSubnets = ["${var.node_ip}/${var.node_netmask}"]
           }
+          # Longhorn requirements: extra mount for volume attachment
+          extraMounts = [
+            {
+              destination = "/var/lib/longhorn"
+              type = "bind"
+              source = "/var/lib/longhorn"
+              options = ["bind", "rshared", "rw"]
+            }
+          ]
         }
       }
     }),
@@ -303,8 +321,11 @@ locals {
   # Cluster endpoint (use node IP if not specified)
   cluster_endpoint = var.cluster_endpoint != "" ? var.cluster_endpoint : "https://${var.node_ip}:6443"
 
-  # Talos installer image (matches schematic from Packer)
-  talos_installer_image = "${var.talos_version}/metal-amd64"
+  # Talos installer image
+  # Official Factory format: SCHEMATIC_ID:VERSION or just VERSION for default
+  # Example: "376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba:v1.11.4"
+  # See: https://www.talos.dev/v1.10/talos-guides/install/boot-assets/
+  talos_installer_image = var.talos_schematic_id != "" ? "${var.talos_schematic_id}:${var.talos_version}" : "${var.talos_version}"
 
   # Generate kubeconfig path
   kubeconfig_path = "${path.module}/kubeconfig"
@@ -356,7 +377,7 @@ resource "local_file" "talosconfig" {
 
 # Wait for Kubernetes API to be ready
 resource "null_resource" "wait_for_kubernetes" {
-  count = var.auto_bootstrap ? 1 : 0
+  count = var.auto_bootstrap && var.generate_kubeconfig ? 1 : 0
 
   provisioner "local-exec" {
     command = <<-EOT
@@ -367,7 +388,8 @@ resource "null_resource" "wait_for_kubernetes" {
   }
 
   depends_on = [
-    local_file.kubeconfig
+    local_file.kubeconfig,
+    talos_machine_bootstrap.cluster
   ]
 }
 
@@ -392,6 +414,24 @@ resource "null_resource" "remove_control_plane_taint" {
   ]
 }
 
+# Configure Longhorn namespace with pod security
+resource "null_resource" "configure_longhorn_namespace" {
+  count = var.auto_bootstrap ? 1 : 0
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      echo "Configuring Longhorn namespace with pod security labels..."
+      kubectl --kubeconfig=${local.kubeconfig_path} create namespace longhorn-system --dry-run=client -o yaml | kubectl --kubeconfig=${local.kubeconfig_path} apply -f -
+      kubectl --kubeconfig=${local.kubeconfig_path} label namespace longhorn-system pod-security.kubernetes.io/enforce=privileged pod-security.kubernetes.io/audit=privileged pod-security.kubernetes.io/warn=privileged --overwrite || true
+      echo "Longhorn namespace configured! Install Longhorn via Helm: helm install longhorn longhorn/longhorn --namespace longhorn-system --values ../kubernetes/longhorn/longhorn-values.yaml"
+    EOT
+  }
+
+  depends_on = [
+    null_resource.remove_control_plane_taint
+  ]
+}
+
 # Notes:
 # - This configuration creates a SINGLE-NODE cluster (control plane + worker)
 # - GPU passthrough requires IOMMU enabled in BIOS and GRUB
@@ -400,7 +440,10 @@ resource "null_resource" "remove_control_plane_taint" {
 # - KubePrism is enabled for local API caching
 # - Control plane taint is removed to allow pod scheduling
 # - Kubeconfig and talosconfig are saved to terraform/ directory
-# - Persistent storage should use NFS CSI driver (external NAS)
-# - Ephemeral storage uses local-path-provisioner
-# - NVIDIA GPU Operator should be installed after Cilium deployment
+# - PRIMARY STORAGE: Longhorn (installed after cluster bootstrap)
+#   - Requires system extensions: iscsi-tools, util-linux-tools (via Talos Factory)
+#   - Kernel modules: nbd, iscsi_tcp, iscsi_generic, configfs (configured above)
+#   - Kubelet extra mounts: /var/lib/longhorn with rshared propagation (configured above)
+# - BACKUP STORAGE: External NAS via NFS for Longhorn backups
+# - NVIDIA GPU Operator should be installed after Cilium and Longhorn
 # - For production: Use remote state backend and separate environments

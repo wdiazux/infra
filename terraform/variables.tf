@@ -62,6 +62,19 @@ variable "talos_version" {
   default     = "v1.11.4"
 }
 
+variable "talos_schematic_id" {
+  description = "Talos Factory schematic ID with required system extensions (iscsi-tools, util-linux-tools, qemu-guest-agent, nvidia extensions). Leave empty to use default installer without extensions."
+  type        = string
+  default     = ""
+  # Example: "376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba"
+  # Generate at https://factory.talos.dev/ with these extensions:
+  # - siderolabs/iscsi-tools (required for Longhorn)
+  # - siderolabs/util-linux-tools (required for Longhorn)
+  # - siderolabs/qemu-guest-agent (recommended for Proxmox)
+  # - nonfree-kmod-nvidia-production (optional, for GPU)
+  # - nvidia-container-toolkit-production (optional, for GPU)
+}
+
 variable "kubernetes_version" {
   description = "Kubernetes version to deploy (supported by Talos version)"
   type        = string

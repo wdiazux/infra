@@ -34,6 +34,31 @@ talos_template_name = "talos-1.11.4-nvidia-template"
 talos_version       = "v1.11.4"
 kubernetes_version  = "v1.31.0"
 
+# CRITICAL FOR LONGHORN: Talos Factory Schematic ID
+# Generate at: https://factory.talos.dev/
+# Required extensions for Longhorn storage manager:
+#   - siderolabs/iscsi-tools (required)
+#   - siderolabs/util-linux-tools (required)
+#   - siderolabs/qemu-guest-agent (recommended for Proxmox)
+# Optional extensions for GPU workloads:
+#   - nonfree-kmod-nvidia-production
+#   - nvidia-container-toolkit-production
+#
+# Example schematic ID format: "376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba"
+talos_schematic_id = ""  # CHANGE ME - paste your schematic ID here
+
+# Steps to generate schematic ID:
+# 1. Visit https://factory.talos.dev/
+# 2. Select Talos version (v1.11.4)
+# 3. Add extensions:
+#    - siderolabs/iscsi-tools
+#    - siderolabs/util-linux-tools
+#    - siderolabs/qemu-guest-agent
+#    - nonfree-kmod-nvidia-production (if using GPU)
+#    - nvidia-container-toolkit-production (if using GPU)
+# 4. Click "Generate" and copy the schematic ID
+# 5. Paste the ID above
+
 # ============================================================================
 # Cluster Configuration
 # ============================================================================
@@ -104,12 +129,21 @@ dns_servers = ["8.8.8.8", "8.8.4.4"]  # Google DNS, or use your own
 ntp_servers = ["time.cloudflare.com"]
 
 # ============================================================================
-# External Storage (NFS)
+# External Storage (NFS) - For Longhorn Backups (OPTIONAL)
 # ============================================================================
 
-# External NAS for persistent storage
-nfs_server = "192.168.1.200"       # Your NAS IP address
-nfs_path   = "/mnt/tank/k8s-storage"  # NFS export path
+# PRIMARY STORAGE: Longhorn (local cluster storage)
+# BACKUP STORAGE: External NAS via NFS (optional, can be configured later)
+
+# External NAS for Longhorn backup target
+# Leave empty to configure later via Longhorn UI
+nfs_server = ""  # Your NAS IP (e.g., "192.168.1.200")
+nfs_path   = ""  # NFS export path (e.g., "/mnt/tank/longhorn-backups")
+
+# You can add NFS backups later:
+# 1. Set up NFS share on your NAS
+# 2. Configure in Longhorn UI: Settings → General → Backup Target
+# 3. Or update these values and run: helm upgrade longhorn ...
 
 # ============================================================================
 # Feature Flags
@@ -158,14 +192,43 @@ description = "Talos Linux single-node Kubernetes cluster with NVIDIA GPU suppor
 install_disk = "/dev/sda"
 
 # Notes:
+# - CRITICAL: Generate and set talos_schematic_id with Longhorn extensions
 # - Update node_ip, node_gateway, node_netmask to match your network
-# - Update nfs_server and nfs_path to match your NAS configuration
+# - nfs_server and nfs_path are OPTIONAL (can configure later via Longhorn UI)
 # - Update gpu_pci_id based on `lspci` output on your Proxmox host
 # - Verify talos_template_name matches the template created by Packer
 # - Check node_disk_storage matches your Proxmox storage pool name
 # - For multiple nodes, create separate .tfvars files (e.g., node1.tfvars, node2.tfvars)
 # - GPU passthrough requires IOMMU enabled in BIOS and GRUB configuration
 # - Single-node cluster requires allow_scheduling_on_control_plane = true
+# - Longhorn kernel modules and kubelet mounts are auto-configured in main.tf
+
+# ============================================================================
+# Post-Deployment: Install Longhorn
+# ============================================================================
+# After successful `terraform apply`, install Longhorn storage manager:
+#
+# 1. Verify cluster is ready:
+#    kubectl --kubeconfig=./kubeconfig get nodes
+#
+# 2. Create Longhorn namespace:
+#    kubectl create namespace longhorn-system
+#    kubectl label namespace longhorn-system pod-security.kubernetes.io/enforce=privileged
+#
+# 3. Install Longhorn via Helm:
+#    helm repo add longhorn https://charts.longhorn.io
+#    helm install longhorn longhorn/longhorn \
+#      --namespace longhorn-system \
+#      --values ../kubernetes/longhorn/longhorn-values.yaml
+#
+# 4. Apply storage classes:
+#    kubectl apply -f ../kubernetes/storage-classes/longhorn-storage-classes.yaml
+#
+# 5. Verify installation:
+#    kubectl get pods -n longhorn-system
+#    kubectl get storageclass
+#
+# Full documentation: ../kubernetes/longhorn/INSTALLATION.md
 
 # ============================================================================
 # Traditional VMs Configuration (Optional)
