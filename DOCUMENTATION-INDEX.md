@@ -148,6 +148,15 @@
 
 ## 🔧 Implementation Guides
 
+### Talos Getting Started ⭐ NEW
+
+- **[docs/TALOS-GETTING-STARTED.md](docs/TALOS-GETTING-STARTED.md)** - Complete beginner's guide (12KB)
+  - Initial setup verification
+  - Essential talosctl & kubectl commands
+  - NGINX deployment example (ClusterIP + LoadBalancer)
+  - Troubleshooting guide
+  - Quick reference cheat sheet
+
 ### Deployment Guides
 
 - **[docs/TALOS-DEPLOYMENT-GUIDE.md](docs/TALOS-DEPLOYMENT-GUIDE.md)** - Talos Linux deployment (150+ lines)
@@ -155,6 +164,18 @@
 - **[docs/ARCH-DEPLOYMENT-GUIDE.md](docs/ARCH-DEPLOYMENT-GUIDE.md)** - Arch Linux deployment
 - **[docs/NIXOS-DEPLOYMENT-GUIDE.md](docs/NIXOS-DEPLOYMENT-GUIDE.md)** - NixOS deployment
 - **[docs/WINDOWS-DEPLOYMENT-GUIDE.md](docs/WINDOWS-DEPLOYMENT-GUIDE.md)** - Windows Server deployment
+
+### Service Stack ⭐ NEW
+
+- **[docs/RECOMMENDED-SERVICES-GUIDE.md](docs/RECOMMENDED-SERVICES-GUIDE.md)** - Production service stack (12KB)
+  - GitOps (FluxCD + SOPS) - Selected
+  - Storage (Longhorn) - Selected
+  - Networking (Cilium) - Selected
+  - Source Control (Forgejo) - with deployment YAML
+  - CI/CD options (Forgejo Actions, GitHub Actions, Podman)
+  - Monitoring (kube-prometheus-stack, Loki, Grafana)
+  - GPU workloads (NVIDIA GPU Operator)
+  - Deployment priority phases
 
 ### Step-by-Step Workflows
 
@@ -175,6 +196,19 @@
   - Code quality metrics (9.9/10)
   - Production readiness assessment
 
+- **[INFRASTRUCTURE-ORGANIZATION-REVIEW.md](INFRASTRUCTURE-ORGANIZATION-REVIEW.md)** ⭐ NEW - Organization assessment
+  - File structure analysis
+  - Best practices compliance
+  - Code quality assessment
+  - Workflow verification
+  - Maintenance recommendations
+
+- **[NETWORK-UPDATE-REPORT.md](NETWORK-UPDATE-REPORT.md)** ⭐ NEW - Network configuration update
+  - Network migration (192.168.1.0/24 → 10.10.2.0/24)
+  - Complete IP allocation table
+  - All files modified (16 files)
+  - Verification checklist
+
 ### Integration Analysis
 
 - **[docs/DEEP-INTEGRATION-ANALYSIS-REPORT.md](docs/DEEP-INTEGRATION-ANALYSIS-REPORT.md)** - Integration verification
@@ -192,6 +226,15 @@
 ---
 
 ## 🔐 Secrets Management
+
+### SOPS + FluxCD Implementation ⭐ NEW (SELECTED)
+
+- **[docs/SOPS-FLUXCD-IMPLEMENTATION-GUIDE.md](docs/SOPS-FLUXCD-IMPLEMENTATION-GUIDE.md)** - Production implementation guide (18KB)
+  - Complete SOPS + FluxCD + Age setup (step-by-step)
+  - Real-world examples (database, Docker registry, API tokens)
+  - Day-to-day workflow (encrypt, edit, rotate keys)
+  - Troubleshooting and disaster recovery
+  - Quick reference commands
 
 ### SOPS and Age Encryption
 
