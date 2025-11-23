@@ -1,7 +1,7 @@
-# Packer Variables for Debian Golden Image
+# Packer Variables for Debian Cloud Image Template
 #
-# This file defines variables for building a Debian stable golden image
-# for Proxmox VE 9.0
+# This uses official Debian cloud image (PREFERRED METHOD)
+# Much faster than building from ISO (5-10 min vs 20-30 min)
 
 # Proxmox Connection
 variable "proxmox_url" {
@@ -12,7 +12,7 @@ variable "proxmox_url" {
 
 variable "proxmox_username" {
   type        = string
-  description = "Proxmox username (format: user@pam or user@pve)"
+  description = "Proxmox username"
   default     = "root@pam"
   sensitive   = true
 }
@@ -39,52 +39,41 @@ variable "proxmox_skip_tls_verify" {
 # Debian Version
 variable "debian_version" {
   type        = string
-  description = "Debian version (12 = Bookworm, 11 = Bullseye)"
+  description = "Debian version"
   default     = "12"
 }
 
-variable "debian_iso_url" {
-  type        = string
-  description = "URL to Debian ISO"
-  default     = "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-12.8.0-amd64-netinst.iso"
-}
-
-variable "debian_iso_checksum" {
-  type        = string
-  description = "SHA256 checksum of Debian ISO (file: reference auto-validates against official checksums)"
-  default     = "file:https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/SHA256SUMS"
+# Cloud Image Base VM
+variable "cloud_image_vm_id" {
+  type        = number
+  description = "VM ID of imported cloud image (created by import-cloud-image.sh)"
+  default     = 9110
 }
 
 # Template Configuration
 variable "template_name" {
   type        = string
   description = "Name for the Proxmox template"
-  default     = "debian-12-golden-template"
+  default     = "debian-12-cloud-template"
 }
 
 variable "template_description" {
   type        = string
   description = "Description for the template"
-  default     = "Debian 12 (Bookworm) golden image with cloud-init"
+  default     = "Debian 12 (Bookworm) cloud image with customizations"
 }
 
 # VM Configuration
 variable "vm_id" {
   type        = number
   description = "VM ID for the template"
-  default     = 9001
+  default     = 9112
 }
 
 variable "vm_name" {
   type        = string
   description = "Temporary VM name during build"
-  default     = "debian-build"
-}
-
-variable "vm_cpu_type" {
-  type        = string
-  description = "CPU type"
-  default     = "host"
+  default     = "debian-cloud-build"
 }
 
 variable "vm_cores" {
@@ -97,12 +86,6 @@ variable "vm_memory" {
   type        = number
   description = "RAM in MB"
   default     = 2048
-}
-
-variable "vm_disk_size" {
-  type        = string
-  description = "Disk size"
-  default     = "20G"
 }
 
 variable "vm_disk_storage" {
@@ -118,21 +101,9 @@ variable "vm_network_bridge" {
 }
 
 # SSH Configuration
-variable "ssh_username" {
-  type        = string
-  description = "SSH username for provisioning"
-  default     = "debian"
-}
-
 variable "ssh_password" {
   type        = string
-  description = "SSH password for provisioning"
+  description = "SSH password (default from cloud image)"
   default     = "debian"
   sensitive   = true
-}
-
-variable "ssh_timeout" {
-  type        = string
-  description = "SSH timeout"
-  default     = "20m"
 }
