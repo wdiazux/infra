@@ -68,20 +68,34 @@ variable "talos_version" {
 }
 
 variable "talos_schematic_id" {
-  description = "Talos Factory schematic ID with required system extensions (iscsi-tools, util-linux-tools, qemu-guest-agent, nvidia extensions). Leave empty to use default installer without extensions."
+  description = "Talos Factory schematic ID with required system extensions. REQUIRED for Longhorn storage (iscsi-tools, util-linux-tools). Generate at https://factory.talos.dev/"
   type        = string
   default     = ""
   # Example: "376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba"
-  # Generate at https://factory.talos.dev/ with these extensions:
-  # - siderolabs/iscsi-tools (required for Longhorn)
-  # - siderolabs/util-linux-tools (required for Longhorn)
-  # - siderolabs/qemu-guest-agent (recommended for Proxmox)
-  # - nonfree-kmod-nvidia-production (optional, for GPU)
-  # - nvidia-container-toolkit-production (optional, for GPU)
+  #
+  # CRITICAL: This infrastructure uses Longhorn as primary storage, which REQUIRES:
+  # - siderolabs/iscsi-tools (REQUIRED for Longhorn)
+  # - siderolabs/util-linux-tools (REQUIRED for Longhorn)
+  # - siderolabs/qemu-guest-agent (REQUIRED for Proxmox integration)
+  #
+  # Optional extensions for GPU workloads:
+  # - nonfree-kmod-nvidia-production (optional, for GPU passthrough)
+  # - nvidia-container-toolkit-production (optional, for GPU in Kubernetes)
+  #
+  # Generate schematic at: https://factory.talos.dev/
+  # See packer/talos/README.md for detailed instructions
 
   validation {
     condition     = var.talos_schematic_id == "" || can(regex("^[a-f0-9]{64}$", var.talos_schematic_id))
-    error_message = "Talos schematic ID must be empty or a 64-character hexadecimal string. Generate at https://factory.talos.dev/"
+    error_message = <<-EOT
+      Talos schematic ID must be a 64-character hexadecimal string.
+
+      IMPORTANT: This infrastructure uses Longhorn for storage, which REQUIRES
+      a custom Talos image with iscsi-tools and util-linux-tools extensions.
+
+      Generate schematic at: https://factory.talos.dev/
+      See packer/talos/README.md for step-by-step instructions.
+    EOT
   }
 }
 
@@ -195,12 +209,22 @@ variable "node_memory" {
   description = "Memory in MB for the node"
   type        = number
   default     = 32768  # 32GB for AI/ML workloads
+
+  validation {
+    condition     = var.node_memory >= 16384
+    error_message = "Single-node Talos with Longhorn requires minimum 16GB (16384MB) RAM. 24-32GB recommended for production workloads."
+  }
 }
 
 variable "node_disk_size" {
   description = "Disk size in GB for the node"
   type        = number
   default     = 200  # 200GB for OS + containers + local ephemeral storage
+
+  validation {
+    condition     = var.node_disk_size >= 100
+    error_message = "Talos disk size should be at least 100GB for production use (200GB+ recommended for Longhorn storage)."
+  }
 }
 
 variable "node_disk_storage" {

@@ -2,6 +2,23 @@
 
 This guide provides step-by-step instructions for installing and configuring Longhorn as the **primary storage solution** for your Talos Linux cluster on Proxmox.
 
+---
+
+## ⚠️ **CRITICAL: Install Cilium CNI BEFORE Longhorn**
+
+**STOP!** Before installing Longhorn, you **MUST** install Cilium first.
+
+Longhorn requires a functioning Container Network Interface (CNI) to operate. Without Cilium:
+- Longhorn pods will fail to start
+- Network communication between components won't work
+- Volume operations will fail
+
+**Installation Order:**
+1. **FIRST:** Install Cilium CNI → See [`kubernetes/cilium/INSTALLATION.md`](../cilium/INSTALLATION.md)
+2. **SECOND:** Install Longhorn (this guide)
+
+---
+
 ## Table of Contents
 
 1. [Prerequisites](#prerequisites)

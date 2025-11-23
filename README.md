@@ -187,7 +187,7 @@ kubectl get nodes
 cd ansible
 
 # Prepare Proxmox host for GPU passthrough
-ansible-playbook -i inventory/proxmox.ini playbooks/day0-proxmox-prep.yml
+ansible-playbook -i inventory/proxmox.ini playbooks/day0_proxmox_prep.yml
 
 # Reboot Proxmox host to apply IOMMU changes
 ```
@@ -266,7 +266,7 @@ infra/
 │   ├── README.md               # Ansible guide and documentation
 │   ├── requirements.yml        # Required Ansible collections
 │   ├── playbooks/              # Ansible playbooks
-│   │   ├── day0-proxmox-prep.yml          # GPU passthrough setup (Proxmox host)
+│   │   ├── day0_proxmox_prep.yml          # GPU passthrough setup (Proxmox host)
 │   │   ├── day1-ubuntu-baseline.yml       # Ubuntu VM baseline configuration
 │   │   ├── day1-debian-baseline.yml       # Debian VM baseline configuration
 │   │   ├── day1-arch-baseline.yml         # Arch Linux VM baseline configuration
@@ -466,7 +466,7 @@ reboot
 **3. Configure VFIO:**
 ```bash
 # Run Ansible playbook (automated)
-ansible-playbook -i inventory/proxmox.ini playbooks/day0-proxmox-prep.yml
+ansible-playbook -i inventory/proxmox.ini playbooks/day0_proxmox_prep.yml
 ```
 
 **Or manually:**
@@ -555,8 +555,8 @@ echo $?  # Should return 0
 
 ```bash
 cd ansible
-ansible-lint playbooks/day0-proxmox-prep.yml
-ansible-playbook -i inventory/proxmox.ini playbooks/day0-proxmox-prep.yml --check
+ansible-lint playbooks/day0_proxmox_prep.yml
+ansible-playbook -i inventory/proxmox.ini playbooks/day0_proxmox_prep.yml --check
 ```
 
 ### Verify Talos Cluster

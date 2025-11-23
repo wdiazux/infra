@@ -136,17 +136,3 @@ variable "ssh_timeout" {
   description = "SSH timeout"
   default     = "20m"
 }
-
-# User Configuration (created during installation)
-variable "default_username" {
-  type        = string
-  description = "Default user to create"
-  default     = "admin"
-}
-
-variable "default_password" {
-  type        = string
-  description = "Default user password (will be changeable via cloud-init)"
-  default     = "changeme"
-  sensitive   = true
-}

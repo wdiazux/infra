@@ -67,6 +67,8 @@ module "ubuntu_vm" {
   enable_qemu_agent = true
 
   # Startup configuration
+  # NOTE: startup_order starts at 20 to leave room for Talos node (startup_order=1)
+  # and any other infrastructure VMs that should start before traditional workload VMs
   on_boot            = var.ubuntu_on_boot
   startup_order      = 20
   startup_up_delay   = 30
