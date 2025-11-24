@@ -23,7 +23,7 @@
 
   vars:
     # Timezone configuration
-    timezone: "America/New_York"
+    timezone: "America/El_Salvador"
 
     # Locale configuration
     locale: "en_US.UTF-8"
