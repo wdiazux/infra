@@ -164,7 +164,7 @@ ansible-lint tasks/*.yml
 
 ### Test with Packer
 ```bash
-cd ../../packer/ubuntu-cloud
+cd ../../packer/ubuntu
 packer validate .
 packer build .
 ```

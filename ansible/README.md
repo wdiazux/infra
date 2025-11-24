@@ -311,7 +311,7 @@ ansible-playbook playbooks/day1-ubuntu-baseline.yml -vvv
 ansible-playbook playbooks/day0-proxmox-prep.yml
 
 # 2. Build Packer templates (run from packer directory)
-cd ../packer/ubuntu-cloud && packer build .
+cd ../packer/ubuntu && packer build .
 
 # 3. Deploy VMs with Terraform (run from terraform directory)
 cd ../../terraform && terraform apply

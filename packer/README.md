@@ -30,10 +30,10 @@ All Packer templates have been comprehensively reviewed and verified against 202
 
 For operating systems with official cloud image support:
 
-| OS | Directory | VM IDs | Build Time | Status |
-|----|-----------|--------|------------|--------|
-| **Ubuntu 24.04** | `ubuntu-cloud/` | 9100→9102 | 5-10 min | ✅ **Recommended** |
-| **Debian 12** | `debian-cloud/` | 9110→9112 | 5-10 min | ✅ **Recommended** |
+| OS | Directory | VM ID | Build Time | Status |
+|----|-----------|-------|------------|--------|
+| **Ubuntu 24.04** | `ubuntu/` | 9002 | 5-10 min | ✅ **Recommended** |
+| **Debian 12** | `debian/` | 9001 | 5-10 min | ✅ **Recommended** |
 
 **Why cloud images?**
 - ⚡ **3-4x faster** build times
@@ -77,26 +77,14 @@ packer/
 │   ├── variables.pkr.hcl
 │   └── README.md
 │
-├── debian-cloud/                # ✨ Debian 12 (PREFERRED)
-│   ├── debian-cloud.pkr.hcl    # Uses official cloud image
-│   ├── import-cloud-image.sh   # One-time setup script
+├── ubuntu/                      # ✨ Ubuntu 24.04 (PREFERRED - cloud image)
+│   ├── ubuntu.pkr.hcl          # Uses official cloud image
 │   ├── variables.pkr.hcl
 │   └── README.md
 │
-├── debian/                      # Debian 12 (ISO fallback)
-│   ├── debian.pkr.hcl          # Uses ISO with preseed
-│   ├── http/preseed.cfg
-│   └── README.md
-│
-├── ubuntu-cloud/                # ✨ Ubuntu 24.04 (PREFERRED)
-│   ├── ubuntu-cloud.pkr.hcl    # Uses official cloud image
-│   ├── import-cloud-image.sh   # One-time setup script
+├── debian/                      # ✨ Debian 12 (PREFERRED - cloud image)
+│   ├── debian.pkr.hcl          # Uses official cloud image
 │   ├── variables.pkr.hcl
-│   └── README.md
-│
-├── ubuntu/                      # Ubuntu 24.04 (ISO fallback)
-│   ├── ubuntu.pkr.hcl          # Uses ISO with autoinstall
-│   ├── http/user-data
 │   └── README.md
 │
 ├── arch/                        # Arch Linux (ISO ONLY)
@@ -120,14 +108,17 @@ packer/
 
 ### For Cloud Images (Ubuntu/Debian)
 
-**Step 1:** Import cloud image (one-time setup on Proxmox host)
+**Build Ubuntu cloud image template:**
 ```bash
-cd packer/ubuntu-cloud
-./import-cloud-image.sh
+cd packer/ubuntu
+packer init .
+packer validate .
+packer build .
 ```
 
-**Step 2:** Build customized template
+**Build Debian cloud image template:**
 ```bash
+cd packer/debian
 packer init .
 packer validate .
 packer build .
@@ -173,8 +164,8 @@ packer build .
    - Cilium CNI, NFS CSI + local-path-provisioner
 
 ### Traditional VMs
-2. **Ubuntu 24.04** (from `ubuntu-cloud/`) - General purpose Linux
-3. **Debian 12** (from `debian-cloud/`) - Stable server workloads
+2. **Ubuntu 24.04** (from `ubuntu/`) - General purpose Linux
+3. **Debian 12** (from `debian/`) - Stable server workloads
 4. **Arch Linux** (from `arch/`) - Rolling release, bleeding edge
 5. **NixOS 24.05** (from `nixos/`) - Declarative configuration
 6. **Windows Server 2022** (from `windows/`) - Windows workloads
@@ -490,8 +481,9 @@ All templates now use UEFI for consistency.
 3. **Use local storage** (not NFS) for build VMs
 4. **Parallel builds** for multiple templates:
    ```bash
-   packer build ubuntu-cloud/ &
-   packer build debian-cloud/ &
+   cd packer
+   packer build ubuntu/ &
+   packer build debian/ &
    wait
    ```
 
@@ -631,15 +623,16 @@ All 8 Packer templates are **production-ready**:
 **Workflow:**
 ```bash
 # 1. Build Packer template
-cd packer/ubuntu-cloud && packer build .
-# Produces: ubuntu-2404-cloud-template-20251119
+cd packer/ubuntu && packer build .
+# Produces: ubuntu-2404-template
 
-# 2. Update Terraform variable
-cd terraform && vim terraform.tfvars
-# Set: ubuntu_template_name = "ubuntu-2404-cloud-template-20251119"
+# 2. Verify template in Terraform
+cd terraform
+terraform plan
+# ✅ Template should be found automatically
 
 # 3. Deploy with Terraform
-terraform apply -target=module.ubuntu_vm
+terraform apply
 # ✅ Clones from golden image and deploys VM
 ```
 
