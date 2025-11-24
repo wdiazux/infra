@@ -68,8 +68,8 @@ All VMs are deployed from Packer golden images. You can enable/disable each VM i
 | VM Type | Module | Control Variable | Default VM ID | Template Source |
 |---------|--------|-----------------|---------------|----------------|
 | **Talos** | Direct resource | Always deployed | 1000 | `packer/talos/` |
-| **Ubuntu** | `module.ubuntu_vm` | `deploy_ubuntu_vm` | 100-199 | `packer/ubuntu-cloud/` or `packer/ubuntu/` |
-| **Debian** | `module.debian_vm` | `deploy_debian_vm` | 200-299 | `packer/debian-cloud/` or `packer/debian/` |
+| **Ubuntu** | `module.ubuntu_vm` | `deploy_ubuntu_vm` | 100-199 | `packer/ubuntu/` |
+| **Debian** | `module.debian_vm` | `deploy_debian_vm` | 200-299 | `packer/debian/` |
 | **Arch** | `module.arch_vm` | `deploy_arch_vm` | 300-399 | `packer/arch/` |
 | **NixOS** | `module.nixos_vm` | `deploy_nixos_vm` | 400-499 | `packer/nixos/` |
 | **Windows** | `module.windows_vm` | `deploy_windows_vm` | 500-599 | `packer/windows/` |
@@ -119,8 +119,8 @@ terraform apply -target=module.debian_vm
 ```bash
 # Build all templates you want to deploy
 cd packer/talos && packer build .
-cd packer/ubuntu-cloud && packer build .
-cd packer/debian-cloud && packer build .
+cd packer/ubuntu && packer build .
+cd packer/debian && packer build .
 cd packer/arch && packer build .
 cd packer/nixos && packer build .
 cd packer/windows && packer build .
@@ -1038,8 +1038,8 @@ terraform/
 
 ```bash
 # Build all templates
-cd ../packer/ubuntu-cloud && packer build .
-cd ../packer/debian-cloud && packer build .
+cd ../packer/ubuntu && packer build .
+cd ../packer/debian && packer build .
 cd ../packer/arch && packer build .
 cd ../packer/nixos && packer build .
 cd ../packer/windows && packer build .

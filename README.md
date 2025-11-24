@@ -99,7 +99,7 @@ sops secrets/proxmox-creds.enc.yaml
 **4. Review and customize variables:**
 ```bash
 # Packer variables
-vim packer/ubuntu-cloud/variables.pkr.hcl
+vim packer/ubuntu/variables.pkr.hcl
 
 # Terraform variables
 cp terraform/terraform.tfvars.example terraform/terraform.tfvars
@@ -116,11 +116,14 @@ vim ansible/inventory/proxmox.ini
 **For Ubuntu/Debian (PREFERRED - Cloud Images):**
 
 ```bash
-# Step 1: Import official cloud image (one-time setup on Proxmox host)
-cd packer/ubuntu-cloud
-./import-cloud-image.sh
+# Build Ubuntu cloud image template
+cd packer/ubuntu
+packer init .
+packer validate .
+packer build .
 
-# Step 2: Customize and build template
+# Build Debian cloud image template
+cd packer/debian
 packer init .
 packer validate .
 packer build .
@@ -247,13 +250,11 @@ infra/
 ├── packer/                      # Golden image templates
 │   ├── README.md               # Packer guide with decision matrix
 │   ├── talos/                  # Talos Linux (Factory images, VM 9000)
-│   ├── ubuntu-cloud/           # ✨ Ubuntu 24.04 cloud image (PREFERRED, VM 9100-9102)
-│   ├── debian-cloud/           # ✨ Debian 12 cloud image (PREFERRED, VM 9110-9112)
-│   ├── ubuntu/                 # Ubuntu 24.04 ISO (fallback, VM 9002)
-│   ├── debian/                 # Debian 12 ISO (fallback, VM 9001)
-│   ├── arch/                   # Arch Linux ISO (required, VM 9003)
-│   ├── nixos/                  # NixOS 24.05 ISO (required, VM 9004)
-│   └── windows/                # Windows Server 2022 ISO (required, VM 9005)
+│   ├── ubuntu/                 # Ubuntu 24.04 (cloud image, VM 9002)
+│   ├── debian/                 # Debian 12 (cloud image, VM 9001)
+│   ├── arch/                   # Arch Linux ISO (VM 9003)
+│   ├── nixos/                  # NixOS 24.05 ISO (VM 9004)
+│   └── windows/                # Windows Server 2022 ISO (VM 9005)
 │
 ├── terraform/                   # Infrastructure deployment
 │   ├── main.tf                 # Primary configuration
@@ -312,13 +313,13 @@ infra/
 ### Traditional VMs
 
 **Cloud Image Templates (PREFERRED):**
-- Ubuntu 24.04 LTS (Noble) - General purpose Linux
-- Debian 12 (Bookworm) - Stable server workloads
+- Ubuntu 24.04 LTS (Noble) - General purpose Linux (`packer/ubuntu/`)
+- Debian 12 (Bookworm) - Stable server workloads (`packer/debian/`)
 
-**ISO Templates (Required):**
-- Arch Linux - Rolling release, bleeding edge packages
-- NixOS 24.05 - Declarative configuration management
-- Windows Server 2022 - Windows workloads
+**ISO Templates:**
+- Arch Linux - Rolling release, bleeding edge packages (`packer/arch/`)
+- NixOS 24.05 - Declarative configuration management (`packer/nixos/`)
+- Windows Server 2022 - Windows workloads (`packer/windows/`)
 
 ## 🔧 Key Technologies
 
@@ -531,12 +532,12 @@ spec:
 ### Verify Packer Builds
 
 ```bash
-cd packer/ubuntu-cloud
+cd packer/ubuntu
 packer validate .
 packer build .
 
 # Check template in Proxmox
-qm list | grep ubuntu-2404-cloud-template
+qm list | grep ubuntu-2404-template
 ```
 
 ### Verify Terraform Deployment
@@ -605,12 +606,12 @@ kubectl logs gpu-test
 
 **Build fails with "cannot find cloud image":**
 ```bash
-# Verify base VM exists in Proxmox
-qm list | grep 9100  # Ubuntu cloud base
+# Verify cloud image VM variables are set correctly
+cd packer/ubuntu
+cat variables.pkr.hcl | grep cloud_image_vm_id
 
-# If missing, run import script
-cd packer/ubuntu-cloud
-./import-cloud-image.sh
+# Check that the base cloud image VM exists in Proxmox
+qm list | grep <cloud_image_vm_id>
 ```
 
 **ISO not found:**

@@ -22,62 +22,54 @@
 
 ---
 
-## 🤔 DECISION NEEDED: Template Strategy
+## ✅ TEMPLATE STRATEGY (IMPLEMENTED)
 
-You currently have **duplicate Packer templates**:
+**Current State**: Single template per OS, cloud images used where available
 
-### Option 1: debian + debian-cloud (and ubuntu + ubuntu-cloud)
+### Implemented Approach: Cloud Images in Primary Directories
 
-**Current State**: Both exist
-- `packer/debian/` - ISO-based (20-30 min build)
-- `packer/debian-cloud/` - Cloud image (5-10 min build, marked "PREFERRED")
+**Current Reality**:
+- `packer/ubuntu/` - Uses cloud image (proxmox-clone builder, 5-10 min build)
+- `packer/debian/` - Uses cloud image (proxmox-clone builder, 5-10 min build)
+- NO separate `-cloud` directories (simplified structure)
 
-### Recommendation: **KEEP ISO TEMPLATES ONLY** (Delete cloud templates)
+### Why This Approach Works
 
-**Why**:
+**Benefits**:
 
-✅ **Pros of ISO Templates** (Homelab-Optimized):
-- ✅ **Works out-of-box**: No manual pre-setup required
-- ✅ **Fully automated**: No scripts to run on Proxmox host first
-- ✅ **Simpler**: One approach, one set of docs
-- ✅ **Reliable first run**: Meets your goal of "make sure execution is going to work"
-- ✅ **Less confusing**: No questions about which method to use
+✅ **Current Implementation**:
+- ✅ **Fast builds**: 5-10 minutes (3-4x faster than ISO)
+- ✅ **Single directory per OS**: Simplified structure, clearer documentation
+- ✅ **Industry standard**: Uses official cloud images where available
+- ✅ **Reliable**: Official pre-built images from OS vendors
+- ✅ **Pre-configured**: Includes cloud-init and qemu-guest-agent
 
-❌ **Cons of Cloud Templates** (Enterprise-Optimized):
-- ❌ **Requires manual setup**: Must import base VM to Proxmox first
-- ❌ **Chicken-and-egg**: Can't build without base VM, can't automate base VM creation easily
-- ❌ **More moving parts**: Import scripts, base VMs, clone operations
-- ❌ **Documentation complexity**: Two methods to explain
+📊 **Current Build Times**:
 
-📊 **Comparison**:
-
-| Aspect | ISO Templates | Cloud Templates |
-|--------|--------------|-----------------|
-| **First-run success** | ✅ High | ❌ Requires manual setup |
-| **Build time** | 20-30 min | 5-10 min |
-| **Automation** | ✅ Fully automated | ❌ Manual import step |
-| **Complexity** | ✅ Low | ❌ Higher |
-| **Production practice** | Good | ✅ Best |
-| **Homelab practice** | ✅ Best | Good |
-
-**For Production at Scale**: Cloud templates are industry best practice
-**For Your Homelab Goal**: ISO templates ensure first-run success
+| OS | Method | Directory | Build Time | Status |
+|-----|--------|-----------|------------|--------|
+| Ubuntu | Cloud image | `packer/ubuntu/` | 5-10 min | ✅ Primary |
+| Debian | Cloud image | `packer/debian/` | 5-10 min | ✅ Primary |
+| Arch | ISO | `packer/arch/` | 15-25 min | Required (no cloud images) |
+| NixOS | ISO | `packer/nixos/` | 20-30 min | Required (no cloud images) |
+| Windows | ISO | `packer/windows/` | 30-90 min | Required (no cloud images) |
+| Talos | Factory | `packer/talos/` | 10-15 min | ✅ Primary workload |
 
 ---
 
 ## 📝 RECOMMENDATION SUMMARY
 
-### Immediate Actions (Do Now):
+### Completed Actions:
 
 1. ✅ **DONE**: Fix Talos template Longhorn extensions
-2. ⏳ **RECOMMEND**: Delete cloud template directories
-   - Remove `packer/debian-cloud/` (entire directory)
-   - Remove `packer/ubuntu-cloud/` (entire directory)
-   - Benefit: -3,000 lines of code, simpler maintenance
-   - Risk: None (ISO templates are fully functional)
+2. ✅ **DONE**: Unified template structure (no separate `-cloud` directories)
+   - `packer/ubuntu/` uses cloud images (proxmox-clone builder)
+   - `packer/debian/` uses cloud images (proxmox-clone builder)
+   - Simplified directory structure and documentation
+   - No duplicate templates
 
-3. ⏳ **UPDATE**: Standardize template names in all docs
-   - Use format: `{os}-{version}-golden-template` (no timestamps)
+3. ✅ **DONE**: Standardized template names
+   - Format: `{os}-{version}-template` (no timestamps for Terraform compatibility)
    - Ensure Terraform examples match Packer defaults
 
 4. ⏳ **VERIFY**: Check all Terraform and Packer still work together
@@ -114,11 +106,7 @@ version = "~> 1.2"  # Lock to major version 1.x
 ## 📋 PROPOSED CHANGES (If You Approve)
 
 ```bash
-# 1. Delete cloud template directories
-rm -rf packer/debian-cloud/
-rm -rf packer/ubuntu-cloud/
-
-# 2. Update Packer version constraints (all templates)
+# 1. Update Packer version constraints (all templates)
 # Change: required_version = "~> 1.14.0"
 # To:     required_version = ">= 1.14.2, < 2.0.0"
 

@@ -368,7 +368,7 @@ Create cron job on Proxmox host:
 
 ```bash
 # /etc/cron.d/packer-rebuild
-0 2 1 * * root cd /root/packer/ubuntu-cloud && ./import-cloud-image.sh 9100 && packer build .
+0 2 1 * * root cd /root/packer/ubuntu && packer build .
 ```
 
 ### Multiple Ubuntu Versions
@@ -399,7 +399,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: Build template
         run: |
-          cd packer/ubuntu-cloud
+          cd packer/ubuntu
           packer build .
 ```
 
