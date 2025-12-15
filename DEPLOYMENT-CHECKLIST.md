@@ -16,13 +16,16 @@ This checklist ensures all components are correctly configured and will work on 
 - [ ] **Required tools installed on build machine**
   ```bash
   # Packer
-  packer version  # Should be 1.14.0+
+  packer version  # Should be 1.14.3+ (Dec 2025)
 
   # Terraform
-  terraform version  # Should be 1.13.5+
+  terraform version  # Should be 1.14.2+ (Dec 2025)
 
   # Ansible
-  ansible --version  # Should be 2.15+
+  ansible --version  # Should be ansible-core 2.17.0+ (required by community.general v12)
+
+  # Python (required by kubernetes.core v6)
+  python3 --version  # Should be 3.9+ (Dec 2025)
 
   # SOPS (optional, for secrets)
   sops --version
