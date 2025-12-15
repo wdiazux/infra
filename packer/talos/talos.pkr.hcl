@@ -21,12 +21,12 @@
 # CRITICAL: Without iscsi-tools and util-linux-tools, Longhorn will fail to create volumes!
 
 packer {
-  required_version = "~> 1.14.0"
+  required_version = "~> 1.14.3"
 
   required_plugins {
     proxmox = {
       source  = "github.com/hashicorp/proxmox"
-      version = ">= 1.2.2"  # Fixed: CPU bug in 1.2.0, use 1.2.2+
+      version = ">= 1.2.3"  # Latest version as of Dec 2025
     }
   }
 }
