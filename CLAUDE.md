@@ -707,7 +707,7 @@ This section provides a comprehensive list of tools specifically for Talos Linux
 **Terraform Stack:**
 - **Providers**:
   - `siderolabs/talos` (~> 0.9.0) - Talos configuration and bootstrapping
-  - `bpg/proxmox` (~> 0.86.0) - Proxmox VM provisioning
+  - `bpg/proxmox` (~> 0.89.1) - Proxmox VM provisioning
 
 **Talos Kubernetes Stack:**
 - **Networking**: Cilium (eBPF-based CNI with L2 load balancing)
@@ -1092,9 +1092,14 @@ This section provides a comprehensive list of tools specifically for Talos Linux
 | Kubernetes | v1.31+ | Supported by Talos |
 | talosctl | Match Talos version | Client-server compatibility |
 | kubectl | Match K8s version | Within 1 minor version |
-| Terraform | v1.9+ | Latest stable |
-| siderolabs/talos provider | ~> 0.9.0 | As of April 2025 |
-| bpg/proxmox provider | ~> 0.86.0 | As of April 2025 |
+| Terraform | v1.14.2+ | Latest stable (Dec 2025) |
+| Packer | v1.14.3+ | Latest stable (Dec 2025) |
+| Ansible | ansible-core 2.17.0+ | Required by community.general v12 |
+| Python | 3.9+ | Required by kubernetes.core v6 |
+| siderolabs/talos provider | ~> 0.9.0 | As of Dec 2025 |
+| bpg/proxmox provider | ~> 0.89.1 | Latest (Dec 2025) |
+| hashicorp/local provider | ~> 2.5.3 | Latest (Dec 2025) |
+| hashicorp/null provider | ~> 3.2.4 | Latest (Dec 2025) |
 | Cilium | v1.18+ | Current stable |
 | FluxCD | v2.4+ | Current stable |
 | kube-prometheus-stack | Latest | Helm chart |
@@ -2176,6 +2181,31 @@ atlantis unlock                            # Unlock state (via PR comment)
 ```
 
 ## Version History
+
+- **2025-12-15**: Infrastructure dependencies audit and update
+  - **Comprehensive dependency audit**: Reviewed all Terraform, Packer, and Ansible dependencies
+  - **Terraform updates**:
+    - Terraform: >= 1.14.0 → >= 1.14.2
+    - bpg/proxmox: ~> 0.87.0 → ~> 0.89.1 (2 minor versions)
+    - hashicorp/local: ~> 2.5 → ~> 2.5.3
+    - hashicorp/null: ~> 3.2 → ~> 3.2.4
+    - siderolabs/talos: ~> 0.9.0 (current, no change)
+  - **Packer updates**:
+    - Packer: ~> 1.14.0 → ~> 1.14.3
+    - hashicorp/proxmox plugin: >= 1.2.2 → >= 1.2.3
+    - Updated all 6 OS templates (Debian, Ubuntu, Talos, Arch, NixOS, Windows)
+  - **Ansible updates (BREAKING CHANGES)**:
+    - community.sops: v1.x → v2.2.7 (MAJOR)
+    - community.general: v7.x → v12.0.1 (MAJOR, requires ansible-core 2.17+)
+    - ansible.posix: v1.5.0 → v2.1.0 (MAJOR)
+    - ansible.windows: v2.x → v3.2.0 (MAJOR, requires ansible-core 2.16+)
+    - community.windows: v2.x → v3.0.1 (MAJOR, requires ansible-core 2.16+)
+    - kubernetes.core: v2.x → v6.2.0 (MAJOR, requires Python 3.9+)
+  - **Documentation**:
+    - Created `docs/DEPENDENCY_AUDIT_REPORT.md` with migration guides and testing checklist
+    - Updated CLAUDE.md version compatibility matrix
+    - Updated minimum requirements: ansible-core 2.17.0+, Python 3.9+
+  - **Files modified**: 9 files (terraform/versions.tf, 6 Packer templates, ansible/requirements.yml)
 
 - **2025-11-23**: Network configuration documentation update
   - **NAS IP correction**: Updated NAS IP from examples (10.10.2.20) to actual value (10.10.2.5)

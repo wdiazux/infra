@@ -4,13 +4,13 @@
 # for deploying Talos Linux on Proxmox VE 9.0
 
 terraform {
-  required_version = ">= 1.14.0"
+  required_version = ">= 1.14.2"
 
   required_providers {
     # Proxmox provider for VM management
     proxmox = {
       source  = "bpg/proxmox"
-      version = "~> 0.87.0"
+      version = "~> 0.89.1"
     }
 
     # Talos provider for machine configuration and cluster bootstrapping
@@ -22,13 +22,13 @@ terraform {
     # Local provider for writing kubeconfig/talosconfig files
     local = {
       source  = "hashicorp/local"
-      version = "~> 2.5"
+      version = "~> 2.5.3"
     }
 
     # Null provider for running local commands and provisioners
     null = {
       source  = "hashicorp/null"
-      version = "~> 3.2"
+      version = "~> 3.2.4"
     }
   }
 

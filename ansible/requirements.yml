@@ -1,43 +1,59 @@
 # Ansible Requirements for Infrastructure Automation
 #
-# Ansible Version: 13.0.0+ (ansible-core 2.20.0+)
-# Install with: ansible-galaxy install -r requirements.yml
+# UPDATED: December 2025
+# Minimum Ansible Version: ansible-core 2.17.0+ (required by community.general v12+)
+# Recommended: ansible-core 2.20.0+ or latest stable
 #
 # Installation:
-#   pip install ansible==13.0.0
-#   # OR for latest
 #   pip install ansible --upgrade
+#   ansible-galaxy collection install -r requirements.yml
+#
+# Breaking Changes Warning:
+#   - community.general v12 requires ansible-core 2.17+
+#   - kubernetes.core v6 requires ansible-core 2.16+, Python 3.9+
+#   - Review migration guides before upgrading production systems
 
 ---
 # Ansible Collections
 collections:
   # SOPS for encrypted secrets
+  # UPDATED: v1.x → v2.2.7 (Dec 2025)
+  # Breaking changes: Review migration guide at https://github.com/ansible-collections/community.sops
   - name: community.sops
-    version: ">=1.0.0,<2.0.0"
+    version: ">=2.2.7"
     source: https://galaxy.ansible.com
 
   # General utilities (Linux VMs)
+  # UPDATED: v7.x → v12.0.1 (Dec 2025)
+  # Breaking changes: Requires ansible-core 2.17+. Review changelog for deprecations
   - name: community.general
-    version: ">=7.0.0"
+    version: ">=12.0.1"
     source: https://galaxy.ansible.com
 
   # POSIX utilities (mount, sysctl, etc.)
+  # UPDATED: v1.5.0 → v2.1.0 (Dec 2025)
   - name: ansible.posix
-    version: ">=1.5.0"
+    version: ">=2.1.0"
     source: https://galaxy.ansible.com
 
   # Windows management
+  # UPDATED: v2.x → v3.2.0 (Dec 2025)
+  # Breaking changes: Requires ansible-core 2.16+
   - name: ansible.windows
-    version: ">=2.0.0"
+    version: ">=3.2.0"
     source: https://galaxy.ansible.com
 
+  # UPDATED: v2.x → v3.0.1 (Dec 2025)
+  # Breaking changes: Requires ansible-core 2.16+
   - name: community.windows
-    version: ">=2.0.0"
+    version: ">=3.0.1"
     source: https://galaxy.ansible.com
 
   # Kubernetes management (for Talos)
+  # UPDATED: v2.x → v6.2.0 (Dec 2025)
+  # Breaking changes: Requires ansible-core 2.16+, Python 3.9+, kubernetes lib 24.2.0+
   - name: kubernetes.core
-    version: ">=2.4.0"
+    version: ">=6.2.0"
     source: https://galaxy.ansible.com
 
 # Ansible Roles (optional - reference implementations)
