@@ -70,3 +70,4 @@ id_ed25519*
 # Cloud-init user-data with plaintext secrets
 # (versioned files should use SOPS encryption)
 user-data-plaintext.yaml
+.venv/
