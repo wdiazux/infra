@@ -20,7 +20,7 @@ Run the following commands on your Proxmox host:
 
 ```bash
 # SSH into Proxmox host
-ssh root@your-proxmox-host
+ssh root@pve.home-infra.net
 
 # Update the Terraform role with new privileges
 pveum rolemod TerraformProv -privs "Datastore.AllocateSpace,Datastore.Audit,Pool.Allocate,SDN.Use,Sys.Audit,Sys.Console,Sys.Modify,Sys.PowerMgmt,VM.Allocate,VM.Audit,VM.Clone,VM.Config.CDROM,VM.Config.Cloudinit,VM.Config.CPU,VM.Config.Disk,VM.Config.HWType,VM.Config.Memory,VM.Config.Network,VM.Config.Options,VM.Migrate,VM.PowerMgmt"
