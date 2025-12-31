@@ -74,6 +74,50 @@ pveum role list | grep -A 1 TerraformProv
 
 ---
 
+## Create Personal Admin User
+
+For your personal administrative access to Proxmox, create a dedicated user account.
+
+**Note**: Personal admin users should use `@pam` realm (NOT `@pve`) because:
+- Requires SSH access to the Proxmox host
+- Needs full administrative capabilities
+- Human user, not automation
+
+```bash
+# SSH into Proxmox host as root
+ssh root@pve.home-infra.net
+
+# 1. Create personal admin user (PAM realm for full access)
+pveum useradd wdiaz@pam --comment "William Diaz - Primary Administrator"
+
+# 2. Set password
+pveum passwd wdiaz@pam
+
+# 3. Assign Administrator role
+pveum aclmod / -user wdiaz@pam -role Administrator
+
+# 4. Verify user was created
+pveum user list | grep wdiaz
+
+# Expected output:
+# wdiaz@pam      William Diaz - Primary Administrator
+```
+
+### User Differences
+
+| User | Realm | Purpose | SSH Access | Web UI | API Access |
+|------|-------|---------|------------|--------|------------|
+| **wdiaz@pam** | PAM | Personal admin | ✅ Yes | ✅ Yes | ✅ Yes |
+| **terraform@pve** | PVE | Automation | ❌ No | ✅ Yes | ✅ Yes |
+| **root@pam** | PAM | System admin | ✅ Yes | ✅ Yes | ✅ Yes |
+
+**Security Best Practice:**
+- Use `wdiaz@pam` for daily administration (full access)
+- Use `terraform@pve` for automation (API-only, limited privileges)
+- Avoid using `root@pam` for routine tasks
+
+---
+
 ## Optional: IOMMU for GPU Passthrough
 
 If you're using GPU passthrough, ensure IOMMU is enabled:
