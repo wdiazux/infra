@@ -20,7 +20,7 @@ Run the following commands on your Proxmox host:
 
 ```bash
 # SSH into Proxmox host
-ssh root@your-proxmox-host
+ssh root@pve.home-infra.net
 
 # Update the Terraform role with new privileges
 pveum rolemod TerraformProv -privs "Datastore.AllocateSpace,Datastore.Audit,Pool.Allocate,SDN.Use,Sys.Audit,Sys.Console,Sys.Modify,Sys.PowerMgmt,VM.Allocate,VM.Audit,VM.Clone,VM.Config.CDROM,VM.Config.Cloudinit,VM.Config.CPU,VM.Config.Disk,VM.Config.HWType,VM.Config.Memory,VM.Config.Network,VM.Config.Options,VM.Migrate,VM.PowerMgmt"
@@ -32,24 +32,29 @@ pveum rolemod TerraformProv -privs "Datastore.AllocateSpace,Datastore.Audit,Pool
 
 If you haven't created a Terraform user yet, follow these steps:
 
+**Note**: Using `@pve` realm instead of `@pam` is more secure because:
+- API-only access (cannot SSH into host)
+- Isolated from Linux system
+- Follows principle of least privilege
+
 ```bash
-# 1. Create Terraform user
-pveum useradd terraform@pam --comment "Terraform automation user"
+# 1. Create Terraform user (PVE realm - more secure, API-only access)
+pveum useradd terraform@pve --comment "Terraform automation user"
 
 # 2. Set password (or use API token)
-pveum passwd terraform@pam
+pveum passwd terraform@pve
 
 # 3. Create Terraform role with correct privileges
 pveum roleadd TerraformProv -privs "Datastore.AllocateSpace,Datastore.Audit,Pool.Allocate,SDN.Use,Sys.Audit,Sys.Console,Sys.Modify,Sys.PowerMgmt,VM.Allocate,VM.Audit,VM.Clone,VM.Config.CDROM,VM.Config.Cloudinit,VM.Config.CPU,VM.Config.Disk,VM.Config.HWType,VM.Config.Memory,VM.Config.Network,VM.Config.Options,VM.Migrate,VM.PowerMgmt"
 
 # 4. Assign role to user
-pveum aclmod / -user terraform@pam -role TerraformProv
+pveum aclmod / -user terraform@pve -role TerraformProv
 
 # 5. Create API token (recommended over password)
-pveum user token add terraform@pam terraform-token --privsep 0
+pveum user token add terraform@pve terraform-token --privsep 0
 
 # Copy the token ID and secret - you'll need these for Terraform
-# Format: PVEAPIToken=terraform@pam!terraform-token=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+# Format: PVEAPIToken=terraform@pve!terraform-token=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 ```
 
 ### Verify Role
@@ -173,7 +178,7 @@ Before running `terraform apply`, ensure:
 
 ```hcl
 # In terraform.tfvars
-proxmox_api_token = "PVEAPIToken=terraform@pam!terraform-token=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+proxmox_api_token = "PVEAPIToken=terraform@pve!terraform-token=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 ```
 
 ### Get GPU PCI ID
