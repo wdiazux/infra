@@ -23,12 +23,12 @@ Run the following commands on your Proxmox host:
 ssh root@your-proxmox-host
 
 # Update the Terraform role with new privileges
-pveum rolemod TerraformRole -privs "Datastore.AllocateSpace,Datastore.Audit,Pool.Allocate,Sys.Audit,Sys.Console,Sys.Modify,VM.Allocate,VM.Audit,VM.Clone,VM.Config.CDROM,VM.Config.Cloudinit,VM.Config.CPU,VM.Config.Disk,VM.Config.HWType,VM.Config.Memory,VM.Config.Network,VM.Config.Options,VM.Migrate,VM.PowerMgmt"
+pveum rolemod TerraformProv -privs "Datastore.AllocateSpace,Datastore.Audit,Pool.Allocate,Sys.Audit,Sys.Console,Sys.Modify,VM.Allocate,VM.Audit,VM.Clone,VM.Config.CDROM,VM.Config.Cloudinit,VM.Config.CPU,VM.Config.Disk,VM.Config.HWType,VM.Config.Memory,VM.Config.Network,VM.Config.Options,VM.Migrate,VM.PowerMgmt"
 
 # Key change: VM.Monitor → Sys.Audit
 ```
 
-### If TerraformRole Doesn't Exist
+### If TerraformProv Doesn't Exist
 
 If you haven't created a Terraform user yet, follow these steps:
 
@@ -40,10 +40,10 @@ pveum useradd terraform@pam --comment "Terraform automation user"
 pveum passwd terraform@pam
 
 # 3. Create Terraform role with correct privileges
-pveum roleadd TerraformRole -privs "Datastore.AllocateSpace,Datastore.Audit,Pool.Allocate,Sys.Audit,Sys.Console,Sys.Modify,VM.Allocate,VM.Audit,VM.Clone,VM.Config.CDROM,VM.Config.Cloudinit,VM.Config.CPU,VM.Config.Disk,VM.Config.HWType,VM.Config.Memory,VM.Config.Network,VM.Config.Options,VM.Migrate,VM.PowerMgmt"
+pveum roleadd TerraformProv -privs "Datastore.AllocateSpace,Datastore.Audit,Pool.Allocate,Sys.Audit,Sys.Console,Sys.Modify,VM.Allocate,VM.Audit,VM.Clone,VM.Config.CDROM,VM.Config.Cloudinit,VM.Config.CPU,VM.Config.Disk,VM.Config.HWType,VM.Config.Memory,VM.Config.Network,VM.Config.Options,VM.Migrate,VM.PowerMgmt"
 
 # 4. Assign role to user
-pveum aclmod / -user terraform@pam -role TerraformRole
+pveum aclmod / -user terraform@pam -role TerraformProv
 
 # 5. Create API token (recommended over password)
 pveum user token add terraform@pam terraform-token --privsep 0
@@ -56,7 +56,7 @@ pveum user token add terraform@pam terraform-token --privsep 0
 
 ```bash
 # Check role privileges
-pveum role list TerraformRole
+pveum role list TerraformProv
 
 # Expected output should include:
 # - Sys.Audit (NOT VM.Monitor)
