@@ -30,7 +30,7 @@ module "ubuntu_vm" {
   memory    = 8192
 
   disks = [{
-    datastore_id = "local-zfs"
+    datastore_id = "tank"
     size         = 40
     interface    = "scsi0"
   }]
@@ -87,17 +87,17 @@ module "storage_vm" {
 
   disks = [
     {
-      datastore_id = "local-zfs"
+      datastore_id = "tank"
       size         = 20
       interface    = "scsi0"
     },
     {
-      datastore_id = "local-zfs"
+      datastore_id = "tank"
       size         = 100
       interface    = "scsi1"
     },
     {
-      datastore_id = "local-zfs"
+      datastore_id = "tank"
       size         = 500
       interface    = "scsi2"
     }

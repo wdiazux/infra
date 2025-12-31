@@ -25,7 +25,7 @@ vm_id                = 9112
 # VM Hardware
 vm_cores    = 2
 vm_memory   = 2048
-vm_disk_storage = "local-zfs"
+vm_disk_storage = "tank"
 
 # Network
 vm_network_bridge = "vmbr0"

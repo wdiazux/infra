@@ -30,7 +30,7 @@ vm_cpu_type = "host"
 vm_cores    = 4
 vm_memory   = 4096
 vm_disk_size    = "60G"
-vm_disk_storage = "local-zfs"
+vm_disk_storage = "tank"
 
 # Network
 vm_network_bridge = "vmbr0"

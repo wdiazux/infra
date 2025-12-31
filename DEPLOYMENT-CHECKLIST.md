@@ -60,7 +60,7 @@ This checklist ensures all components are correctly configured and will work on 
 
 - [ ] **Proxmox storage pool exists**
   ```bash
-  pvesm status | grep -E "local-zfs|YOUR-STORAGE-POOL"
+  pvesm status | grep -E "tank|YOUR-STORAGE-POOL"
   ```
 
 - [ ] **Proxmox network bridge exists**

@@ -230,7 +230,7 @@ variable "node_disk_size" {
 variable "node_disk_storage" {
   description = "Proxmox storage pool for node disk"
   type        = string
-  default     = "local-zfs"
+  default     = "tank"
 }
 
 # ============================================================================
@@ -494,7 +494,7 @@ variable "ubuntu_disk_size" {
 variable "ubuntu_disk_storage" {
   description = "Ubuntu disk storage pool"
   type        = string
-  default     = "local-zfs"
+  default     = "tank"
 }
 
 variable "ubuntu_ip_address" {
@@ -563,7 +563,7 @@ variable "debian_disk_size" {
 variable "debian_disk_storage" {
   description = "Debian disk storage pool"
   type        = string
-  default     = "local-zfs"
+  default     = "tank"
 }
 
 variable "debian_ip_address" {
@@ -632,7 +632,7 @@ variable "arch_disk_size" {
 variable "arch_disk_storage" {
   description = "Arch Linux disk storage pool"
   type        = string
-  default     = "local-zfs"
+  default     = "tank"
 }
 
 variable "arch_ip_address" {
@@ -701,7 +701,7 @@ variable "nixos_disk_size" {
 variable "nixos_disk_storage" {
   description = "NixOS disk storage pool"
   type        = string
-  default     = "local-zfs"
+  default     = "tank"
 }
 
 variable "nixos_ip_address" {
@@ -770,7 +770,7 @@ variable "windows_disk_size" {
 variable "windows_disk_storage" {
   description = "Windows 11 disk storage pool"
   type        = string
-  default     = "local-zfs"
+  default     = "tank"
 }
 
 variable "windows_ip_address" {

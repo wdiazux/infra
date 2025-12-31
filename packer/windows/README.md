@@ -89,7 +89,7 @@ proxmox_node = "pve"
 # Update iso_file paths in windows.pkr.hcl to match your uploaded files
 
 # Storage
-vm_disk_storage = "local-zfs"  # Your Proxmox storage pool
+vm_disk_storage = "tank"  # Your Proxmox storage pool
 ```
 
 ### 3. Update ISO Paths

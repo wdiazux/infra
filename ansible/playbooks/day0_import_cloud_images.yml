@@ -22,7 +22,7 @@
 #
 # Prerequisites:
 # - SSH access to Proxmox host
-# - Proxmox storage pool configured (e.g., local-zfs)
+# - Proxmox storage pool configured (e.g., tank)
 # - Internet access on Proxmox host
 
 - name: Import Official Cloud Images to Proxmox
@@ -46,7 +46,7 @@
     ubuntu_vm_description: "Ubuntu 24.04 LTS official cloud image (base for Packer cloning)"
 
     # Proxmox settings
-    proxmox_storage: "local-zfs"
+    proxmox_storage: "tank"
     proxmox_bridge: "vmbr0"
     temp_dir: "/tmp/cloud-images"
 

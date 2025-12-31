@@ -58,7 +58,7 @@ This repository automates the creation and deployment of standardized virtual ma
 **Proxmox Requirements:**
 - Proxmox VE 9.0
 - API token or root password
-- Storage pool (e.g., local-zfs)
+- Storage pool (e.g., tank)
 - Network bridge (e.g., vmbr0)
 - IOMMU enabled in BIOS (for GPU passthrough)
 

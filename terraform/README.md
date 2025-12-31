@@ -1141,7 +1141,7 @@ module "my_custom_vm" {
   memory    = 4096
 
   disks = [{
-    datastore_id = "local-zfs"
+    datastore_id = "tank"
     size         = 20
     interface    = "scsi0"
   }]
@@ -1206,12 +1206,12 @@ module "storage_vm" {
 
   disks = [
     {
-      datastore_id = "local-zfs"
+      datastore_id = "tank"
       size         = 20
       interface    = "scsi0"
     },
     {
-      datastore_id = "local-zfs"
+      datastore_id = "tank"
       size         = 100
       interface    = "scsi1"  # Additional disk
     }

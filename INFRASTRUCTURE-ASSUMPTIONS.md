@@ -32,11 +32,11 @@ curl -k https://YOUR_PROXMOX_IP:8006/api2/json/version
 
 ### ZFS Storage Pool
 
-**Assumption:** Storage pool named `local-zfs` exists and is accessible.
+**Assumption:** Storage pool named `tank` exists and is accessible.
 
 **Default in code:**
-- Packer: `vm_disk_storage = "local-zfs"`
-- Terraform: `node_disk_storage = "local-zfs"`
+- Packer: `vm_disk_storage = "tank"`
+- Terraform: `node_disk_storage = "tank"`
 
 **To verify:**
 ```bash
@@ -64,7 +64,7 @@ zfs list
    ```
 
 **Common Proxmox storage names:**
-- `local-zfs` - ZFS pool
+- `tank` - ZFS pool
 - `local-lvm` - LVM-thin
 - `local` - Directory storage
 - Custom names based on your setup
@@ -408,7 +408,7 @@ Before deploying, verify these assumptions match your environment:
 - [ ] Node name is `pve` OR updated in all configs
 - [ ] API token created and tested
 - [ ] Network bridge `vmbr0` exists OR updated in configs
-- [ ] Storage pool `local-zfs` exists OR updated in configs
+- [ ] Storage pool `tank` exists OR updated in configs
 
 ### Network
 - [ ] Gateway IP confirmed (default: `10.10.2.1`)

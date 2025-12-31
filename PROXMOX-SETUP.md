@@ -224,7 +224,7 @@ Before running `terraform apply`, ensure:
 - [ ] Proxmox API token or password configured
 - [ ] Network bridge `vmbr0` exists
 - [ ] IOMMU enabled (if using GPU passthrough)
-- [ ] ZFS pool created (if using ZFS storage)
+- [ ] ZFS pool "tank" created and configured
 - [ ] Talos Factory schematic ID generated
 - [ ] `terraform.tfvars` configured with your environment
 
@@ -285,7 +285,7 @@ pveversion
 
 **Solution**:
 1. List pools: `zpool list`
-2. Update `terraform.tfvars`: `node_disk_storage = "your-pool-name"`
+2. Update `terraform.tfvars`: `node_disk_storage = "tank"`  # Replace "tank" with your pool name
 
 ---
 
