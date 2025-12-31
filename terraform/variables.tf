@@ -9,13 +9,13 @@
 variable "proxmox_url" {
   description = "Proxmox API endpoint URL"
   type        = string
-  default     = "https://proxmox.local:8006/api2/json"
+  default     = "https://pve.home-infra.net:8006/api2/json"
 }
 
 variable "proxmox_username" {
-  description = "Proxmox username (format: user@pam or user@pve)"
+  description = "Proxmox username (format: user@pve for API-only access)"
   type        = string
-  default     = "root@pam"
+  default     = "root@pve"
   sensitive   = true
 }
 

@@ -10,14 +10,14 @@
 # ============================================================================
 
 proxmox_url      = "https://10.10.2.2:8006/api2/json"
-proxmox_username = "root@pam"
+proxmox_username = "root@pve"
 proxmox_node     = "pve"
 
 # Use API token (recommended)
-proxmox_api_token = "PVEAPIToken=terraform@pam!terraform-token=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+proxmox_api_token = "PVEAPIToken=terraform@pve!terraform-token=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 
 # Alternatively, use environment variable (more secure):
-# export TF_VAR_proxmox_api_token="PVEAPIToken=terraform@pam!terraform-token=..."
+# export TF_VAR_proxmox_api_token="PVEAPIToken=terraform@pve!terraform-token=..."
 # Then omit proxmox_api_token line above
 
 # Or use password (less secure, but required for some GPU passthrough operations)
