@@ -7,19 +7,19 @@
 variable "proxmox_url" {
   type        = string
   description = "Proxmox API endpoint URL"
-  default     = "https://proxmox.local:8006/api2/json"
+  default     = "https://pve.home-infra.net:8006/api2/json"
 }
 
 variable "proxmox_username" {
   type        = string
-  description = "Proxmox username (format: user@pam or user@pve)"
-  default     = "root@pam"
+  description = "Proxmox username (format: user@pve for API-only access)"
+  default     = "root@pve"
   sensitive   = true
 }
 
 variable "proxmox_token" {
   type        = string
-  description = "Proxmox API token (format: PVEAPIToken=user@pam!token=secret)"
+  description = "Proxmox API token (format: PVEAPIToken=user@pve!token=secret)"
   default     = env("PROXMOX_TOKEN")
   sensitive   = true
 }
