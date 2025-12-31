@@ -114,12 +114,22 @@ reboot
 
 ```bash
 # After reboot, check IOMMU is enabled
-dmesg | grep -i iommu | grep -i enabled
+dmesg | grep -i "amd-vi"
+
+# Expected output should include:
+# AMD-Vi: IOMMU performance counters supported
+# perf/amd_iommu: Detected AMD IOMMU
+
+# Alternative: Check for passthrough mode
+dmesg | grep -i iommu | grep -i passthrough
 
 # Expected output:
-# AMD-Vi: Interrupt remapping enabled
-# OR
-# DMAR: Intel-IOMMU: enabled
+# iommu: Default domain type: Passthrough
+
+# Count IOMMU groups (should be multiple groups)
+find /sys/kernel/iommu_groups/ -type l | wc -l
+
+# Expected: Should show 20+ groups
 ```
 
 ---
