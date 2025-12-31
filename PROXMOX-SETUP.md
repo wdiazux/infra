@@ -256,7 +256,8 @@ After completing Proxmox setup:
 
 ---
 
-**Last Updated**: 2025-11-22
+**Last Updated**: 2025-12-31
+**Proxmox Version**: 9.1.4 (tested and verified)
 **Applies To**: Proxmox VE 9.0+
-**Terraform Version**: >= 1.13.5
-**Proxmox Provider**: bpg/proxmox >= 0.86.0
+**Terraform Version**: >= 1.14.2
+**Proxmox Provider**: bpg/proxmox >= 0.89.1
