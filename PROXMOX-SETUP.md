@@ -60,12 +60,16 @@ pveum user token add terraform@pve terraform-token --privsep 0
 ### Verify Role
 
 ```bash
-# Check role privileges
-pveum role list TerraformProv
+# Check all roles (look for TerraformProv in the output)
+pveum role list
+
+# Or filter for TerraformProv specifically
+pveum role list | grep -A 1 TerraformProv
 
 # Expected output should include:
 # - Sys.Audit (NOT VM.Monitor)
-# - All other VM and Datastore privileges
+# - SDN.Use and Sys.PowerMgmt
+# - All VM and Datastore privileges
 ```
 
 ---
