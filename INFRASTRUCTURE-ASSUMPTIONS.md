@@ -32,7 +32,14 @@ curl -k https://YOUR_PROXMOX_IP:8006/api2/json/version
 
 ### ZFS Storage Pool
 
-**Assumption:** Storage pool named `tank` exists and is accessible.
+**This infrastructure uses ZFS for all VM storage.**
+
+**Assumption:** ZFS storage pool named `tank` exists and is accessible.
+
+**Storage Architecture:**
+- **All VMs** (Talos, Ubuntu, Debian, Arch, NixOS, Windows) use ZFS storage
+- **Storage Pool:** `tank` (ZFS)
+- **Benefits:** Snapshots, compression, data integrity, copy-on-write
 
 **Default in code:**
 - Packer: `vm_disk_storage = "tank"`
@@ -63,11 +70,13 @@ zfs list
    }
    ```
 
-**Common Proxmox storage names:**
-- `tank` - ZFS pool
-- `local-lvm` - LVM-thin
-- `local` - Directory storage
-- Custom names based on your setup
+**Common Proxmox storage types:**
+- `tank` - **ZFS pool (USED IN THIS PROJECT)**
+- `local-zfs` - ZFS pool (alternative name)
+- `local-lvm` - LVM-thin (not used)
+- `local` - Directory storage (not used for VMs)
+
+**This project exclusively uses ZFS (`tank`) for all VM virtual disks.**
 
 ---
 

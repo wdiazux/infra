@@ -224,9 +224,11 @@ Before running `terraform apply`, ensure:
 - [ ] Proxmox API token or password configured
 - [ ] Network bridge `vmbr0` exists
 - [ ] IOMMU enabled (if using GPU passthrough)
-- [ ] ZFS pool "tank" created and configured
+- [ ] **ZFS pool "tank" created and configured** (all VMs use ZFS storage)
 - [ ] Talos Factory schematic ID generated
 - [ ] `terraform.tfvars` configured with your environment
+
+**Note:** This infrastructure uses **ZFS for all VM storage** via the `tank` pool.
 
 ---
 

@@ -23,7 +23,7 @@ This repository automates the creation and deployment of standardized virtual ma
 - **CPU**: AMD Ryzen AI 9 HX 370 (12 cores)
 - **RAM**: 96GB
 - **GPU**: NVIDIA Ada Lovelace RTX 4000
-- **Storage**: ZFS with 16GB ARC, mirror vdevs
+- **Storage**: ZFS (`tank` pool) for all VMs, 16GB ARC, mirror vdevs recommended
 - **Network**: External NAS on separate computer (NFS/Samba)
 
 **Software:**
