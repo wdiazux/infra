@@ -102,7 +102,7 @@ variable "vm_disk_size" {
 variable "vm_disk_storage" {
   type        = string
   description = "Proxmox storage pool"
-  default     = "local-zfs"
+  default     = "tank"
 }
 
 variable "vm_network_bridge" {

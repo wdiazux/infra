@@ -29,7 +29,7 @@ proxmox:
       gpu_pci_id: "01:00"
 
       # Storage
-      zfs_pool: "local-zfs"
+      zfs_pool: "tank"
       zfs_arc_max_gb: 16
 
   vars:

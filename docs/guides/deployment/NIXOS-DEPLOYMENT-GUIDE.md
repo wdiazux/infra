@@ -30,7 +30,7 @@ terraform version # Should be 1.9.0+
 
 - Proxmox VE 9.0 host
 - API token with permissions: `PVEVMAdmin`, `PVEDatastoreUser`
-- Storage pool (e.g., `local-zfs`)
+- Storage pool (e.g., `tank`)
 - Network bridge (e.g., `vmbr0`)
 
 ### Network Requirements
@@ -165,7 +165,7 @@ vm_id                = 9400
 vm_cores  = 2
 vm_memory = 2048
 vm_disk_size    = "30G"  # NixOS needs more space for nix store
-vm_disk_storage = "local-zfs"
+vm_disk_storage = "tank"
 vm_cpu_type     = "host"
 
 # Network
@@ -232,7 +232,7 @@ qm config 9400 | grep template
 
 # Verify cloud-init drive exists
 qm config 9400 | grep ide2
-# Should show: ide2: local-zfs:vm-9400-cloudinit
+# Should show: ide2: tank:vm-9400-cloudinit
 ```
 
 ---

@@ -34,7 +34,7 @@ helm version       # Should be v3.16.0+
 
 - Proxmox VE 9.0 host
 - API token with permissions: `PVEVMAdmin`, `PVEDatastoreUser`
-- Storage pool (e.g., `local-zfs`)
+- Storage pool (e.g., `tank`)
 - Network bridge (e.g., `vmbr0`)
 - **CRITICAL**: CPU type set to "host" (required for Talos v1.0+ and Cilium)
 
@@ -167,7 +167,7 @@ vm_id                = 9200
 vm_cores  = 2
 vm_memory = 2048
 vm_disk_size    = "20G"  # Minimal for template
-vm_disk_storage = "local-zfs"
+vm_disk_storage = "tank"
 vm_cpu_type     = "host"  # CRITICAL: Must be 'host' for Talos v1.0+ and Cilium
 
 # Network

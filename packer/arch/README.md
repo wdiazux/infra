@@ -62,7 +62,7 @@ arch_iso_url = "https://mirror.rackspace.com/archlinux/iso/latest/archlinux-x86_
 arch_iso_checksum = "file:https://mirror.rackspace.com/archlinux/iso/latest/sha256sums.txt"
 
 # Storage
-vm_disk_storage = "local-zfs"  # Your Proxmox storage pool
+vm_disk_storage = "tank"  # Your Proxmox storage pool
 ```
 
 ### 3. Initialize and Build

@@ -31,7 +31,7 @@ ansible --version # Should be 2.16+ (optional, for provisioning)
 
 - Proxmox VE 9.0 host
 - API token with permissions: `PVEVMAdmin`, `PVEDatastoreUser`
-- Storage pool (e.g., `local-zfs`)
+- Storage pool (e.g., `tank`)
 - Network bridge (e.g., `vmbr0`)
 
 ### Windows Server Requirements
@@ -178,7 +178,7 @@ vm_id                = 9500
 vm_cores  = 4
 vm_memory = 4096  # 4GB minimum, 8GB recommended
 vm_disk_size    = "60G"  # Windows needs 40GB+, 60GB recommended
-vm_disk_storage = "local-zfs"
+vm_disk_storage = "tank"
 vm_cpu_type     = "host"
 
 # Network
@@ -288,7 +288,7 @@ qm config 9500 | grep template
 
 # Verify cloud-init drive exists
 qm config 9500 | grep ide2
-# Should show: ide2: local-zfs:vm-9500-cloudinit
+# Should show: ide2: tank:vm-9500-cloudinit
 ```
 
 ---

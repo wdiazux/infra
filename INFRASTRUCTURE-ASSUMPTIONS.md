@@ -32,11 +32,18 @@ curl -k https://YOUR_PROXMOX_IP:8006/api2/json/version
 
 ### ZFS Storage Pool
 
-**Assumption:** Storage pool named `local-zfs` exists and is accessible.
+**This infrastructure uses ZFS for all VM storage.**
+
+**Assumption:** ZFS storage pool named `tank` exists and is accessible.
+
+**Storage Architecture:**
+- **All VMs** (Talos, Ubuntu, Debian, Arch, NixOS, Windows) use ZFS storage
+- **Storage Pool:** `tank` (ZFS)
+- **Benefits:** Snapshots, compression, data integrity, copy-on-write
 
 **Default in code:**
-- Packer: `vm_disk_storage = "local-zfs"`
-- Terraform: `node_disk_storage = "local-zfs"`
+- Packer: `vm_disk_storage = "tank"`
+- Terraform: `node_disk_storage = "tank"`
 
 **To verify:**
 ```bash
@@ -63,11 +70,13 @@ zfs list
    }
    ```
 
-**Common Proxmox storage names:**
-- `local-zfs` - ZFS pool
-- `local-lvm` - LVM-thin
-- `local` - Directory storage
-- Custom names based on your setup
+**Common Proxmox storage types:**
+- `tank` - **ZFS pool (USED IN THIS PROJECT)**
+- `local-zfs` - ZFS pool (alternative name)
+- `local-lvm` - LVM-thin (not used)
+- `local` - Directory storage (not used for VMs)
+
+**This project exclusively uses ZFS (`tank`) for all VM virtual disks.**
 
 ---
 
@@ -408,7 +417,7 @@ Before deploying, verify these assumptions match your environment:
 - [ ] Node name is `pve` OR updated in all configs
 - [ ] API token created and tested
 - [ ] Network bridge `vmbr0` exists OR updated in configs
-- [ ] Storage pool `local-zfs` exists OR updated in configs
+- [ ] Storage pool `tank` exists OR updated in configs
 
 ### Network
 - [ ] Gateway IP confirmed (default: `10.10.2.1`)

@@ -31,7 +31,7 @@ ansible --version # Should be 2.16+
 
 - Proxmox VE 9.0 host
 - API token with permissions: `PVEVMAdmin`, `PVEDatastoreUser`
-- Storage pool (e.g., `local-zfs`)
+- Storage pool (e.g., `tank`)
 - Network bridge (e.g., `vmbr0`)
 
 ### Network Requirements
@@ -119,7 +119,7 @@ vm_id                = 9300
 vm_cores  = 2
 vm_memory = 2048
 vm_disk_size    = "20G"
-vm_disk_storage = "local-zfs"
+vm_disk_storage = "tank"
 vm_cpu_type     = "host"
 
 # Network
@@ -191,7 +191,7 @@ qm config 9300 | grep template
 
 # Verify cloud-init drive exists
 qm config 9300 | grep ide2
-# Should show: ide2: local-zfs:vm-9300-cloudinit
+# Should show: ide2: tank:vm-9300-cloudinit
 ```
 
 ---

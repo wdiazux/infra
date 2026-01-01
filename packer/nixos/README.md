@@ -85,7 +85,7 @@ nixos_iso_url = "https://channels.nixos.org/nixos-25.05/latest-nixos-minimal-x86
 nixos_iso_checksum = "file:https://channels.nixos.org/nixos-25.05/latest-nixos-minimal-x86_64-linux.iso.sha256"
 
 # Storage
-vm_disk_storage = "local-zfs"  # Your Proxmox storage pool
+vm_disk_storage = "tank"  # Your Proxmox storage pool
 ```
 
 ### 3. Initialize and Build

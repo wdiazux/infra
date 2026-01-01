@@ -11,7 +11,7 @@ VM_ID=${1:-9110}
 VM_NAME="debian-12-cloud-base"
 DEBIAN_VERSION="12"
 DEBIAN_RELEASE="trixie"
-STORAGE_POOL="local-zfs"
+STORAGE_POOL="tank"
 BRIDGE="vmbr0"
 
 # Cloud image URL

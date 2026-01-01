@@ -10,7 +10,7 @@ set -e
 VM_ID=${1:-9100}
 VM_NAME="ubuntu-2404-cloud-base"
 UBUNTU_VERSION="24.04"
-STORAGE_POOL="local-zfs"
+STORAGE_POOL="tank"
 BRIDGE="vmbr0"
 
 # Cloud image URL

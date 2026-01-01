@@ -94,7 +94,7 @@ node_memory = 32768  # 32GB (32768 MB) - adjust as needed
 
 # Disk configuration
 node_disk_size    = 200          # 200GB for OS + containers + ephemeral
-node_disk_storage = "local-zfs"  # Your Proxmox storage pool name
+node_disk_storage = "tank"  # Your Proxmox storage pool name
 
 # ============================================================================
 # GPU Passthrough
@@ -261,7 +261,7 @@ ubuntu_vm_id          = 100
 ubuntu_cpu_cores      = 4
 ubuntu_memory         = 8192   # MB
 ubuntu_disk_size      = 40     # GB
-ubuntu_disk_storage   = "local-zfs"
+ubuntu_disk_storage   = "tank"
 ubuntu_ip_address     = "dhcp"  # Or "10.10.2.11/24" for static
 ubuntu_on_boot        = true
 
@@ -275,7 +275,7 @@ debian_vm_id          = 200
 debian_cpu_cores      = 4
 debian_memory         = 8192   # MB
 debian_disk_size      = 40     # GB
-debian_disk_storage   = "local-zfs"
+debian_disk_storage   = "tank"
 debian_ip_address     = "dhcp"  # Or "10.10.2.12/24" for static
 debian_on_boot        = true
 
@@ -289,7 +289,7 @@ arch_vm_id          = 300
 arch_cpu_cores      = 2
 arch_memory         = 4096   # MB
 arch_disk_size      = 30     # GB
-arch_disk_storage   = "local-zfs"
+arch_disk_storage   = "tank"
 arch_ip_address     = "dhcp"  # Or "10.10.2.13/24" for static
 arch_on_boot        = true
 
@@ -303,7 +303,7 @@ nixos_vm_id          = 400
 nixos_cpu_cores      = 2
 nixos_memory         = 4096   # MB
 nixos_disk_size      = 30     # GB
-nixos_disk_storage   = "local-zfs"
+nixos_disk_storage   = "tank"
 nixos_ip_address     = "dhcp"  # Or "10.10.2.14/24" for static
 nixos_on_boot        = true
 
@@ -317,7 +317,7 @@ windows_vm_id               = 500
 windows_cpu_cores           = 4
 windows_memory              = 8192   # MB
 windows_disk_size           = 100    # GB
-windows_disk_storage        = "local-zfs"
+windows_disk_storage        = "tank"
 windows_ip_address          = "dhcp"  # Or "10.10.2.15/24" for static
 windows_cloud_init_user     = "Administrator"
 windows_cloud_init_password = "ChangeMe123!"  # Change this!

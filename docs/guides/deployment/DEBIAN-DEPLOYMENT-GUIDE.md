@@ -31,7 +31,7 @@ ansible --version # Should be 2.16+
 
 - Proxmox VE 9.0 host
 - API token with permissions: `PVEVMAdmin`, `PVEDatastoreUser`
-- Storage pool (e.g., `local-zfs`)
+- Storage pool (e.g., `tank`)
 - Network bridge (e.g., `vmbr0`)
 
 ### Network Requirements
@@ -145,7 +145,7 @@ vm_id                = 9112  # Template VM ID (must be different from 9110)
 # VM Hardware
 vm_cores    = 2
 vm_memory   = 2048
-vm_disk_storage = "local-zfs"  # Your Proxmox storage pool
+vm_disk_storage = "tank"  # Your Proxmox storage pool
 
 # Network
 vm_network_bridge = "vmbr0"  # Your Proxmox network bridge
@@ -344,7 +344,7 @@ fatal: [proxmox]: FAILED! => {"msg": "Failed to download cloud image"}
 
 **Solutions**:
 1. Check Proxmox host internet access: `curl https://cloud.debian.org/`
-2. Verify storage pool exists: `ssh root@proxmox 'pvesm status | grep local-zfs'`
+2. Verify storage pool exists: `ssh root@proxmox 'pvesm status | grep tank'`
 3. Check available space: `ssh root@proxmox 'df -h | grep zfs'`
 4. Try manual script: `scp packer/debian/import-cloud-image.sh root@proxmox:/root/`
 

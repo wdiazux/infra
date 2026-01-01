@@ -1019,7 +1019,7 @@ http_bind_address = "192.168.1.100"
 ```hcl
 disks {
   disk_size         = "20G"
-  storage_pool      = "local-zfs"  # ZFS pool
+  storage_pool      = "tank"  # ZFS pool
   format            = "raw"        # Use raw for ZFS
   type              = "scsi"
 }
@@ -1323,7 +1323,7 @@ source "proxmox-iso" "ubuntu2404" {
 
   disks {
     disk_size         = "20G"
-    storage_pool      = "local-zfs"
+    storage_pool      = "tank"
     format            = "raw"
     type              = "scsi"
   }
@@ -1333,7 +1333,7 @@ source "proxmox-iso" "ubuntu2404" {
 
   # Cloud-init
   cloud_init              = true
-  cloud_init_storage_pool = "local-zfs"
+  cloud_init_storage_pool = "tank"
 
   # Boot configuration
   boot_wait = "5s"
@@ -1465,7 +1465,7 @@ source "proxmox-iso" "talos" {
 
   disks {
     disk_size    = "20G"
-    storage_pool = "local-zfs"
+    storage_pool = "tank"
     format       = "raw"
     type         = "scsi"
   }
@@ -1579,7 +1579,7 @@ source "proxmox-iso" "windows2022" {
 
   disks {
     disk_size    = "60G"
-    storage_pool = "local-zfs"
+    storage_pool = "tank"
     format       = "raw"
     type         = "scsi"
     cache_mode   = "writeback"
@@ -1587,7 +1587,7 @@ source "proxmox-iso" "windows2022" {
 
   # EFI disk for UEFI boot
   efi_config {
-    efi_storage_pool = "local-zfs"
+    efi_storage_pool = "tank"
     efi_type         = "4m"
   }
 
@@ -1673,7 +1673,7 @@ source "proxmox-clone" "ubuntu-updates" {
 
   # Cloud-init for customization
   cloud_init              = true
-  cloud_init_storage_pool = "local-zfs"
+  cloud_init_storage_pool = "tank"
 
   # SSH configuration
   ssh_username = "ubuntu"

@@ -38,7 +38,7 @@ packer --version
 
 Access to Proxmox VE 9.0 host with:
 - API token or password authentication
-- Storage pool (e.g., local-zfs)
+- Storage pool (e.g., tank)
 - Network bridge (e.g., vmbr0)
 
 ## Quick Start
@@ -93,7 +93,7 @@ proxmox_node = "pve"
 cloud_image_vm_id = 9110  # Base VM created by import script
 vm_id             = 9112  # Template VM ID (must be different)
 
-vm_disk_storage = "local-zfs"
+vm_disk_storage = "tank"
 ```
 
 ### Step 3: Build Template

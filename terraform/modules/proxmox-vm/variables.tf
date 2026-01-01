@@ -63,7 +63,7 @@ variable "disks" {
   }))
   description = "List of disk configurations"
   default = [{
-    datastore_id = "local-zfs"
+    datastore_id = "tank"
     size         = 20
     interface    = "scsi0"
     iothread     = true
@@ -98,7 +98,7 @@ variable "bios_type" {
 variable "efi_disk_datastore" {
   type        = string
   description = "Datastore for EFI disk (only used if bios_type = 'ovmf')"
-  default     = "local-zfs"
+  default     = "tank"
 }
 
 variable "boot_order" {
@@ -132,7 +132,7 @@ variable "enable_cloud_init" {
 variable "cloud_init_datastore" {
   type        = string
   description = "Datastore for cloud-init drive"
-  default     = "local-zfs"
+  default     = "tank"
 }
 
 variable "cloud_init_user" {

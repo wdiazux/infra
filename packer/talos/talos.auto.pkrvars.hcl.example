@@ -45,7 +45,7 @@ vm_memory   = 8192  # 8GB for build process
 
 # Disk Configuration
 vm_disk_size    = "150G"  # Adjust based on your needs (minimum 100G recommended)
-vm_disk_storage = "local-zfs"  # Your ZFS pool name
+vm_disk_storage = "tank"  # Your ZFS pool name
 vm_disk_type    = "scsi"
 
 # Network Configuration

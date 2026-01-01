@@ -152,7 +152,7 @@ talos_schematic_id = "abc123def456..."  # Your schematic ID from Factory
 
 # VM configuration
 vm_id           = 9000
-vm_disk_storage = "local-zfs"  # Your ZFS pool name
+vm_disk_storage = "tank"  # Your ZFS pool name
 vm_disk_size    = "150G"
 ```
 

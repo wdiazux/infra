@@ -187,7 +187,7 @@ qm --version  # On Proxmox host
 
 - Proxmox VE 9.0
 - API token or password authentication
-- Storage pool (e.g., local-zfs)
+- Storage pool (e.g., tank)
 - Network bridge (e.g., vmbr0)
 - For ISO builds: Upload ISOs to Proxmox storage
 
