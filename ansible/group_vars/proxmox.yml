@@ -69,7 +69,8 @@ proxmox_disable_ha_services: true
 
 # Enable GPU passthrough configuration
 # Set to true if passing through NVIDIA GPU to VMs
-has_gpu: false
+# Hardware: NVIDIA Ada Lovelace RTX 4000
+has_gpu: true
 
 # GRUB kernel parameters (automatically set based on CPU vendor)
 # AMD: "quiet amd_iommu=on iommu=pt"

@@ -20,11 +20,13 @@ all:
         #
         # REPLACE THESE VALUES WITH YOUR ACTUAL PROXMOX HOST DETAILS
         #
-        # Example single host:
+        # Single Proxmox VE 9.0 Host - MS-A2 (AMD Ryzen AI 9 HX 370, 96GB RAM, RTX 4000)
         pve1:
-          ansible_host: 10.10.2.2
+          ansible_host: pve.home-infra.net  # or 10.10.2.2
           ansible_user: root
+          ansible_python_interpreter: /usr/bin/python3
           # ansible_ssh_private_key_file: ~/.ssh/proxmox_ed25519
+          description: "Proxmox VE 9.0 - Minisforum MS-A2 - Primary Hypervisor"
 
         # Example multiple hosts (cluster):
         # pve1:
@@ -40,17 +42,12 @@ all:
         #   ansible_user: root
 
       # ========================================================================
-      # Group Variables (can be overridden in group_vars/proxmox_hosts.yml)
+      # Group Variables (defined in group_vars/proxmox_hosts.yml)
       # ========================================================================
       vars:
         # Ansible connection settings
         ansible_connection: ssh
         ansible_port: 22
 
-        # GPU passthrough configuration
-        # Set to true if this host has NVIDIA GPU for passthrough
-        has_gpu: true
-
-        # ZFS ARC memory limit (GB) - adjust based on total system RAM
-        # Recommended: 16GB for 96GB system
-        zfs_arc_max_gb: 16
+        # Note: Other variables like has_gpu, zfs_arc_max_gb are in group_vars/proxmox_hosts.yml
+        # This keeps the inventory clean and configuration centralized
