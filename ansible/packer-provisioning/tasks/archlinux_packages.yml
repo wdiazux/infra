@@ -24,5 +24,6 @@
       - ufw
       - crowdsec
       - crowdsec-firewall-bouncer-nftables
+      - gnupg
     state: present
   tags: [arch]
