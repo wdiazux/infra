@@ -1,6 +1,6 @@
 # Infrastructure Documentation Index
 
-**Last Updated:** 2025-11-23
+**Last Updated:** 2026-01-05
 **Repository:** wdiazux/infra
 **Status:** Production-Ready
 
@@ -114,6 +114,8 @@
 - `packer-provisioning/tasks/debian_packages.yml` - Debian/Ubuntu packages
 - `packer-provisioning/tasks/archlinux_packages.yml` - Arch Linux packages
 - `packer-provisioning/tasks/windows_packages.yml` - Windows packages
+- `packer-provisioning/tasks/ssh_keys.yml` - SSH authorized_keys management (idempotent)
+- `packer-provisioning/tasks/cleanup.yml` - Template cleanup (machine-id, cloud-init)
 
 **Inventory and Configuration:**
 - `inventories/proxmox_hosts.yml` - Proxmox hosts inventory
@@ -266,12 +268,34 @@
 
 ---
 
-## 📊 Final Audit
+## 📊 Latest Audits
 
-**Final Audit Report:** [docs/FINAL-AUDIT-REPORT.md](docs/FINAL-AUDIT-REPORT.md) - Production readiness validation
+### 2026-01-05: Packer & Ansible Configuration Audit ⭐ LATEST
+
+**Audit Report:** [docs/PACKER-ANSIBLE-AUDIT-2026-01-05.md](docs/PACKER-ANSIBLE-AUDIT-2026-01-05.md) - Comprehensive configuration review
+
+- **Overall Status:** ✅ Excellent (95% compliance)
+- **Audit Date:** 2026-01-05
+- **Scope:** Packer templates, Ansible provisioners, deprecated options, disk optimization
+
+**Key Findings:**
+- ✅ All Ansible best practices followed (FQCN, idempotency)
+- ✅ Packer configurations follow official recommendations
+- ✅ Replaced deprecated ISO configuration with modern `boot_iso` block
+- ✅ Added TRIM support for ZFS storage efficiency
+- ✅ SSH key management via Ansible with SOPS integration
+
+**Changes Applied:**
+- Fixed deprecated ISO options in Arch and NixOS templates
+- Added `discard = true` for TRIM/ZFS optimization
+- Consolidated SSH keys and cleanup into Ansible provisioner
+- Documented all configurations against official sources
+
+### 2025-11-23: Infrastructure Production Readiness
+
+**Audit Report:** [docs/archive/FINAL-AUDIT-REPORT-2025-11-23.md](docs/archive/FINAL-AUDIT-REPORT-2025-11-23.md) - Complete infrastructure audit
 
 - **Overall Status:** ✅ Production-Ready
-- **Audit Date:** 2025-11-23
 - **Grade:** A+ (98/100)
 - **Scope:** Complete infrastructure audit (Packer, Terraform, Ansible, Talos, Kubernetes, SOPS)
 
