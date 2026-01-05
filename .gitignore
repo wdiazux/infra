@@ -72,5 +72,38 @@ id_ed25519*
 # Cloud-init user-data with plaintext secrets
 # (versioned files should use SOPS encryption)
 user-data-plaintext.yaml
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 .venv/
+venv/
+ENV/
+env/
+
+# Nix
+result
+result-*
 .direnv/
+
+# Claude Code (commit skills, but ignore session artifacts)
+.claude/.cache/
+.claude/sessions/
