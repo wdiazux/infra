@@ -23,9 +23,11 @@ Run the following commands on your Proxmox host:
 ssh root@pve.home-infra.net
 
 # Update the Terraform role with new privileges
-pveum rolemod TerraformProv -privs "Datastore.AllocateSpace,Datastore.Audit,Pool.Allocate,SDN.Use,Sys.Audit,Sys.Console,Sys.Modify,Sys.PowerMgmt,VM.Allocate,VM.Audit,VM.Clone,VM.Config.CDROM,VM.Config.Cloudinit,VM.Config.CPU,VM.Config.Disk,VM.Config.HWType,VM.Config.Memory,VM.Config.Network,VM.Config.Options,VM.Migrate,VM.PowerMgmt"
+pveum rolemod TerraformProv -privs "Datastore.AllocateSpace,Datastore.Audit,Pool.Allocate,SDN.Use,Sys.Audit,Sys.Console,Sys.Modify,Sys.PowerMgmt,VM.Allocate,VM.Audit,VM.Clone,VM.Config.CDROM,VM.Config.Cloudinit,VM.Config.CPU,VM.Config.Disk,VM.Config.HWType,VM.Config.Memory,VM.Config.Network,VM.Config.Options,VM.Migrate,VM.PowerMgmt,VM.GuestAgent.Audit"
 
-# Key change: VM.Monitor → Sys.Audit
+# Key changes:
+# - VM.Monitor → Sys.Audit (Proxmox 9.0 compatibility)
+# - Added VM.GuestAgent.Audit (required for Packer to query guest agent for IP detection)
 ```
 
 ### If TerraformProv Doesn't Exist
@@ -45,7 +47,7 @@ pveum useradd terraform@pve --comment "Terraform automation user"
 pveum passwd terraform@pve
 
 # 3. Create Terraform role with correct privileges
-pveum roleadd TerraformProv -privs "Datastore.AllocateSpace,Datastore.Audit,Pool.Allocate,SDN.Use,Sys.Audit,Sys.Console,Sys.Modify,Sys.PowerMgmt,VM.Allocate,VM.Audit,VM.Clone,VM.Config.CDROM,VM.Config.Cloudinit,VM.Config.CPU,VM.Config.Disk,VM.Config.HWType,VM.Config.Memory,VM.Config.Network,VM.Config.Options,VM.Migrate,VM.PowerMgmt"
+pveum roleadd TerraformProv -privs "Datastore.AllocateSpace,Datastore.Audit,Pool.Allocate,SDN.Use,Sys.Audit,Sys.Console,Sys.Modify,Sys.PowerMgmt,VM.Allocate,VM.Audit,VM.Clone,VM.Config.CDROM,VM.Config.Cloudinit,VM.Config.CPU,VM.Config.Disk,VM.Config.HWType,VM.Config.Memory,VM.Config.Network,VM.Config.Options,VM.Migrate,VM.PowerMgmt,VM.GuestAgent.Audit"
 
 # 4. Assign role to user
 pveum aclmod / -user terraform@pve -role TerraformProv
@@ -68,8 +70,13 @@ pveum role list | grep -A 1 TerraformProv
 
 # Expected output should include:
 # - Sys.Audit (NOT VM.Monitor)
+# - VM.GuestAgent.Audit (required for Packer)
 # - SDN.Use and Sys.PowerMgmt
 # - All VM and Datastore privileges
+
+# Verify guest agent permission specifically
+pveum user permissions terraform@pve | grep -i guest
+# Should show: VM.GuestAgent.Audit (*)
 ```
 
 ---
@@ -180,6 +187,8 @@ find /sys/kernel/iommu_groups/ -type l | wc -l
 
 ## Optional: Run Ansible Day 0 Playbook
 
+**Note**: This is for Proxmox **host** preparation only. Packer template provisioning uses a separate Ansible playbook (see `ansible/packer-provisioning/`).
+
 For automated Proxmox host preparation (IOMMU, VFIO, ZFS, GPU detection), run:
 
 ```bash
@@ -220,12 +229,14 @@ The playbook will:
 
 Before running `terraform apply`, ensure:
 
-- [ ] **CRITICAL**: Terraform API user role updated (Sys.Audit privilege)
+- [ ] **CRITICAL**: Terraform API user role updated with required privileges:
+  - [ ] `Sys.Audit` (replaces deprecated VM.Monitor)
+  - [ ] `VM.GuestAgent.Audit` (required for Packer)
 - [ ] Proxmox API token or password configured
 - [ ] Network bridge `vmbr0` exists
 - [ ] IOMMU enabled (if using GPU passthrough)
 - [ ] **ZFS pool "tank" created and configured** (all VMs use ZFS storage)
-- [ ] Talos Factory schematic ID generated
+- [ ] Talos Factory schematic ID generated (for Talos deployments)
 - [ ] `terraform.tfvars` configured with your environment
 
 **Note:** This infrastructure uses **ZFS for all VM storage** via the `tank` pool.
@@ -272,6 +283,17 @@ pveversion
 
 **Solution**: Run the role update command above.
 
+### Packer fails with "Timeout waiting for SSH"
+
+**Error**: `403 Permission check failed (/vms/XXXX, VM.GuestAgent.Audit|VM.GuestAgent.Unrestricted)`
+
+**Cause**: Packer uses QEMU guest agent to detect VM IP addresses. Without `VM.GuestAgent.Audit` permission, Packer cannot query the guest agent.
+
+**Solution**:
+1. Add `VM.GuestAgent.Audit` to the TerraformProv role (see command above)
+2. Verify: `pveum user permissions terraform@pve | grep -i guest`
+3. Ensure base VM has qemu-guest-agent installed (Packer import scripts handle this automatically)
+
 ### GPU passthrough not working
 
 **Cause**: IOMMU not enabled or GPU not in separate IOMMU group.
@@ -295,15 +317,109 @@ pveversion
 
 After completing Proxmox setup:
 
-1. **Build Packer templates**: `cd packer/talos && packer build .`
-2. **Deploy with Terraform**: `cd terraform && terraform apply`
-3. **Install Cilium CNI**: See `kubernetes/cilium/INSTALLATION.md`
-4. **Install Longhorn storage**: See `kubernetes/longhorn/INSTALLATION.md`
+### 1. Setup Development Environment (REQUIRED)
+
+**This project uses Nix + direnv for reproducible development environments.**
+
+```bash
+# Install Nix (if not already installed)
+# See: https://nixos.org/download.html
+
+# Enable direnv in project root
+cd /path/to/infra
+echo "use nix" > .envrc
+direnv allow
+
+# Tools are now automatically available
+packer --version     # >= 1.14.3
+terraform --version  # >= 1.14.2
+ansible --version    # >= 2.17.0
+sshpass             # Required for Ansible provisioner
+```
+
+See `CLAUDE.md` for detailed Nix setup instructions.
+
+### 2. Configure SSH Keys (Recommended)
+
+Add your SSH public key to SOPS-encrypted secrets for automatic configuration in all templates:
+
+```bash
+# Edit encrypted secrets
+sops secrets/proxmox-creds.enc.yaml
+
+# Add your SSH public key
+ssh_public_key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQ... your-email@example.com"
+```
+
+The Ansible provisioner will automatically:
+- Read the key from SOPS during Packer builds
+- Configure authorized_keys in all templates
+- Enable passwordless SSH on cloned VMs
+
+### 3. Build Packer Templates
+
+**All commands must be run from Nix shell** (auto-activated with direnv):
+
+```bash
+# Build Debian cloud image template (recommended, 5-10 min)
+cd packer/debian
+packer init .
+packer validate .
+packer build .
+
+# Build Ubuntu cloud image template (recommended, 5-10 min)
+cd packer/ubuntu
+packer init .
+packer validate .
+packer build .
+
+# Build Talos Linux template (primary VM, 10-15 min)
+cd packer/talos
+packer init .
+packer validate .
+packer build .
+```
+
+The Packer builds now use a unified Ansible provisioner that:
+- ✅ Installs baseline packages
+- ✅ Configures SSH keys from SOPS
+- ✅ Cleans up templates for proper cloning
+- ✅ Uses password authentication (avoids SSH key errors)
+
+See `packer/README.md` for detailed build instructions.
+
+### 4. Deploy with Terraform
+
+```bash
+# From Nix shell
+cd terraform
+terraform init
+terraform plan
+terraform apply
+```
+
+### 5. Kubernetes Setup (Talos Only)
+
+```bash
+# Install Cilium CNI
+# See kubernetes/cilium/INSTALLATION.md
+
+# Install Longhorn storage
+# See kubernetes/longhorn/INSTALLATION.md
+```
 
 ---
 
-**Last Updated**: 2025-12-31
+**Last Updated**: 2026-01-05
 **Proxmox Version**: 9.1.4 (tested and verified)
 **Applies To**: Proxmox VE 9.0+
 **Terraform Version**: >= 1.14.2
+**Packer Version**: >= 1.14.3
 **Proxmox Provider**: bpg/proxmox >= 0.89.1
+
+**Recent Changes**:
+- **2026-01-05**: Added Nix + direnv requirement and Ansible provisioner enhancement documentation
+- **2026-01-05**: Documented SSH key configuration via SOPS for Packer templates
+- **2025-12-XX**: Added `VM.GuestAgent.Audit` permission requirement for Packer builds
+- **2025-12-XX**: Updated role commands to include guest agent audit permission
+- **2025-12-XX**: Added troubleshooting section for Packer SSH timeout issues

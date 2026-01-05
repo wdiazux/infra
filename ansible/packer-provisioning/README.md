@@ -7,10 +7,12 @@ This directory contains Ansible playbooks and tasks used during Packer image bui
 ```
 ansible/packer-provisioning/
 ├── install_baseline_packages.yml    # Main orchestration playbook
-├── tasks/                            # Modular OS-specific tasks
+├── tasks/                            # Modular task files
 │   ├── debian_packages.yml           # Debian/Ubuntu package installation
 │   ├── archlinux_packages.yml        # Arch Linux package installation
-│   └── windows_packages.yml          # Windows package installation (Chocolatey)
+│   ├── windows_packages.yml          # Windows package installation (Chocolatey)
+│   ├── ssh_keys.yml                  # SSH authorized_keys configuration
+│   └── cleanup.yml                   # Template cleanup (machine-id, cloud-init, temp files)
 └── README.md                         # This file
 ```
 
@@ -33,6 +35,8 @@ This provisioning fits into the overall infrastructure architecture:
 Layer 1: PACKER + ANSIBLE PROVISIONER (this directory)
 ├─ Install baseline packages in golden images
 ├─ Install security packages (ufw, fail2ban, etc.)
+├─ Configure SSH authorized_keys (from SOPS-encrypted secrets)
+├─ Clean up template (machine-id, cloud-init, temp files)
 └─ Create consistent, reproducible templates
 
 Layer 2: TERRAFORM
@@ -41,21 +45,36 @@ Layer 2: TERRAFORM
 
 Layer 3: ANSIBLE DAY 1 (../playbooks/day1_*.yml)
 ├─ Instance-specific configuration ONLY
+├─ Hostname, static IPs, secrets management
 └─ No package installation (already in golden image)
 ```
 
 ## Usage in Packer Templates
 
-All Packer templates reference the main playbook:
+All Packer templates use a unified Ansible provisioner configuration:
 
 ```hcl
 # Debian/Ubuntu example
 provisioner "ansible" {
   playbook_file = "../../ansible/packer-provisioning/install_baseline_packages.yml"
-  user          = "ubuntu"
+  user          = "debian"  # or "ubuntu"
   use_proxy     = false
+  use_sftp      = true      # Recommended by Packer, replaces deprecated SCP
+
+  # Pass variables for SSH keys and authentication
   extra_arguments = [
-    "--extra-vars", "ansible_python_interpreter=/usr/bin/python3"
+    "--extra-vars", "ansible_python_interpreter=/usr/bin/python3",
+    "--extra-vars", "ansible_password=${var.ssh_password}",
+    "--extra-vars", "packer_ssh_user=debian",
+    "--extra-vars", "ssh_public_key=${var.ssh_public_key}",
+    "--ssh-common-args", "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null",
+    "-vv"  # Verbose output for debugging
+  ]
+
+  # Use password authentication via sshpass (avoids SSH key libcrypto error)
+  ansible_env_vars = [
+    "ANSIBLE_HOST_KEY_CHECKING=False",
+    "ANSIBLE_SSH_ARGS=-o ControlMaster=auto -o ControlPersist=60s -o StrictHostKeyChecking=no"
   ]
 }
 
@@ -64,12 +83,24 @@ provisioner "ansible" {
   playbook_file = "../../ansible/packer-provisioning/install_baseline_packages.yml"
   user          = "root"
   use_proxy     = false
+  use_sftp      = true
+
   extra_arguments = [
-    "--extra-vars", "ansible_python_interpreter=/usr/bin/python"
+    "--extra-vars", "ansible_python_interpreter=/usr/bin/python",  # Note: Python 2 in Arch ISO
+    "--extra-vars", "ansible_password=${var.ssh_password}",
+    "--extra-vars", "packer_ssh_user=root",
+    "--extra-vars", "ssh_public_key=${var.ssh_public_key}",
+    "--ssh-common-args", "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null",
+    "-vv"
+  ]
+
+  ansible_env_vars = [
+    "ANSIBLE_HOST_KEY_CHECKING=False",
+    "ANSIBLE_SSH_ARGS=-o ControlMaster=auto -o ControlPersist=60s -o StrictHostKeyChecking=no"
   ]
 }
 
-# Windows example
+# Windows example (future)
 provisioner "ansible" {
   playbook_file = "../../ansible/packer-provisioning/install_baseline_packages.yml"
   user          = "Administrator"
@@ -101,6 +132,94 @@ provisioner "ansible" {
 ### Windows Specific
 - Chocolatey (package manager)
 - 7zip, sysinternals, putty, winscp
+
+## SSH Key Configuration
+
+**File:** `tasks/ssh_keys.yml`
+
+**Purpose:** Configure SSH authorized_keys idempotently for passwordless authentication on cloned VMs.
+
+**How it works:**
+1. Checks if `ssh_public_key` variable is defined and not empty
+2. Uses `ansible.posix.authorized_key` module for idempotent configuration
+3. Creates `.ssh` directory with correct permissions (700)
+4. Adds public key to authorized_keys
+5. Skips if no key provided (graceful degradation)
+
+**Key features:**
+- **Idempotent**: Safe to run multiple times
+- **SOPS integration**: Reads key from encrypted `secrets/proxmox-creds.enc.yaml`
+- **Exclusive: no**: Preserves existing SSH keys in authorized_keys
+- **Manages directory**: Creates `.ssh` with correct ownership and permissions
+
+**SOPS Configuration:**
+```bash
+# Edit encrypted secrets file
+sops secrets/proxmox-creds.enc.yaml
+
+# Add your SSH public key
+ssh_public_key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQ... your-email@example.com"
+```
+
+**Packer automatically:**
+- Reads `ssh_public_key` from SOPS during build
+- Passes it to Ansible via `--extra-vars ssh_public_key=${var.ssh_public_key}`
+- Ansible configures authorized_keys using the `ansible.posix.authorized_key` module
+
+**Benefits:**
+- ✅ Secure storage with SOPS + Age encryption
+- ✅ Idempotent configuration via Ansible
+- ✅ Works across all cloud-image templates
+- ✅ No manual SSH key copying required
+- ✅ Cloned VMs automatically have passwordless SSH
+
+## Template Cleanup
+
+**File:** `tasks/cleanup.yml`
+
+**Purpose:** Clean and prepare template for cloning, ensuring cloned VMs have unique identities.
+
+**What it cleans:**
+1. **Package caches**: APT cache (Debian/Ubuntu), Pacman cache (Arch)
+2. **Temporary files**: `/tmp/*`, `/var/tmp/*`
+3. **Cloud-init data**: Logs and seed files (allows cloud-init to run on clones)
+4. **Machine ID**: Reset to empty (regenerated on first boot of cloned VM)
+5. **DBus machine ID**: Removed and symlinked to `/etc/machine-id`
+
+**Why cleanup is critical:**
+- **Machine ID**: Ensures cloned VMs get unique systemd machine IDs
+- **Cloud-init**: Allows cloud-init to run properly on cloned VMs
+- **Temp files**: Reduces template size
+- **Package caches**: Reduces template size
+
+**Tasks performed:**
+```yaml
+# Reset machine-id for proper cloning
+- name: Reset machine-id for proper cloning
+  ansible.builtin.command: truncate -s 0 /etc/machine-id
+  changed_when: true
+
+# Clean cloud-init data
+- name: Clean cloud-init data
+  ansible.builtin.command: cloud-init clean --logs --seed
+  changed_when: true
+  failed_when: false  # Don't fail if cloud-init not present
+
+# Remove temporary files
+- name: Remove temporary files
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /tmp/*
+    - /var/tmp/*
+```
+
+**Benefits:**
+- ✅ Cloned VMs have unique identities
+- ✅ Cloud-init runs correctly on clones
+- ✅ Reduced template size
+- ✅ Production-ready templates
 
 ## Adding New Packages
 
@@ -230,7 +349,8 @@ winrm_insecure = true
 
 ## Version History
 
+- **2026-01-05:** Added SSH key management (`tasks/ssh_keys.yml`) and template cleanup (`tasks/cleanup.yml`) - consolidated all provisioning into single Ansible provisioner with SOPS integration
 - **2025-11-19:** Refactored to modular architecture with separate task files per OS
 - **2025-11-18:** Initial creation with single-file playbook
 
-**Last Updated:** 2025-11-19
+**Last Updated:** 2026-01-05

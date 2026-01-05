@@ -9,8 +9,32 @@ Golden images provide consistent, pre-configured VM templates that can be rapidl
 1. **Cloud Images** (Preferred) - Official pre-built images from OS vendors
 2. **ISO Builds** (Fallback) - Custom installation from ISO when cloud images unavailable
 
-## ⚠️ Recent Updates (2025-11-19)
+## ⚠️ Recent Updates
 
+### 2026-01-05: Ansible Provisioner Enhancement
+**🎉 MAJOR ENHANCEMENT**: Consolidated SSH key management and template cleanup into Ansible
+
+**Problem**: Packer-generated SSH keys caused `error in libcrypto` when using Ansible provisioner
+
+**Solution**: Unified approach using Ansible for all configuration:
+- **Templates affected**: Debian, Ubuntu, Arch (NixOS uses shell provisioner)
+- **Password authentication**: Switched to `sshpass` with `ansible_password` variable
+- **SSH key management**: Created `ansible/packer-provisioning/tasks/ssh_keys.yml` for idempotent key configuration
+- **Template cleanup**: Created `ansible/packer-provisioning/tasks/cleanup.yml` for standardized cleanup
+- **SOPS integration**: SSH public keys stored in encrypted `secrets/proxmox-creds.enc.yaml`
+- **File transfer**: Added `use_sftp = true` (replaces deprecated SCP)
+- **Single provisioner**: Consolidated SSH keys, package installation, and cleanup into one Ansible provisioner
+
+**Benefits**:
+- ✅ Consistent configuration management across all templates
+- ✅ Idempotent SSH key management using `ansible.posix.authorized_key` module
+- ✅ Standardized template cleanup (machine-id reset, cloud-init cleanup, temp files)
+- ✅ Production-ready approach with encrypted secrets via SOPS
+- ✅ Better debugging with verbose Ansible output
+
+**Status**: ✅ All templates validated and production-ready
+
+### 2025-11-19: Template Verification
 All Packer templates have been comprehensively reviewed and verified against 2025 best practices:
 
 **Fixed Issues:**
@@ -106,10 +130,13 @@ packer/
 
 ## 🚀 Quick Start
 
+**⚠️ IMPORTANT:** All commands must be run from the Nix shell environment (automatic with direnv, or manual with `nix-shell`).
+
 ### For Cloud Images (Ubuntu/Debian)
 
 **Build Ubuntu cloud image template:**
 ```bash
+# Ensure you're in Nix shell (direnv auto-activates, or run: nix-shell)
 cd packer/ubuntu
 packer init .
 packer validate .
@@ -118,6 +145,7 @@ packer build .
 
 **Build Debian cloud image template:**
 ```bash
+# Ensure you're in Nix shell
 cd packer/debian
 packer init .
 packer validate .
@@ -130,6 +158,7 @@ packer build .
 
 **Step 1:** Configure variables
 ```bash
+# Ensure you're in Nix shell
 cd packer/arch
 cp arch.auto.pkrvars.hcl.example arch.auto.pkrvars.hcl
 vim arch.auto.pkrvars.hcl
@@ -137,6 +166,7 @@ vim arch.auto.pkrvars.hcl
 
 **Step 2:** Build template
 ```bash
+# From Nix shell
 packer init .
 packer validate .
 packer build .
@@ -172,16 +202,50 @@ packer build .
 
 ## 🔧 Prerequisites
 
-### Required Tools
+### Development Environment (REQUIRED)
 
+**This project uses Nix + direnv for reproducible development environments.** All tools are automatically available when you enter the project directory.
+
+**Setup (one-time):**
 ```bash
-# Packer 1.14.2+
-packer --version
+# 1. Install Nix (if not already installed)
+# See: https://nixos.org/download.html
 
-# For cloud images (optional, for manual verification)
-wget --version
-qm --version  # On Proxmox host
+# 2. Enable direnv (recommended)
+echo "use nix" > .envrc
+direnv allow
+
+# 3. Tools are now automatically available
+# Enter the directory and verify:
+packer --version     # >= 1.14.3
+terraform --version  # >= 1.14.2
+ansible --version    # >= 2.17.0
+sshpass             # Required for Ansible provisioner
 ```
+
+**Without direnv (manual activation):**
+```bash
+# Enter Nix shell manually
+nix-shell
+
+# Now tools are available
+packer --version
+```
+
+**Important:** All `packer`, `terraform`, and `ansible` commands in this documentation assume you're in the Nix shell environment (automatic with direnv, or manual with `nix-shell`).
+
+### Required Tools (Managed via Nix)
+
+Tools automatically available in Nix shell:
+- Packer >= 1.14.3
+- Terraform >= 1.14.2
+- Ansible >= 2.17.0
+- sshpass (for Ansible password authentication)
+- SOPS + Age (for secrets management)
+- kubectl, talosctl, k9s (for Kubernetes)
+- All other project dependencies
+
+See `shell.nix` in project root for full tool list.
 
 ### Proxmox Requirements
 
@@ -230,13 +294,37 @@ provisioner "shell" {
 
 ### Run Ansible Playbook
 
-Add ansible provisioner:
+All cloud-image templates (Debian, Ubuntu, Arch) use a unified Ansible provisioner:
 
 ```hcl
 provisioner "ansible" {
-  playbook_file = "../ansible/playbooks/baseline.yml"
+  playbook_file = "../../ansible/packer-provisioning/install_baseline_packages.yml"
+  user          = "debian"  # or ubuntu, root for Arch
+  use_proxy     = false
+  use_sftp      = true
+
+  # Pass variables for SSH keys and authentication
+  extra_arguments = [
+    "--extra-vars", "ansible_python_interpreter=/usr/bin/python3",
+    "--extra-vars", "ansible_password=${var.ssh_password}",
+    "--extra-vars", "packer_ssh_user=debian",
+    "--extra-vars", "ssh_public_key=${var.ssh_public_key}",
+    "--ssh-common-args", "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null",
+    "-vv"
+  ]
+
+  ansible_env_vars = [
+    "ANSIBLE_HOST_KEY_CHECKING=False",
+    "ANSIBLE_SSH_ARGS=-o ControlMaster=auto -o ControlPersist=60s -o StrictHostKeyChecking=no"
+  ]
 }
 ```
+
+**Modular task files** for organization:
+- `tasks/debian_packages.yml` - Debian/Ubuntu package installation
+- `tasks/archlinux_packages.yml` - Arch Linux package installation
+- `tasks/ssh_keys.yml` - SSH authorized_keys configuration (idempotent)
+- `tasks/cleanup.yml` - Template cleanup (machine-id, cloud-init, temp files)
 
 ### Modify Resources
 
@@ -247,6 +335,36 @@ vm_cores    = 4      # Increase CPU cores
 vm_memory   = 8192   # Increase RAM
 vm_disk_size = "50G" # Increase disk
 ```
+
+### Configure SSH Keys
+
+All templates support SSH public key injection via SOPS-encrypted secrets:
+
+**1. Add your SSH public key to SOPS:**
+```bash
+# Edit encrypted secrets file
+sops secrets/proxmox-creds.enc.yaml
+
+# Add your public key
+ssh_public_key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQ... your-email@example.com"
+```
+
+**2. Packer will automatically:**
+- Read `ssh_public_key` from SOPS during build
+- Pass it to Ansible provisioner
+- Configure authorized_keys idempotently using `ansible.posix.authorized_key` module
+- Enable passwordless SSH authentication on cloned VMs
+
+**3. Variable priority:**
+- SOPS encrypted value (recommended for production)
+- Packer variable file (`*.auto.pkrvars.hcl`)
+- Environment variable (`PKR_VAR_ssh_public_key`)
+
+**Benefits:**
+- Secure storage with SOPS + Age encryption
+- Idempotent configuration via Ansible
+- Works across all cloud-image templates
+- No manual SSH key copying required
 
 ## 🔄 Workflow Integration
 

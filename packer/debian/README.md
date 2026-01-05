@@ -2,6 +2,25 @@
 
 This directory contains configuration for building Debian 13 (Trixie) golden images from **official Debian cloud images**. This is the **preferred and recommended approach** for creating Debian templates in Proxmox.
 
+## Recent Updates (2026-01-05)
+
+### Ansible Provisioner Enhancement
+- ✅ **Enhanced**: Consolidated SSH key management and template cleanup into Ansible
+- ✅ **Added**: Modular Ansible task files (`tasks/ssh_keys.yml`, `tasks/cleanup.yml`)
+- ✅ **Added**: SSH public key support via SOPS-encrypted secrets
+- ✅ **Fixed**: Ansible provisioner SSH key libcrypto error (switched to password authentication via sshpass)
+- ✅ **Improved**: Single Ansible provisioner handles packages, SSH keys, and cleanup
+- ✅ **Improved**: Idempotent SSH key configuration using `ansible.posix.authorized_key` module
+
+### Earlier Fixes
+- ✅ **Fixed**: SSH timeout issues by adding `VM.GuestAgent.Audit` permission requirement
+- ✅ **Fixed**: Base image now pre-installs `qemu-guest-agent` via `virt-customize`
+- ✅ **Fixed**: SSH password authentication enabled in cloud image
+- ✅ **Fixed**: Cloud-init exit code 2 now accepted as valid (degraded/done status)
+- ✅ **Updated**: SSH timeout reduced to 5 minutes (was 15 minutes)
+- ✅ **Updated**: All tools managed via Nix (`shell.nix`) with `sshpass` added
+- ✅ **Verified**: Template builds successfully with all baseline packages installed via Ansible
+
 ## Why Cloud Images? (Preferred Method)
 
 ### ✅ Advantages over ISO Build
@@ -27,19 +46,73 @@ If you absolutely need custom disk partitioning or non-standard filesystem layou
 
 ## Prerequisites
 
-### Tools Required
+### Development Environment (REQUIRED)
 
+**⚠️ IMPORTANT:** This project uses **Nix + direnv** for reproducible development environments. All commands in this guide must be run from the Nix shell.
+
+**One-time setup:**
 ```bash
-# Packer 1.14.2+
+# 1. Install Nix (if not already installed)
+# See: https://nixos.org/download.html
+
+# 2. Enable direnv in project root (recommended)
+cd /path/to/infra
+echo "use nix" > .envrc
+direnv allow
+
+# 3. Tools are now automatically available when you enter the directory
+cd /path/to/infra/packer/debian
+packer --version    # >= 1.14.3
+ansible --version   # >= 2.17.0
+```
+
+**Without direnv (manual activation):**
+```bash
+# From project root
+nix-shell
+
+# Now all tools are available
 packer --version
 ```
+
+**Tools automatically provided by Nix shell:**
+- Packer >= 1.14.3
+- Terraform >= 1.14.2
+- Ansible >= 2.17.0
+- sshpass (required for Ansible provisioner)
+- SOPS + Age (for secrets management)
+- libguestfs-tools (virt-customize)
+- All other project dependencies
+
+See `shell.nix` in project root for complete tool list.
+
+### Environment Variables
+
+Create `.envrc` file in project root with Proxmox credentials:
+
+```bash
+# Load Nix environment
+use nix
+
+# Proxmox API credentials (from SOPS encrypted secrets)
+export SOPS_AGE_KEY_FILE="$HOME/.config/sops/age/keys.txt"
+# ... (credentials loaded from secrets/proxmox-creds.enc.yaml)
+```
+
+See `CLAUDE.md` for full setup instructions.
 
 ### Proxmox Setup
 
 Access to Proxmox VE 9.0 host with:
-- API token or password authentication
+- API token with **VM.GuestAgent.Audit** permission (critical!)
 - Storage pool (e.g., tank)
 - Network bridge (e.g., vmbr0)
+
+**Required Proxmox API Permissions:**
+```bash
+# On Proxmox host, add guest agent permission to role
+pveum role modify TerraformProv -privs 'Datastore.AllocateSpace,Datastore.Audit,Pool.Allocate,SDN.Use,Sys.Audit,Sys.Console,Sys.Modify,Sys.PowerMgmt,VM.Allocate,VM.Audit,VM.Clone,VM.Config.CDROM,VM.Config.CPU,VM.Config.Cloudinit,VM.Config.Disk,VM.Config.HWType,VM.Config.Memory,VM.Config.Network,VM.Config.Options,VM.Migrate,VM.PowerMgmt,VM.GuestAgent.Audit'
+```
 
 ## Quick Start
 
@@ -67,14 +140,22 @@ This creates a base VM (`debian-13-cloud-base`) that Packer will clone and custo
 **What the script does:**
 1. Downloads official Debian 13 cloud image
 2. Verifies SHA512 checksum
-3. Imports to Proxmox as VM disk
-4. Configures VM with cloud-init
-5. Enables QEMU guest agent
+3. **Customizes image** using `virt-customize`:
+   - Installs `qemu-guest-agent` (required for Packer IP detection)
+   - Enables SSH password authentication
+   - Disables root login
+4. Imports customized image to Proxmox as VM disk
+5. Configures VM with cloud-init and DHCP networking
 6. Sets up default user (debian/debian)
+
+**Note**: The script requires `libguestfs-tools` on the Proxmox host, which is installed automatically if missing.
 
 ### Step 2: Configure Packer
 
+**⚠️ All following commands must be run from Nix shell** (auto-activated with direnv, or run `nix-shell` manually)
+
 ```bash
+# Ensure you're in Nix shell environment
 cd packer/debian
 
 # Copy example configuration
@@ -98,8 +179,10 @@ vm_disk_storage = "tank"
 
 ### Step 3: Build Template
 
+**⚠️ Reminder:** Ensure you're in the Nix shell environment (direnv auto-activates, or run `nix-shell`)
+
 ```bash
-# Initialize Packer plugins
+# Initialize Packer plugins (from Nix shell)
 packer init .
 
 # Validate configuration
@@ -185,30 +268,70 @@ runcmd:
 
 ### Add Packages to Template
 
-Edit `debian.pkr.hcl` provisioner:
+The template uses a unified Ansible provisioner for all configuration. To add packages, edit the package list in `ansible/packer-provisioning/tasks/debian_packages.yml`:
+
+```yaml
+# Add your custom packages to common_packages variable
+- name: Install baseline packages (Debian/Ubuntu)
+  ansible.builtin.apt:
+    name:
+      - vim
+      - git
+      - docker.io    # Add custom packages here
+      - nginx
+      - postgresql
+    state: present
+    update_cache: yes
+```
+
+### Configure SSH Keys
+
+SSH public keys are automatically configured from SOPS-encrypted secrets:
+
+```bash
+# Edit encrypted secrets
+sops secrets/proxmox-creds.enc.yaml
+
+# Add your SSH public key
+ssh_public_key: "ssh-rsa AAAAB3NzaC1yc2E... your-email@example.com"
+```
+
+The Ansible provisioner will:
+- Read the key from SOPS during build
+- Configure authorized_keys idempotently
+- Enable passwordless SSH on cloned VMs
+
+### Unified Ansible Provisioner
+
+The template uses a single Ansible provisioner that handles:
 
 ```hcl
-provisioner "shell" {
-  inline = [
-    "sudo apt-get install -y",
-    "  docker.io",
-    "  nginx",
-    "  postgresql",
-    "  redis-server"
+provisioner "ansible" {
+  playbook_file = "../../ansible/packer-provisioning/install_baseline_packages.yml"
+  user          = "debian"
+  use_proxy     = false
+  use_sftp      = true
+
+  extra_arguments = [
+    "--extra-vars", "ansible_python_interpreter=/usr/bin/python3",
+    "--extra-vars", "ansible_password=${var.ssh_password}",
+    "--extra-vars", "packer_ssh_user=debian",
+    "--extra-vars", "ssh_public_key=${var.ssh_public_key}",
+    "--ssh-common-args", "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null",
+    "-vv"
+  ]
+
+  ansible_env_vars = [
+    "ANSIBLE_HOST_KEY_CHECKING=False",
+    "ANSIBLE_SSH_ARGS=-o ControlMaster=auto -o ControlPersist=60s -o StrictHostKeyChecking=no"
   ]
 }
 ```
 
-### Run Ansible Playbook
-
-Add ansible provisioner to `debian.pkr.hcl`:
-
-```hcl
-provisioner "ansible" {
-  playbook_file = "../../ansible/playbooks/debian-baseline.yml"
-  user          = "debian"
-}
-```
+**What it does:**
+1. Installs baseline packages (via `tasks/debian_packages.yml`)
+2. Configures SSH authorized_keys (via `tasks/ssh_keys.yml`)
+3. Cleans up template (via `tasks/cleanup.yml`)
 
 ## Troubleshooting
 
@@ -241,11 +364,53 @@ Error: VM with ID 9110 not found
 Timeout waiting for SSH
 ```
 
-**Solution**:
-- Start base VM manually to test: `qm start 9110`
-- Check it gets IP: `qm guest cmd 9110 network-get-interfaces`
-- Test SSH: `ssh debian@<ip>` (password: debian)
-- Check firewall allows port 22
+**Common causes and solutions**:
+
+1. **Missing guest agent permission** (most common):
+   ```
+   403 Permission check failed (VM.GuestAgent.Audit|VM.GuestAgent.Unrestricted)
+   ```
+   **Solution**: Add `VM.GuestAgent.Audit` to Proxmox API token role (see Prerequisites)
+
+2. **Guest agent not installed**:
+   - The import script installs it automatically
+   - Verify: `qm guest cmd 9110 network-get-interfaces`
+   - If missing, re-run import script with updated version
+
+3. **Network/DHCP issues**:
+   - Start base VM manually: `qm start 9110`
+   - Check IP assignment: `qm guest cmd 9110 network-get-interfaces`
+   - Test SSH: `ssh debian@<ip>` (password: debian)
+
+4. **SSH timeout too short**:
+   - Current timeout: 5 minutes (configurable in `debian.pkr.hcl`)
+   - Cloud-init can take 1-2 minutes to complete
+
+### Issue: Cloud-init status returns exit code 2
+
+```
+Script exited with non-zero exit status: 2
+```
+
+**This is expected** - Proxmox cloud-init generates deprecation warnings causing "degraded done" status. The template accepts exit codes 0 and 2 as valid.
+
+**Verify**: `cloud-init status --long` on VM shows `extended_status: degraded done`
+
+### Issue: Ansible provisioner fails with libcrypto error (RESOLVED)
+
+```
+Load key "/tmp/ansible-key...": error in libcrypto
+```
+
+**Status**: ✅ **FIXED** (2026-01-05)
+
+**Solution**: Switched from SSH key authentication to password authentication via `sshpass`:
+- Added `use_sftp = true` for file transfer
+- Added `ansible_password` variable for password authentication
+- Configured Ansible environment variables to disable host key checking
+- Added verbose logging (`-vv`) for debugging
+
+**Result**: Ansible provisioner now works perfectly and installs all baseline packages during template build.
 
 ## Best Practices
 
