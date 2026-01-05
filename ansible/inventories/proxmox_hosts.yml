@@ -48,7 +48,8 @@ all:
         ansible_port: 22
 
         # GPU passthrough configuration
-        has_gpu: false  # Set to true if this host has NVIDIA GPU for passthrough
+        # Set to true if this host has NVIDIA GPU for passthrough
+        has_gpu: true
 
         # ZFS ARC memory limit (GB) - adjust based on total system RAM
         # Recommended: 16GB for 96GB system

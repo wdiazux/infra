@@ -226,7 +226,7 @@ Install if needed (see `../docs/versions.md`).
 **API Token:**
 ```
 Proxmox Web UI → Datacenter → Permissions → API Tokens → Add
-- User: terraform@pam
+- User: terraform@pve
 - Token ID: terraform-token
 - Privileges: PVEVMAdmin, PVEDatastoreUser, PVETemplateUser
 ```
@@ -325,7 +325,7 @@ Edit `terraform.tfvars` with your values:
 ```hcl
 # Proxmox
 proxmox_url      = "https://your-proxmox:8006/api2/json"
-proxmox_api_token = "PVEAPIToken=terraform@pam!terraform-token=your-secret"
+proxmox_api_token = "PVEAPIToken=terraform@pve!terraform-token=your-secret"
 proxmox_node     = "pve"
 
 # Talos template (from Packer)

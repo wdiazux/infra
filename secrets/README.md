@@ -99,7 +99,7 @@ source ~/.bashrc  # or source ~/.zshrc
 ```bash
 cat > secrets/proxmox-creds-plaintext.yaml << EOF
 proxmox_url: "https://proxmox.example.com:8006/api2/json"
-proxmox_user: "terraform@pam"
+proxmox_user: "terraform@pve"
 proxmox_token_id: "terraform-token"
 proxmox_token_secret: "your-secret-token-here"
 EOF
@@ -339,7 +339,7 @@ File: `secrets/proxmox-creds.enc.yaml`
 ```yaml
 # Proxmox API credentials for Terraform
 proxmox_url: "https://proxmox.example.com:8006/api2/json"
-proxmox_user: "terraform@pam"
+proxmox_user: "terraform@pve"
 proxmox_token_id: "terraform-token"
 proxmox_token_secret: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 ```

@@ -92,8 +92,8 @@ module "debian_vm" {
   # VM identification
   vm_name     = var.debian_vm_name
   vm_id       = var.debian_vm_id
-  description = "Debian 12 (Bookworm) VM - Stable server workloads"
-  tags        = concat(["debian", "linux", "stable"], var.common_tags)
+  description = "Debian 13 (Trixie) VM - Stable server workloads with baseline packages pre-installed"
+  tags        = concat(["debian", "linux", "testing"], var.common_tags)
 
   # Hardware configuration
   cpu_type   = var.debian_cpu_type
