@@ -22,8 +22,47 @@
   community.general.pacman:
     name:
       - ufw
-      - crowdsec
-      - crowdsec-firewall-bouncer-nftables
       - gnupg
     state: present
   tags: [arch]
+
+- name: Install paru dependencies (Arch Linux)
+  community.general.pacman:
+    name:
+      - base-devel
+      - git
+      - rustup
+    state: present
+  tags: [arch, paru]
+
+- name: Create temporary directory for paru installation
+  ansible.builtin.file:
+    path: /tmp/paru-install
+    state: directory
+    mode: '0755'
+  tags: [arch, paru]
+
+- name: Clone paru-bin from AUR
+  ansible.builtin.git:
+    repo: https://aur.archlinux.org/paru-bin.git
+    dest: /tmp/paru-install/paru-bin
+    version: master
+  become: yes
+  become_user: "{{ packer_ssh_user }}"
+  tags: [arch, paru]
+
+- name: Build and install paru
+  ansible.builtin.shell: |
+    cd /tmp/paru-install/paru-bin
+    makepkg -si --noconfirm
+  become: yes
+  become_user: "{{ packer_ssh_user }}"
+  args:
+    creates: /usr/bin/paru
+  tags: [arch, paru]
+
+- name: Clean up paru installation directory
+  ansible.builtin.file:
+    path: /tmp/paru-install
+    state: absent
+  tags: [arch, paru]
