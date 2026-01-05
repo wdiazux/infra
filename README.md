@@ -89,11 +89,17 @@ export SOPS_AGE_KEY_FILE="$HOME/.config/sops/age/keys.txt"
 
 **3. Configure Proxmox credentials:**
 ```bash
-# Copy example secrets file
-cp secrets/proxmox-creds.enc.yaml.example secrets/proxmox-creds.enc.yaml
+# Copy template to plaintext file
+cp secrets/TEMPLATE-proxmox-creds.yaml secrets/proxmox-creds-plaintext.yaml
 
-# Edit and encrypt with SOPS
-sops secrets/proxmox-creds.enc.yaml
+# Edit the plaintext file with your actual values
+vim secrets/proxmox-creds-plaintext.yaml
+
+# Encrypt with SOPS
+sops -e secrets/proxmox-creds-plaintext.yaml > secrets/proxmox-creds.enc.yaml
+
+# Delete the plaintext file (never commit unencrypted secrets!)
+rm secrets/proxmox-creds-plaintext.yaml
 ```
 
 **4. Review and customize variables:**
