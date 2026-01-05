@@ -7,19 +7,19 @@
 variable "proxmox_url" {
   type        = string
   description = "Proxmox API endpoint URL"
-  default     = "https://pve.home-infra.net:8006/api2/json"
+  default     = env("PROXMOX_URL")
 }
 
 variable "proxmox_username" {
   type        = string
-  description = "Proxmox username (format: user@pve for API-only access)"
-  default     = "root@pve"
+  description = "Proxmox token ID (format: user@realm!tokenid)"
+  default     = env("PROXMOX_USERNAME")
   sensitive   = true
 }
 
 variable "proxmox_token" {
   type        = string
-  description = "Proxmox API token"
+  description = "Proxmox API token secret"
   default     = env("PROXMOX_TOKEN")
   sensitive   = true
 }
@@ -106,4 +106,16 @@ variable "ssh_password" {
   description = "SSH password (default from cloud image)"
   default     = "debian"
   sensitive   = true
+}
+
+variable "ssh_public_key" {
+  type        = string
+  description = "SSH public key to add to the template (optional)"
+  default     = ""
+}
+
+variable "ssh_public_key_file" {
+  type        = string
+  description = "Path to SSH public key file (e.g., ~/.ssh/id_rsa.pub)"
+  default     = ""
 }

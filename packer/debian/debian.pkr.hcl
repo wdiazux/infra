@@ -28,13 +28,14 @@ locals {
 source "proxmox-clone" "debian" {
   # Proxmox connection
   proxmox_url              = var.proxmox_url
-  username                 = var.proxmox_username
-  token                    = var.proxmox_token
+  username                 = var.proxmox_username  # Token ID format: user@realm!tokenid
+  token                    = var.proxmox_token     # Just the token secret
   node                     = var.proxmox_node
   insecure_skip_tls_verify = var.proxmox_skip_tls_verify
 
   # Clone from uploaded cloud image VM
   clone_vm_id = var.cloud_image_vm_id
+  full_clone  = true  # Use full clone instead of linked clone
 
   # VM configuration
   vm_id                = var.vm_id
@@ -49,6 +50,9 @@ source "proxmox-clone" "debian" {
   # Memory
   memory = var.vm_memory
 
+  # Disk configuration
+  scsi_controller = "virtio-scsi-single"
+
   # Network configuration
   network_adapters {
     model  = "virtio"
@@ -61,11 +65,23 @@ source "proxmox-clone" "debian" {
   # Cloud-init (already in cloud image)
   cloud_init              = true
   cloud_init_storage_pool = var.vm_disk_storage
+  cloud_init_disk_type    = "scsi"  # Better performance than default "ide"
+
+  # Force IP configuration via cloud-init (DHCP)
+  ipconfig {
+    ip = "dhcp"
+  }
+
+  # DNS configuration
+  nameserver = "10.10.2.1"
 
   # SSH configuration
   ssh_username = "debian"
   ssh_password = var.ssh_password
-  ssh_timeout  = "10m"
+  ssh_timeout  = "5m"
+
+  # Add handshake attempts
+  ssh_handshake_attempts = 50
 
   # Template settings
   os = "l26"
@@ -82,32 +98,37 @@ build {
       "cloud-init status --wait",
       "echo 'Cloud-init ready!'"
     ]
+    # Accept exit code 2 (degraded/done) due to Proxmox cloud-init deprecation warnings
+    valid_exit_codes = [0, 2]
   }
 
-  # Install baseline packages with Ansible
+  # Install baseline packages, configure SSH keys, and cleanup with Ansible
+  # This provisioner handles:
+  #   1. Package installation (via OS-specific tasks)
+  #   2. SSH key configuration (idempotent, from SOPS or direct variable)
+  #   3. Template cleanup (machine-id reset, temp files, cloud-init data)
   provisioner "ansible" {
     playbook_file = "../../ansible/packer-provisioning/install_baseline_packages.yml"
     user          = "debian"
     use_proxy     = false
 
-    # Ansible variables passed to playbook
-    extra_arguments = [
-      "--extra-vars", "ansible_python_interpreter=/usr/bin/python3"
-    ]
-  }
+    # Use SFTP for file transfer (recommended by Packer, replaces deprecated SCP)
+    use_sftp = true
 
-  # Clean up
-  provisioner "shell" {
-    inline = [
-      "sudo apt-get autoremove -y",
-      "sudo apt-get clean",
-      "sudo rm -rf /tmp/*",
-      "sudo rm -rf /var/tmp/*",
-      "sudo cloud-init clean --logs --seed",
-      "sudo truncate -s 0 /etc/machine-id",
-      "sudo rm -f /var/lib/dbus/machine-id",
-      "sudo ln -s /etc/machine-id /var/lib/dbus/machine-id",
-      "sudo sync"
+    # Ansible variables and SSH configuration
+    extra_arguments = [
+      "--extra-vars", "ansible_python_interpreter=/usr/bin/python3",
+      "--extra-vars", "ansible_password=${var.ssh_password}",
+      "--extra-vars", "packer_ssh_user=debian",
+      "--extra-vars", "ssh_public_key=${var.ssh_public_key}",
+      "--ssh-common-args", "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null",
+      "-vv"  # Verbose output for debugging
+    ]
+
+    # Use password authentication via sshpass (already in Nix shell.nix)
+    ansible_env_vars = [
+      "ANSIBLE_HOST_KEY_CHECKING=False",
+      "ANSIBLE_SSH_ARGS=-o ControlMaster=auto -o ControlPersist=60s -o StrictHostKeyChecking=no"
     ]
   }
 

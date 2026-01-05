@@ -28,6 +28,10 @@
       - python3
       - python3-pip
 
+    # SSH configuration (can be overridden from SOPS or Packer variables)
+    # ssh_public_key: defined externally or empty
+    # packer_ssh_user: defined externally (debian, ubuntu, root, etc.)
+
   tasks:
     # ==========================================================================
     # Display Build Information
@@ -67,6 +71,22 @@
       tags: [windows]
 
     # ==========================================================================
+    # SSH Key Configuration
+    # ==========================================================================
+
+    - name: Include SSH key configuration tasks
+      ansible.builtin.include_tasks: tasks/ssh_keys.yml
+      tags: [ssh]
+
+    # ==========================================================================
+    # Template Cleanup
+    # ==========================================================================
+
+    - name: Include cleanup tasks
+      ansible.builtin.include_tasks: tasks/cleanup.yml
+      tags: [cleanup]
+
+    # ==========================================================================
     # Post-Installation Summary
     # ==========================================================================
 
@@ -77,7 +97,9 @@
           Baseline Package Installation Complete
           ============================================================
           OS: {{ ansible_distribution }} {{ ansible_distribution_version }}
-          Packages installed successfully
+          Packages installed: {{ common_packages | length }}
+          SSH key configured: {{ 'Yes' if ssh_public_key is defined and ssh_public_key != '' else 'No' }}
+          Template cleanup: Complete
           Golden image ready for cloning
           ============================================================
       tags: [always]

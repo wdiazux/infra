@@ -1,0 +1,57 @@
+---
+# SSH Key Management Tasks for Packer Provisioning
+# This file manages SSH authorized_keys for template users
+#
+# Variables:
+#   - ssh_public_key: The SSH public key to add (from SOPS or direct variable)
+#   - packer_ssh_user: The username for SSH key (e.g., debian, ubuntu, root)
+
+- name: Check if SSH public key is provided
+  ansible.builtin.set_fact:
+    has_ssh_key: "{{ ssh_public_key is defined and ssh_public_key != '' and ssh_public_key != 'ssh-rsa AAAAB3NzaC1yc2E... your-public-key-here' }}"
+  tags: [ssh]
+
+- name: Display SSH key configuration status
+  ansible.builtin.debug:
+    msg: |
+      ============================================================
+      SSH Key Configuration
+      ============================================================
+      User: {{ packer_ssh_user }}
+      Key provided: {{ 'Yes' if has_ssh_key else 'No' }}
+      Home directory: {{ ansible_env.HOME if packer_ssh_user == 'root' else '/home/' + packer_ssh_user }}
+      ============================================================
+  tags: [ssh]
+
+- name: Ensure .ssh directory exists with correct permissions
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME if packer_ssh_user == 'root' else '/home/' + packer_ssh_user }}/.ssh"
+    state: directory
+    owner: "{{ packer_ssh_user }}"
+    group: "{{ packer_ssh_user }}"
+    mode: '0700'
+  when: has_ssh_key
+  tags: [ssh]
+
+- name: Add SSH public key to authorized_keys
+  ansible.posix.authorized_key:
+    user: "{{ packer_ssh_user }}"
+    key: "{{ ssh_public_key }}"
+    state: present
+    manage_dir: yes
+    exclusive: no
+    comment: "Added by Packer build"
+  when: has_ssh_key
+  tags: [ssh]
+
+- name: Display SSH key addition success
+  ansible.builtin.debug:
+    msg: "✅ SSH public key added successfully for user {{ packer_ssh_user }}"
+  when: has_ssh_key
+  tags: [ssh]
+
+- name: Display skip message
+  ansible.builtin.debug:
+    msg: "⏭️  No SSH public key provided - using password authentication only"
+  when: not has_ssh_key
+  tags: [ssh]

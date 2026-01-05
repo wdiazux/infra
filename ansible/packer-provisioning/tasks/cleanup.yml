@@ -1,0 +1,95 @@
+---
+# Cleanup Tasks for Packer Provisioning
+# This file handles template cleanup before conversion
+#
+# These tasks ensure the template is properly cleaned for cloning
+
+- name: Display cleanup information
+  ansible.builtin.debug:
+    msg: |
+      ============================================================
+      Template Cleanup
+      ============================================================
+      OS Family: {{ ansible_os_family }}
+      Distribution: {{ ansible_distribution }}
+      Cleaning temporary files and preparing for template conversion
+      ============================================================
+  tags: [cleanup]
+
+# =============================================================================
+# Debian/Ubuntu Cleanup
+# =============================================================================
+
+- name: Remove unnecessary packages (Debian/Ubuntu)
+  ansible.builtin.apt:
+    autoremove: yes
+    autoclean: yes
+  when: ansible_os_family == "Debian"
+  tags: [cleanup, debian, ubuntu]
+
+- name: Clean APT cache (Debian/Ubuntu)
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /var/cache/apt/archives/*.deb
+    - /var/cache/apt/*.bin
+  when: ansible_os_family == "Debian"
+  tags: [cleanup, debian, ubuntu]
+
+# =============================================================================
+# Arch Linux Cleanup
+# =============================================================================
+
+- name: Clean Pacman cache (Arch)
+  ansible.builtin.command: pacman -Scc --noconfirm
+  when: ansible_os_family == "Archlinux"
+  changed_when: true
+  tags: [cleanup, arch]
+
+# =============================================================================
+# Common Cleanup (All Distributions)
+# =============================================================================
+
+- name: Remove temporary files
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /tmp/*
+    - /var/tmp/*
+  tags: [cleanup]
+
+- name: Clean cloud-init data
+  ansible.builtin.command: cloud-init clean --logs --seed
+  changed_when: true
+  failed_when: false  # Don't fail if cloud-init not present
+  tags: [cleanup]
+
+- name: Reset machine-id for proper cloning
+  ansible.builtin.command: truncate -s 0 /etc/machine-id
+  changed_when: true
+  tags: [cleanup]
+
+- name: Remove dbus machine-id
+  ansible.builtin.file:
+    path: /var/lib/dbus/machine-id
+    state: absent
+  tags: [cleanup]
+
+- name: Create symlink for dbus machine-id
+  ansible.builtin.file:
+    src: /etc/machine-id
+    dest: /var/lib/dbus/machine-id
+    state: link
+  tags: [cleanup]
+
+- name: Sync filesystem
+  ansible.builtin.command: sync
+  changed_when: false
+  tags: [cleanup]
+
+- name: Display cleanup completion
+  ansible.builtin.debug:
+    msg: "✅ Template cleanup completed successfully"
+  tags: [cleanup]
