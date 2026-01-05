@@ -129,9 +129,9 @@ data "talos_machine_configuration" "node" {
         # Longhorn requirements: kernel modules
         kernel = {
           modules = [
-            { name = "nbd" }
-            { name = "iscsi_tcp" }
-            { name = "iscsi_generic" }
+            { name = "nbd" },
+            { name = "iscsi_tcp" },
+            { name = "iscsi_generic" },
             { name = "configfs" }
           ]
         }
