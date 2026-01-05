@@ -48,8 +48,8 @@ locals {
 source "proxmox-iso" "talos" {
   # Proxmox connection
   proxmox_url              = var.proxmox_url
-  username                 = var.proxmox_username
-  token                    = var.proxmox_token
+  username                 = var.proxmox_username  # Token ID format: user@realm!tokenid
+  token                    = var.proxmox_token     # Just the token secret
   node                     = var.proxmox_node
   insecure_skip_tls_verify = var.proxmox_skip_tls_verify
 
@@ -81,6 +81,7 @@ source "proxmox-iso" "talos" {
     format       = "raw"
     cache_mode   = "writethrough"
     io_thread    = true
+    discard      = true  # Enable TRIM for ZFS storage efficiency
   }
 
   # Network configuration
@@ -178,6 +179,8 @@ build {
 #
 # 2. Set variables in talos.auto.pkrvars.hcl:
 #    proxmox_url         = "https://your-proxmox:8006/api2/json"
+  username                 = var.proxmox_username  # Token ID format: user@realm!tokenid
+  token                    = var.proxmox_token     # Just the token secret
 #    proxmox_username    = "root@pam"
 #    proxmox_token       = "PVEAPIToken=user@pam!token=secret"
 #    proxmox_node        = "pve"

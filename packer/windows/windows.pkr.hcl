@@ -29,8 +29,8 @@ locals {
 source "proxmox-iso" "windows" {
   # Proxmox connection
   proxmox_url              = var.proxmox_url
-  username                 = var.proxmox_username
-  token                    = var.proxmox_token
+  username                 = var.proxmox_username  # Token ID format: user@realm!tokenid
+  token                    = var.proxmox_token     # Just the token secret
   node                     = var.proxmox_node
   insecure_skip_tls_verify = var.proxmox_skip_tls_verify
 
@@ -69,6 +69,7 @@ source "proxmox-iso" "windows" {
     format       = "raw"
     cache_mode   = "writethrough"
     io_thread    = true
+    discard      = true  # Enable TRIM for ZFS storage efficiency
   }
 
   # Network configuration
