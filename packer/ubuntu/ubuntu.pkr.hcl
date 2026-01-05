@@ -67,6 +67,13 @@ source "proxmox-clone" "ubuntu" {
   ssh_password = var.ssh_password
   ssh_timeout  = "10m"
 
+  # Console configuration
+  # Use standard VGA for console access (not serial)
+  # This prevents "starting serial terminal" message in console
+  vga {
+    type = "std"
+  }
+
   # Template settings
   os = "l26"
 }

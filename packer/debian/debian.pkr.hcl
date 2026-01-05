@@ -9,7 +9,7 @@ packer {
   required_plugins {
     proxmox = {
       source  = "github.com/hashicorp/proxmox"
-      version = ">= 1.2.3"  # Latest version as of Dec 2025
+      version = ">= 1.2.3" # Latest version as of Dec 2025
     }
     ansible = {
       source  = "github.com/hashicorp/ansible"
@@ -28,14 +28,14 @@ locals {
 source "proxmox-clone" "debian" {
   # Proxmox connection
   proxmox_url              = var.proxmox_url
-  username                 = var.proxmox_username  # Token ID format: user@realm!tokenid
-  token                    = var.proxmox_token     # Just the token secret
+  username                 = var.proxmox_username # Token ID format: user@realm!tokenid
+  token                    = var.proxmox_token    # Just the token secret
   node                     = var.proxmox_node
   insecure_skip_tls_verify = var.proxmox_skip_tls_verify
 
   # Clone from uploaded cloud image VM
   clone_vm_id = var.cloud_image_vm_id
-  full_clone  = true  # Use full clone instead of linked clone
+  full_clone  = true # Use full clone instead of linked clone
 
   # VM configuration
   vm_id                = var.vm_id
@@ -65,7 +65,7 @@ source "proxmox-clone" "debian" {
   # Cloud-init (already in cloud image)
   cloud_init              = true
   cloud_init_storage_pool = var.vm_disk_storage
-  cloud_init_disk_type    = "scsi"  # Better performance than default "ide"
+  cloud_init_disk_type    = "scsi" # Better performance than default "ide"
 
   # Force IP configuration via cloud-init (DHCP)
   ipconfig {
@@ -82,6 +82,13 @@ source "proxmox-clone" "debian" {
 
   # Add handshake attempts
   ssh_handshake_attempts = 50
+
+  # Console configuration
+  # Use standard VGA for console access (not serial)
+  # This prevents "starting serial terminal" message in console
+  vga {
+    type = "std"
+  }
 
   # Template settings
   os = "l26"
@@ -122,7 +129,7 @@ build {
       "--extra-vars", "packer_ssh_user=debian",
       "--extra-vars", "ssh_public_key=${var.ssh_public_key}",
       "--ssh-common-args", "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null",
-      "-vv"  # Verbose output for debugging
+      "-vv" # Verbose output for debugging
     ]
 
     # Use password authentication via sshpass (already in Nix shell.nix)
@@ -137,13 +144,13 @@ build {
     output     = "manifest.json"
     strip_path = true
     custom_data = {
-      debian_version   = var.debian_version
-      build_time       = timestamp()
-      template_name    = local.template_name
-      proxmox_node     = var.proxmox_node
-      cloud_image      = true
-      cloud_init       = true
-      qemu_agent       = true
+      debian_version = var.debian_version
+      build_time     = timestamp()
+      template_name  = local.template_name
+      proxmox_node   = var.proxmox_node
+      cloud_image    = true
+      cloud_init     = true
+      qemu_agent     = true
     }
   }
 }
