@@ -38,6 +38,8 @@ secrets/*.key
 *.age
 keys.txt
 .sops.yaml.bak
+*-plaintext.yaml
+*-plaintext.yml
 
 # IMPORTANT: Encrypted files with .enc.yaml extension are SAFE to commit
 # Do NOT add *.enc.yaml to .gitignore
@@ -71,3 +73,4 @@ id_ed25519*
 # (versioned files should use SOPS encryption)
 user-data-plaintext.yaml
 .venv/
+.direnv/
