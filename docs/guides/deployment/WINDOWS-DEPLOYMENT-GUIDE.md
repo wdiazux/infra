@@ -157,7 +157,7 @@ vim windows.auto.pkrvars.hcl
 # Proxmox Connection
 proxmox_url      = "https://proxmox.local:8006/api2/json"
 proxmox_username = "root@pam"
-proxmox_token    = "PVEAPIToken=terraform@pam!terraform-token=xxxxxxxx"
+proxmox_token    = "PVEAPIToken=terraform@pve!terraform-token=xxxxxxxx"
 proxmox_node     = "pve"
 proxmox_skip_tls_verify = true
 
@@ -313,7 +313,7 @@ vim terraform.tfvars
 # Proxmox Connection
 proxmox_url      = "https://proxmox.local:8006/api2/json"
 proxmox_username = "root@pam"
-proxmox_token    = "PVEAPIToken=terraform@pam!terraform-token=xxxxxxxx"
+proxmox_token    = "PVEAPIToken=terraform@pve!terraform-token=xxxxxxxx"
 proxmox_node     = "pve"
 
 # Windows VM Configuration

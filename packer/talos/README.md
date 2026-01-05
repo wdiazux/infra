@@ -35,7 +35,7 @@ sudo mv packer /usr/local/bin/
    ```
    Proxmox Web UI → Datacenter → Permissions → API Tokens → Add
    ```
-   - User: `terraform@pam` (or create dedicated user)
+   - User: `terraform@pve` (or create dedicated user)
    - Token ID: `terraform-token`
    - Privilege Separation: Unchecked (inherit user permissions)
    - Save the secret securely
@@ -142,8 +142,8 @@ Edit `talos.auto.pkrvars.hcl` with your values:
 ```hcl
 # Proxmox connection
 proxmox_url      = "https://proxmox.local:8006/api2/json"
-proxmox_username = "root@pam"
-proxmox_token    = "PVEAPIToken=terraform@pam!terraform-token=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+proxmox_username = "terraform@pve"
+proxmox_token    = "PVEAPIToken=terraform@pve!terraform-token=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 proxmox_node     = "pve"
 
 # Talos configuration
@@ -359,7 +359,7 @@ qm destroy <vmid>
 **Solution**: Grant additional roles to API token user:
 ```bash
 pveum role add PVETemplateUser -privs "VM.Allocate VM.Clone VM.Config.CDROM VM.Config.CPU VM.Config.Disk VM.Config.HWType VM.Config.Memory VM.Config.Network VM.Config.Options VM.Monitor VM.Audit VM.PowerMgmt Datastore.AllocateSpace Datastore.Audit"
-pveum aclmod / -user terraform@pam -role PVETemplateUser
+pveum aclmod / -user terraform@pve -role PVETemplateUser
 ```
 
 ### Issue: Template builds but can't boot

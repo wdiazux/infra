@@ -149,8 +149,8 @@ vim talos.auto.pkrvars.hcl
 ```hcl
 # Proxmox Connection
 proxmox_url      = "https://proxmox.local:8006/api2/json"
-proxmox_username = "root@pam"
-proxmox_token    = "PVEAPIToken=terraform@pam!terraform-token=xxxxxxxx"
+proxmox_username = "terraform@pve"
+proxmox_token    = "PVEAPIToken=terraform@pve!terraform-token=xxxxxxxx"
 proxmox_node     = "pve"
 proxmox_skip_tls_verify = true
 
@@ -241,8 +241,8 @@ vim terraform.tfvars
 ```hcl
 # Proxmox Connection
 proxmox_url      = "https://proxmox.local:8006/api2/json"
-proxmox_username = "root@pam"
-proxmox_token    = "PVEAPIToken=terraform@pam!terraform-token=xxxxxxxx"
+proxmox_username = "terraform@pve"
+proxmox_token    = "PVEAPIToken=terraform@pve!terraform-token=xxxxxxxx"
 proxmox_node     = "pve"
 
 # Talos Configuration

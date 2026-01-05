@@ -8,8 +8,8 @@ set -e
 
 # Configuration
 VM_ID=${1:-9110}
-VM_NAME="debian-12-cloud-base"
-DEBIAN_VERSION="12"
+VM_NAME="debian-13-cloud-base"
+DEBIAN_VERSION="13"
 DEBIAN_RELEASE="trixie"
 STORAGE_POOL="tank"
 BRIDGE="vmbr0"
@@ -35,6 +35,20 @@ fi
 echo "==> Verifying checksum..."
 wget -q "https://cloud.debian.org/images/cloud/${DEBIAN_RELEASE}/latest/SHA512SUMS" -O SHA512SUMS
 sha512sum -c SHA512SUMS --ignore-missing
+
+# Customize cloud image to install qemu-guest-agent and enable password auth
+echo "==> Customizing cloud image..."
+if ! command -v virt-customize &> /dev/null; then
+    echo "    ERROR: virt-customize not found. Installing libguestfs-tools..."
+    apt-get update && apt-get install -y libguestfs-tools
+fi
+
+echo "    - Installing qemu-guest-agent"
+echo "    - Enabling password authentication"
+virt-customize -a "${CLOUD_IMAGE_FILE}" \
+  --install qemu-guest-agent \
+  --run-command "sed -i 's/^#\?PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config" \
+  --run-command "sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config"
 
 # Create VM
 echo "==> Creating VM ${VM_ID}..."
@@ -71,6 +85,20 @@ qm set ${VM_ID} --agent enabled=1
 # Set default CloudInit user
 echo "==> Configuring default CloudInit user..."
 qm set ${VM_ID} --ciuser debian --cipassword debian
+
+# Configure network to use DHCP
+echo "==> Configuring network to use DHCP..."
+qm set ${VM_ID} --ipconfig0 ip=dhcp
+
+# Add SSH key for passwordless authentication
+echo "==> Adding SSH public key..."
+SSH_KEY_FILE="/root/.ssh/id_rsa.pub"
+if [ -f "$SSH_KEY_FILE" ]; then
+    qm set ${VM_ID} --sshkeys "$SSH_KEY_FILE"
+    echo "    SSH key added from $SSH_KEY_FILE"
+else
+    echo "    Warning: No SSH key found at $SSH_KEY_FILE - password auth only"
+fi
 
 # Resize disk (optional, increases from ~2GB to specified size)
 echo "==> Resizing disk to 20GB..."
