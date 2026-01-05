@@ -13,14 +13,14 @@
   listen: restart ssh
 
 # ==============================================================================
-# Fail2ban Service
+# CrowdSec Service
 # ==============================================================================
 
-- name: restart fail2ban
+- name: restart crowdsec
   ansible.builtin.service:
-    name: fail2ban
+    name: crowdsec
     state: restarted
-  listen: restart fail2ban
+  listen: restart crowdsec
 
 # ==============================================================================
 # Firewall Services

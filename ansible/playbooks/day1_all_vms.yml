@@ -37,7 +37,7 @@
           - System updates (post-deployment)
           - Timezone and locale
           - Hostname configuration
-          - Security hardening (SSH, firewall, fail2ban)
+          - Security hardening (SSH, firewall, crowdsec)
           - NFS mounts (if configured)
           - Optional Docker/Podman (instance-specific)
 

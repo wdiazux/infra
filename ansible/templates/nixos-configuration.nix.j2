@@ -74,22 +74,23 @@
     allowedTCPPorts = [ {{ firewall_allowed_ports | join(' ') }} ];
   };
 
-  # Fail2ban configuration
-  services.fail2ban = {
+  # CrowdSec configuration
+  services.crowdsec = {
     enable = true;
-    maxretry = 5;
-    bantime = "1h";
-    ignoreIP = [ "127.0.0.1/8" ];
-    jails = {
-      sshd = ''
-        enabled = true
-        port = ssh
-        filter = sshd
-        logpath = /var/log/auth.log
-        maxretry = 5
-        findtime = 10m
-        bantime = 1h
-      '';
+    allowLocalJournalAccess = true;
+    settings = {
+      api.server = {
+        listen_uri = "127.0.0.1:8080";
+      };
+    };
+  };
+
+  # CrowdSec firewall bouncer
+  services.crowdsec-firewall-bouncer = {
+    enable = true;
+    settings = {
+      api_url = "http://127.0.0.1:8080";
+      api_key = ""; # Auto-generated on first run
     };
   };
 

@@ -25,7 +25,8 @@ os_package_map:
 # Security packages (OS-specific)
 os_security_packages:
   - ufw
-  - fail2ban
+  - crowdsec
+  - crowdsec-firewall-bouncer-iptables
   - unattended-upgrades
   - apt-listchanges
 
@@ -37,4 +38,4 @@ os_upgrade_command: "apt upgrade -y"
 # Service names (OS-specific)
 os_ssh_service: ssh
 os_firewall_service: ufw
-os_fail2ban_service: fail2ban
+os_crowdsec_service: crowdsec

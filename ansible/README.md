@@ -166,7 +166,7 @@ ansible-playbook playbooks/day0-proxmox-prep.yml
 - Timezone and locale configuration
 - SSH hardening (Linux)
 - Firewall configuration (UFW/Windows Firewall)
-- Fail2ban (Linux)
+- CrowdSec (Linux)
 - Automatic security updates
 - Optional Docker/Podman installation
 - Optional NFS mounts

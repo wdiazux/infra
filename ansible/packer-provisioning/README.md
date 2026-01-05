@@ -34,7 +34,7 @@ This provisioning fits into the overall infrastructure architecture:
 ```
 Layer 1: PACKER + ANSIBLE PROVISIONER (this directory)
 ├─ Install baseline packages in golden images
-├─ Install security packages (ufw, fail2ban, etc.)
+├─ Install security packages (ufw, CrowdSec, etc.)
 ├─ Configure SSH authorized_keys (from SOPS-encrypted secrets)
 ├─ Clean up template (machine-id, cloud-init, temp files)
 └─ Create consistent, reproducible templates
@@ -123,11 +123,11 @@ provisioner "ansible" {
 
 ### Debian/Ubuntu Specific
 - net-tools, dnsutils
-- ufw, fail2ban, unattended-upgrades
+- ufw, CrowdSec, unattended-upgrades
 
 ### Arch Linux Specific
 - net-tools, bind (dnsutils equivalent)
-- ufw, fail2ban
+- ufw, CrowdSec
 
 ### Windows Specific
 - Chocolatey (package manager)

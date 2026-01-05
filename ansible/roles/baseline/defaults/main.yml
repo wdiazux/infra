@@ -57,11 +57,13 @@ baseline_firewall_allowed_ports:
   - 5985 # WinRM HTTP (Windows)
   - 5986 # WinRM HTTPS (Windows)
 
-# Fail2ban configuration (Linux only)
-baseline_fail2ban_enabled: true
-baseline_fail2ban_maxretry: 5
-baseline_fail2ban_findtime: 600    # 10 minutes
-baseline_fail2ban_bantime: 3600    # 1 hour
+# CrowdSec configuration (Linux only)
+baseline_crowdsec_enabled: true
+baseline_crowdsec_collections:
+  - crowdsecurity/linux
+  - crowdsecurity/sshd
+  - crowdsecurity/http-cve
+baseline_crowdsec_enroll_key: ""  # Optional: CrowdSec Console enrollment key
 
 # SSH hardening (Linux only)
 baseline_ssh_permit_root_login: false

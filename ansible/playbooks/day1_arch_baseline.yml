@@ -31,7 +31,7 @@
     # Note: Baseline packages are pre-installed in Packer golden image:
     # - vim, git, htop, curl, wget, tmux, tree, net-tools, bind (dnsutils)
     # - python3, python3-pip, rsync, zip, unzip
-    # - Security: ufw, fail2ban
+    # - Security: ufw, crowdsec
     #
     # Only install instance-specific packages here (e.g., nfs-utils for NFS mounts)
 
@@ -49,9 +49,9 @@
       - 22   # SSH
 
     # Fail2ban configuration
-    fail2ban_maxretry: 5
-    fail2ban_findtime: 600
-    fail2ban_bantime: 3600
+    crowdsec_maxretry: 5
+    crowdsec_findtime: 600
+    crowdsec_bantime: 3600
 
     # Optional: NFS mount configuration
     nfs_mounts: []
@@ -198,24 +198,24 @@
     # Fail2ban Configuration
     # ========================================================================
 
-    - name: Configure fail2ban jail for SSH
+    - name: Configure crowdsec jail for SSH
       ansible.builtin.copy:
-        dest: /etc/fail2ban/jail.d/sshd.local
+        dest: /etc/crowdsec/jail.d/sshd.local
         content: |
           [sshd]
           enabled = true
           port = ssh
           filter = sshd
           logpath = /var/log/auth.log
-          maxretry = {{ fail2ban_maxretry }}
-          findtime = {{ fail2ban_findtime }}
-          bantime = {{ fail2ban_bantime }}
+          maxretry = {{ crowdsec_maxretry }}
+          findtime = {{ crowdsec_findtime }}
+          bantime = {{ crowdsec_bantime }}
         mode: '0644'
-      notify: Restart fail2ban
+      notify: Restart crowdsec
 
-    - name: Enable and start fail2ban
+    - name: Enable and start crowdsec
       ansible.builtin.systemd:
-        name: fail2ban
+        name: crowdsec
         enabled: yes
         state: started
 
@@ -401,9 +401,9 @@
         name: sshd
         state: restarted
 
-    - name: Restart fail2ban
+    - name: Restart crowdsec
       ansible.builtin.systemd:
-        name: fail2ban
+        name: crowdsec
         state: restarted
 
 # Notes:

@@ -32,7 +32,7 @@
     # Note: Baseline packages are pre-configured in Packer golden image's configuration.nix:
     # - vim, git, htop, curl, wget, tmux, tree, tcpdump
     # - python3, python3-pip, rsync, zip, unzip
-    # - Security packages (ufw, fail2ban)
+    # - Security packages (ufw, crowdsec)
     #
     # This playbook only modifies instance-specific settings via configuration.nix
 

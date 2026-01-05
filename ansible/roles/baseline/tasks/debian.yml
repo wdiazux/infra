@@ -84,25 +84,34 @@
   tags: [security, firewall]
 
 # ==============================================================================
-# Fail2ban Configuration
+# CrowdSec Configuration
 # ==============================================================================
 
-- name: Configure fail2ban
-  ansible.builtin.template:
-    src: fail2ban-jail.local.j2
-    dest: /etc/fail2ban/jail.local
-    mode: '0644'
-  when: baseline_fail2ban_enabled | bool
-  notify: restart fail2ban
-  tags: [security, fail2ban]
-
-- name: Enable and start fail2ban
+- name: Enable and start CrowdSec
   ansible.builtin.service:
-    name: fail2ban
+    name: crowdsec
     state: started
     enabled: yes
-  when: baseline_fail2ban_enabled | bool
-  tags: [security, fail2ban]
+  when: baseline_crowdsec_enabled | bool
+  tags: [security, crowdsec]
+
+- name: Install CrowdSec collections
+  ansible.builtin.command:
+    cmd: "cscli collections install {{ item }}"
+  loop: "{{ baseline_crowdsec_collections }}"
+  when: baseline_crowdsec_enabled | bool
+  register: crowdsec_collections
+  changed_when: "'installed' in crowdsec_collections.stdout"
+  failed_when: false
+  tags: [security, crowdsec]
+
+- name: Enable CrowdSec firewall bouncer
+  ansible.builtin.service:
+    name: crowdsec-firewall-bouncer
+    state: started
+    enabled: yes
+  when: baseline_crowdsec_enabled | bool
+  tags: [security, crowdsec]
 
 # ==============================================================================
 # NFS Mounts
