@@ -29,8 +29,8 @@ locals {
 source "proxmox-iso" "arch" {
   # Proxmox connection
   proxmox_url              = var.proxmox_url
-  username                 = var.proxmox_username
-  token                    = var.proxmox_token
+  username                 = var.proxmox_username  # Token ID format: user@realm!tokenid
+  token                    = var.proxmox_token     # Just the token secret
   node                     = var.proxmox_node
   insecure_skip_tls_verify = var.proxmox_skip_tls_verify
 
@@ -40,11 +40,14 @@ source "proxmox-iso" "arch" {
   template_name        = local.template_name
   template_description = "${var.template_description} (built ${formatdate("YYYY-MM-DD", timestamp())})"
 
-  # ISO configuration
-  iso_url          = var.arch_iso_url
-  iso_checksum     = var.arch_iso_checksum
-  iso_storage_pool = "local"
-  unmount_iso      = true
+  # ISO configuration (using boot_iso block - recommended modern approach)
+  boot_iso {
+    type             = "scsi"
+    iso_url          = var.arch_iso_url
+    iso_checksum     = var.arch_iso_checksum
+    iso_storage_pool = "local"
+    unmount          = true
+  }
 
   # CPU configuration
   cpu_type = var.vm_cpu_type
@@ -62,6 +65,7 @@ source "proxmox-iso" "arch" {
     format       = "raw"
     cache_mode   = "writethrough"
     io_thread    = true
+    discard      = true  # Enable TRIM for ZFS storage efficiency
   }
 
   # Network configuration
@@ -144,39 +148,43 @@ build {
     ]
   }
 
-  # Install baseline packages with Ansible
+  # Install baseline packages, configure SSH keys, and cleanup with Ansible
+  # This provisioner handles:
+  #   1. Package installation (via OS-specific tasks)
+  #   2. SSH key configuration (idempotent, from SOPS or direct variable)
+  #   3. Template cleanup (machine-id reset, temp files, cloud-init data)
   provisioner "ansible" {
     playbook_file = "../../ansible/packer-provisioning/install_baseline_packages.yml"
     user          = "root"
     use_proxy     = false
 
-    # Ansible variables passed to playbook
+    # Use SFTP for file transfer (recommended by Packer, replaces deprecated SCP)
+    use_sftp = true
+
+    # Ansible variables and SSH configuration
     extra_arguments = [
-      "--extra-vars", "ansible_python_interpreter=/usr/bin/python"
+      "--extra-vars", "ansible_python_interpreter=/usr/bin/python",
+      "--extra-vars", "ansible_password=${var.ssh_password}",
+      "--extra-vars", "packer_ssh_user=root",
+      "--extra-vars", "ssh_public_key=${var.ssh_public_key}",
+      "--ssh-common-args", "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null",
+      "-vv"  # Verbose output for debugging
+    ]
+
+    # Use password authentication via sshpass (already in Nix shell.nix)
+    ansible_env_vars = [
+      "ANSIBLE_HOST_KEY_CHECKING=False",
+      "ANSIBLE_SSH_ARGS=-o ControlMaster=auto -o ControlPersist=60s -o StrictHostKeyChecking=no"
     ]
   }
 
-  # Configure cloud-init
+  # Configure cloud-init services
   provisioner "shell" {
     inline = [
       "systemctl enable cloud-init",
       "systemctl enable cloud-init-local",
       "systemctl enable cloud-config",
       "systemctl enable cloud-final"
-    ]
-  }
-
-  # Clean up
-  provisioner "shell" {
-    inline = [
-      "pacman -Scc --noconfirm",
-      "rm -rf /tmp/*",
-      "rm -rf /var/tmp/*",
-      "cloud-init clean --logs --seed",
-      "truncate -s 0 /etc/machine-id",
-      "rm -f /var/lib/dbus/machine-id",
-      "ln -s /etc/machine-id /var/lib/dbus/machine-id",
-      "sync"
     ]
   }
 

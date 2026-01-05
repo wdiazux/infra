@@ -25,8 +25,8 @@ locals {
 source "proxmox-iso" "nixos" {
   # Proxmox connection
   proxmox_url              = var.proxmox_url
-  username                 = var.proxmox_username
-  token                    = var.proxmox_token
+  username                 = var.proxmox_username  # Token ID format: user@realm!tokenid
+  token                    = var.proxmox_token     # Just the token secret
   node                     = var.proxmox_node
   insecure_skip_tls_verify = var.proxmox_skip_tls_verify
 
@@ -36,11 +36,14 @@ source "proxmox-iso" "nixos" {
   template_name        = local.template_name
   template_description = "${var.template_description} (built ${formatdate("YYYY-MM-DD", timestamp())})"
 
-  # ISO configuration
-  iso_url          = var.nixos_iso_url
-  iso_checksum     = var.nixos_iso_checksum
-  iso_storage_pool = "local"
-  unmount_iso      = true
+  # ISO configuration (using boot_iso block - recommended modern approach)
+  boot_iso {
+    type             = "scsi"
+    iso_url          = var.nixos_iso_url
+    iso_checksum     = var.nixos_iso_checksum
+    iso_storage_pool = "local"
+    unmount          = true
+  }
 
   # CPU configuration
   cpu_type = var.vm_cpu_type
@@ -58,6 +61,7 @@ source "proxmox-iso" "nixos" {
     format       = "raw"
     cache_mode   = "writethrough"
     io_thread    = true
+    discard      = true  # Enable TRIM for ZFS storage efficiency
   }
 
   # Network configuration
@@ -141,6 +145,22 @@ build {
   provisioner "shell" {
     inline = [
       "nixos-rebuild switch --upgrade"
+    ]
+  }
+
+  # Add SSH public key to template (optional)
+  provisioner "shell" {
+    inline = [
+      "if [ -n '${var.ssh_public_key}' ]; then",
+      "  echo 'Adding SSH public key to template...'",
+      "  mkdir -p /root/.ssh",
+      "  echo '${var.ssh_public_key}' >> /root/.ssh/authorized_keys",
+      "  chmod 700 /root/.ssh",
+      "  chmod 600 /root/.ssh/authorized_keys",
+      "  echo 'SSH public key added successfully'",
+      "else",
+      "  echo 'No SSH public key provided, skipping...'",
+      "fi"
     ]
   }
 

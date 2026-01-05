@@ -7,19 +7,19 @@
 variable "proxmox_url" {
   type        = string
   description = "Proxmox API endpoint URL"
-  default     = "https://pve.home-infra.net:8006/api2/json"
+  default     = env("PROXMOX_URL")
 }
 
 variable "proxmox_username" {
   type        = string
-  description = "Proxmox username (format: user@pve for API-only access)"
-  default     = "root@pve"
+  description = "Proxmox token ID (format: user@realm!tokenid)"
+  default     = env("PROXMOX_USERNAME")
   sensitive   = true
 }
 
 variable "proxmox_token" {
   type        = string
-  description = "Proxmox API token"
+  description = "Proxmox API token secret"
   default     = env("PROXMOX_TOKEN")
   sensitive   = true
 }
@@ -129,4 +129,10 @@ variable "ssh_timeout" {
   type        = string
   description = "SSH timeout"
   default     = "20m"
+}
+
+variable "ssh_public_key" {
+  type        = string
+  description = "SSH public key to add to the template (optional)"
+  default     = ""
 }
