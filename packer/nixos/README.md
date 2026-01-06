@@ -7,9 +7,10 @@ This directory contains Packer configuration to build a NixOS golden image for P
 Creates a production-ready NixOS template with:
 - **NixOS 25.11** - Latest development release (from Hydra CI)
 - **Declarative configuration** - Entire system defined in configuration.nix
-- **Cloud-init** - For automated VM customization
+- **Full cloud-init integration** - Hostname, IP, SSH keys via Terraform/Proxmox
 - **QEMU Guest Agent** - Pre-installed for Proxmox integration
-- **SSH Server** - Pre-configured and enabled
+- **SSH Server** - Pre-configured with key-only authentication
+- **Default user**: wdiaz with passwordless sudo
 - **Fast builds** - 5-10 minutes (vs 20-30 min with ISO)
 
 ## Architecture
@@ -121,10 +122,9 @@ cloud_image_vm_id = 9200
 
 # Storage
 vm_disk_storage = "tank"
-
-# Optional: SSH public key
-ssh_public_key = "ssh-ed25519 AAAA... user@host"
 ```
+
+**Note:** SSH keys are configured in `config/configuration.nix` (base key) and via cloud-init (additional keys per-VM).
 
 ### 3. Build Template
 
@@ -160,16 +160,19 @@ Should see: `nixos-golden-template`
 
 1. Right-click template → Clone
 2. Full clone (not linked)
-3. Set VM name and resources
-4. Start VM
-5. SSH: `ssh nixos@<ip>` (password: nixos)
-6. Configure via `/etc/nixos/configuration.nix`
+3. Set VM name (becomes hostname via cloud-init)
+4. Configure cloud-init: IP, SSH keys (optional)
+5. Start VM
+6. SSH: `ssh wdiaz@<ip>` (SSH key auth only)
+7. Configure via `/etc/nixos/configuration.nix`
 
 ### Option 2: Deploy with Terraform
 
+The NixOS template supports full cloud-init integration. VM name becomes hostname, and SSH keys can be added per-VM:
+
 ```hcl
 resource "proxmox_virtual_environment_vm" "nixos_vm" {
-  name      = "nixos-vm-01"
+  name      = "nixos-vm-01"  # → becomes hostname
   node_name = "pve"
 
   clone {
@@ -186,15 +189,34 @@ resource "proxmox_virtual_environment_vm" "nixos_vm" {
   }
 
   initialization {
+    # Static IP configuration
     ip_config {
       ipv4 {
         address = "10.10.2.14/24"
         gateway = "10.10.2.1"
       }
     }
+
+    # User configuration (optional - default user is 'wdiaz')
+    user_account {
+      username = "wdiaz"
+      # Additional SSH keys (ADDED to base key, not replaced)
+      keys = [
+        "ssh-ed25519 AAAA... additional-key@example"
+      ]
+    }
   }
 }
 ```
+
+**Cloud-init features:**
+
+| Setting | Terraform Field | Notes |
+|---------|-----------------|-------|
+| Hostname | `name` | VM name becomes hostname |
+| Static IP | `initialization.ip_config` | Overrides DHCP |
+| SSH Keys | `initialization.user_account.keys` | Added to base key |
+| User | `initialization.user_account.username` | Default: wdiaz |
 
 ### Option 3: Configure with NixOS
 
