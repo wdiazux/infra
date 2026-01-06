@@ -28,13 +28,13 @@
   tags: [cleanup, debian, ubuntu]
 
 - name: Clean APT cache (Debian/Ubuntu)
-  ansible.builtin.file:
-    path: "{{ item }}"
-    state: absent
-  loop:
-    - /var/cache/apt/archives/*.deb
-    - /var/cache/apt/*.bin
+  ansible.builtin.shell: |
+    rm -f /var/cache/apt/archives/*.deb
+    rm -f /var/cache/apt/*.bin
+  args:
+    warn: false
   when: ansible_os_family == "Debian"
+  changed_when: false
   tags: [cleanup, debian, ubuntu]
 
 # =============================================================================
@@ -43,8 +43,10 @@
 
 - name: Clean Pacman cache (Arch)
   ansible.builtin.command: pacman -Scc --noconfirm
+  register: pacman_clean
   when: ansible_os_family == "Archlinux"
-  changed_when: true
+  changed_when: "'Database directory cleaned up' in pacman_clean.stdout or 'Cache directory cleaned' in pacman_clean.stdout"
+  failed_when: pacman_clean.rc not in [0, 1]
   tags: [cleanup, arch]
 
 # =============================================================================
@@ -52,23 +54,29 @@
 # =============================================================================
 
 - name: Remove temporary files
-  ansible.builtin.file:
-    path: "{{ item }}"
-    state: absent
-  loop:
-    - /tmp/*
-    - /var/tmp/*
+  ansible.builtin.shell: |
+    rm -rf /tmp/* 2>/dev/null || true
+    rm -rf /var/tmp/* 2>/dev/null || true
+  args:
+    warn: false
+  changed_when: false
   tags: [cleanup]
 
 - name: Clean cloud-init data
-  ansible.builtin.command: cloud-init clean --logs --seed
-  changed_when: true
-  failed_when: false  # Don't fail if cloud-init not present
+  ansible.builtin.shell: |
+    cloud-init clean --logs --seed 2>/dev/null || \
+    rm -rf /var/lib/cloud/{instance,instances,data,sem}/* 2>/dev/null || true
+  args:
+    warn: false
+  changed_when: false
+  failed_when: false
   tags: [cleanup]
 
 - name: Reset machine-id for proper cloning
-  ansible.builtin.command: truncate -s 0 /etc/machine-id
-  changed_when: true
+  ansible.builtin.shell: truncate -s 0 /etc/machine-id
+  args:
+    warn: false
+  changed_when: false
   tags: [cleanup]
 
 - name: Remove dbus machine-id

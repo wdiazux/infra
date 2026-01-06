@@ -1,33 +1,81 @@
 ---
 # Debian/Ubuntu Package Installation Tasks
 # This file is included by install_baseline_packages.yml for Debian-based systems
+#
+# Updated: 2026-01-06 - Added error handling with block/rescue
 
-- name: Update APT cache (Debian/Ubuntu)
-  ansible.builtin.apt:
-    update_cache: yes
-    cache_valid_time: 3600
-  tags: [debian, ubuntu]
+# =============================================================================
+# Package Installation Block with Error Handling
+# =============================================================================
 
-- name: Upgrade all packages (Debian/Ubuntu)
-  ansible.builtin.apt:
-    upgrade: dist
-    autoremove: yes
-    autoclean: yes
-  tags: [debian, ubuntu]
+- name: Debian/Ubuntu package installation
+  block:
+    - name: Update APT cache (Debian/Ubuntu)
+      ansible.builtin.apt:
+        update_cache: yes
+        cache_valid_time: 3600
+      tags: [debian, ubuntu]
 
-- name: Install baseline packages (Debian/Ubuntu)
-  ansible.builtin.apt:
-    name: "{{ common_packages + ['net-tools', 'dnsutils'] }}"
-    state: present
-  tags: [debian, ubuntu]
+    - name: Upgrade all packages (Debian/Ubuntu)
+      ansible.builtin.apt:
+        upgrade: dist
+        autoremove: yes
+        autoclean: yes
+      tags: [debian, ubuntu]
+
+    - name: Install baseline packages (Debian/Ubuntu)
+      ansible.builtin.apt:
+        name: "{{ common_packages + ['net-tools', 'dnsutils'] }}"
+        state: present
+      tags: [debian, ubuntu]
+
+  rescue:
+    - name: Handle package installation failure
+      ansible.builtin.debug:
+        msg: |
+          ============================================================
+          WARNING: Package installation encountered an error
+          ============================================================
+          Attempting to recover by updating APT cache...
+          ============================================================
+
+    - name: Force APT cache update on failure
+      ansible.builtin.apt:
+        update_cache: yes
+        force_apt_get: yes
+      ignore_errors: yes
+
+    - name: Retry baseline package installation
+      ansible.builtin.apt:
+        name: "{{ common_packages + ['net-tools', 'dnsutils'] }}"
+        state: present
+      tags: [debian, ubuntu]
+
+# =============================================================================
+# Security Packages (Optional - Failure Won't Stop Build)
+# =============================================================================
 
 - name: Install security packages (Debian/Ubuntu)
   ansible.builtin.apt:
     name:
       - ufw
-      - crowdsec
-      - crowdsec-firewall-bouncer
       - unattended-upgrades
       - gpg
     state: present
   tags: [debian, ubuntu]
+  ignore_errors: yes
+
+- name: Install CrowdSec if available (Debian/Ubuntu)
+  ansible.builtin.apt:
+    name:
+      - crowdsec
+      - crowdsec-firewall-bouncer
+    state: present
+  tags: [debian, ubuntu, security]
+  ignore_errors: yes
+  register: crowdsec_install
+
+- name: Display CrowdSec installation status
+  ansible.builtin.debug:
+    msg: "{{ 'CrowdSec installed successfully' if crowdsec_install is succeeded else 'CrowdSec not available in repositories - skipping' }}"
+  tags: [debian, ubuntu, security]

@@ -1,27 +1,60 @@
 ---
 # Arch Linux Package Installation Tasks
 # This file is included by install_baseline_packages.yml for Arch Linux systems
+#
+# Updated: 2026-01-06 - Added error handling with block/rescue
 
-- name: Update package database (Arch Linux)
-  community.general.pacman:
-    update_cache: yes
-  tags: [arch]
+# =============================================================================
+# Package Installation Block with Error Handling
+# =============================================================================
 
-- name: Upgrade all packages (Arch Linux)
-  community.general.pacman:
-    upgrade: yes
-  tags: [arch]
+- name: Arch Linux package installation
+  block:
+    - name: Update package database (Arch Linux)
+      community.general.pacman:
+        update_cache: yes
+      tags: [arch]
 
-- name: Set Arch-specific package names
-  ansible.builtin.set_fact:
-    arch_packages: "{{ common_packages | reject('in', ['python3-pip']) | list + ['python-pip', 'net-tools', 'bind'] }}"
-  tags: [arch]
+    - name: Upgrade all packages (Arch Linux)
+      community.general.pacman:
+        upgrade: yes
+      tags: [arch]
 
-- name: Install baseline packages (Arch Linux)
-  community.general.pacman:
-    name: "{{ arch_packages }}"
-    state: present
-  tags: [arch]
+    - name: Set Arch-specific package names
+      ansible.builtin.set_fact:
+        arch_packages: "{{ common_packages | reject('in', ['python3-pip']) | list + ['python-pip', 'net-tools', 'bind'] }}"
+      tags: [arch]
+
+    - name: Install baseline packages (Arch Linux)
+      community.general.pacman:
+        name: "{{ arch_packages }}"
+        state: present
+      tags: [arch]
+
+  rescue:
+    - name: Handle package installation failure
+      ansible.builtin.debug:
+        msg: |
+          ============================================================
+          WARNING: Package installation encountered an error
+          ============================================================
+          Attempting to recover by force-refreshing package database...
+          ============================================================
+
+    - name: Force refresh package database on failure
+      ansible.builtin.command: pacman -Syy
+      become: yes
+      ignore_errors: yes
+
+    - name: Retry baseline package installation
+      community.general.pacman:
+        name: "{{ arch_packages | default(common_packages) }}"
+        state: present
+      tags: [arch]
+
+# =============================================================================
+# Security Packages (Optional - Failure Won't Stop Build)
+# =============================================================================
 
 - name: Install security packages (Arch Linux)
   community.general.pacman:
@@ -29,47 +62,60 @@
       - ufw
       - gnupg
     state: present
-  tags: [arch]
+  tags: [arch, security]
+  ignore_errors: yes
 
-- name: Install yay dependencies (Arch Linux)
-  community.general.pacman:
-    name:
-      - base-devel
-      - git
-      - go
-    state: present
-  tags: [arch, yay]
+# =============================================================================
+# Yay AUR Helper Installation (Optional)
+# =============================================================================
 
-- name: Create temporary directory for yay installation
-  ansible.builtin.file:
-    path: /tmp/yay-install
-    state: directory
-    mode: '0755'
-    owner: "{{ packer_ssh_user }}"
-    group: "{{ packer_ssh_user }}"
-  tags: [arch, yay]
+- name: Yay AUR helper installation
+  block:
+    - name: Install yay dependencies (Arch Linux)
+      community.general.pacman:
+        name:
+          - base-devel
+          - git
+          - go
+        state: present
+      tags: [arch, yay]
 
-- name: Clone yay from AUR
-  ansible.builtin.git:
-    repo: https://aur.archlinux.org/yay.git
-    dest: /tmp/yay-install/yay
-    version: master
-  become: yes
-  become_user: "{{ packer_ssh_user }}"
-  tags: [arch, yay]
+    - name: Create temporary directory for yay installation
+      ansible.builtin.file:
+        path: /tmp/yay-install
+        state: directory
+        mode: '0755'
+        owner: "{{ packer_ssh_user }}"
+        group: "{{ packer_ssh_user }}"
+      tags: [arch, yay]
 
-- name: Build and install yay from source
-  ansible.builtin.shell: |
-    cd /tmp/yay-install/yay
-    makepkg -si --noconfirm
-  become: yes
-  become_user: "{{ packer_ssh_user }}"
-  args:
-    creates: /usr/bin/yay
-  tags: [arch, yay]
+    - name: Clone yay from AUR
+      ansible.builtin.git:
+        repo: https://aur.archlinux.org/yay.git
+        dest: /tmp/yay-install/yay
+        version: master
+      become: yes
+      become_user: "{{ packer_ssh_user }}"
+      tags: [arch, yay]
 
-- name: Clean up yay installation directory
-  ansible.builtin.file:
-    path: /tmp/yay-install
-    state: absent
-  tags: [arch, yay]
+    - name: Build and install yay from source
+      ansible.builtin.shell: |
+        cd /tmp/yay-install/yay
+        makepkg -si --noconfirm
+      become: yes
+      become_user: "{{ packer_ssh_user }}"
+      args:
+        creates: /usr/bin/yay
+      tags: [arch, yay]
+
+  rescue:
+    - name: Display yay installation failure
+      ansible.builtin.debug:
+        msg: "Warning: Yay AUR helper installation failed - continuing without it"
+
+  always:
+    - name: Clean up yay installation directory
+      ansible.builtin.file:
+        path: /tmp/yay-install
+        state: absent
+      tags: [arch, yay]
