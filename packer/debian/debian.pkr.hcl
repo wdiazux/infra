@@ -155,31 +155,4 @@ build {
   }
 }
 
-# Usage Notes:
-#
-# PREREQUISITES:
-# - Ansible 2.16+ installed on Packer build machine
-# - Ansible collections: ansible-galaxy collection install -r ../../ansible/requirements.yml
-#
-# SETUP (One-time):
-# 1. Run import-cloud-image.sh on Proxmox host to create base VM
-#    ./import-cloud-image.sh 9110
-#
-# BUILD:
-# 1. Set variables in debian.auto.pkrvars.hcl
-# 2. Run: packer init .
-# 3. Run: packer validate .
-# 4. Run: packer build .
-#
-# Build time: 5-10 minutes (much faster than ISO!)
-#
-# Architecture:
-# - Packer + Ansible provisioner: Installs baseline packages in golden image
-# - Terraform: Deploys VMs from golden image
-# - Ansible baseline role: Instance-specific configuration (hostnames, IPs, secrets)
-#
-# After building:
-# - Template available in Proxmox with baseline packages pre-installed
-# - Clone VMs from template
-# - Customize with cloud-init (user-data, network-config)
-# - Configure with Ansible baseline role for instance-specific settings
+# See README.md for usage instructions

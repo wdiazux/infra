@@ -43,11 +43,12 @@ if ! command -v virt-customize &> /dev/null; then
     apt-get update && apt-get install -y libguestfs-tools
 fi
 
-echo "    - Installing qemu-guest-agent"
-echo "    - Enabling password authentication"
+echo "    - Installing qemu-guest-agent and configuring SSH"
 virt-customize -a "${CLOUD_IMAGE_FILE}" \
   --install qemu-guest-agent \
+  --run-command "systemctl enable qemu-guest-agent" \
   --run-command "sed -i 's/^#\?PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config" \
+  --run-command "sed -i 's/^PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config.d/50-cloud-init.conf || true" \
   --run-command "sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config"
 
 # Create VM
@@ -90,14 +91,13 @@ qm set ${VM_ID} --ciuser debian --cipassword debian
 echo "==> Configuring network to use DHCP..."
 qm set ${VM_ID} --ipconfig0 ip=dhcp
 
-# Add SSH key for passwordless authentication
+# Add SSH public key if available
 echo "==> Adding SSH public key..."
-SSH_KEY_FILE="/root/.ssh/id_rsa.pub"
-if [ -f "$SSH_KEY_FILE" ]; then
-    qm set ${VM_ID} --sshkeys "$SSH_KEY_FILE"
-    echo "    SSH key added from $SSH_KEY_FILE"
+if [ -f "$HOME/.ssh/id_rsa.pub" ]; then
+    qm set ${VM_ID} --sshkeys "$HOME/.ssh/id_rsa.pub"
+    echo "    SSH key added from $HOME/.ssh/id_rsa.pub"
 else
-    echo "    Warning: No SSH key found at $SSH_KEY_FILE - password auth only"
+    echo "    Warning: No SSH key found at $HOME/.ssh/id_rsa.pub - password auth only"
 fi
 
 # Resize disk (optional, increases from ~2GB to specified size)
