@@ -74,8 +74,9 @@ source "proxmox-clone" "nixos" {
   nameserver = "10.10.2.1"
 
   # SSH configuration
+  # NixOS cloud image has empty password by default
   ssh_username = "nixos"
-  ssh_password = var.ssh_password
+  ssh_password = ""
   ssh_timeout  = "5m"
 
   # Add handshake attempts
@@ -95,37 +96,26 @@ build {
   name    = "nixos-proxmox-template"
   sources = ["source.proxmox-clone.nixos"]
 
-  # Wait for cloud-init to complete
-  provisioner "shell" {
-    inline = [
-      "echo 'Waiting for cloud-init to complete...'",
-      "cloud-init status --wait || true",
-      "echo 'Cloud-init ready!'"
-    ]
-    # Accept exit code 2 (degraded/done) due to cloud-init warnings
-    valid_exit_codes = [0, 2]
-  }
-
   # NixOS-specific configuration
-  # Note: We don't use Ansible for NixOS - all config is declarative via configuration.nix
+  # Note: NixOS cloud image doesn't have cloud-init command and nixos user has no passwordless sudo
+  # Keep provisioning minimal - NixOS is declarative, configure via configuration.nix after deployment
   provisioner "shell" {
     inline = [
       "echo 'Preparing NixOS template...'",
 
-      # Ensure SSH allows password auth (for Packer/initial access)
-      "sudo sed -i 's/^#\\?PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config || true",
-
       # Display current NixOS version
       "nixos-version",
 
-      # Update channels
-      "sudo nix-channel --update || true",
+      # Verify system is ready
+      "echo 'System info:'",
+      "uname -a",
+      "df -h /",
 
       "echo 'NixOS template preparation complete!'"
     ]
   }
 
-  # Add SSH public key if provided
+  # Add SSH public key if provided (user's home directory, no sudo needed)
   provisioner "shell" {
     inline = [
       "if [ -n '${var.ssh_public_key}' ]; then",
@@ -141,23 +131,10 @@ build {
     ]
   }
 
-  # Clean up for template
+  # Minimal cleanup (no sudo required)
   provisioner "shell" {
     inline = [
       "echo 'Cleaning up for template...'",
-
-      # Clean nix store (remove old generations)
-      "sudo nix-collect-garbage -d || true",
-
-      # Clean temporary files
-      "sudo rm -rf /tmp/*",
-      "sudo rm -rf /var/tmp/*",
-
-      # Clean cloud-init for re-initialization on clone
-      "sudo cloud-init clean --logs --seed || true",
-
-      # Reset machine-id for unique ID on clone
-      "sudo truncate -s 0 /etc/machine-id",
 
       # Clear shell history
       "history -c || true",
