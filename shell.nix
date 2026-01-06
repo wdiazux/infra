@@ -13,6 +13,7 @@ pkgs.mkShell {
     # Core Infrastructure Tools
     terraform                  # >= 1.14.2 - Infrastructure as Code
     packer                     # ~> 1.14.3 - Image building
+    xorriso                    # ISO creation for Packer Windows builds
     ansible                    # >= 2.17.0 - Configuration management
     python3                    # >= 3.9 - Required for Ansible
     sshpass                    # SSH password authentication for Ansible

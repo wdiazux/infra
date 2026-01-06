@@ -103,7 +103,7 @@ variable "vm_cores" {
 variable "vm_memory" {
   type        = number
   description = "RAM in MB"
-  default     = 4096
+  default     = 5120 # 5GB - Windows 11 requires 4GB minimum, extra for install
 }
 
 variable "vm_disk_size" {

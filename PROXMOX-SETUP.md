@@ -23,11 +23,12 @@ Run the following commands on your Proxmox host:
 ssh root@pve.home-infra.net
 
 # Update the Terraform role with new privileges
-pveum rolemod TerraformProv -privs "Datastore.AllocateSpace,Datastore.Audit,Pool.Allocate,SDN.Use,Sys.Audit,Sys.Console,Sys.Modify,Sys.PowerMgmt,VM.Allocate,VM.Audit,VM.Clone,VM.Config.CDROM,VM.Config.Cloudinit,VM.Config.CPU,VM.Config.Disk,VM.Config.HWType,VM.Config.Memory,VM.Config.Network,VM.Config.Options,VM.Migrate,VM.PowerMgmt,VM.GuestAgent.Audit"
+pveum rolemod TerraformProv -privs "Datastore.Allocate,Datastore.AllocateSpace,Datastore.AllocateTemplate,Datastore.Audit,Pool.Allocate,SDN.Use,Sys.Audit,Sys.Console,Sys.Modify,Sys.PowerMgmt,VM.Allocate,VM.Audit,VM.Clone,VM.Config.CDROM,VM.Config.Cloudinit,VM.Config.CPU,VM.Config.Disk,VM.Config.HWType,VM.Config.Memory,VM.Config.Network,VM.Config.Options,VM.Migrate,VM.PowerMgmt,VM.GuestAgent.Audit"
 
 # Key changes:
 # - VM.Monitor → Sys.Audit (Proxmox 9.0 compatibility)
 # - Added VM.GuestAgent.Audit (required for Packer to query guest agent for IP detection)
+# - Added Datastore.Allocate and Datastore.AllocateTemplate (required for Windows ISO builds)
 ```
 
 ### If TerraformProv Doesn't Exist
@@ -47,7 +48,7 @@ pveum useradd terraform@pve --comment "Terraform automation user"
 pveum passwd terraform@pve
 
 # 3. Create Terraform role with correct privileges
-pveum roleadd TerraformProv -privs "Datastore.AllocateSpace,Datastore.Audit,Pool.Allocate,SDN.Use,Sys.Audit,Sys.Console,Sys.Modify,Sys.PowerMgmt,VM.Allocate,VM.Audit,VM.Clone,VM.Config.CDROM,VM.Config.Cloudinit,VM.Config.CPU,VM.Config.Disk,VM.Config.HWType,VM.Config.Memory,VM.Config.Network,VM.Config.Options,VM.Migrate,VM.PowerMgmt,VM.GuestAgent.Audit"
+pveum roleadd TerraformProv -privs "Datastore.Allocate,Datastore.AllocateSpace,Datastore.AllocateTemplate,Datastore.Audit,Pool.Allocate,SDN.Use,Sys.Audit,Sys.Console,Sys.Modify,Sys.PowerMgmt,VM.Allocate,VM.Audit,VM.Clone,VM.Config.CDROM,VM.Config.Cloudinit,VM.Config.CPU,VM.Config.Disk,VM.Config.HWType,VM.Config.Memory,VM.Config.Network,VM.Config.Options,VM.Migrate,VM.PowerMgmt,VM.GuestAgent.Audit"
 
 # 4. Assign role to user
 pveum aclmod / -user terraform@pve -role TerraformProv
@@ -57,6 +58,9 @@ pveum user token add terraform@pve terraform-token --privsep 0
 
 # Copy the token ID and secret - you'll need these for Terraform
 # Format: PVEAPIToken=terraform@pve!terraform-token=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+
+# 6. Add storage permission for Windows ISO builds (uploads CD ISO to local storage)
+pveum acl modify /storage/local -user terraform@pve -role PVEDatastoreAdmin
 ```
 
 ### Verify Role
@@ -232,6 +236,8 @@ Before running `terraform apply`, ensure:
 - [ ] **CRITICAL**: Terraform API user role updated with required privileges:
   - [ ] `Sys.Audit` (replaces deprecated VM.Monitor)
   - [ ] `VM.GuestAgent.Audit` (required for Packer)
+  - [ ] `Datastore.AllocateTemplate` (required for Windows ISO builds)
+- [ ] **For Windows builds**: Storage permission on `/storage/local` (PVEDatastoreAdmin)
 - [ ] Proxmox API token or password configured
 - [ ] Network bridge `vmbr0` exists
 - [ ] IOMMU enabled (if using GPU passthrough)
@@ -378,6 +384,13 @@ cd packer/talos
 packer init .
 packer validate .
 packer build .
+
+# Build Windows 11 template (40-90 min, requires ISOs uploaded first)
+# See packer/windows/README.md for ISO download instructions
+cd packer/windows
+packer init .
+packer validate .
+packer build .
 ```
 
 The Packer builds now use a unified Ansible provisioner that:
@@ -410,7 +423,7 @@ terraform apply
 
 ---
 
-**Last Updated**: 2026-01-05
+**Last Updated**: 2026-01-06
 **Proxmox Version**: 9.1.4 (tested and verified)
 **Applies To**: Proxmox VE 9.0+
 **Terraform Version**: >= 1.14.2
@@ -418,6 +431,7 @@ terraform apply
 **Proxmox Provider**: bpg/proxmox >= 0.89.1
 
 **Recent Changes**:
+- **2026-01-06**: Added Windows 11 Packer template and required permissions (Datastore.AllocateTemplate, /storage/local)
 - **2026-01-05**: Added Nix + direnv requirement and Ansible provisioner enhancement documentation
 - **2026-01-05**: Documented SSH key configuration via SOPS for Packer templates
 - **2025-12-XX**: Added `VM.GuestAgent.Audit` permission requirement for Packer builds
