@@ -65,17 +65,159 @@
   tags: [debian, ubuntu]
   ignore_errors: yes
 
-- name: Install CrowdSec if available (Debian/Ubuntu)
-  ansible.builtin.apt:
-    name:
-      - crowdsec
-      - crowdsec-firewall-bouncer
-    state: present
+# =============================================================================
+# CrowdSec Installation (Golden Image Approach)
+# =============================================================================
+# CrowdSec's post-install script tries to register with CAPI (Central API).
+# This fails during golden image builds and is wrong anyway - each VM should
+# register independently. We install CrowdSec but clean up CAPI credentials.
+# Each VM will re-register on first boot via cloud-init or systemd service.
+
+# Install CrowdSec and handle dpkg errors from CAPI registration failure
+- name: Install CrowdSec packages (Debian/Ubuntu)
+  ansible.builtin.shell: |
+    export DEBIAN_FRONTEND=noninteractive
+    # Try to install, may fail due to CAPI registration in postinst
+    apt-get install -y crowdsec crowdsec-firewall-bouncer || true
+    # Fix any broken packages (configures without CAPI)
+    dpkg --configure -a || true
+    # Verify crowdsec binary exists
+    which crowdsec && echo "CROWDSEC_INSTALLED=true" || echo "CROWDSEC_INSTALLED=false"
+  register: crowdsec_install_result
+  changed_when: "'CROWDSEC_INSTALLED=true' in crowdsec_install_result.stdout"
   tags: [debian, ubuntu, security]
+
+- name: Set CrowdSec installation fact
+  ansible.builtin.set_fact:
+    crowdsec_installed: "{{ 'CROWDSEC_INSTALLED=true' in crowdsec_install_result.stdout }}"
+  tags: [debian, ubuntu, security]
+
+- name: Stop CrowdSec services for cleanup (if installed)
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    state: stopped
+  loop:
+    - crowdsec
+    - crowdsec-firewall-bouncer
+  when: crowdsec_installed
   ignore_errors: yes
-  register: crowdsec_install
+  tags: [debian, ubuntu, security]
+
+- name: Remove CAPI credentials from golden image
+  ansible.builtin.file:
+    path: /etc/crowdsec/online_api_credentials.yaml
+    state: absent
+  when: crowdsec_installed
+  tags: [debian, ubuntu, security]
+
+- name: Remove local API credentials from golden image
+  ansible.builtin.file:
+    path: /etc/crowdsec/local_api_credentials.yaml
+    state: absent
+  when: crowdsec_installed
+  tags: [debian, ubuntu, security]
+
+- name: Remove CrowdSec machine registrations and databases
+  ansible.builtin.shell: |
+    rm -f /etc/crowdsec/machines/*.yaml 2>/dev/null || true
+    rm -f /var/lib/crowdsec/data/*.db 2>/dev/null || true
+    rm -f /etc/crowdsec/bouncers/*.yaml 2>/dev/null || true
+  when: crowdsec_installed
+  changed_when: false
+  tags: [debian, ubuntu, security]
+
+- name: Create CrowdSec first-boot registration script
+  ansible.builtin.copy:
+    dest: /usr/local/bin/crowdsec-first-boot.sh
+    mode: '0755'
+    content: |
+      #!/bin/bash
+      # CrowdSec First Boot Registration
+      # This script runs on first boot to register with LAPI and optionally CAPI
+
+      set -e
+
+      MARKER_FILE="/var/lib/crowdsec/.first-boot-done"
+
+      # Skip if already registered
+      if [ -f "$MARKER_FILE" ]; then
+          echo "CrowdSec already registered, skipping..."
+          exit 0
+      fi
+
+      echo "=== CrowdSec First Boot Registration ==="
+
+      # Wait for network
+      for i in {1..30}; do
+          if ping -c1 -W1 8.8.8.8 &>/dev/null; then
+              break
+          fi
+          echo "Waiting for network... ($i/30)"
+          sleep 2
+      done
+
+      # Register local API machine
+      if [ ! -f /etc/crowdsec/local_api_credentials.yaml ]; then
+          echo "Registering with Local API..."
+          cscli machines add -a --force || true
+      fi
+
+      # Register with Central API (optional - provides threat intelligence)
+      if [ ! -f /etc/crowdsec/online_api_credentials.yaml ]; then
+          echo "Registering with Central API..."
+          cscli capi register || echo "CAPI registration failed (non-critical)"
+      fi
+
+      # Install default collections
+      echo "Installing default collections..."
+      cscli hub update || true
+      cscli collections install crowdsecurity/linux || true
+      cscli collections install crowdsecurity/sshd || true
+
+      # Restart services
+      systemctl restart crowdsec || true
+      systemctl restart crowdsec-firewall-bouncer || true
+
+      # Mark as done
+      mkdir -p /var/lib/crowdsec
+      touch "$MARKER_FILE"
+
+      echo "=== CrowdSec First Boot Registration Complete ==="
+  when: crowdsec_installed
+  tags: [debian, ubuntu, security]
+
+- name: Create CrowdSec first-boot systemd service
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/crowdsec-first-boot.service
+    mode: '0644'
+    content: |
+      [Unit]
+      Description=CrowdSec First Boot Registration
+      After=network-online.target cloud-init.target
+      Wants=network-online.target
+      ConditionPathExists=!/var/lib/crowdsec/.first-boot-done
+
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/local/bin/crowdsec-first-boot.sh
+      RemainAfterExit=yes
+      StandardOutput=journal
+      StandardError=journal
+
+      [Install]
+      WantedBy=multi-user.target
+  when: crowdsec_installed
+  tags: [debian, ubuntu, security]
+
+- name: Enable CrowdSec first-boot service
+  ansible.builtin.systemd:
+    name: crowdsec-first-boot.service
+    enabled: yes
+    daemon_reload: yes
+  when: crowdsec_installed
+  tags: [debian, ubuntu, security]
 
 - name: Display CrowdSec installation status
   ansible.builtin.debug:
-    msg: "{{ 'CrowdSec installed successfully' if crowdsec_install is succeeded else 'CrowdSec not available in repositories - skipping' }}"
+    msg: "{{ 'CrowdSec installed (will register on first boot)' if crowdsec_installed else 'CrowdSec not available - skipping' }}"
   tags: [debian, ubuntu, security]
