@@ -107,6 +107,7 @@ build {
     ]
     # Accept exit code 2 (degraded/done) due to Proxmox cloud-init deprecation warnings
     valid_exit_codes = [0, 2]
+    timeout          = "5m"
   }
 
   # Install baseline packages, configure SSH keys, and cleanup with Ansible
@@ -118,18 +119,26 @@ build {
     playbook_file = "../../ansible/packer-provisioning/install_baseline_packages.yml"
     user          = "arch"
     use_proxy     = false
+    timeout       = "15m"
 
     # Use SFTP for file transfer (recommended by Packer, replaces deprecated SCP)
     use_sftp = true
 
     # Ansible variables and SSH configuration
-    extra_arguments = [
+    # Verbosity controlled by debug_mode variable
+    extra_arguments = var.debug_mode ? [
       "--extra-vars", "ansible_python_interpreter=/usr/bin/python",
       "--extra-vars", "ansible_password=${var.ssh_password}",
       "--extra-vars", "packer_ssh_user=arch",
       "--extra-vars", "ssh_public_key=${var.ssh_public_key}",
-      "--ssh-common-args", "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null",
-      "-vv"  # Verbose output for debugging
+      "--ssh-common-args", "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=30",
+      "-vv"
+    ] : [
+      "--extra-vars", "ansible_python_interpreter=/usr/bin/python",
+      "--extra-vars", "ansible_password=${var.ssh_password}",
+      "--extra-vars", "packer_ssh_user=arch",
+      "--extra-vars", "ssh_public_key=${var.ssh_public_key}",
+      "--ssh-common-args", "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=30"
     ]
 
     # Use password authentication via sshpass (already in Nix shell.nix)

@@ -45,9 +45,9 @@
           ============================================================
           Builder: {{ packer_builder_type | default('unknown') }}
           Build Name: {{ packer_build_name | default('unknown') }}
-          OS Family: {{ ansible_os_family }}
-          Distribution: {{ ansible_distribution }} {{ ansible_distribution_version }}
-          Architecture: {{ ansible_architecture }}
+          OS Family: {{ ansible_facts['os_family'] }}
+          Distribution: {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }}
+          Architecture: {{ ansible_facts['architecture'] }}
           ============================================================
       tags: [always]
 
@@ -57,17 +57,17 @@
 
     - name: Include Debian/Ubuntu package installation tasks
       ansible.builtin.include_tasks: tasks/debian_packages.yml
-      when: ansible_os_family == "Debian"
+      when: ansible_facts['os_family'] == "Debian"
       tags: [debian, ubuntu]
 
     - name: Include Arch Linux package installation tasks
       ansible.builtin.include_tasks: tasks/archlinux_packages.yml
-      when: ansible_os_family == "Archlinux"
+      when: ansible_facts['os_family'] == "Archlinux"
       tags: [arch]
 
     - name: Include Windows package installation tasks
       ansible.builtin.include_tasks: tasks/windows_packages.yml
-      when: ansible_os_family == "Windows"
+      when: ansible_facts['os_family'] == "Windows"
       tags: [windows]
 
     # ==========================================================================
@@ -96,7 +96,7 @@
           ============================================================
           Baseline Package Installation Complete
           ============================================================
-          OS: {{ ansible_distribution }} {{ ansible_distribution_version }}
+          OS: {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }}
           Packages installed: {{ common_packages | length }}
           SSH key configured: {{ 'Yes' if ssh_public_key is defined and ssh_public_key != '' else 'No' }}
           Template cleanup: Complete

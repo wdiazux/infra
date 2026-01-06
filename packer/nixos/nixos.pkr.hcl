@@ -101,6 +101,7 @@ build {
       "nixos-version",
       "uname -a"
     ]
+    timeout = "2m"
   }
 
   # Upload custom configuration files
@@ -131,6 +132,7 @@ build {
       "truncate -s 0 /etc/machine-id",
       "echo '==> Cloud-init reset complete!'"
     ]
+    timeout = "20m"
   }
 
   # Post-processor: Create manifest

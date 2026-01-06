@@ -10,8 +10,8 @@
       ============================================================
       Template Cleanup
       ============================================================
-      OS Family: {{ ansible_os_family }}
-      Distribution: {{ ansible_distribution }}
+      OS Family: {{ ansible_facts['os_family'] }}
+      Distribution: {{ ansible_facts['distribution'] }}
       Cleaning temporary files and preparing for template conversion
       ============================================================
   tags: [cleanup]
@@ -24,18 +24,38 @@
   ansible.builtin.apt:
     autoremove: yes
     autoclean: yes
-  when: ansible_os_family == "Debian"
+  when: ansible_facts['os_family'] == "Debian"
   tags: [cleanup, debian, ubuntu]
 
 - name: Clean APT cache (Debian/Ubuntu)
-  ansible.builtin.file:
-    path: "{{ item }}"
-    state: absent
-  loop:
-    - /var/cache/apt/archives/*.deb
-    - /var/cache/apt/*.bin
-  when: ansible_os_family == "Debian"
+  ansible.builtin.shell: |
+    rm -f /var/cache/apt/archives/*.deb
+    rm -f /var/cache/apt/*.bin
+  when: ansible_facts['os_family'] == "Debian"
+  changed_when: false
   tags: [cleanup, debian, ubuntu]
+
+# =============================================================================
+# CrowdSec Cleanup (Golden Image - Remove Instance-Specific Data)
+# =============================================================================
+
+- name: Clean CrowdSec credentials for golden image
+  ansible.builtin.shell: |
+    # Remove CAPI credentials (each VM should register independently)
+    rm -f /etc/crowdsec/online_api_credentials.yaml 2>/dev/null || true
+    # Remove LAPI credentials (regenerated on first boot)
+    rm -f /etc/crowdsec/local_api_credentials.yaml 2>/dev/null || true
+    # Remove machine registrations
+    rm -f /etc/crowdsec/machines/*.yaml 2>/dev/null || true
+    # Remove bouncer API keys
+    rm -f /etc/crowdsec/bouncers/*.yaml 2>/dev/null || true
+    # Clear database (contains machine-specific data)
+    rm -f /var/lib/crowdsec/data/*.db 2>/dev/null || true
+    # Remove first-boot marker so it runs on cloned VMs
+    rm -f /var/lib/crowdsec/.first-boot-done 2>/dev/null || true
+  changed_when: false
+  failed_when: false
+  tags: [cleanup, security]
 
 # =============================================================================
 # Arch Linux Cleanup
@@ -43,32 +63,34 @@
 
 - name: Clean Pacman cache (Arch)
   ansible.builtin.command: pacman -Scc --noconfirm
-  when: ansible_os_family == "Archlinux"
-  changed_when: true
+  register: pacman_clean
+  when: ansible_facts['os_family'] == "Archlinux"
+  changed_when: "'Database directory cleaned up' in pacman_clean.stdout or 'Cache directory cleaned' in pacman_clean.stdout"
+  failed_when: pacman_clean.rc not in [0, 1]
   tags: [cleanup, arch]
 
 # =============================================================================
 # Common Cleanup (All Distributions)
 # =============================================================================
 
-- name: Remove temporary files
-  ansible.builtin.file:
-    path: "{{ item }}"
-    state: absent
-  loop:
-    - /tmp/*
-    - /var/tmp/*
+- name: Remove temporary files (excluding ansible)
+  ansible.builtin.shell: |
+    find /tmp -mindepth 1 -maxdepth 1 ! -name 'ansible*' -exec rm -rf {} + 2>/dev/null || true
+    rm -rf /var/tmp/* 2>/dev/null || true
+  changed_when: false
   tags: [cleanup]
 
 - name: Clean cloud-init data
-  ansible.builtin.command: cloud-init clean --logs --seed
-  changed_when: true
-  failed_when: false  # Don't fail if cloud-init not present
+  ansible.builtin.shell: |
+    cloud-init clean --logs --seed 2>/dev/null || \
+    rm -rf /var/lib/cloud/{instance,instances,data,sem}/* 2>/dev/null || true
+  changed_when: false
+  failed_when: false
   tags: [cleanup]
 
 - name: Reset machine-id for proper cloning
-  ansible.builtin.command: truncate -s 0 /etc/machine-id
-  changed_when: true
+  ansible.builtin.shell: truncate -s 0 /etc/machine-id
+  changed_when: false
   tags: [cleanup]
 
 - name: Remove dbus machine-id
