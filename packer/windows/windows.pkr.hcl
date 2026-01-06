@@ -9,11 +9,7 @@ packer {
   required_plugins {
     proxmox = {
       source  = "github.com/hashicorp/proxmox"
-      version = ">= 1.2.3"  # Latest version as of Dec 2025
-    }
-    ansible = {
-      source  = "github.com/hashicorp/ansible"
-      version = "~> 1"
+      version = ">= 1.2.3" # Latest version as of Dec 2025
     }
   }
 }
@@ -29,8 +25,8 @@ locals {
 source "proxmox-iso" "windows" {
   # Proxmox connection
   proxmox_url              = var.proxmox_url
-  username                 = var.proxmox_username  # Token ID format: user@realm!tokenid
-  token                    = var.proxmox_token     # Just the token secret
+  username                 = var.proxmox_username # Token ID format: user@realm!tokenid
+  token                    = var.proxmox_token    # Just the token secret
   node                     = var.proxmox_node
   insecure_skip_tls_verify = var.proxmox_skip_tls_verify
 
@@ -40,17 +36,32 @@ source "proxmox-iso" "windows" {
   template_name        = local.template_name
   template_description = "${var.template_description} (built ${formatdate("YYYY-MM-DD", timestamp())})"
 
-  # ISO configuration
-  iso_file         = "local:iso/windows-11.iso"  # Upload manually to Proxmox
-  iso_storage_pool = "local"
-  unmount_iso      = true
+  # Boot ISO (Windows 11 installation media)
+  boot_iso {
+    type             = "sata"
+    iso_file         = "local:iso/windows-11.iso" # Upload manually to Proxmox
+    iso_storage_pool = "local"
+    unmount          = true
+  }
 
   # Additional ISOs (VirtIO drivers)
   additional_iso_files {
-    device           = "ide3"
-    iso_file         = "local:iso/virtio-win.iso"  # Upload manually to Proxmox
+    type             = "sata"
+    iso_file         = "local:iso/virtio-win.iso" # Upload manually to Proxmox
     iso_storage_pool = "local"
-    unmount_iso      = true
+    unmount          = true
+  }
+
+  # Autounattend.xml and scripts (delivered via CD)
+  additional_iso_files {
+    type = "sata"
+    cd_files = [
+      "${path.root}/http/autounattend.xml",
+      "${path.root}/scripts/setup-winrm.ps1"
+    ]
+    cd_label         = "OEMDRV"
+    iso_storage_pool = "local"
+    unmount          = true
   }
 
   # CPU configuration
@@ -61,15 +72,18 @@ source "proxmox-iso" "windows" {
   # Memory
   memory = var.vm_memory
 
-  # Disk configuration
+  # Machine type (q35 recommended for Windows 11 UEFI)
+  machine = "q35"
+
+  # Disk configuration (Proxmox best practices)
   disks {
     type         = "scsi"
     storage_pool = var.vm_disk_storage
     disk_size    = var.vm_disk_size
     format       = "raw"
-    cache_mode   = "writethrough"
+    cache_mode   = "writeback" # Best performance per Proxmox docs
     io_thread    = true
-    discard      = true  # Enable TRIM for ZFS storage efficiency
+    discard      = true # Enable TRIM for ZFS storage efficiency
   }
 
   # Network configuration
@@ -93,13 +107,8 @@ source "proxmox-iso" "windows" {
   }
 
   # Boot configuration
-  boot_wait = "5s"
+  boot_wait    = "5s"
   boot_command = ["<spacebar>"]
-
-  # HTTP server for autounattend.xml and scripts
-  http_directory = "http"
-  http_port_min  = 8104
-  http_port_max  = 8104
 
   # WinRM configuration (instead of SSH)
   communicator   = "winrm"
@@ -110,7 +119,7 @@ source "proxmox-iso" "windows" {
   winrm_insecure = true
 
   # Template settings
-  os = "win11"  # Windows 11/Server 2022
+  os = "win11" # Windows 11/Server 2022
 }
 
 # Build configuration
@@ -138,16 +147,37 @@ build {
     script = "${path.root}/scripts/install-cloudbase-init.ps1"
   }
 
-  # Install baseline packages with Ansible
-  provisioner "ansible" {
-    playbook_file = "../../ansible/packer-provisioning/install_baseline_packages.yml"
-    user          = "Administrator"
-    use_proxy     = false
-
-    # Ansible variables for Windows/WinRM
-    extra_arguments = [
-      "--connection", "winrm",
-      "--extra-vars", "ansible_connection=winrm ansible_winrm_server_cert_validation=ignore ansible_shell_type=powershell"
+  # Install VirtIO drivers and QEMU Guest Agent (Proxmox recommended method)
+  provisioner "powershell" {
+    inline = [
+      "Write-Host 'Installing VirtIO drivers and QEMU Guest Agent...'",
+      "# Find VirtIO ISO drive letter",
+      "$virtioVolume = Get-Volume | Where-Object { $_.FileSystemLabel -like 'virtio-win*' }",
+      "if ($virtioVolume) {",
+      "  $virtioPath = $virtioVolume.DriveLetter",
+      "} else {",
+      "  # Fallback: search for the installer on available drives",
+      "  $virtioPath = (Get-PSDrive -PSProvider FileSystem | Where-Object { Test-Path \"$($_.Root)virtio-win-gt-x64.msi\" } | Select-Object -First 1).Root.TrimEnd('\\\\')",
+      "  if (-not $virtioPath) { $virtioPath = 'E' }",
+      "}",
+      "Write-Host \"VirtIO drive: $virtioPath\"",
+      "",
+      "# Install VirtIO Guest Tools (includes drivers + QEMU agent)",
+      "$installerPath = \"$${virtioPath}:\\virtio-win-gt-x64.msi\"",
+      "if (Test-Path $installerPath) {",
+      "  Write-Host \"Installing from: $installerPath\"",
+      "  Start-Process msiexec.exe -ArgumentList '/i', $installerPath, '/quiet', '/norestart' -Wait",
+      "  Write-Host 'VirtIO Guest Tools installed successfully!'",
+      "} else {",
+      "  Write-Host \"Warning: VirtIO installer not found at $installerPath\"",
+      "  Write-Host 'Trying alternative location...'",
+      "  # Try guest-agent only as fallback",
+      "  $gaPath = \"$${virtioPath}:\\guest-agent\\qemu-ga-x86_64.msi\"",
+      "  if (Test-Path $gaPath) {",
+      "    Start-Process msiexec.exe -ArgumentList '/i', $gaPath, '/quiet', '/norestart' -Wait",
+      "    Write-Host 'QEMU Guest Agent installed!'",
+      "  }",
+      "}"
     ]
   }
 
@@ -156,12 +186,13 @@ build {
     script = "${path.root}/scripts/cleanup.ps1"
   }
 
-  # Run Sysprep (generalizes the image)
+  # Run Sysprep (generalizes the image for cloning)
   provisioner "powershell" {
     inline = [
-      "& 'C:\\Program Files\\Cloudbase Solutions\\Cloudbase-Init\\conf\\Unattend.xml'",
-      "& $env:SystemRoot\\System32\\Sysprep\\Sysprep.exe /oobe /generalize /quiet /quit",
-      "while($true) { $imageState = Get-ItemProperty HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Setup\\State | Select-Object ImageState; if($imageState.ImageState -ne 'IMAGE_STATE_GENERALIZE_RESEAL_TO_OOBE') { Write-Output $imageState.ImageState; Start-Sleep -s 10 } else { break } }"
+      "Write-Host 'Running Sysprep to generalize the image...'",
+      "& $env:SystemRoot\\System32\\Sysprep\\Sysprep.exe /oobe /generalize /quiet /quit /unattend:'C:\\Program Files\\Cloudbase Solutions\\Cloudbase-Init\\conf\\Unattend.xml'",
+      "while($true) { $imageState = Get-ItemProperty HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Setup\\State | Select-Object ImageState; Write-Host \"Image State: $($imageState.ImageState)\"; if($imageState.ImageState -ne 'IMAGE_STATE_GENERALIZE_RESEAL_TO_OOBE') { Start-Sleep -s 10 } else { break } }",
+      "Write-Host 'Sysprep complete!'"
     ]
   }
 
@@ -170,13 +201,13 @@ build {
     output     = "manifest.json"
     strip_path = true
     custom_data = {
-      windows_version  = "Windows 11"
-      build_time       = timestamp()
-      template_name    = local.template_name
-      proxmox_node     = var.proxmox_node
-      disk_size        = var.vm_disk_size
-      cloudbase_init   = true
-      qemu_agent       = true
+      windows_version = "Windows 11"
+      build_time      = timestamp()
+      template_name   = local.template_name
+      proxmox_node    = var.proxmox_node
+      disk_size       = var.vm_disk_size
+      cloudbase_init  = true
+      qemu_agent      = true
     }
   }
 }
