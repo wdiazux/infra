@@ -136,7 +136,7 @@ Supporting golden images for:
 - **Debian** (latest stable) - Cloud image approach
 - **Ubuntu** (latest LTS) - Cloud image approach
 - **Arch Linux** (rolling) - Cloud image approach
-- **NixOS** - TBD
+- **NixOS** (25.11) - Cloud image approach (Hydra VMA, no Ansible - declarative config)
 - **Windows** - TBD
 
 #### Packer Implementation Strategy
@@ -145,8 +145,10 @@ All traditional Linux distributions use the **official cloud image approach**:
 
 **Workflow:**
 1. **One-time setup** (on Proxmox host): Run `import-cloud-image.sh` to download and import official cloud image
-2. **Packer build** (from workstation): `proxmox-clone` builder clones the base VM and customizes with Ansible
+2. **Packer build** (from workstation): `proxmox-clone` builder clones the base VM and customizes with Ansible (except NixOS - declarative)
 3. **Result**: Golden template ready for deployment via Terraform
+
+**Note**: NixOS uses its own declarative configuration system (`/etc/nixos/configuration.nix`). No Ansible provisioning is used - configure NixOS via `nixos-rebuild switch`.
 
 **Benefits:**
 - ✅ Much faster than ISO installation (5-10 min vs 20-30 min)
@@ -162,6 +164,7 @@ All traditional Linux distributions use the **official cloud image approach**:
 | Ubuntu 24.04 | cloud-images.ubuntu.com | 9100 | 9102 | ubuntu |
 | Debian 13 | cloud.debian.org | 9110 | 9112 | debian |
 | Arch Linux | mirror.pkgbuild.com/images | 9300 | 9302 | arch |
+| NixOS 25.11 | hydra.nixos.org (VMA) | 9200 | 9202 | nixos |
 
 ## Talos Implementation
 
@@ -520,6 +523,7 @@ zpool scrub poolname          # Data integrity check
 
 ## Version History
 
+- **2026-01-05**: NixOS cloud image implementation (using Hydra VMA, declarative config - no Ansible)
 - **2026-01-05**: Arch Linux cloud image implementation (converted from ISO to official cloud image approach, consistent with Ubuntu/Debian)
 - **2026-01-04**: Nix + npins dependency management implementation (shell.nix, direnv, reproducible environments)
 - **2025-12-15**: Infrastructure dependencies audit and update (Terraform 1.14.2, Packer 1.14.3, Ansible major updates)

@@ -3,42 +3,39 @@
 # Copy this file to nixos.auto.pkrvars.hcl and fill in your values
 # cp nixos.auto.pkrvars.hcl.example nixos.auto.pkrvars.hcl
 
-# Proxmox Connection
-proxmox_url      = "https://proxmox.local:8006/api2/json"
-proxmox_username = "terraform@pve"
-proxmox_token    = "PVEAPIToken=terraform@pve!terraform-token=xxxxxxxx"
-proxmox_node     = "pve"
+# Proxmox Connection (can also use environment variables)
+# proxmox_url      = "https://proxmox.example.com:8006/api2/json"
+# proxmox_username = "packer@pve!packer-token"
+# proxmox_token    = "your-token-secret"
+proxmox_node            = "pve"
 proxmox_skip_tls_verify = true
 
-# NixOS Version and ISO
-nixos_version = "25.05"  # Current stable release
-nixos_iso_url = "https://channels.nixos.org/nixos-25.05/latest-nixos-minimal-x86_64-linux.iso"
-nixos_iso_checksum = "file:https://channels.nixos.org/nixos-25.05/latest-nixos-minimal-x86_64-linux.iso.sha256"
+# Cloud image base VM (created by import-cloud-image.sh)
+cloud_image_vm_id = 9200
+
+# NixOS version (for tracking - image comes from Hydra)
+nixos_version = "25.11"
 
 # Template Configuration
 template_name        = "nixos-golden-template"
-template_description = "NixOS 25.05 golden image with cloud-init and qemu-guest-agent"
-vm_id                = 9004
+template_description = "NixOS 25.11 golden image with cloud-init"
 
-# VM Hardware
-vm_cpu_type = "host"
-vm_cores    = 2
-vm_memory   = 2048
-vm_disk_size    = "20G"
-vm_disk_storage = "tank"
-
-# Network
+# VM Configuration
+vm_id             = 9202
+vm_name           = "nixos-build"
+vm_cores          = 2
+vm_memory         = 2048
+vm_disk_storage   = "tank"
 vm_network_bridge = "vmbr0"
 
-# SSH (for Packer provisioning only)
-ssh_username = "root"
+# SSH (for Packer provisioning - uses cloud image default)
 ssh_password = "nixos"
-ssh_timeout  = "20m"
+
+# Optional: Add SSH public key to template
+# ssh_public_key = "ssh-ed25519 AAAA... user@host"
 
 # Notes:
-# - Get latest ISO URL from: https://nixos.org/download
-# - Checksum is verified from official .sha256 file
-# - ssh_username/password are temporary, only used during build
-# - Final VMs will use cloud-init for user creation
-# - Template will have cloud-init and qemu-guest-agent installed
-# - NixOS uses declarative configuration via /etc/nixos/configuration.nix
+# - Run import-cloud-image.sh on Proxmox host first to create base VM
+# - NixOS is declarative - configure via /etc/nixos/configuration.nix
+# - No Ansible provisioning needed - NixOS manages its own packages
+# - Image source: https://hydra.nixos.org/job/nixos/release-25.11/nixos.proxmoxImage.x86_64-linux

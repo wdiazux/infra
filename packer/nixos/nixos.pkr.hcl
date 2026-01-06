@@ -1,7 +1,9 @@
-# NixOS Golden Image Packer Template for Proxmox VE 9.0
+# NixOS Cloud Image Packer Template for Proxmox VE 9.0
+# PREFERRED METHOD - Uses official NixOS Proxmox image from Hydra (much faster than ISO)
 #
-# This template creates a NixOS golden image with cloud-init
-# for use as a template in Proxmox
+# This template clones NixOS cloud image and prepares it as a Proxmox template.
+# NixOS is declarative - all configuration is done via /etc/nixos/configuration.nix
+# No Ansible provisioning needed - NixOS manages its own packages and configuration.
 
 packer {
   required_version = "~> 1.14.3"
@@ -9,26 +11,29 @@ packer {
   required_plugins {
     proxmox = {
       source  = "github.com/hashicorp/proxmox"
-      version = ">= 1.2.3"  # Latest version as of Dec 2025
+      version = ">= 1.2.3" # Latest version as of Dec 2025
     }
   }
 }
 
 # Local variables for computed values
 locals {
-  # Use static template name for homelab simplicity (no timestamp)
-  # This ensures Terraform always finds the template without manual updates
+  # Template name (no timestamp - Terraform expects exact name)
   template_name = var.template_name
 }
 
-# Proxmox ISO Builder
-source "proxmox-iso" "nixos" {
+# Proxmox clone builder
+source "proxmox-clone" "nixos" {
   # Proxmox connection
   proxmox_url              = var.proxmox_url
-  username                 = var.proxmox_username  # Token ID format: user@realm!tokenid
-  token                    = var.proxmox_token     # Just the token secret
+  username                 = var.proxmox_username # Token ID format: user@realm!tokenid
+  token                    = var.proxmox_token    # Just the token secret
   node                     = var.proxmox_node
   insecure_skip_tls_verify = var.proxmox_skip_tls_verify
+
+  # Clone from uploaded cloud image VM
+  clone_vm_id = var.cloud_image_vm_id
+  full_clone  = true # Use full clone instead of linked clone
 
   # VM configuration
   vm_id                = var.vm_id
@@ -36,33 +41,15 @@ source "proxmox-iso" "nixos" {
   template_name        = local.template_name
   template_description = "${var.template_description} (built ${formatdate("YYYY-MM-DD", timestamp())})"
 
-  # ISO configuration (using boot_iso block - recommended modern approach)
-  boot_iso {
-    type             = "scsi"
-    iso_url          = var.nixos_iso_url
-    iso_checksum     = var.nixos_iso_checksum
-    iso_storage_pool = "local"
-    unmount          = true
-  }
-
   # CPU configuration
-  cpu_type = var.vm_cpu_type
-  cores    = var.vm_cores
-  sockets  = 1
+  cores   = var.vm_cores
+  sockets = 1
 
   # Memory
   memory = var.vm_memory
 
   # Disk configuration
-  disks {
-    type         = "scsi"
-    storage_pool = var.vm_disk_storage
-    disk_size    = var.vm_disk_size
-    format       = "raw"
-    cache_mode   = "writethrough"
-    io_thread    = true
-    discard      = true  # Enable TRIM for ZFS storage efficiency
-  }
+  scsi_controller = "virtio-scsi-single"
 
   # Network configuration
   network_adapters {
@@ -70,93 +57,83 @@ source "proxmox-iso" "nixos" {
     bridge = var.vm_network_bridge
   }
 
-  # SCSI controller
-  scsi_controller = "virtio-scsi-single"
-
-  # QEMU Agent
+  # QEMU Agent (already in cloud image)
   qemu_agent = true
 
-  # BIOS (UEFI for NixOS)
-  bios = "ovmf"
-  efi_config {
-    efi_storage_pool  = var.vm_disk_storage
-    efi_type          = "4m"
-    pre_enrolled_keys = true
-  }
-
-  # Boot configuration for NixOS
-  boot_wait = "10s"
-  boot_command = [
-    "<enter><wait30>",
-    "sudo su -<enter><wait>",
-    "passwd<enter><wait>",
-    "${var.ssh_password}<enter><wait>",
-    "${var.ssh_password}<enter><wait>",
-    "systemctl start sshd<enter><wait>",
-    "ip addr show<enter><wait>"
-  ]
-
-  # HTTP server for configuration files
-  http_directory = "http"
-  http_port_min  = 8103
-  http_port_max  = 8103
-
-  # SSH configuration
-  ssh_username = var.ssh_username
-  ssh_password = var.ssh_password
-  ssh_timeout  = var.ssh_timeout
-
-  # Cloud-init
+  # Cloud-init (already in cloud image)
   cloud_init              = true
   cloud_init_storage_pool = var.vm_disk_storage
+  cloud_init_disk_type    = "scsi"
+
+  # Force IP configuration via cloud-init (DHCP)
+  ipconfig {
+    ip = "dhcp"
+  }
+
+  # DNS configuration
+  nameserver = "10.10.2.1"
+
+  # SSH configuration
+  ssh_username = "nixos"
+  ssh_password = var.ssh_password
+  ssh_timeout  = "5m"
+
+  # Add handshake attempts
+  ssh_handshake_attempts = 50
+
+  # Console configuration
+  vga {
+    type = "std"
+  }
 
   # Template settings
-  os = "l26"  # Linux 2.6+ kernel
+  os = "l26" # Linux 2.6+ kernel
 }
 
 # Build configuration
 build {
   name    = "nixos-proxmox-template"
-  sources = ["source.proxmox-iso.nixos"]
+  sources = ["source.proxmox-clone.nixos"]
 
-  # Run installation script
-  provisioner "shell" {
-    script = "${path.root}/http/install.sh"
-    environment_vars = [
-      "PACKER_HTTP_ADDR={{ .HTTPIP }}:{{ .HTTPPort }}"
-    ]
-  }
-
-  # Reboot into installed system
-  provisioner "shell" {
-    inline = ["reboot"]
-    expect_disconnect = true
-  }
-
-  # Wait for system to come back up
-  provisioner "shell" {
-    pause_before = "60s"
-    inline = [
-      "echo 'System rebooted successfully!'"
-    ]
-  }
-
-  # Update system and rebuild
+  # Wait for cloud-init to complete
   provisioner "shell" {
     inline = [
-      "nixos-rebuild switch --upgrade"
+      "echo 'Waiting for cloud-init to complete...'",
+      "cloud-init status --wait || true",
+      "echo 'Cloud-init ready!'"
+    ]
+    # Accept exit code 2 (degraded/done) due to cloud-init warnings
+    valid_exit_codes = [0, 2]
+  }
+
+  # NixOS-specific configuration
+  # Note: We don't use Ansible for NixOS - all config is declarative via configuration.nix
+  provisioner "shell" {
+    inline = [
+      "echo 'Preparing NixOS template...'",
+
+      # Ensure SSH allows password auth (for Packer/initial access)
+      "sudo sed -i 's/^#\\?PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config || true",
+
+      # Display current NixOS version
+      "nixos-version",
+
+      # Update channels
+      "sudo nix-channel --update || true",
+
+      "echo 'NixOS template preparation complete!'"
     ]
   }
 
-  # Add SSH public key to template (optional)
+  # Add SSH public key if provided
   provisioner "shell" {
     inline = [
       "if [ -n '${var.ssh_public_key}' ]; then",
       "  echo 'Adding SSH public key to template...'",
-      "  mkdir -p /root/.ssh",
-      "  echo '${var.ssh_public_key}' >> /root/.ssh/authorized_keys",
-      "  chmod 700 /root/.ssh",
-      "  chmod 600 /root/.ssh/authorized_keys",
+      "  mkdir -p ~/.ssh",
+      "  echo '${var.ssh_public_key}' >> ~/.ssh/authorized_keys",
+      "  chmod 700 ~/.ssh",
+      "  chmod 600 ~/.ssh/authorized_keys",
       "  echo 'SSH public key added successfully'",
       "else",
       "  echo 'No SSH public key provided, skipping...'",
@@ -164,15 +141,32 @@ build {
     ]
   }
 
-  # Clean up
+  # Clean up for template
   provisioner "shell" {
     inline = [
-      "nix-collect-garbage -d",
-      "rm -rf /tmp/*",
-      "rm -rf /var/tmp/*",
-      "cloud-init clean --logs --seed || true",
-      "truncate -s 0 /etc/machine-id",
-      "sync"
+      "echo 'Cleaning up for template...'",
+
+      # Clean nix store (remove old generations)
+      "sudo nix-collect-garbage -d || true",
+
+      # Clean temporary files
+      "sudo rm -rf /tmp/*",
+      "sudo rm -rf /var/tmp/*",
+
+      # Clean cloud-init for re-initialization on clone
+      "sudo cloud-init clean --logs --seed || true",
+
+      # Reset machine-id for unique ID on clone
+      "sudo truncate -s 0 /etc/machine-id",
+
+      # Clear shell history
+      "history -c || true",
+      "rm -f ~/.bash_history",
+
+      # Sync filesystem
+      "sync",
+
+      "echo 'Template cleanup complete!'"
     ]
   }
 
@@ -181,31 +175,15 @@ build {
     output     = "manifest.json"
     strip_path = true
     custom_data = {
-      nixos_version    = var.nixos_version
-      build_time       = timestamp()
-      template_name    = local.template_name
-      proxmox_node     = var.proxmox_node
-      disk_size        = var.vm_disk_size
-      cloud_init       = true
-      qemu_agent       = true
+      nixos_version = var.nixos_version
+      build_time    = timestamp()
+      template_name = local.template_name
+      proxmox_node  = var.proxmox_node
+      cloud_init    = true
+      qemu_agent    = true
+      note          = "NixOS is declarative - configure via /etc/nixos/configuration.nix"
     }
   }
 }
 
-# Usage Notes:
-#
-# 1. Ensure http/install.sh and http/configuration.nix exist
-# 2. Set variables in nixos.auto.pkrvars.hcl
-# 3. Run: packer init .
-# 4. Run: packer validate .
-# 5. Run: packer build .
-#
-# After building:
-# - Template available in Proxmox
-# - Clone VMs from template
-# - Customize with cloud-init (user-data, network-config)
-# - Further configure with NixOS declarative configuration
-#
-# Note: NixOS uses declarative configuration
-# To modify the system, edit /etc/nixos/configuration.nix and run:
-# nixos-rebuild switch
+# See README.md for usage instructions
