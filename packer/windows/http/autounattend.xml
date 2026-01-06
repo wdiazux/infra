@@ -4,6 +4,27 @@
 
     <!-- Windows PE Settings -->
     <settings pass="windowsPE">
+        <!-- VirtIO Drivers for Proxmox/KVM -->
+        <component name="Microsoft-Windows-PnpCustomizationsWinPE" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+            <DriverPaths>
+                <!-- VirtIO SCSI driver (required to see disk) -->
+                <PathAndCredentials wcm:action="add" wcm:keyValue="1">
+                    <Path>E:\vioscsi\w11\amd64</Path>
+                </PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="2">
+                    <Path>E:\viostor\w11\amd64</Path>
+                </PathAndCredentials>
+                <!-- VirtIO Network driver -->
+                <PathAndCredentials wcm:action="add" wcm:keyValue="3">
+                    <Path>E:\NetKVM\w11\amd64</Path>
+                </PathAndCredentials>
+                <!-- VirtIO Balloon driver -->
+                <PathAndCredentials wcm:action="add" wcm:keyValue="4">
+                    <Path>E:\Balloon\w11\amd64</Path>
+                </PathAndCredentials>
+            </DriverPaths>
+        </component>
+
         <!-- International Settings -->
         <component name="Microsoft-Windows-International-Core-WinPE" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <SetupUILanguage>

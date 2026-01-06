@@ -106,6 +106,12 @@ source "proxmox-iso" "windows" {
     pre_enrolled_keys = true
   }
 
+  # TPM 2.0 (required for Windows 11)
+  tpm_config {
+    tpm_storage_pool = var.vm_disk_storage
+    tpm_version      = "v2.0"
+  }
+
   # Boot configuration
   boot_wait    = "5s"
   boot_command = ["<spacebar>"]
