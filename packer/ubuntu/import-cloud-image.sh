@@ -35,6 +35,21 @@ echo "==> Verifying checksum..."
 wget -q "https://cloud-images.ubuntu.com/releases/${UBUNTU_VERSION}/release/SHA256SUMS" -O SHA256SUMS
 sha256sum -c SHA256SUMS --ignore-missing
 
+# Customize cloud image to install qemu-guest-agent and enable password auth
+echo "==> Customizing cloud image..."
+if ! command -v virt-customize &> /dev/null; then
+    echo "    ERROR: virt-customize not found. Installing libguestfs-tools..."
+    apt-get update && apt-get install -y libguestfs-tools
+fi
+
+echo "    - Installing qemu-guest-agent and configuring SSH"
+virt-customize -a "${CLOUD_IMAGE_FILE}" \
+  --install qemu-guest-agent \
+  --run-command "systemctl enable qemu-guest-agent" \
+  --run-command "sed -i 's/^#\?PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config" \
+  --run-command "sed -i 's/^PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config.d/60-cloudimg-settings.conf" \
+  --run-command "sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config"
+
 # Create VM
 echo "==> Creating VM ${VM_ID}..."
 qm create ${VM_ID} \
@@ -70,6 +85,19 @@ qm set ${VM_ID} --agent enabled=1
 # Set default CloudInit user
 echo "==> Configuring default CloudInit user..."
 qm set ${VM_ID} --ciuser ubuntu --cipassword ubuntu
+
+# Configure network to use DHCP
+echo "==> Configuring network to use DHCP..."
+qm set ${VM_ID} --ipconfig0 ip=dhcp
+
+# Add SSH public key if available
+echo "==> Adding SSH public key..."
+if [ -f "$HOME/.ssh/id_rsa.pub" ]; then
+    qm set ${VM_ID} --sshkeys "$HOME/.ssh/id_rsa.pub"
+    echo "    SSH key added from $HOME/.ssh/id_rsa.pub"
+else
+    echo "    Warning: No SSH key found at $HOME/.ssh/id_rsa.pub - password auth only"
+fi
 
 # Resize disk (optional, increases from ~2GB to specified size)
 echo "==> Resizing disk to 20GB..."

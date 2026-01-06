@@ -35,6 +35,7 @@ source "proxmox-clone" "ubuntu" {
 
   # Clone from uploaded cloud image VM
   clone_vm_id = var.cloud_image_vm_id
+  full_clone  = true # Use full clone instead of linked clone
 
   # VM configuration
   vm_id                = var.vm_id
@@ -49,6 +50,9 @@ source "proxmox-clone" "ubuntu" {
   # Memory
   memory = var.vm_memory
 
+  # Disk configuration
+  scsi_controller = "virtio-scsi-single"
+
   # Network configuration
   network_adapters {
     model  = "virtio"
@@ -61,11 +65,23 @@ source "proxmox-clone" "ubuntu" {
   # Cloud-init (already in cloud image)
   cloud_init              = true
   cloud_init_storage_pool = var.vm_disk_storage
+  cloud_init_disk_type    = "scsi" # Better performance than default "ide"
+
+  # Force IP configuration via cloud-init (DHCP)
+  ipconfig {
+    ip = "dhcp"
+  }
+
+  # DNS configuration
+  nameserver = "10.10.2.1"
 
   # SSH configuration
   ssh_username = "ubuntu"
   ssh_password = var.ssh_password
-  ssh_timeout  = "10m"
+  ssh_timeout  = "5m"
+
+  # Add handshake attempts
+  ssh_handshake_attempts = 50
 
   # Console configuration
   # Use standard VGA for console access (not serial)
@@ -89,6 +105,8 @@ build {
       "cloud-init status --wait",
       "echo 'Cloud-init ready!'"
     ]
+    # Accept exit code 2 (degraded/done) due to Proxmox cloud-init deprecation warnings
+    valid_exit_codes = [0, 2]
   }
 
   # Install baseline packages, configure SSH keys, and cleanup with Ansible
@@ -137,43 +155,4 @@ build {
   }
 }
 
-# Usage Notes:
-#
-# PREREQUISITES:
-# - Ansible 2.16+ installed on Packer build machine
-# - Ansible collections: ansible-galaxy collection install -r ../../ansible/requirements.yml
-#
-# SETUP (One-time):
-# 1. Download Ubuntu cloud image:
-#    wget https://cloud-images.ubuntu.com/releases/24.04/release/ubuntu-24.04-server-cloudimg-amd64.img
-#
-# 2. Import to Proxmox (run on Proxmox host):
-#    qm create 9000 --name ubuntu-cloud-base --memory 2048 --cores 2 --net0 virtio,bridge=vmbr0
-#    qm importdisk 9000 ubuntu-24.04-server-cloudimg-amd64.img tank
-#    qm set 9000 --scsihw virtio-scsi-single --scsi0 tank:vm-9000-disk-0
-#    qm set 9000 --boot order=scsi0
-#    qm set 9000 --ide2 tank:cloudinit
-#    qm set 9000 --serial0 socket --vga serial0
-#    qm set 9000 --agent enabled=1
-#    qm set 9000 --ciuser ubuntu --cipassword ubuntu
-#
-# 3. Set cloud_image_vm_id = 9000 in variables
-#
-# BUILD:
-# 1. Set variables in ubuntu.auto.pkrvars.hcl
-# 2. Run: packer init .
-# 3. Run: packer validate .
-# 4. Run: packer build .
-#
-# Build time: 5-10 minutes (much faster than ISO!)
-#
-# Architecture:
-# - Packer + Ansible provisioner: Installs baseline packages in golden image
-# - Terraform: Deploys VMs from golden image
-# - Ansible baseline role: Instance-specific configuration (hostnames, IPs, secrets)
-#
-# After building:
-# - Template available in Proxmox with baseline packages pre-installed
-# - Clone VMs from template
-# - Customize with cloud-init (user-data, network-config)
-# - Configure with Ansible baseline role for instance-specific settings
+# See README.md for usage instructions
