@@ -133,11 +133,35 @@ All project dependencies are defined in `shell.nix` and automatically available 
 ### Traditional OS
 
 Supporting golden images for:
-- Debian (latest stable)
-- Ubuntu (latest LTS)
-- Arch Linux
-- NixOS
-- Windows (version TBD)
+- **Debian** (latest stable) - Cloud image approach
+- **Ubuntu** (latest LTS) - Cloud image approach
+- **Arch Linux** (rolling) - Cloud image approach
+- **NixOS** - TBD
+- **Windows** - TBD
+
+#### Packer Implementation Strategy
+
+All traditional Linux distributions use the **official cloud image approach**:
+
+**Workflow:**
+1. **One-time setup** (on Proxmox host): Run `import-cloud-image.sh` to download and import official cloud image
+2. **Packer build** (from workstation): `proxmox-clone` builder clones the base VM and customizes with Ansible
+3. **Result**: Golden template ready for deployment via Terraform
+
+**Benefits:**
+- ✅ Much faster than ISO installation (5-10 min vs 20-30 min)
+- ✅ Official, tested base images
+- ✅ No boot/installation issues
+- ✅ Consistent workflow across all distributions
+- ✅ Cloud-init pre-configured
+
+**Template Details:**
+
+| OS | Cloud Image Source | Base VM ID | Template ID | Default User |
+|----|-------------------|------------|-------------|--------------|
+| Ubuntu 24.04 | cloud-images.ubuntu.com | 9100 | 9102 | ubuntu |
+| Debian 13 | cloud.debian.org | 9110 | 9112 | debian |
+| Arch Linux | mirror.pkgbuild.com/images | 9300 | 9302 | arch |
 
 ## Talos Implementation
 
@@ -496,6 +520,7 @@ zpool scrub poolname          # Data integrity check
 
 ## Version History
 
+- **2026-01-05**: Arch Linux cloud image implementation (converted from ISO to official cloud image approach, consistent with Ubuntu/Debian)
 - **2026-01-04**: Nix + npins dependency management implementation (shell.nix, direnv, reproducible environments)
 - **2025-12-15**: Infrastructure dependencies audit and update (Terraform 1.14.2, Packer 1.14.3, Ansible major updates)
 - **2025-11-23**: Session recovery and comprehensive infrastructure review (fixed template naming, added validation, Ansible integration)
@@ -507,6 +532,6 @@ zpool scrub poolname          # Data integrity check
 
 ---
 
-**Last Updated**: 2026-01-04
+**Last Updated**: 2026-01-05
 **Project Status**: Production-Ready
 **Primary Contact**: wdiazux
