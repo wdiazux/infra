@@ -100,16 +100,4 @@ variable "vm_network_bridge" {
   default     = "vmbr0"
 }
 
-# SSH Configuration
-variable "ssh_password" {
-  type        = string
-  description = "SSH password for provisioning (default NixOS cloud image password)"
-  default     = "nixos"
-  sensitive   = true
-}
-
-variable "ssh_public_key" {
-  type        = string
-  description = "SSH public key to add to the template (optional)"
-  default     = ""
-}
+# Note: SSH keys are configured in config/configuration.nix

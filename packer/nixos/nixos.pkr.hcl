@@ -1,9 +1,8 @@
 # NixOS Cloud Image Packer Template for Proxmox VE 9.0
 # PREFERRED METHOD - Uses official NixOS Proxmox image from Hydra (much faster than ISO)
 #
-# This template clones NixOS cloud image and prepares it as a Proxmox template.
-# NixOS is declarative - all configuration is done via /etc/nixos/configuration.nix
-# No Ansible provisioning needed - NixOS manages its own packages and configuration.
+# This template clones NixOS cloud image and applies custom configuration.nix
+# to create a golden image with packages and settings baked in.
 
 packer {
   required_version = "~> 1.14.3"
@@ -73,9 +72,8 @@ source "proxmox-clone" "nixos" {
   # DNS configuration
   nameserver = "10.10.2.1"
 
-  # SSH configuration
-  # NixOS cloud image has empty password by default
-  ssh_username = "nixos"
+  # SSH configuration - use root (no password required)
+  ssh_username = "root"
   ssh_password = ""
   ssh_timeout  = "5m"
 
@@ -96,54 +94,33 @@ build {
   name    = "nixos-proxmox-template"
   sources = ["source.proxmox-clone.nixos"]
 
-  # NixOS-specific configuration
-  # Note: NixOS cloud image doesn't have cloud-init command and nixos user has no passwordless sudo
-  # Keep provisioning minimal - NixOS is declarative, configure via configuration.nix after deployment
+  # Display NixOS version
   provisioner "shell" {
     inline = [
-      "echo 'Preparing NixOS template...'",
-
-      # Display current NixOS version
+      "echo '=== NixOS Golden Image Build ==='",
       "nixos-version",
-
-      # Verify system is ready
-      "echo 'System info:'",
-      "uname -a",
-      "df -h /",
-
-      "echo 'NixOS template preparation complete!'"
+      "uname -a"
     ]
   }
 
-  # Add SSH public key if provided (user's home directory, no sudo needed)
-  provisioner "shell" {
-    inline = [
-      "if [ -n '${var.ssh_public_key}' ]; then",
-      "  echo 'Adding SSH public key to template...'",
-      "  mkdir -p ~/.ssh",
-      "  echo '${var.ssh_public_key}' >> ~/.ssh/authorized_keys",
-      "  chmod 700 ~/.ssh",
-      "  chmod 600 ~/.ssh/authorized_keys",
-      "  echo 'SSH public key added successfully'",
-      "else",
-      "  echo 'No SSH public key provided, skipping...'",
-      "fi"
-    ]
+  # Upload custom configuration files
+  provisioner "file" {
+    source      = "${path.root}/config/configuration.nix"
+    destination = "/etc/nixos/configuration.nix"
   }
 
-  # Minimal cleanup (no sudo required)
+  provisioner "file" {
+    source      = "${path.root}/config/hardware-configuration.nix"
+    destination = "/etc/nixos/hardware-configuration.nix"
+  }
+
+  # Apply NixOS configuration
   provisioner "shell" {
     inline = [
-      "echo 'Cleaning up for template...'",
+      "echo '==> Applying NixOS configuration...'",
+      "nixos-rebuild switch",
 
-      # Clear shell history
-      "history -c || true",
-      "rm -f ~/.bash_history",
-
-      # Sync filesystem
-      "sync",
-
-      "echo 'Template cleanup complete!'"
+      "echo '==> NixOS configuration applied successfully!'"
     ]
   }
 
@@ -158,7 +135,8 @@ build {
       proxmox_node  = var.proxmox_node
       cloud_init    = true
       qemu_agent    = true
-      note          = "NixOS is declarative - configure via /etc/nixos/configuration.nix"
+      custom_config = true
+      note          = "Golden image with custom configuration.nix applied"
     }
   }
 }
