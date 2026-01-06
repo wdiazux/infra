@@ -36,17 +36,11 @@ variable "proxmox_skip_tls_verify" {
   default     = true
 }
 
-# Arch Linux ISO
-variable "arch_iso_url" {
-  type        = string
-  description = "URL to Arch Linux ISO"
-  default     = "https://mirror.rackspace.com/archlinux/iso/latest/archlinux-x86_64.iso"
-}
-
-variable "arch_iso_checksum" {
-  type        = string
-  description = "SHA256 checksum of Arch ISO (use 'file:' prefix for checksum file)"
-  default     = "file:https://mirror.rackspace.com/archlinux/iso/latest/sha256sums.txt"
+# Cloud Image Base VM
+variable "cloud_image_vm_id" {
+  type        = number
+  description = "VM ID of imported cloud image (created by import-cloud-image.sh)"
+  default     = 9300
 }
 
 # Template Configuration
@@ -66,13 +60,13 @@ variable "template_description" {
 variable "vm_id" {
   type        = number
   description = "VM ID for the template"
-  default     = 9003
+  default     = 9302
 }
 
 variable "vm_name" {
   type        = string
   description = "Temporary VM name during build"
-  default     = "arch-build"
+  default     = "arch-cloud-build"
 }
 
 variable "vm_cpu_type" {
@@ -128,7 +122,7 @@ variable "ssh_password" {
 variable "ssh_timeout" {
   type        = string
   description = "SSH timeout"
-  default     = "20m"
+  default     = "5m"
 }
 
 variable "ssh_public_key" {

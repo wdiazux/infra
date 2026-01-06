@@ -1,71 +1,139 @@
 # Arch Linux Golden Image Packer Template
 
-This directory contains Packer configuration to build an Arch Linux golden image for Proxmox VE 9.0 with cloud-init and QEMU guest agent support.
+This directory contains Packer configuration to build an Arch Linux golden image for Proxmox VE 9.0 using the **official Arch Linux cloud image** (PREFERRED METHOD).
 
 ## Overview
 
 Creates a production-ready Arch Linux template with:
-- **Arch Linux** - Latest rolling release
-- **Cloud-init** - For automated VM customization
-- **QEMU Guest Agent** - For Proxmox integration
+- **Arch Linux** - Latest rolling release (official cloud image)
+- **Cloud-init** - Pre-configured for automated VM customization
+- **QEMU Guest Agent** - Pre-installed for Proxmox integration
 - **SSH Server** - Pre-configured and enabled
-- **Baseline packages** - Common utilities and tools
-- **Minimal footprint** - ~20GB disk, 2GB RAM during build
-- **UEFI boot** - Modern boot system with systemd-boot
+- **Baseline packages** - Installed via Ansible provisioning
+- **Fast build** - 5-10 minutes (vs 20-30 min with ISO approach)
+
+## Why Cloud Image?
+
+✅ **Much faster** - No full OS installation
+✅ **Official base** - Maintained by Arch Linux team
+✅ **Pre-configured** - Cloud-init and qemu-guest-agent already installed
+✅ **Consistent** - Same workflow as Ubuntu/Debian templates
+✅ **No boot issues** - Avoids BIOS/boot order complexity
 
 ## Prerequisites
 
 ### Tools Required
 
+All tools are available in the Nix development environment:
+
 ```bash
-# Packer 1.14.2+
-packer --version
+# Enter Nix shell (from project root)
+nix-shell
+
+# Verify tools
+packer --version  # 1.14.3+
+ansible --version # 2.17.0+
 ```
 
 ### Proxmox Setup
 
-Same as Talos template - see [main Packer README](../../packer/talos/README.md#proxmox-setup).
+1. **API Token**: Create Proxmox API token with appropriate permissions
+2. **Storage**: ZFS pool or other storage for VM disks (default: `tank`)
+3. **Network**: Bridge for VM networking (default: `vmbr0`)
 
-### Get Arch Linux ISO Information
+### libguestfs-tools (On Proxmox Host)
 
-Visit https://archlinux.org/download/ and get the latest ISO:
-- **ISO URL**: Always use "latest" link for rolling release
-- **Checksum**: Automatically verified from sha256sums.txt
+The import script uses `virt-customize` to configure the cloud image before importing:
 
-Example:
-```
-URL: https://mirror.rackspace.com/archlinux/iso/latest/archlinux-x86_64.iso
-Checksum: file:https://mirror.rackspace.com/archlinux/iso/latest/sha256sums.txt
+```bash
+# On Proxmox host
+apt-get update && apt-get install -y libguestfs-tools
 ```
 
 ## Quick Start
 
-### 1. Copy Example Configuration
+### Step 1: Import Official Cloud Image (One-Time Setup)
+
+This creates a base VM (ID 9300) that Packer will clone.
+
+**Option A: Execute on Proxmox host directly**
+
+```bash
+# SSH to Proxmox host
+ssh root@pve.home-infra.net
+
+# Run import script
+cd /tmp
+wget https://raw.githubusercontent.com/your-repo/infra/main/packer/arch/import-cloud-image.sh
+chmod +x import-cloud-image.sh
+./import-cloud-image.sh
+```
+
+**Option B: Execute remotely from workstation**
+
+```bash
+# From your workstation (in project directory)
+cd packer/arch
+
+# Copy script to Proxmox
+scp import-cloud-image.sh root@pve.home-infra.net:/tmp/
+
+# Execute remotely
+ssh root@pve.home-infra.net 'cd /tmp && chmod +x import-cloud-image.sh && ./import-cloud-image.sh'
+```
+
+**What this does:**
+1. Downloads official Arch cloud image (558MB, ~1-2 minutes)
+2. Verifies SHA256 checksum
+3. Customizes image with `virt-customize` (SSH password authentication)
+4. Imports to Proxmox as VM 9300 (`arch-cloud-base`)
+5. Configures cloud-init, networking, and resizes disk to 20GB
+
+**Output:**
+```
+==> ✅ Arch Linux cloud image imported successfully!
+
+Base VM created: 9300 (arch-cloud-base)
+
+Next steps:
+1. Start VM to test: qm start 9300
+2. Find IP: qm guest cmd 9300 network-get-interfaces
+3. SSH: ssh arch@<ip> (password: arch)
+4. Stop VM: qm stop 9300
+5. Use Packer to customize and create template
+```
+
+### Step 2: Configure Packer Variables
 
 ```bash
 cd packer/arch
 cp arch.auto.pkrvars.hcl.example arch.auto.pkrvars.hcl
 ```
 
-### 2. Edit Configuration
-
 Edit `arch.auto.pkrvars.hcl`:
 
 ```hcl
 # Proxmox connection
-proxmox_url  = "https://your-proxmox:8006/api2/json"
-proxmox_token = "PVEAPIToken=user@pam!token=secret"
+proxmox_url  = "https://pve.home-infra.net:8006/api2/json"
+proxmox_username = "packer@pve!packer-token"  # Token ID
+proxmox_token = "your-token-secret-here"
 proxmox_node = "pve"
 
-# Arch ISO (always use latest for rolling release)
-arch_iso_url = "https://mirror.rackspace.com/archlinux/iso/latest/archlinux-x86_64.iso"
-arch_iso_checksum = "file:https://mirror.rackspace.com/archlinux/iso/latest/sha256sums.txt"
+# Cloud image base VM (created by import-cloud-image.sh)
+cloud_image_vm_id = 9300
+
+# Template configuration
+vm_id = 9302  # Template will be created with this ID
+template_name = "arch-golden-template"
 
 # Storage
-vm_disk_storage = "tank"  # Your Proxmox storage pool
+vm_disk_storage = "tank"
+
+# SSH public key (optional, will be added to template)
+ssh_public_key = "ssh-rsa AAAAB3Nza... your-key-here"
 ```
 
-### 3. Initialize and Build
+### Step 3: Build Golden Template
 
 ```bash
 # Initialize Packer plugins
@@ -78,373 +146,211 @@ packer validate .
 packer build .
 ```
 
-**Build time**: 15-25 minutes depending on network speed and storage.
+**Build time**: 5-10 minutes
 
-### 4. Verify Template
+**What happens:**
+1. Packer clones base VM 9300 → creates build VM 9302
+2. Starts VM and waits for cloud-init to complete
+3. Runs Ansible playbook to install baseline packages
+4. Configures SSH keys and system settings
+5. Cleans up (machine-id reset, temp files, cloud-init data)
+6. Converts to Proxmox template
 
-Check in Proxmox UI:
+### Step 4: Verify Template
+
+Check in Proxmox UI or CLI:
+
+```bash
+# List templates
+ssh root@pve.home-infra.net 'qm list | grep template'
+
+# View template config
+ssh root@pve.home-infra.net 'qm config 9302'
 ```
-Datacenter → Node → VM Templates
-```
-
-Should see: `arch-linux-golden-template-YYYYMMDD-hhmm`
 
 ## Using the Template
 
 ### Option 1: Clone Manually in Proxmox UI
 
-1. Right-click template → Clone
-2. Full clone (not linked)
-3. Set VM name and resources
-4. Start VM
-5. Access via console or SSH (user: root, password: arch - change immediately!)
+1. Navigate to template in Proxmox UI
+2. Right-click → Clone
+3. Choose full clone (not linked)
+4. Set VM ID, name, and resources
+5. Configure cloud-init settings (user, password, SSH keys)
+6. Start VM
 
-### Option 2: Clone with Terraform (Recommended)
+### Option 2: Clone via CLI
 
-```hcl
-resource "proxmox_virtual_environment_vm" "arch_vm" {
-  name      = "arch-vm-01"
-  node_name = "pve"
+```bash
+# Clone template
+qm clone 9302 201 --name arch-vm-01 --full
 
-  clone {
-    vm_id = 9003  # Template ID
-    full  = true
-  }
+# Configure cloud-init
+qm set 201 --ciuser wdiaz --cipassword yourpassword
+qm set 201 --sshkeys ~/.ssh/id_ed25519.pub
+qm set 201 --ipconfig0 ip=dhcp
 
-  cpu {
-    cores = 4
-  }
+# Start VM
+qm start 201
 
-  memory {
-    dedicated = 8192
-  }
-
-  # Cloud-init configuration
-  initialization {
-    user_data_file_id = proxmox_virtual_environment_file.cloud_init.id
-
-    ip_config {
-      ipv4 {
-        address = "192.168.1.130/24"
-        gateway = "192.168.1.1"
-      }
-    }
-  }
-}
+# Get IP address
+qm guest cmd 201 network-get-interfaces
 ```
 
-### Option 3: Customize with Cloud-init
+### Option 3: Deploy with Terraform
 
-Create `user-data.yaml`:
-
-```yaml
-#cloud-config
-hostname: my-arch-vm
-fqdn: my-arch-vm.localdomain
-
-users:
-  - name: admin
-    groups: wheel
-    shell: /bin/bash
-    sudo: ALL=(ALL) NOPASSWD:ALL
-    ssh_authorized_keys:
-      - ssh-rsa AAAAB3NzaC1yc2E... your-key
-
-packages:
-  - vim
-  - htop
-  - docker
-
-runcmd:
-  - systemctl enable docker
-  - systemctl start docker
-```
-
-Upload to Proxmox and assign to VM during clone.
+Use the Terraform Proxmox provider to deploy VMs from this template. See `terraform/` directory for examples.
 
 ## Customization
 
-### Modify Installation Script
+### Modifying Packages
 
-Edit `http/install.sh` to change:
-- **Partitioning scheme** - Modify disk layout
-- **Package selection** - Add/remove packages
-- **Locale/timezone** - Change from en_US/UTC
-- **Root password** - Change default password
-- **Bootloader** - Switch from systemd-boot to GRUB
-
-### Add Provisioning Steps
-
-Edit `arch.pkr.hcl` and add provisioner blocks:
-
-```hcl
-# Install Docker
-provisioner "shell" {
-  inline = [
-    "pacman -S --noconfirm docker",
-    "systemctl enable docker"
-  ]
-}
-
-# Run Ansible
-provisioner "ansible" {
-  playbook_file = "../../ansible/playbooks/arch-baseline.yml"
-}
-```
-
-### Change Disk Size
-
-In `arch.auto.pkrvars.hcl`:
-
-```hcl
-vm_disk_size = "50G"  # Increase to 50GB
-```
-
-### Add Additional Packages
-
-In `http/install.sh`, modify the pacman install command:
+Edit the Ansible playbook to add/remove packages:
 
 ```bash
-pacman -Sy --noconfirm \
-    # ... existing packages ... \
-    docker \
-    nginx \
-    postgresql
+# Arch-specific package list
+vim ../../ansible/packer-provisioning/tasks/archlinux_packages.yml
 ```
 
-## Post-Build Configuration
-
-After deploying VMs from this template:
-
-### 1. Run Ansible Baseline Playbook
+Then rebuild the template:
 
 ```bash
-# From ansible/ directory
-ansible-playbook -i inventory/hosts.yml playbooks/arch-baseline.yml
+packer build .
 ```
 
-This configures:
-- Security hardening
-- Additional packages
-- User accounts and SSH keys
-- Service configuration
+### Modifying Cloud Image Import
 
-### 2. Update and Harden
-
-```bash
-# On the VM
-pacman -Syu  # Full system upgrade
-```
-
-### 3. Configure Firewall
-
-```bash
-pacman -S ufw
-ufw allow 22/tcp
-ufw enable
-```
+Edit `import-cloud-image.sh` to change:
+- VM ID (default: 9300)
+- Disk size (default: 20GB)
+- Memory/CPU allocation
+- Network configuration
+- SSH configuration
 
 ## Troubleshooting
 
-### Issue: Installation script fails
+### Base VM not found
 
 ```
-Error running installation script
+Error: clone_vm_id 9300 does not exist
 ```
 
-**Solution**:
-- Check `http/install.sh` exists and is executable
-- Verify script syntax: `bash -n http/install.sh`
-- Review Packer logs with `PACKER_LOG=1 packer build .`
+**Solution**: Run `import-cloud-image.sh` first (Step 1)
 
-### Issue: Can't SSH to VM during build
+### Cloud-init timeout
 
 ```
-Timeout waiting for SSH
+Error: cloud-init status --wait timed out
 ```
 
 **Solution**:
-- Verify boot_command sets root password correctly
-- Ensure SSH is started: check boot_command includes `systemctl start sshd`
-- Increase ssh_timeout if network is slow
+1. Check VM network connectivity (DHCP enabled?)
+2. Verify cloud-init is enabled in base image
+3. Start base VM manually and check logs: `journalctl -u cloud-init`
 
-### Issue: System won't boot after installation
+### SSH connection refused
+
+**Solution**:
+1. Verify SSH password authentication is enabled
+2. Check firewall rules on Proxmox
+3. Verify cloud-init completed: `cloud-init status`
+
+### Ansible fails to connect
 
 ```
-VM fails to boot or drops to emergency shell
+Error: unreachable: Failed to connect to the host via ssh
 ```
 
 **Solution**:
-- Check bootloader was installed: verify systemd-boot configuration
-- Ensure partitions formatted correctly
-- Review installation script for errors
-- Check UEFI firmware is available on Proxmox
+1. Verify `ssh_password` in `arch.auto.pkrvars.hcl`
+2. Check VM is running and accessible
+3. Test manual SSH: `ssh arch@<vm-ip>`
 
-### Issue: Cloud-init not working
-
-```
-Cloud-init configuration not applied
-```
-
-**Solution**:
-- Verify cloud-init installed: `pacman -Q cloud-init`
-- Check cloud-init services enabled: `systemctl status cloud-init`
-- Review logs: `cloud-init status --long`
-- Ensure datasource configured in `/etc/cloud/cloud.cfg.d/`
-
-### Issue: QEMU guest agent not responding
+## Files
 
 ```
-qm agent <vmid> ping
-# Returns: connection failed
+packer/arch/
+├── arch.pkr.hcl                  # Main Packer template (proxmox-clone)
+├── variables.pkr.hcl             # Variable definitions
+├── arch.auto.pkrvars.hcl         # Your environment config
+├── import-cloud-image.sh         # Import official cloud image script
+└── README.md                     # This file
 ```
 
-**Solution**:
-- Verify installed: `pacman -Q qemu-guest-agent`
-- Check service: `systemctl status qemu-guest-agent`
-- Ensure enabled in VM config: `qm config <vmid> | grep agent`
+## Build Process Details
 
-### Issue: Pacman keyring errors
+### Phase 1: Import Cloud Image (One-Time)
 
 ```
-Signature errors when installing packages
+import-cloud-image.sh
+├── Download official Arch cloud image (558MB)
+├── Verify SHA256 checksum
+├── Customize with virt-customize
+│   ├── Enable SSH password authentication
+│   └── Disable root login (security)
+├── Create Proxmox VM (ID 9300)
+├── Import disk to storage pool
+├── Configure cloud-init drive
+├── Resize disk to 20GB
+└── Configure VM settings (CPU, memory, network)
 ```
 
-**Solution**:
-- Initialize keyring: `pacman-key --init`
-- Populate keyring: `pacman-key --populate archlinux`
-- Update keyring: `pacman -Sy archlinux-keyring`
+### Phase 2: Packer Build
 
-## Template Details
-
-### Installed Packages
-
-**Base System**:
-- `base`, `base-devel` - Core system packages
-- `linux`, `linux-firmware` - Kernel and firmware
-- `qemu-guest-agent` - Proxmox integration
-- `cloud-init`, `cloud-guest-utils` - Automated configuration
-- `sudo` - Privilege escalation
-- `openssh` - SSH access
-
-**Utilities**:
-- `vim` - Text editor
-- `curl`, `wget` - Download tools
-- `git` - Version control
-- `htop` - Process monitor
-- `net-tools` - Network utilities
-- `dnsutils` - DNS tools
-- `python`, `python-pip` - Python runtime
-- `networkmanager`, `dhcpcd` - Network management
-
-### Bootloader
-
-Uses **systemd-boot** (not GRUB) for:
-- Faster boot times
-- Simpler configuration
-- Native UEFI integration
-- Minimal dependencies
-
-### Cloud-init Configuration
-
-The template includes cloud-init with:
-- Network configuration support (DHCP or static)
-- User and SSH key management
-- Package installation on first boot
-- Custom scripts execution
-- NoCloud and ConfigDrive datasources
-
-### QEMU Guest Agent
-
-Enabled and configured for:
-- VM status reporting to Proxmox
-- Graceful shutdown/reboot
-- IP address discovery
-- Filesystem quiescing for snapshots
-
-## Best Practices
-
-1. **Update Template Regularly**
-   - **IMPORTANT**: Rebuild monthly (Arch is rolling release!)
-   - Always use latest ISO
-   - Test new template before replacing production
-   - Keep track of major package updates
-
-2. **Use Cloud-init for Customization**
-   - Don't modify template directly
-   - Use cloud-init user-data for VM-specific config
-   - Keep template generic and reusable
-
-3. **Baseline Configuration with Ansible**
-   - Use Ansible for consistent configuration
-   - Version control playbooks
-   - Test in dev before production
-
-4. **Security Hardening**
-   - Change default root password immediately
-   - Create non-root user with sudo access
-   - Disable root SSH login
-   - Enable automatic security updates
-   - Configure firewall
-
-5. **Documentation**
-   - Document custom provisioning steps
-   - Track template versions and build dates
-   - Note Arch-specific considerations
-
-## Resources
-
-- **Arch Linux Documentation**: https://wiki.archlinux.org/
-- **Arch Installation Guide**: https://wiki.archlinux.org/title/Installation_guide
-- **Cloud-init Docs**: https://cloudinit.readthedocs.io/
-- **Systemd-boot**: https://wiki.archlinux.org/title/Systemd-boot
-- **Packer Proxmox Builder**: https://www.packer.io/plugins/builders/proxmox
-
-## Important Notes
-
-### Rolling Release Considerations
-
-Arch Linux is a rolling release distribution, which means:
-- No version numbers (always "latest")
-- Continuous updates to all packages
-- **Must rebuild template regularly** (monthly recommended)
-- May encounter breaking changes between builds
-- Read Arch news before major updates: https://archlinux.org/news/
-
-### AUR (Arch User Repository)
-
-This template does NOT include AUR helper (yay, paru). To add:
-
-```bash
-# After VM deployment, as regular user (not root)
-git clone https://aur.archlinux.org/yay.git
-cd yay
-makepkg -si
+```
+packer build
+├── Clone base VM 9300 → build VM 9302
+├── Start VM and wait for cloud-init
+├── Ansible provisioning
+│   ├── Update system (pacman -Syu)
+│   ├── Install baseline packages
+│   ├── Configure SSH keys
+│   └── Template cleanup
+├── Shutdown VM
+└── Convert to template
 ```
 
-### Package Management
+## Network Configuration
 
-Unlike Debian/Ubuntu, Arch uses:
-- `pacman` - Package manager
-- `makepkg` - Build packages from source
-- AUR - Community package repository
+**Default settings:**
+- **Bridge**: vmbr0
+- **IP**: DHCP (configurable via cloud-init)
+- **DNS**: 10.10.2.1 (gateway)
 
-Key commands:
-```bash
-pacman -Syu          # Full system upgrade
-pacman -S package    # Install package
-pacman -R package    # Remove package
-pacman -Ss keyword   # Search packages
-```
+**VM ID allocation:**
+- **9300**: Base cloud image (import-cloud-image.sh)
+- **9302**: Golden template (packer build)
+- **201+**: Cloned VMs (your VMs)
 
-## Next Steps
+## References
 
-After building the Arch template:
+- **Official Arch Cloud Images**: https://mirror.pkgbuild.com/images/
+- **Arch Linux on VPS**: https://wiki.archlinux.org/title/Arch_Linux_on_a_VPS
+- **Cloud-init Documentation**: https://cloudinit.readthedocs.io/
+- **Proxmox Cloud-Init**: https://pve.proxmox.com/wiki/Cloud-Init_Support
+- **Packer Proxmox Builder**: https://developer.hashicorp.com/packer/integrations/hashicorp/proxmox
 
-1. Test deployment with cloud-init
-2. Create Ansible baseline playbook specific to Arch
-3. Document custom configurations
-4. Set up automated rebuild schedule (monthly)
-5. Build templates for other OSes (NixOS, Windows, etc.)
+## Comparison: Cloud Image vs ISO
 
-See `../../terraform/` for deploying VMs from this template.
+| Aspect | Cloud Image (Current) | ISO (Old Approach) |
+|--------|----------------------|-------------------|
+| **Build Time** | 5-10 minutes | 20-30 minutes |
+| **Approach** | Clone and customize | Full installation |
+| **Boot Issues** | None | BIOS/boot order complexity |
+| **Cloud-init** | Pre-configured | Manual setup |
+| **qemu-guest-agent** | Pre-installed | Manual installation |
+| **Base Image** | Official Arch team | Manual installation |
+| **Maintenance** | Updates from Arch team | Manual updates |
+
+## Version History
+
+- **2026-01-05**: Converted to official cloud image approach (proxmox-clone)
+- **2025-12-15**: Initial ISO-based approach
+
+---
+
+**Last Updated**: 2026-01-05
+**Approach**: Official Cloud Image (PREFERRED)
+**Build Time**: ~5-10 minutes
+**Base VM ID**: 9300
+**Template ID**: 9302

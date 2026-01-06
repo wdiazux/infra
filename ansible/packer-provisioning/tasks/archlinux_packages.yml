@@ -12,9 +12,14 @@
     upgrade: yes
   tags: [arch]
 
+- name: Set Arch-specific package names
+  ansible.builtin.set_fact:
+    arch_packages: "{{ common_packages | reject('in', ['python3-pip']) | list + ['python-pip', 'net-tools', 'bind'] }}"
+  tags: [arch]
+
 - name: Install baseline packages (Arch Linux)
   community.general.pacman:
-    name: "{{ common_packages + ['net-tools', 'bind'] }}"
+    name: "{{ arch_packages }}"
     state: present
   tags: [arch]
 
@@ -26,43 +31,45 @@
     state: present
   tags: [arch]
 
-- name: Install paru dependencies (Arch Linux)
+- name: Install yay dependencies (Arch Linux)
   community.general.pacman:
     name:
       - base-devel
       - git
-      - rustup
+      - go
     state: present
-  tags: [arch, paru]
+  tags: [arch, yay]
 
-- name: Create temporary directory for paru installation
+- name: Create temporary directory for yay installation
   ansible.builtin.file:
-    path: /tmp/paru-install
+    path: /tmp/yay-install
     state: directory
     mode: '0755'
-  tags: [arch, paru]
+    owner: "{{ packer_ssh_user }}"
+    group: "{{ packer_ssh_user }}"
+  tags: [arch, yay]
 
-- name: Clone paru-bin from AUR
+- name: Clone yay from AUR
   ansible.builtin.git:
-    repo: https://aur.archlinux.org/paru-bin.git
-    dest: /tmp/paru-install/paru-bin
+    repo: https://aur.archlinux.org/yay.git
+    dest: /tmp/yay-install/yay
     version: master
   become: yes
   become_user: "{{ packer_ssh_user }}"
-  tags: [arch, paru]
+  tags: [arch, yay]
 
-- name: Build and install paru
+- name: Build and install yay from source
   ansible.builtin.shell: |
-    cd /tmp/paru-install/paru-bin
+    cd /tmp/yay-install/yay
     makepkg -si --noconfirm
   become: yes
   become_user: "{{ packer_ssh_user }}"
   args:
-    creates: /usr/bin/paru
-  tags: [arch, paru]
+    creates: /usr/bin/yay
+  tags: [arch, yay]
 
-- name: Clean up paru installation directory
+- name: Clean up yay installation directory
   ansible.builtin.file:
-    path: /tmp/paru-install
+    path: /tmp/yay-install
     state: absent
-  tags: [arch, paru]
+  tags: [arch, yay]
