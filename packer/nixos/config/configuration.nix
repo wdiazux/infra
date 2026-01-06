@@ -68,6 +68,15 @@
   # Define a user account - this is the base user, cloud-init can add SSH keys
   # Cloud-init SSH keys from Terraform are ADDED to this user's authorized_keys
   users.users = {
+    # Remove the default nixos user from Hydra image (conflicts with wdiaz UID 1000)
+    nixos = {
+      isNormalUser = lib.mkForce false;
+      isSystemUser = lib.mkForce true;
+      group = "nogroup";
+      home = lib.mkForce "/var/empty";
+      createHome = false;
+    };
+
     # Default user with passwordless sudo
     wdiaz = {
       isNormalUser = true;
