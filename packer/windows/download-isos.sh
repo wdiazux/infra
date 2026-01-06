@@ -1,21 +1,19 @@
 #!/usr/bin/env bash
-# Download Windows 11 ISOs for Packer builds
-# Run this on Proxmox host to download and upload ISOs
+# Download ISOs for Windows 11 Packer builds
+# Run this on Proxmox host to download VirtIO drivers
 #
 # Usage: ./download-isos.sh
 #
-# Uses Mido.sh (https://github.com/ElliotKillick/Mido) to download
-# Windows ISOs directly from Microsoft servers.
+# Note: Windows 11 ISO must be downloaded manually from Microsoft
+#       VirtIO drivers are downloaded automatically
 
 set -e
 
 # Configuration
-ISO_STORAGE="local"
 ISO_PATH="/var/lib/vz/template/iso"
 VIRTIO_URL="https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/virtio-win.iso"
 VIRTIO_ISO="virtio-win.iso"
 WINDOWS_ISO="windows-11.iso"
-MIDO_URL="https://raw.githubusercontent.com/ElliotKillick/Mido/main/Mido.sh"
 
 # Colors
 RED='\033[0;31m'
@@ -29,34 +27,15 @@ echo "Windows 11 Packer ISO Setup"
 echo "==========================================="
 echo ""
 
-# Check dependencies
-check_deps() {
-    local missing=()
-    for cmd in curl sha256sum grep sed; do
-        if ! command -v "$cmd" &> /dev/null; then
-            missing+=("$cmd")
-        fi
-    done
-
-    if [ ${#missing[@]} -gt 0 ]; then
-        echo -e "${RED}Error: Missing dependencies: ${missing[*]}${NC}"
-        echo "Install with: apt install curl coreutils grep sed"
-        exit 1
-    fi
-}
-
-check_deps
-
-# Check if running on Proxmox (optional - can run elsewhere and copy)
-if command -v pvesm &> /dev/null; then
-    echo -e "${GREEN}Running on Proxmox host${NC}"
-    ON_PROXMOX=true
-else
-    echo -e "${YELLOW}Not running on Proxmox - ISOs will be downloaded locally${NC}"
-    echo "You'll need to copy them to Proxmox storage afterwards"
-    ISO_PATH="."
-    ON_PROXMOX=false
+# Check if running on Proxmox
+if ! command -v pvesm &> /dev/null; then
+    echo -e "${RED}Error: This script must be run on a Proxmox host${NC}"
+    echo ""
+    echo "Usage: ssh root@pve 'bash -s' < download-isos.sh"
+    exit 1
 fi
+
+echo -e "${GREEN}Running on Proxmox host${NC}"
 
 # Create ISO directory if it doesn't exist
 mkdir -p "$ISO_PATH"
@@ -66,59 +45,42 @@ echo ""
 echo -e "${BLUE}[1/2] VirtIO Drivers${NC}"
 echo "==========================================="
 if [ -f "$ISO_PATH/$VIRTIO_ISO" ]; then
-    echo -e "${GREEN}VirtIO ISO already exists, skipping download${NC}"
+    SIZE=$(du -h "$ISO_PATH/$VIRTIO_ISO" | cut -f1)
+    echo -e "${GREEN}VirtIO ISO already exists ($SIZE), skipping download${NC}"
 else
     echo "Downloading from: $VIRTIO_URL"
-    curl -L -o "$ISO_PATH/$VIRTIO_ISO" "$VIRTIO_URL" --progress-bar
+    wget -O "$ISO_PATH/$VIRTIO_ISO" "$VIRTIO_URL" --progress=bar:force 2>&1
     echo -e "${GREEN}VirtIO drivers downloaded successfully!${NC}"
 fi
 
-# Download Windows 11 using Mido
+# Check for Windows ISO
 echo ""
 echo -e "${BLUE}[2/2] Windows 11 ISO${NC}"
 echo "==========================================="
 
 if [ -f "$ISO_PATH/$WINDOWS_ISO" ]; then
-    echo -e "${GREEN}Windows 11 ISO already exists, skipping download${NC}"
+    SIZE=$(du -h "$ISO_PATH/$WINDOWS_ISO" | cut -f1)
+    echo -e "${GREEN}Windows 11 ISO found ($SIZE)${NC}"
 else
-    echo "Downloading Windows 11 using Mido.sh..."
-    echo "(This downloads directly from Microsoft servers)"
+    echo -e "${YELLOW}Windows 11 ISO not found!${NC}"
     echo ""
-
-    # Download Mido.sh
-    MIDO_SCRIPT=$(mktemp)
-    curl -sL "$MIDO_URL" -o "$MIDO_SCRIPT"
-    chmod +x "$MIDO_SCRIPT"
-
-    # Run Mido to download Windows 11
-    cd "$ISO_PATH"
-
-    echo -e "${YELLOW}Note: Microsoft may rate-limit downloads. If it fails, wait and retry.${NC}"
+    echo "Windows 11 ISO must be downloaded manually from Microsoft."
     echo ""
-
-    if bash "$MIDO_SCRIPT" win11x64; then
-        # Mido downloads to Win11_*_x64.iso, rename it
-        WIN11_FILE=$(ls -1 Win11_*_x64*.iso 2>/dev/null | head -1)
-        if [ -n "$WIN11_FILE" ] && [ -f "$WIN11_FILE" ]; then
-            mv "$WIN11_FILE" "$WINDOWS_ISO"
-            echo -e "${GREEN}Windows 11 ISO downloaded and renamed to $WINDOWS_ISO${NC}"
-        else
-            echo -e "${RED}Download completed but ISO file not found${NC}"
-            echo "Looking for: Win11_*_x64*.iso"
-            ls -la *.iso 2>/dev/null || echo "No ISO files found"
-        fi
-    else
-        echo -e "${RED}Mido download failed${NC}"
-        echo ""
-        echo "Alternative: Download manually from Microsoft:"
-        echo "  https://www.microsoft.com/software-download/windows11"
-        echo ""
-        echo "Then copy to: $ISO_PATH/$WINDOWS_ISO"
-    fi
-
-    # Cleanup
-    rm -f "$MIDO_SCRIPT"
-    cd - > /dev/null
+    echo "Steps:"
+    echo "  1. Go to: https://www.microsoft.com/software-download/windows11"
+    echo ""
+    echo "  2. Scroll to 'Download Windows 11 Disk Image (ISO)'"
+    echo ""
+    echo "  3. Select 'Windows 11 (multi-edition ISO for x64 devices)'"
+    echo ""
+    echo "  4. Choose your language and download (~5.5GB)"
+    echo ""
+    echo "  5. Upload to Proxmox via Web UI:"
+    echo "     Datacenter → Storage → local → ISO Images → Upload"
+    echo ""
+    echo "  6. Rename the uploaded ISO to: ${WINDOWS_ISO}"
+    echo "     ssh root@pve 'cd $ISO_PATH && mv Win11_*.iso $WINDOWS_ISO'"
+    echo ""
 fi
 
 # Summary
@@ -139,27 +101,24 @@ if [ -f "$ISO_PATH/$WINDOWS_ISO" ]; then
     SIZE=$(du -h "$ISO_PATH/$WINDOWS_ISO" | cut -f1)
     echo -e "  Windows 11:     ${GREEN}Ready${NC} ($SIZE)"
 else
-    echo -e "  Windows 11:     ${RED}Missing${NC}"
+    echo -e "  Windows 11:     ${RED}Missing${NC} (manual download required)"
 fi
 
 echo ""
 
-# Verify ISOs are visible to Proxmox
-if [ "$ON_PROXMOX" = true ]; then
-    echo "Checking Proxmox storage..."
-    pvesm list $ISO_STORAGE --content iso 2>/dev/null | grep -E "(virtio|windows)" || echo "  (no matching ISOs found in storage)"
-    echo ""
-fi
+# List ISOs in storage
+echo "ISOs in Proxmox storage:"
+pvesm list local --content iso 2>/dev/null | grep -E "iso" || echo "  (none found)"
 
+echo ""
 echo "==========================================="
 
 if [ -f "$ISO_PATH/$VIRTIO_ISO" ] && [ -f "$ISO_PATH/$WINDOWS_ISO" ]; then
     echo -e "${GREEN}All ISOs ready! You can now run Packer build.${NC}"
     echo ""
-    echo "Next steps:"
-    echo "  cd /home/wdiaz/devland/infra/packer/windows"
-    echo "  packer init ."
-    echo "  packer build ."
+    echo "Next steps (from your workstation):"
+    echo "  cd packer/windows"
+    echo "  nix-shell ../../shell.nix --run 'packer build .'"
 else
-    echo -e "${YELLOW}Some ISOs are missing. Check the errors above.${NC}"
+    echo -e "${YELLOW}Some ISOs are missing. Complete the steps above.${NC}"
 fi
