@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Download Windows 11 ISOs for Packer builds
 # Run this on Proxmox host to download and upload ISOs
 #
