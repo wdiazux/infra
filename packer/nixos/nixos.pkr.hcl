@@ -119,8 +119,17 @@ build {
     inline = [
       "echo '==> Applying NixOS configuration...'",
       "nixos-rebuild switch",
+      "echo '==> NixOS configuration applied successfully!'",
 
-      "echo '==> NixOS configuration applied successfully!'"
+      "echo '==> Running garbage collection...'",
+      "nix-collect-garbage -d",
+      "echo '==> Garbage collection complete!'",
+
+      "echo '==> Resetting cloud-init for fresh run on clone...'",
+      "/run/current-system/sw/bin/cloud-init clean --logs || rm -rf /var/lib/cloud/{instance,instances,data,sem}/*",
+      "truncate -s 0 /etc/hostname",
+      "truncate -s 0 /etc/machine-id",
+      "echo '==> Cloud-init reset complete!'"
     ]
   }
 
