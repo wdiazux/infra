@@ -1,6 +1,9 @@
 # NixOS Golden Image Configuration
 # This configuration is applied during Packer build to create the golden template.
 # Customize this file to bake packages and settings into the template.
+#
+# Cloud-init integration: Hostname and networking are configured by Proxmox cloud-init
+# when deploying via Terraform. Set vm_name and ipconfig in Terraform to configure.
 
 { config, lib, pkgs, ... }:
 
@@ -22,10 +25,18 @@
   # Select internationalisation properties.
   i18n.defaultLocale = "en_US.UTF-8";
 
-  # Networking
+  # Cloud-init integration for Terraform/Proxmox deployment
+  # Hostname and IP are set via Proxmox cloud-init drive
+  services.cloud-init = {
+    enable = true;
+    network.enable = true;
+  };
+
+  # Networking - cloud-init will configure hostname and IP
+  # Fallback to DHCP if cloud-init doesn't provide network config
   networking = {
-    hostName = "nixos-template";
-    useDHCP = true;
+    hostName = lib.mkDefault "";  # Set by cloud-init
+    useDHCP = lib.mkDefault true; # Fallback if cloud-init doesn't configure
     firewall = {
       enable = true;
       allowedTCPPorts = [ 22 ];
