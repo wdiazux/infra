@@ -59,8 +59,9 @@ spec:
   # - ens192 (some systems)
   #
   # Use regex to match interface name
+  # Matches both eth0 (common) and ens18/ens192 (Proxmox/VMware)
   interfaces:
-    - ^eth0  # CHANGE ME if your interface is different
+    - ^(eth|ens).*
 
   # Optional: Specific interface by name
   # interfaces:
