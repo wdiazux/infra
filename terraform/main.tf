@@ -94,6 +94,7 @@ data "talos_machine_configuration" "node" {
         }
         time = {
           servers = var.ntp_servers
+          timezone = "America/El_Salvador"
         }
         install = {
           disk = var.install_disk
