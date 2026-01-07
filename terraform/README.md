@@ -1451,11 +1451,11 @@ A complete verification of all Packer, Terraform, and Ansible code has been perf
 - Manual configuration required after deployment
 
 **Missing Playbooks:**
-- `day1-ubuntu-baseline.yml` - Ubuntu baseline configuration
-- `day1-debian-baseline.yml` - Debian baseline configuration
-- `day1-arch-baseline.yml` - Arch baseline configuration
-- `day1-nixos-baseline.yml` - NixOS baseline configuration
-- `day1-windows-baseline.yml` - Windows baseline configuration
+- `day1_ubuntu_baseline.yml` - Ubuntu baseline configuration
+- `day1_debian_baseline.yml` - Debian baseline configuration
+- `day1_arch_baseline.yml` - Arch baseline configuration
+- `day1_windows_baseline.yml` - Windows baseline configuration
+- *NixOS uses declarative config (`/etc/nixos/configuration.nix`), not Ansible*
 
 **Recommendation:**
 Create Ansible baseline playbooks before production deployment of traditional VMs. Talos deployment is fully ready (manual Kubernetes setup acceptable).

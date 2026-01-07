@@ -336,7 +336,7 @@
 
           Software:
           - Windows Features: {{ windows_features | length }} installed
-          - Chocolatey packages: {{ chocolatey_packages | length }} installed
+          - Baseline packages: Pre-installed in golden image
           - Docker: {{ 'Installed' if install_docker else 'Not installed' }}
 
           Updates:

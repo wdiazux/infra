@@ -648,11 +648,11 @@ cat /boot/loader/loader.conf
 
 - **Packer Arch Template**: `packer/arch/README.md`
 - **Terraform Configuration**: `terraform/README.md`
-- **Ansible Baseline Role**: `ansible/roles/baseline/README.md`
+- **Ansible Day 1 Playbook**: `ansible/playbooks/day1_arch_baseline.yml`
 - **Arch Linux Wiki**: https://wiki.archlinux.org/
 - **Arch Installation Guide**: https://wiki.archlinux.org/title/Installation_guide
 
 ---
 
-**Last Updated**: 2025-11-23
+**Last Updated**: 2026-01-06
 **Maintained By**: wdiazux

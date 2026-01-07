@@ -316,11 +316,11 @@ After deploying your Debian VM:
 
 - **Packer Template**: `../packer/debian/`
 - **Template README**: `../packer/debian/README.md`
-- **Ansible Baseline**: `../ansible/roles/baseline/`
+- **Ansible Day 1 Playbook**: `../ansible/playbooks/day1_debian_baseline.yml`
 - **Terraform Module**: `./modules/proxmox-vm/`
 
 ---
 
-**Last Updated**: 2026-01-05  
+**Last Updated**: 2026-01-06  
 **Template Version**: debian-13-cloud-template (VM 9112)  
 **Terraform Module**: proxmox-vm

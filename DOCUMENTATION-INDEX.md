@@ -1,6 +1,6 @@
 # Infrastructure Documentation Index
 
-**Last Updated:** 2026-01-05
+**Last Updated:** 2026-01-06
 **Repository:** wdiazux/infra
 **Status:** Production-Ready
 
@@ -102,28 +102,24 @@
 - `playbooks/day0_import_cloud_images.yml` - Cloud image import
 
 **Day 1 (Post-deployment):**
-- `playbooks/day1_debian_baseline.yml` - Debian baseline configuration
 - `playbooks/day1_ubuntu_baseline.yml` - Ubuntu baseline configuration
+- `playbooks/day1_debian_baseline.yml` - Debian baseline configuration
 - `playbooks/day1_arch_baseline.yml` - Arch Linux baseline configuration
-- `playbooks/day1_nixos_baseline.yml` - NixOS baseline configuration
 - `playbooks/day1_windows_baseline.yml` - Windows baseline configuration
 - `playbooks/day1_all_vms.yml` - All VMs orchestration
+- *Note: NixOS uses declarative config (`/etc/nixos/configuration.nix`), not Ansible*
 
 **Packer Provisioning:**
 - `packer-provisioning/install_baseline_packages.yml` - Main provisioning playbook
 - `packer-provisioning/tasks/debian_packages.yml` - Debian/Ubuntu packages
 - `packer-provisioning/tasks/archlinux_packages.yml` - Arch Linux packages
-- `packer-provisioning/tasks/windows_packages.yml` - Windows packages
 - `packer-provisioning/tasks/ssh_keys.yml` - SSH authorized_keys management (idempotent)
 - `packer-provisioning/tasks/cleanup.yml` - Template cleanup (machine-id, cloud-init)
+- *Note: Windows uses PowerShell provisioners in Packer, not Ansible*
 
 **Inventory and Configuration:**
 - `inventories/proxmox_hosts.yml` - Proxmox hosts inventory
-- `group_vars/proxmox_hosts.yml` - Proxmox configuration variables
-- `requirements.yml` - Ansible collections and roles
-
-**Roles:**
-- `roles/baseline/` - Baseline configuration role (timezone, locale, SSH, firewall, etc.)
+- `group_vars/proxmox.yml` - Proxmox configuration variables
 
 #### Kubernetes (`kubernetes/`)
 
@@ -270,26 +266,17 @@
 
 ## 📊 Latest Audits
 
-### 2026-01-05: Packer & Ansible Configuration Audit ⭐ LATEST
+### 2026-01-06: Documentation & Code Cleanup
 
-**Audit Report:** [docs/PACKER-ANSIBLE-AUDIT-2026-01-05.md](docs/PACKER-ANSIBLE-AUDIT-2026-01-05.md) - Comprehensive configuration review
-
-- **Overall Status:** ✅ Excellent (95% compliance)
-- **Audit Date:** 2026-01-05
-- **Scope:** Packer templates, Ansible provisioners, deprecated options, disk optimization
-
-**Key Findings:**
-- ✅ All Ansible best practices followed (FQCN, idempotency)
-- ✅ Packer configurations follow official recommendations
-- ✅ Replaced deprecated ISO configuration with modern `boot_iso` block
-- ✅ Added TRIM support for ZFS storage efficiency
-- ✅ SSH key management via Ansible with SOPS integration
+**Summary:** Removed orphaned code and updated documentation to match current architecture.
 
 **Changes Applied:**
-- Fixed deprecated ISO options in Arch and NixOS templates
-- Added `discard = true` for TRIM/ZFS optimization
-- Consolidated SSH keys and cleanup into Ansible provisioner
-- Documented all configurations against official sources
+- Removed orphaned `ansible/roles/baseline/` (11 files)
+- Removed unused `day1_nixos_baseline.yml` (NixOS uses declarative config)
+- Removed unused `windows_packages.yml` (Windows uses PowerShell in Packer)
+- Fixed Cilium L2 interface regex for Proxmox
+- Added timezone to Talos machine config
+- Updated all documentation to reflect current file structure
 
 ### 2025-11-23: Infrastructure Production Readiness
 
@@ -313,17 +300,12 @@
 
 Located in `docs/archive/`:
 
-- AUDIT-ADDENDUM-DEEP-DIVE.md
-- AUDIT-FINDINGS.md
-- AUDIT-FIXES-APPLIED.md
-- CODE-REVIEW-REPORT.md
-- COMPREHENSIVE-AUDIT-REPORT-2025.md
-- COMPREHENSIVE-CODE-REVIEW.md
-- PACKER-ANSIBLE-AUDIT-2025.md
-- SESSION-RECOVERY-SUMMARY.md
-- TERRAFORM-AUDIT-2025.md
-- WORKFLOW-AUDIT-SUMMARY.md
-- Plus 9 additional archived reports
+- PACKER-ANSIBLE-AUDIT-2026-01-06.md (latest full audit)
+- PACKER-ANSIBLE-AUDIT-2026-01-05.md
+- BREAKING_CHANGES_ANALYSIS.md
+- DEPENDENCY_AUDIT_REPORT.md
+- FINAL-AUDIT-REPORT-2025-11-23.md
+- Plus 20+ additional archived reports from previous sessions
 
 ---
 
@@ -347,7 +329,7 @@ Located in `docs/archive/`:
 |-----------|----------|-----------|
 | **Terraform** | `terraform/` | README.md, *.tf files, LONGHORN-INTEGRATION.md |
 | **Packer** | `packer/` | Each OS has own directory with README.md |
-| **Ansible** | `ansible/` | README.md, playbooks/, roles/, requirements.yml |
+| **Ansible** | `ansible/` | README.md, playbooks/, packer-provisioning/ |
 | **Kubernetes** | `kubernetes/` | cilium/INSTALLATION.md, longhorn/INSTALLATION.md |
 | **Talos** | `talos/`, `docs/` | talos-research-report.md, TALOS-DEPLOYMENT-GUIDE.md |
 | **Secrets** | `secrets/`, `docs/` | KUBERNETES_SECRETS_MANAGEMENT_GUIDE.md, .sops.yaml |

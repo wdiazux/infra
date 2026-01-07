@@ -527,11 +527,11 @@ terraform destroy -target=proxmox_virtual_environment_vm.debian
 
 - **Packer Debian Template**: `packer/debian/README.md`
 - **Terraform Configuration**: `terraform/README.md`
-- **Ansible Baseline Role**: `ansible/roles/baseline/README.md`
+- **Ansible Day 1 Playbook**: `ansible/playbooks/day1_debian_baseline.yml`
 - **Cloud Image Import Playbook**: `ansible/playbooks/day0_import_cloud_images.yml`
 - **Talos Deployment Guide**: `docs/TALOS-DEPLOYMENT-GUIDE.md`
 
 ---
 
-**Last Updated**: 2025-11-23
+**Last Updated**: 2026-01-06
 **Maintained By**: wdiazux

@@ -57,10 +57,6 @@
   ansible.builtin.import_playbook: day1_arch_baseline.yml
   when: groups['arch_vms'] is defined and groups['arch_vms'] | length > 0
 
-- name: Configure NixOS VMs
-  ansible.builtin.import_playbook: day1_nixos_baseline.yml
-  when: groups['nixos_vms'] is defined and groups['nixos_vms'] | length > 0
-
 - name: Configure Windows VMs
   ansible.builtin.import_playbook: day1_windows_baseline.yml
   when: groups['windows_vms'] is defined and groups['windows_vms'] | length > 0
@@ -87,9 +83,6 @@
           {% if groups['arch_vms'] is defined and groups['arch_vms'] | length > 0 %}
           - Arch Linux: {{ groups['arch_vms'] | length }} VM(s)
           {% endif %}
-          {% if groups['nixos_vms'] is defined and groups['nixos_vms'] | length > 0 %}
-          - NixOS: {{ groups['nixos_vms'] | length }} VM(s)
-          {% endif %}
           {% if groups['windows_vms'] is defined and groups['windows_vms'] | length > 0 %}
           - Windows: {{ groups['windows_vms'] | length }} VM(s)
           {% endif %}
@@ -114,5 +107,5 @@
 #   - ansible-playbook playbooks/day1_ubuntu_baseline.yml
 #   - ansible-playbook playbooks/day1_debian_baseline.yml
 #   - ansible-playbook playbooks/day1_arch_baseline.yml
-#   - ansible-playbook playbooks/day1_nixos_baseline.yml
 #   - ansible-playbook playbooks/day1_windows_baseline.yml
+# - NixOS uses declarative config (/etc/nixos/configuration.nix), not Ansible

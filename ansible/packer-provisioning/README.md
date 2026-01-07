@@ -10,10 +10,12 @@ ansible/packer-provisioning/
 ├── tasks/                            # Modular task files
 │   ├── debian_packages.yml           # Debian/Ubuntu package installation
 │   ├── archlinux_packages.yml        # Arch Linux package installation
-│   ├── windows_packages.yml          # Windows package installation (Chocolatey)
 │   ├── ssh_keys.yml                  # SSH authorized_keys configuration
 │   └── cleanup.yml                   # Template cleanup (machine-id, cloud-init, temp files)
 └── README.md                         # This file
+
+# Note: Windows uses PowerShell provisioners in Packer, not Ansible
+# See packer/windows/scripts/ for Windows provisioning
 ```
 
 ## Design Principles
@@ -257,16 +259,7 @@ Edit the appropriate task file:
     state: present
 ```
 
-**Windows:** `tasks/windows_packages.yml`
-```yaml
-- name: Install baseline packages (Windows)
-  ansible.windows.win_chocolatey:
-    name:
-      - vim
-      # ... existing packages ...
-      - your-new-package  # Add here
-    state: present
-```
+> **Note:** Windows uses PowerShell provisioners in Packer (`packer/windows/scripts/`), not Ansible.
 
 ## Testing
 
@@ -341,9 +334,8 @@ winrm_insecure = true
 ## Related Documentation
 
 - **Packer Templates:** `../../packer/*/README.md`
-- **Ansible Baseline Role:** `../roles/baseline/README.md`
 - **Day 1 Playbooks:** `../playbooks/day1_*.yml`
-- **Duplication Audit:** `../../docs/DUPLICATION-AUDIT-2025.md`
+- **Ansible Documentation:** `../README.md`
 - **Ansible Best Practices:** https://docs.ansible.com/ansible/latest/tips_tricks/ansible_tips_tricks.html
 - **Packer Ansible Provisioner:** https://developer.hashicorp.com/packer/integrations/hashicorp/ansible/latest/components/provisioner/ansible
 

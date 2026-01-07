@@ -343,7 +343,7 @@ When updating features:
 
 ### Naming
 
-- Files: `{os-name}.pkr.hcl`, `{os-name}-baseline.yml`
+- Files: `{os-name}.pkr.hcl`, `day1_{os-name}_baseline.yml`
 - Resources: Descriptive kebab-case, include OS/version
 - Variables: snake_case, prefix with scope
 
@@ -523,6 +523,7 @@ zpool scrub poolname          # Data integrity check
 
 ## Version History
 
+- **2026-01-06**: Talos configuration review (timezone, Cilium L2 interface fix), documentation cleanup (removed orphaned roles/baseline, NixOS Ansible playbook, windows_packages.yml)
 - **2026-01-05**: NixOS cloud image implementation (using Hydra VMA, declarative config - no Ansible)
 - **2026-01-05**: Arch Linux cloud image implementation (converted from ISO to official cloud image approach, consistent with Ubuntu/Debian)
 - **2026-01-04**: Nix + npins dependency management implementation (shell.nix, direnv, reproducible environments)
@@ -536,6 +537,6 @@ zpool scrub poolname          # Data integrity check
 
 ---
 
-**Last Updated**: 2026-01-05
+**Last Updated**: 2026-01-06
 **Project Status**: Production-Ready
 **Primary Contact**: wdiazux

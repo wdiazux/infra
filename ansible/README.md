@@ -153,12 +153,13 @@ ansible-playbook playbooks/day0-proxmox-prep.yml
 
 | Playbook | Purpose | Target Hosts | Package Manager |
 |----------|---------|--------------|-----------------|
-| `day1-ubuntu-baseline.yml` | Configure Ubuntu 24.04 VMs | `ubuntu_vms` | apt |
-| `day1-debian-baseline.yml` | Configure Debian 12 VMs | `debian_vms` | apt |
-| `day1-arch-baseline.yml` | Configure Arch Linux VMs | `arch_vms` | pacman |
-| `day1-nixos-baseline.yml` | Configure NixOS VMs | `nixos_vms` | nix |
-| `day1-windows-baseline.yml` | Configure Windows Server VMs | `windows_vms` | chocolatey |
-| `day1-all-vms.yml` | **Orchestrate all VM configurations** | `all` | N/A |
+| `day1_ubuntu_baseline.yml` | Configure Ubuntu 24.04 VMs | `ubuntu_vms` | apt |
+| `day1_debian_baseline.yml` | Configure Debian 12 VMs | `debian_vms` | apt |
+| `day1_arch_baseline.yml` | Configure Arch Linux VMs | `arch_vms` | pacman |
+| `day1_windows_baseline.yml` | Configure Windows Server VMs | `windows_vms` | chocolatey |
+| `day1_all_vms.yml` | **Orchestrate all VM configurations** | `all` | N/A |
+
+> **Note:** NixOS uses declarative configuration (`/etc/nixos/configuration.nix`), not Ansible.
 
 **All Day 1 playbooks provide:**
 - System updates
@@ -175,14 +176,13 @@ ansible-playbook playbooks/day0-proxmox-prep.yml
 **Run after Terraform deployment:**
 ```bash
 # Configure all VMs at once
-ansible-playbook playbooks/day1-all-vms.yml
+ansible-playbook playbooks/day1_all_vms.yml
 
 # Or configure specific OS types
-ansible-playbook playbooks/day1-ubuntu-baseline.yml
-ansible-playbook playbooks/day1-debian-baseline.yml
-ansible-playbook playbooks/day1-arch-baseline.yml
-ansible-playbook playbooks/day1-nixos-baseline.yml
-ansible-playbook playbooks/day1-windows-baseline.yml
+ansible-playbook playbooks/day1_ubuntu_baseline.yml
+ansible-playbook playbooks/day1_debian_baseline.yml
+ansible-playbook playbooks/day1_arch_baseline.yml
+ansible-playbook playbooks/day1_windows_baseline.yml
 ```
 
 ## Inventory Configuration
@@ -232,13 +232,6 @@ arch_vms:
   hosts:
     arch-vm:
       ansible_host: 192.168.1.112
-      ansible_user: admin
-
-# NixOS VMs
-nixos_vms:
-  hosts:
-    nixos-vm:
-      ansible_host: 192.168.1.113
       ansible_user: admin
 
 # Windows VMs
@@ -393,23 +386,10 @@ sudo nixos-rebuild switch
 sudo nixos-rebuild --rollback switch
 ```
 
-### NixOS Playbook Workflow
+### NixOS Configuration
 
-1. Ansible generates a baseline `/etc/nixos/configuration.nix`
-2. Runs `nixos-rebuild switch` to apply
-3. Creates backup of previous configuration
-4. For future changes, edit `/etc/nixos/configuration.nix` directly or re-run playbook
-
-### NixOS Template
-
-The playbook uses a Jinja2 template: `templates/nixos-configuration.nix.j2`
-
-**Customize by editing the template or:**
-```bash
-ansible-playbook playbooks/day1-nixos-baseline.yml \
-  -e "enable_docker=true" \
-  -e "baseline_packages=['vim','git','htop','curl']"
-```
+NixOS uses its own declarative configuration system (`/etc/nixos/configuration.nix`).
+Configure NixOS VMs via `nixos-rebuild switch`, not Ansible playbooks.
 
 ## Best Practices
 

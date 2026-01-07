@@ -210,14 +210,14 @@ ansible-galaxy collection install -r requirements.yml
 pip install pywinrm
 
 # Configure all VMs at once
-ansible-playbook playbooks/day1-all-vms.yml
+ansible-playbook playbooks/day1_all_vms.yml
 
 # Or configure specific OS:
-ansible-playbook playbooks/day1-ubuntu-baseline.yml
-ansible-playbook playbooks/day1-debian-baseline.yml
-ansible-playbook playbooks/day1-arch-baseline.yml
-ansible-playbook playbooks/day1-nixos-baseline.yml
-ansible-playbook playbooks/day1-windows-baseline.yml
+ansible-playbook playbooks/day1_ubuntu_baseline.yml
+ansible-playbook playbooks/day1_debian_baseline.yml
+ansible-playbook playbooks/day1_arch_baseline.yml
+ansible-playbook playbooks/day1_windows_baseline.yml
+# Note: NixOS uses declarative config (/etc/nixos/configuration.nix), not Ansible
 ```
 
 **Features Provided:**
@@ -271,19 +271,19 @@ infra/
 │
 ├── ansible/                     # Configuration management
 │   ├── README.md               # Ansible guide and documentation
-│   ├── requirements.yml        # Required Ansible collections
-│   ├── playbooks/              # Ansible playbooks
-│   │   ├── day0_proxmox_prep.yml          # GPU passthrough setup (Proxmox host)
-│   │   ├── day1-ubuntu-baseline.yml       # Ubuntu VM baseline configuration
-│   │   ├── day1-debian-baseline.yml       # Debian VM baseline configuration
-│   │   ├── day1-arch-baseline.yml         # Arch Linux VM baseline configuration
-│   │   ├── day1-nixos-baseline.yml        # NixOS VM baseline configuration
-│   │   ├── day1-windows-baseline.yml      # Windows Server VM baseline configuration
-│   │   └── day1-all-vms.yml               # Orchestration for all VM configurations
-│   ├── templates/              # Jinja2 templates
-│   │   └── nixos-configuration.nix.j2     # NixOS declarative config template
-│   └── inventory/              # Inventory files
-│       └── hosts.yml.example              # Example inventory
+│   ├── playbooks/              # Day 0/1 Ansible playbooks
+│   │   ├── day0_proxmox_prep.yml          # Proxmox host preparation
+│   │   ├── day0_import_cloud_images.yml   # Cloud image import
+│   │   ├── day1_ubuntu_baseline.yml       # Ubuntu VM baseline
+│   │   ├── day1_debian_baseline.yml       # Debian VM baseline
+│   │   ├── day1_arch_baseline.yml         # Arch Linux VM baseline
+│   │   ├── day1_windows_baseline.yml      # Windows VM baseline
+│   │   └── day1_all_vms.yml               # Orchestration for all VMs
+│   ├── packer-provisioning/    # Packer Ansible provisioner
+│   │   ├── install_baseline_packages.yml  # Main provisioning playbook
+│   │   └── tasks/                         # OS-specific tasks
+│   └── inventories/            # Inventory files
+│       └── proxmox_hosts.yml              # Proxmox hosts inventory
 │
 └── secrets/                     # Encrypted secrets (SOPS + Age)
     ├── README.md               # Secrets management guide

@@ -65,10 +65,8 @@
       when: ansible_facts['os_family'] == "Archlinux"
       tags: [arch]
 
-    - name: Include Windows package installation tasks
-      ansible.builtin.include_tasks: tasks/windows_packages.yml
-      when: ansible_facts['os_family'] == "Windows"
-      tags: [windows]
+    # Note: Windows uses PowerShell provisioners in Packer, not Ansible
+    # See packer/windows/scripts/ for Windows provisioning
 
     # ==========================================================================
     # SSH Key Configuration
