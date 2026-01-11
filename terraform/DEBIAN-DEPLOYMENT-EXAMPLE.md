@@ -72,7 +72,8 @@ cloud_init_ssh_keys = [
 ]
 ```
 
-**Connect**: 
+**Connect**:
+
 - Preferred: `ssh admin@10.10.2.20` (uses SSH key)
 - Fallback: `ssh -o PreferredAuthentications=password admin@10.10.2.20`
 
@@ -132,6 +133,7 @@ terraform plan
 ```
 
 Review the changes:
+
 - ✅ Verifies template exists
 - ✅ Shows what will be created
 - ✅ Validates configuration
@@ -162,6 +164,7 @@ ssh admin@10.10.2.20
 Your Debian VM includes:
 
 **✅ Pre-installed from Packer template:**
+
 - Debian 13.2 (Trixie)
 - Development tools: git 2.47.3, vim 9.1, python3 3.13.5, gcc 14.2.0
 - System utilities: htop, tmux, rsync, curl, wget, tree
@@ -170,6 +173,7 @@ Your Debian VM includes:
 - QEMU guest agent
 
 **✅ Configured via Cloud-init:**
+
 - User account (username from `cloud_init_user`)
 - SSH access (password and/or keys)
 - Network configuration (static IP or DHCP)
@@ -240,6 +244,7 @@ cloud_init_ssh_keys = [
 ### Issue: Can't SSH to VM
 
 **Check cloud-init status:**
+
 ```bash
 # Via Proxmox host
 ssh root@pve "qm guest cmd 200 network-get-interfaces"
@@ -250,6 +255,7 @@ cloud-init status --long
 ```
 
 **Common causes:**
+
 1. Cloud-init still running (wait 1-2 minutes)
 2. Wrong IP address (check DHCP assignment)
 3. SSH key mismatch (use password as fallback)
@@ -262,6 +268,7 @@ Error: template 'debian-13-cloud-template' does not exist
 ```
 
 **Solution:**
+
 ```bash
 # Verify template exists in Proxmox
 curl -k "${PROXMOX_URL}/nodes/pve/qemu/9112/config" \
@@ -278,6 +285,7 @@ Error: VM failed to start
 ```
 
 **Solution:** Use a different IP or check for conflicts:
+
 ```bash
 # Ping to check if IP is in use
 ping -c 3 10.10.2.20
@@ -321,6 +329,6 @@ After deploying your Debian VM:
 
 ---
 
-**Last Updated**: 2026-01-06  
-**Template Version**: debian-13-cloud-template (VM 9112)  
+**Last Updated**: 2026-01-06
+**Template Version**: debian-13-cloud-template (VM 9112)
 **Terraform Module**: proxmox-vm

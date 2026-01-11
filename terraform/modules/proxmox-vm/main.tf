@@ -37,7 +37,7 @@ resource "proxmox_virtual_environment_vm" "vm" {
   # Clone from template
   clone {
     vm_id = data.proxmox_virtual_environment_vms.template.vms[0].vm_id
-    full  = true  # Full clone (not linked)
+    full  = true # Full clone (not linked)
   }
 
   # CPU configuration

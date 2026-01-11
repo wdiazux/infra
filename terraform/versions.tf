@@ -64,7 +64,7 @@ provider "proxmox" {
   # Note: Some GPU passthrough configurations require password authentication.
   # If you encounter "403 Forbidden" errors with GPU setup, switch to password auth.
 
-  insecure = var.proxmox_insecure  # For self-signed certs
+  insecure = var.proxmox_insecure # For self-signed certs
 
   # Optional SSH configuration for certain operations
   # ssh {

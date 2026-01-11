@@ -129,7 +129,7 @@ cd packer/windows && packer build .
 **Step 2: Update Template Names in terraform.tfvars**
 ```hcl
 # Template names with timestamps from Packer builds
-talos_template_name   = "talos-1.11.5-nvidia-template"
+talos_template_name   = "talos-1.12.1-nvidia-template"
 ubuntu_template_name  = "ubuntu-2404-cloud-template-20251119"
 debian_template_name  = "debian-13-cloud-template-20251119"
 arch_template_name    = "arch-linux-golden-template-20251119"
@@ -329,7 +329,7 @@ proxmox_api_token = "PVEAPIToken=terraform@pve!terraform-token=your-secret"
 proxmox_node     = "pve"
 
 # Talos template (from Packer)
-talos_template_name = "talos-1.11.5-nvidia-template"
+talos_template_name = "talos-1.12.1-nvidia-template"
 
 # Node configuration
 node_name = "talos-node"
@@ -781,7 +781,7 @@ kubectl get cs  # Component status
 
 If you see an error like:
 ```
-Talos template 'talos-1.11.5-nvidia-template' not found on Proxmox node 'pve'.
+Talos template 'talos-1.12.1-nvidia-template' not found on Proxmox node 'pve'.
 Build the template with Packer first.
 ```
 
