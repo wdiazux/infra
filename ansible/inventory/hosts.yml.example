@@ -67,7 +67,7 @@ talos_nodes:
   vars:
     # Talos cluster variables
     cluster_name: "homelab-k8s"
-    talos_version: "v1.11.4"
+    talos_version: "v1.12.1"
     kubernetes_version: "v1.31.0"
 
     # Talosconfig and kubeconfig paths (from Terraform)

@@ -21,7 +21,7 @@ all:
           ansible_python_interpreter: /usr/bin/python3
       vars:
         # Talos-specific variables
-        talos_version: v1.11.4
+        talos_version: v1.12.1
         kubernetes_version: v1.31.0
         cluster_name: homelab-k8s
         talosconfig_path: "{{ playbook_dir }}/../../terraform/talosconfig"
