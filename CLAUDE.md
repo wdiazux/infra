@@ -82,8 +82,8 @@ All project dependencies are defined in `shell.nix` and automatically available 
 
 ### Terraform Providers
 
-- **siderolabs/talos**: ~> 0.9.0 (Talos configuration)
-- **bpg/proxmox**: ~> 0.89.1 (VM provisioning)
+- **siderolabs/talos**: ~> 0.10.0 (Talos configuration)
+- **bpg/proxmox**: ~> 0.92.0 (VM provisioning)
 - **hashicorp/local**: ~> 2.5.3
 - **hashicorp/null**: ~> 3.2.4
 

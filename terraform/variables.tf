@@ -102,7 +102,7 @@ variable "talos_schematic_id" {
 variable "kubernetes_version" {
   description = "Kubernetes version to deploy (supported by Talos version)"
   type        = string
-  default     = "v1.31.0"
+  default     = "v1.35.0"
 }
 
 # ============================================================================
