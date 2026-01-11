@@ -2,12 +2,13 @@
 
 This directory contains Packer templates for building golden VM images on Proxmox VE 9.0. Templates are organized by operating system and build method.
 
-## 📖 Overview
+## Overview
 
-Golden images provide consistent, pre-configured VM templates that can be rapidly cloned for new deployments. This project uses **two approaches** based on OS support:
+Golden images provide consistent, pre-configured VM templates that can be rapidly cloned for new deployments. This project uses **three approaches** based on OS requirements:
 
-1. **Cloud Images** (Preferred) - Official pre-built images from OS vendors
-2. **ISO Builds** (Fallback) - Custom installation from ISO when cloud images unavailable
+1. **Direct Import** (Talos) - Pre-built disk images imported directly (no Packer needed)
+2. **Cloud Images** (Preferred) - Official pre-built images from OS vendors + Packer customization
+3. **ISO Builds** (Fallback) - Custom installation from ISO when cloud images unavailable
 
 ## ⚠️ Recent Updates
 
@@ -48,25 +49,39 @@ All Packer templates have been comprehensively reviewed and verified against 202
 
 **All Packer templates are now production-ready and follow industry best practices.**
 
-## 🎯 Which Method to Use?
+## Which Method to Use?
 
-### ✅ Use Cloud Images (PREFERRED)
+### Direct Import: Talos Linux (Primary VM)
+
+| OS | Directory | VM ID | Build Time | Method |
+|----|-----------|-------|------------|--------|
+| **Talos Linux** | `talos/` | 9000 | 2-5 min | Direct disk image import |
+
+Talos uses **direct disk image import** from Talos Factory - **no Packer needed**. This is the recommended approach because:
+- Talos has **no SSH** - Packer's communicator model doesn't work
+- Talos requires **no customization** - configured via API after deployment
+- Talos Factory provides **pre-built images** with custom extensions
+- Direct import is **simpler and faster** than any Packer workflow
+
+See `talos/README.md` for the import script approach.
+
+### Cloud Images (PREFERRED for Traditional Linux)
 
 For operating systems with official cloud image support:
 
 | OS | Directory | VM ID | Build Time | Status |
 |----|-----------|-------|------------|--------|
-| **Ubuntu 24.04** | `ubuntu/` | 9002 | 5-10 min | ✅ **Recommended** |
-| **Debian 12** | `debian/` | 9001 | 5-10 min | ✅ **Recommended** |
+| **Ubuntu 24.04** | `ubuntu/` | 9002 | 5-10 min | Recommended |
+| **Debian 12** | `debian/` | 9001 | 5-10 min | Recommended |
 
 **Why cloud images?**
-- ⚡ **3-4x faster** build times
-- ✅ **More reliable** - official pre-built images
-- 🎯 **Simpler** - no installation complexity
-- 📦 **Pre-configured** - cloud-init and qemu-guest-agent included
-- 🔄 **Industry standard** - production best practice
+- 3-4x faster build times
+- More reliable - official pre-built images
+- Simpler - no installation complexity
+- Pre-configured - cloud-init and qemu-guest-agent included
+- Industry standard - production best practice
 
-### ⚠️ Use ISO Builds (When Required)
+### ISO Builds (When Required)
 
 For operating systems without official cloud image support:
 
@@ -82,31 +97,22 @@ For operating systems without official cloud image support:
 - Specific installation options
 - Learning/understanding OS installation
 
-### 🚀 Special Case: Talos Linux (Primary VM)
-
-| OS | Directory | VM ID | Build Time | Method |
-|----|-----------|-------|------------|--------|
-| **Talos Linux** | `talos/` | 9000 | 10-15 min | Talos Factory images |
-
-Talos uses **Factory-generated images** (similar concept to cloud images) with custom extensions.
-
-## 📁 Repository Structure
+## Repository Structure
 
 ```
 packer/
 ├── README.md                    # This file - overview
 │
-├── talos/                       # Talos Linux (PRIMARY VM)
-│   ├── talos.pkr.hcl           # Factory image with NVIDIA extensions
-│   ├── variables.pkr.hcl
-│   └── README.md
+├── talos/                       # Talos Linux (PRIMARY VM) - NO PACKER
+│   ├── import-talos-image.sh   # Direct disk image import script
+│   └── README.md               # Import workflow documentation
 │
-├── ubuntu/                      # ✨ Ubuntu 24.04 (PREFERRED - cloud image)
+├── ubuntu/                      # Ubuntu 24.04 (PREFERRED - cloud image)
 │   ├── ubuntu.pkr.hcl          # Uses official cloud image
 │   ├── variables.pkr.hcl
 │   └── README.md
 │
-├── debian/                      # ✨ Debian 12 (PREFERRED - cloud image)
+├── debian/                      # Debian 12 (PREFERRED - cloud image)
 │   ├── debian.pkr.hcl          # Uses official cloud image
 │   ├── variables.pkr.hcl
 │   └── README.md
@@ -128,9 +134,25 @@ packer/
     └── README.md
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
-**⚠️ IMPORTANT:** All commands must be run from the Nix shell environment (automatic with direnv, or manual with `nix-shell`).
+**IMPORTANT:** All commands must be run from the Nix shell environment (automatic with direnv, or manual with `nix-shell`).
+
+### For Talos Linux (Direct Import - No Packer)
+
+```bash
+# Copy import script to Proxmox host
+scp packer/talos/import-talos-image.sh root@pve:/tmp/
+
+# SSH to Proxmox and run
+ssh root@pve
+cd /tmp && chmod +x import-talos-image.sh
+./import-talos-image.sh
+```
+
+**Build time:** 2-5 minutes
+
+See `talos/README.md` for full documentation.
 
 ### For Cloud Images (Ubuntu/Debian)
 
@@ -174,16 +196,16 @@ packer build .
 
 **Build time:** 15-90 minutes depending on OS ⏱️
 
-## 📊 Build Time Comparison
+## Build Time Comparison
 
-| OS | Cloud Image | ISO Build | Speedup |
-|----|-------------|-----------|---------|
-| Ubuntu | 5-10 min | 20-30 min | **3-4x faster** |
-| Debian | 5-10 min | 20-30 min | **3-4x faster** |
-| Arch | N/A | 15-25 min | - |
-| NixOS | N/A | 20-30 min | - |
-| Windows | N/A | 30-90 min | - |
-| Talos | 10-15 min | N/A | Factory images |
+| OS | Method | Build Time | Notes |
+|----|--------|------------|-------|
+| Talos | Direct Import | 2-5 min | No Packer - fastest |
+| Ubuntu | Cloud Image | 5-10 min | Packer + Ansible |
+| Debian | Cloud Image | 5-10 min | Packer + Ansible |
+| Arch | ISO Build | 15-25 min | Packer + custom install |
+| NixOS | ISO Build | 20-30 min | Packer + declarative config |
+| Windows | ISO Build | 30-90 min | Packer + autounattend |
 
 ## 🎯 Recommended Deployment Strategy
 
@@ -633,23 +655,24 @@ All templates now use UEFI for consistency.
 - Cloud-init Docs: https://cloudinit.readthedocs.io/
 - Proxmox Wiki: https://pve.proxmox.com/wiki/
 
-## 📊 VM ID Allocation
+## VM ID Allocation
 
 | VM ID | Purpose | Type | Status |
 |-------|---------|------|--------|
-| 9000 | Talos Linux template | Factory image | Primary VM |
+| 9000 | Talos Linux template | Direct import | **Primary VM** |
 | 9001 | Debian ISO template | ISO build | Alternative |
 | 9002 | Ubuntu ISO template | ISO build | Alternative |
 | 9003 | Arch Linux template | ISO build | Required |
 | 9004 | NixOS template | ISO build | Required |
 | 9005 | Windows Server template | ISO build | Required |
-| 9100 | Ubuntu cloud base | Cloud image | **Preferred** |
-| 9102 | Ubuntu cloud template | Cloud image | **Preferred** |
-| 9110 | Debian cloud base | Cloud image | **Preferred** |
-| 9112 | Debian cloud template | Cloud image | **Preferred** |
+| 9100 | Ubuntu cloud base | Cloud image | Preferred |
+| 9102 | Ubuntu cloud template | Cloud image | Preferred |
+| 9110 | Debian cloud base | Cloud image | Preferred |
+| 9112 | Debian cloud template | Cloud image | Preferred |
 
 **Allocation Strategy:**
-- 9000-9099: Templates (ISO and Factory builds)
+- 9000: Talos (direct import - no Packer)
+- 9001-9099: Templates (ISO builds)
 - 9100-9199: Cloud image base VMs and templates
 
 ## 🎯 Next Steps
@@ -667,8 +690,8 @@ See `../terraform/` for deploying VMs from these templates.
 
 ---
 
-**Last Updated:** 2025-11-18
-**Packer Version:** 1.14.2+
+**Last Updated:** 2026-01-11
+**Packer Version:** 1.14.3+
 **Proxmox Version:** 9.0
 
 ---
@@ -702,18 +725,18 @@ A complete verification of all Packer, Terraform, and Ansible code has been perf
 
 ### Template Readiness
 
-All 8 Packer templates are **production-ready**:
+All templates are **production-ready**:
 
 | Template | Build Method | Status | Terraform Integration |
 |----------|-------------|--------|----------------------|
-| Talos Linux | ISO (factory) | ✅ READY | ✅ VERIFIED |
-| Ubuntu Cloud | Cloud image | ✅ READY | ✅ VERIFIED |
-| Debian Cloud | Cloud image | ✅ READY | ✅ VERIFIED |
-| Ubuntu ISO | ISO build | ✅ READY | ✅ VERIFIED |
-| Debian ISO | ISO build | ✅ READY | ✅ VERIFIED |
-| Arch Linux | ISO build | ✅ READY | ✅ VERIFIED |
-| NixOS | ISO build | ✅ READY | ✅ VERIFIED |
-| Windows Server | ISO build | ✅ READY | ✅ VERIFIED |
+| Talos Linux | Direct import (no Packer) | READY | VERIFIED |
+| Ubuntu Cloud | Cloud image (Packer) | READY | VERIFIED |
+| Debian Cloud | Cloud image (Packer) | READY | VERIFIED |
+| Ubuntu ISO | ISO build (Packer) | READY | VERIFIED |
+| Debian ISO | ISO build (Packer) | READY | VERIFIED |
+| Arch Linux | ISO build (Packer) | READY | VERIFIED |
+| NixOS | ISO build (Packer) | READY | VERIFIED |
+| Windows Server | ISO build (Packer) | READY | VERIFIED |
 
 ### Best Practices Compliance (2025)
 
@@ -726,8 +749,8 @@ All 8 Packer templates are **production-ready**:
 6. Cloud-init for automated VM configuration
 7. Proper template cleanup and conversion
 
-**🎯 Template Naming Convention:**
-- **Talos:** `talos-1.11.4-nvidia-template` (no timestamp - exact match)
+**Template Naming Convention:**
+- **Talos:** `talos-1.12.1-nvidia-template` (no timestamp - from import script)
 - **Others:** `{os-name}-YYYYMMDD` (e.g., `ubuntu-2404-cloud-template-20251119`)
 
 ### Terraform Integration Verified

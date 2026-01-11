@@ -1,482 +1,272 @@
-# Talos Linux Packer Template for Proxmox
+# Talos Linux Template for Proxmox
 
-This directory contains Packer configuration to build a customized Talos Linux template for Proxmox VE 9.0 with NVIDIA GPU support and qemu-guest-agent integration.
+Creates a Talos Linux v1.12.1 template for Proxmox VE using the **direct disk image import** approach from Talos Factory.
 
 ## Overview
 
-Talos Linux is an immutable, minimal Linux distribution designed specifically for running Kubernetes. This Packer template creates a Proxmox VM template from a custom Talos Factory image that includes:
+Unlike traditional Linux distributions that use Packer for customization, Talos Linux templates are created by **directly importing pre-built disk images** from Talos Factory. This approach is recommended by Sidero Labs because:
 
-- **siderolabs/qemu-guest-agent**: Proxmox integration for better VM management
-- **siderolabs/iscsi-tools**: iSCSI support for Longhorn storage (**REQUIRED**)
-- **siderolabs/util-linux-tools**: Volume management for Longhorn storage (**REQUIRED**)
-- **nonfree-kmod-nvidia-production**: NVIDIA GPU drivers for GPU passthrough (optional)
-- **nvidia-container-toolkit-production**: NVIDIA container runtime for Kubernetes GPU workloads (optional)
+- Talos has **no SSH** - Packer's communicator model doesn't work
+- Talos requires **no customization** - it's configured via API after deployment
+- Talos Factory provides **pre-built images** with custom extensions
+- Direct import is **simpler and faster** than ISO-based workflows
+
+**Why not Packer?** Packer's value is automating OS installation and running provisioners (Ansible, shell scripts). Talos doesn't need either - the Factory image is ready to use, and all configuration happens via `talosctl` after deployment.
+
+## Architecture
+
+```
+Talos Factory (factory.talos.dev)
+    |
+    v
+Generate Schematic (select extensions)
+    |
+    v
+import-talos-image.sh (download + import)
+    |
+    v
+Template 9000 (talos-1.12.1-nvidia-template)
+    |
+    v
+Terraform/Manual Deploy (clone template)
+    |
+    v
+talosctl apply-config (configure node)
+```
 
 ## Prerequisites
 
-### Tools Required
-
-```bash
-# Check versions
-packer --version   # Should be 1.14.2+
-```
-
-Install if needed:
-```bash
-# Install Packer
-wget https://releases.hashicorp.com/packer/1.14.2/packer_1.14.2_linux_amd64.zip
-unzip packer_1.14.2_linux_amd64.zip
-sudo mv packer /usr/local/bin/
-```
-
 ### Proxmox Setup
 
-1. **Create API Token** (recommended over username/password):
-   ```
-   Proxmox Web UI → Datacenter → Permissions → API Tokens → Add
-   ```
-   - User: `terraform@pve` (or create dedicated user)
-   - Token ID: `terraform-token`
-   - Privilege Separation: Unchecked (inherit user permissions)
-   - Save the secret securely
+1. **API access** or SSH access to Proxmox host
+2. **Storage pool**: ZFS or other storage (default: `tank`)
+3. **Network bridge**: For VM networking (default: `vmbr0`)
+4. **IOMMU**: Enable in BIOS for GPU passthrough (optional)
 
-2. **Grant Permissions** to the user/token:
-   ```
-   Proxmox Web UI → Datacenter → Permissions → Add → User Permission
-   ```
-   Required roles:
-   - `PVEVMAdmin` (create/modify VMs)
-   - `PVEDatastoreUser` (access datastores)
-   - `PVETemplateUser` (create templates)
+### Generate Talos Factory Schematic
 
-3. **Verify Network Access**:
-   - Ensure Proxmox node can reach the internet (to download Talos image)
-   - Verify network bridge `vmbr0` exists (or adjust in variables)
+1. Visit https://factory.talos.dev/
+2. Select **Platform**: Metal (or Nocloud for cloud-init-like behavior)
+3. Select **Version**: v1.12.1
+4. Add **REQUIRED** extensions:
+   - `siderolabs/qemu-guest-agent` - Proxmox integration
+   - `siderolabs/iscsi-tools` - Longhorn storage
+   - `siderolabs/util-linux-tools` - Longhorn volume operations
+5. Add **OPTIONAL** extensions (for GPU workloads):
+   - `siderolabs/nonfree-kmod-nvidia-production` - NVIDIA drivers
+   - `siderolabs/nvidia-container-toolkit-production` - GPU containers
+   - `siderolabs/zfs` - ZFS support
+   - `siderolabs/amd-ucode` - AMD microcode updates
+6. Click **Generate** and copy the **Schematic ID** (64-character hex string)
 
-### Talos Factory Schematic
+**Important**: Without `iscsi-tools` and `util-linux-tools`, Longhorn storage will fail to create volumes.
 
-Talos Factory allows you to build custom Talos images with system extensions. You need to generate a schematic ID before building.
+## Quick Start
 
-#### Step 1: Generate Schematic
+### Step 1: Edit Import Script Configuration
 
-Visit https://factory.talos.dev/
-
-#### Step 2: Select Platform
-
-Choose **"Metal"** (for Talos 1.8.0+)
-
-#### Step 3: Select Talos Version
-
-Choose **v1.11.5** (or latest stable from https://github.com/siderolabs/talos/releases)
-
-#### Step 4: Add System Extensions
-
-Click **"+ Add Extension"** and add the following:
-
-1. **siderolabs/qemu-guest-agent**
-   - Purpose: Proxmox VM integration
-   - Enables: VM status reporting, proper shutdown, network info
-   - Required: Yes
-
-2. **nonfree-kmod-nvidia-production**
-   - Purpose: NVIDIA proprietary GPU drivers
-   - Enables: GPU passthrough support
-   - Required: Only if using NVIDIA GPU
-
-3. **nvidia-container-toolkit-production**
-   - Purpose: NVIDIA container runtime
-   - Enables: GPU workloads in Kubernetes
-   - Required: Only if using NVIDIA GPU
-
-4. **siderolabs/iscsi-tools**
-   - Purpose: iSCSI initiator daemon and tools
-   - Enables: Longhorn storage persistent volumes via iSCSI
-   - Required: **YES (for Longhorn storage)**
-   - Note: Longhorn is the primary storage solution for this infrastructure
-
-5. **siderolabs/util-linux-tools**
-   - Purpose: Volume management utilities (fstrim, nsenter, etc.)
-   - Enables: Disk optimization and management for Longhorn
-   - Required: **YES (for Longhorn storage)**
-   - Note: Required for Longhorn volume operations
-
-**IMPORTANT FOR LONGHORN:** Extensions #4 and #5 are **REQUIRED** if you plan to use Longhorn as your primary storage (which is the recommended configuration). Without these extensions, Longhorn will fail to create volumes.
-
-#### Step 5: Copy Schematic ID
-
-After adding extensions, Factory generates a schematic ID (example: `abc123def456...`).
-
-**Copy this schematic ID** - you'll need it for the Packer build.
-
-#### Alternative: Manual Image Download
-
-If you prefer to download the image manually:
+Edit `import-talos-image.sh` with your values:
 
 ```bash
-# Construct URL (replace with your schematic ID and version)
-SCHEMATIC_ID="your-schematic-id-here"
-VERSION="v1.11.5"
-IMAGE_URL="https://factory.talos.dev/image/${SCHEMATIC_ID}/${VERSION}/metal-amd64.iso"
-
-# Download ISO
-wget "${IMAGE_URL}" -O talos-${VERSION}-custom.iso
-
-# Or download raw disk image
-wget "https://factory.talos.dev/image/${SCHEMATIC_ID}/${VERSION}/metal-amd64.raw.xz" -O talos.raw.xz
-xz -d talos.raw.xz
+# Configuration
+VM_ID="${1:-9000}"
+TALOS_VERSION="v1.12.1"
+SCHEMATIC_ID="your-64-char-schematic-id-here"
+STORAGE_POOL="tank"
+BRIDGE="vmbr0"
 ```
 
-## Configuration
-
-### Step 1: Copy Example Variables
+### Step 2: Run Import Script on Proxmox Host
 
 ```bash
-cd packer/talos
-cp talos.auto.pkrvars.hcl.example talos.auto.pkrvars.hcl
+# Copy script to Proxmox host
+scp import-talos-image.sh root@pve:/tmp/
+
+# SSH to Proxmox and run
+ssh root@pve
+cd /tmp
+chmod +x import-talos-image.sh
+./import-talos-image.sh
+
+# Or specify custom VM ID
+./import-talos-image.sh 9001
 ```
 
-### Step 2: Edit Variables
-
-Edit `talos.auto.pkrvars.hcl` with your values:
-
-```hcl
-# Proxmox connection
-proxmox_url      = "https://proxmox.local:8006/api2/json"
-proxmox_username = "terraform@pve"
-proxmox_token    = "PVEAPIToken=terraform@pve!terraform-token=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-proxmox_node     = "pve"
-
-# Talos configuration
-talos_version      = "v1.11.5"
-talos_schematic_id = "abc123def456..."  # Your schematic ID from Factory
-
-# VM configuration
-vm_id           = 9000
-vm_disk_storage = "tank"  # Your ZFS pool name
-vm_disk_size    = "150G"
-```
-
-**Important Variables:**
-
-- `proxmox_token`: Format is `PVEAPIToken=user@realm!token-id=secret`
-- `talos_schematic_id`: From Talos Factory (Step 5 above)
-- `vm_cpu_type`: Must be `"host"` for Talos v1.0+ and Cilium
-- `vm_disk_storage`: Must match your Proxmox storage pool name
-
-### Step 3: Optional - Use SOPS for Credentials
-
-Instead of plain text credentials in `talos.auto.pkrvars.hcl`, use SOPS-encrypted secrets:
+### Step 3: Verify Template
 
 ```bash
-# Create encrypted Proxmox credentials
-sops ../../secrets/proxmox-creds.enc.yaml
+# Check template exists
+qm list | grep talos
 
-# Export decrypted values as environment variables
-export PROXMOX_URL=$(sops -d ../../secrets/proxmox-creds.enc.yaml | yq '.proxmox_url')
-export PROXMOX_TOKEN=$(sops -d ../../secrets/proxmox-creds.enc.yaml | yq '.proxmox_token_secret')
+# View template configuration
+qm config 9000
 ```
 
-Then in `talos.auto.pkrvars.hcl`:
-```hcl
-proxmox_url   = env("PROXMOX_URL")
-proxmox_token = env("PROXMOX_TOKEN")
-```
+## What the Script Does
 
-## Building the Template
-
-### Step 1: Initialize Packer
-
-```bash
-cd packer/talos
-packer init .
-```
-
-This downloads required plugins (proxmox builder).
-
-### Step 2: Validate Configuration
-
-```bash
-packer validate .
-```
-
-If validation fails, check:
-- Variable syntax in `talos.auto.pkrvars.hcl`
-- Schematic ID format
-- Proxmox URL and credentials
-
-### Step 3: Format Code (optional)
-
-```bash
-packer fmt .
-```
-
-### Step 4: Build Template
-
-```bash
-packer build .
-```
-
-**Expected Output:**
-```
-proxmox-iso.talos: output will be in this color.
-
-==> proxmox-iso.talos: Downloading Talos ISO from Factory...
-==> proxmox-iso.talos: Creating VM...
-==> proxmox-iso.talos: Starting VM...
-==> proxmox-iso.talos: Waiting for boot...
-==> proxmox-iso.talos: Converting to template...
-==> proxmox-iso.talos: Build complete!
-```
-
-**Build Time**: 5-15 minutes depending on:
-- Internet speed (downloading Talos ISO ~150MB)
-- Proxmox storage performance
-- VM boot time
-
-### Step 5: Verify Template
-
-Check Proxmox web UI:
-```
-Proxmox Web UI → Node → VM Templates
-```
-
-You should see: `talos-1.11.5-nvidia-template-YYYYMMDD-hhmm`
-
-Verify template properties:
-- CPU type: host
-- BIOS: OVMF (EFI)
-- SCSI controller: VirtIO SCSI
-- Network: VirtIO
-- QEMU agent: Enabled
+1. **Downloads** the Talos disk image from Factory (`nocloud-amd64.raw.xz`)
+2. **Decompresses** the image
+3. **Creates** a VM with proper settings (UEFI, q35, virtio-scsi)
+4. **Imports** the disk image to your storage pool
+5. **Configures** boot order and resizes disk to 150GB
+6. **Converts** the VM to a template
 
 ## Using the Template
 
 ### Option 1: Terraform (Recommended)
 
-Use the Terraform configuration in `terraform/` to deploy VMs from this template:
+Use the Terraform configuration in `terraform/`:
 
 ```bash
-cd terraform/
+cd terraform
 terraform init
 terraform plan
 terraform apply
 ```
 
-See `terraform/README.md` for details.
+Terraform will:
+- Clone template to create VM
+- Generate Talos machine secrets
+- Apply machine configuration
+- Bootstrap Kubernetes
 
-### Option 2: Manual Deployment (Testing)
+### Option 2: Manual Deployment
 
-1. **Clone Template** in Proxmox:
-   ```
-   Right-click template → Clone
-   Name: talos-test
-   Full Clone: Yes
-   ```
+```bash
+# Clone template
+qm clone 9000 100 --name talos-node --full
 
-2. **Configure VM** (adjust resources as needed):
-   - Memory: 24-32GB (for production workload)
-   - CPU: 6-8 cores
-   - Disk: Resize if needed (qm resize <vmid> scsi0 +50G)
+# Adjust resources
+qm set 100 --memory 32768 --cores 8
 
-3. **Optional: Add GPU Passthrough**:
+# Add GPU passthrough (optional)
+qm set 100 --hostpci0 07:00,pcie=1,rombar=0
+
+# Start VM
+qm start 100
+
+# Wait for DHCP, then apply Talos config
+talosctl gen config homelab https://<vm-ip>:6443
+talosctl apply-config --insecure --nodes <vm-ip> --file controlplane.yaml
+talosctl bootstrap --nodes <vm-ip>
+talosctl kubeconfig --nodes <vm-ip>
+```
+
+## Configuration
+
+### Default Settings
+
+| Setting | Value | Notes |
+|---------|-------|-------|
+| VM ID | 9000 | Configurable via CLI argument |
+| CPU | 2 cores, host type | `host` required for Talos |
+| Memory | 4096 MB | Increase when cloning |
+| Disk | 150 GB | Resized during import |
+| BIOS | OVMF (UEFI) | Required for Talos |
+| Machine | q35 | Better PCIe support |
+| SCSI | virtio-scsi-single | With IO thread |
+| Network | virtio on vmbr0 | |
+| Tags | talos,kubernetes,nvidia-gpu | |
+
+### Included Extensions (Current Schematic)
+
+- `siderolabs/qemu-guest-agent` - Proxmox integration
+- `siderolabs/iscsi-tools` - Longhorn storage
+- `siderolabs/util-linux-tools` - Longhorn volumes
+- `siderolabs/nonfree-kmod-nvidia-production` - NVIDIA GPU
+- `siderolabs/nvidia-container-toolkit-production` - GPU containers
+- `siderolabs/zfs` - ZFS support
+- `siderolabs/nfs-utils` - NFS client
+- `siderolabs/amd-ucode` - AMD microcode
+- `siderolabs/thunderbolt` - Thunderbolt support
+- `siderolabs/uinput` - Input device support
+- `siderolabs/newt` - Network configuration
+
+## Updating Talos Version
+
+1. Generate new schematic at factory.talos.dev with desired version
+2. Update `import-talos-image.sh`:
    ```bash
-   # Enable IOMMU in BIOS first, then:
-   qm set <vmid> --hostpci0 01:00,pcie=1,rombar=0
+   TALOS_VERSION="v1.13.0"
+   SCHEMATIC_ID="new-schematic-id"
    ```
-
-4. **Start VM**:
-   ```bash
-   qm start <vmid>
-   ```
-
-5. **Apply Talos Configuration**:
-   ```bash
-   # Generate machine config
-   talosctl gen config homelab-k8s https://<vm-ip>:6443
-
-   # Apply configuration
-   talosctl apply-config --insecure --nodes <vm-ip> --file controlplane.yaml
-
-   # Bootstrap Kubernetes
-   talosctl bootstrap --nodes <vm-ip>
-
-   # Get kubeconfig
-   talosctl kubeconfig --nodes <vm-ip>
-   ```
-
-## Post-Build Configuration
-
-After deploying VMs from the template, you need to:
-
-1. **Apply Talos Machine Configuration** via `talosctl`
-2. **Bootstrap Kubernetes Cluster**
-3. **Install Cilium CNI** (networking)
-4. **Install NVIDIA GPU Operator** (if using GPU)
-5. **Install Longhorn Storage Manager** (primary persistent storage for almost all services)
-6. **Install NFS CSI Driver** (optional - Longhorn backup target to external NAS)
-7. **Install FluxCD** (GitOps)
-
-See `ansible/` directory for Day 0/1/2 automation.
+3. Delete old template: `qm destroy 9000 --purge`
+4. Run import script: `./import-talos-image.sh`
+5. Test before production use
 
 ## Troubleshooting
 
-### Issue: Packer times out waiting for SSH
+### "VM already exists"
 
-**Solution**: This is expected. Talos doesn't have SSH access. The Packer template uses `communicator = "none"` to skip SSH.
-
-### Issue: "Error connecting to Proxmox API"
-
-**Solutions**:
-- Verify `proxmox_url` is correct (include `/api2/json`)
-- Check API token format: `PVEAPIToken=user@pam!token=secret`
-- Verify token permissions (PVEVMAdmin, PVEDatastoreUser)
-- Test with curl:
-  ```bash
-  curl -k -H "Authorization: PVEAPIToken=user@pam!token=secret" \
-    https://proxmox.local:8006/api2/json/nodes
-  ```
-
-### Issue: "Failed to download ISO"
-
-**Solutions**:
-- Verify schematic ID is correct (check factory.talos.dev)
-- Ensure Proxmox node has internet access
-- Check firewall rules
-- Try downloading manually:
-  ```bash
-  wget https://factory.talos.dev/image/{schematic}/{version}/metal-amd64.iso
-  ```
-
-### Issue: "VM ID already exists"
-
-**Solution**: Change `vm_id` in variables or delete existing VM:
 ```bash
-qm destroy <vmid>
+# Delete existing VM/template
+qm destroy 9000 --purge
 ```
 
-### Issue: "Insufficient permissions"
+### Download fails
 
-**Solution**: Grant additional roles to API token user:
-```bash
-pveum role add PVETemplateUser -privs "VM.Allocate VM.Clone VM.Config.CDROM VM.Config.CPU VM.Config.Disk VM.Config.HWType VM.Config.Memory VM.Config.Network VM.Config.Options VM.Monitor VM.Audit VM.PowerMgmt Datastore.AllocateSpace Datastore.Audit"
-pveum aclmod / -user terraform@pve -role PVETemplateUser
+- Verify schematic ID is correct (64-character hex string)
+- Ensure Proxmox has internet access
+- Test manually: `wget https://factory.talos.dev/image/{schematic}/{version}/nocloud-amd64.raw.xz`
+
+### Template boots to maintenance mode
+
+This is **expected behavior**. Talos waits in maintenance mode until it receives a machine configuration via `talosctl apply-config`.
+
+### QEMU guest agent not responding
+
+Verify your schematic includes `siderolabs/qemu-guest-agent` extension. Regenerate if needed.
+
+### Longhorn volumes fail
+
+Missing extensions. Regenerate schematic with:
+- `siderolabs/iscsi-tools`
+- `siderolabs/util-linux-tools`
+
+## Files
+
+```
+packer/talos/
+├── import-talos-image.sh    # Main import script (run on Proxmox)
+└── README.md                # This file
 ```
 
-### Issue: Template builds but can't boot
+## Why Not Packer?
 
-**Solutions**:
-- Verify CPU type is set to "host" (required for Talos v1.0+)
-- Check EFI disk was created
-- Ensure SCSI controller is virtio-scsi-single
-- Review Proxmox logs: `/var/log/pve/tasks/*.log`
+Sidero Labs (Talos creators) explicitly recommend against Packer for Talos images:
 
-## Updating the Template
+> "Packer automates old practices instead of eliminating them."
 
-When a new Talos version is released:
+**Packer's value proposition:**
+1. Automate OS installation from ISO
+2. Run provisioners (Ansible, shell) to customize
+3. Create reusable golden image
 
-1. **Generate New Schematic** at factory.talos.dev with new version
-2. **Update Variables**:
-   ```hcl
-   talos_version      = "v1.12.0"  # New version
-   talos_schematic_id = "new-schematic-id"
-   template_name      = "talos-1.12.0-nvidia-template"
-   vm_id              = 9001  # New VM ID
-   ```
-3. **Rebuild Template**: `packer build .`
-4. **Test New Template** before using in production
-5. **Update Terraform** to use new template
+**Why Talos doesn't need this:**
+1. Talos Factory provides pre-built, ready-to-use disk images
+2. Talos has no SSH, no shell - can't run provisioners
+3. All configuration happens via API (`talosctl`) after deployment
+4. The Factory image IS the golden image
 
-## Template Customization
+**Community approaches that use Packer** work around this by booting a helper OS (Arch Linux), downloading the Talos image, and `dd`-ing it to disk - complex and fragile. Direct import is simpler.
 
-### Adjust Resources
-
-Edit `variables.pkr.hcl` or override in `talos.auto.pkrvars.hcl`:
-
-```hcl
-# Increase disk size
-vm_disk_size = "200G"
-
-# More CPU cores for build
-vm_cores = 8
-
-# More memory
-vm_memory = 16384  # 16GB
-```
-
-### Add/Remove Extensions
-
-Regenerate schematic at factory.talos.dev with desired extensions:
-
-**Common Extensions:**
-- `siderolabs/qemu-guest-agent` - Always include for Proxmox
-- `nonfree-kmod-nvidia-production` - NVIDIA GPU (proprietary)
-- `nvidia-open-gpu-kernel-modules` - NVIDIA GPU (open source alternative)
-- `nvidia-container-toolkit-production` - NVIDIA container runtime
-- Various hardware support extensions
-
-See https://github.com/siderolabs/extensions for full list.
-
-### Use Different Platform
-
-Talos supports multiple platforms. For bare metal or other virtualization:
-
-- **Metal**: Generic x86-64 (recommended for Proxmox)
-- **VMware**: VMware-specific optimizations
-- **Hyper-V**: Microsoft Hyper-V
-- **KVM**: QEMU/KVM optimizations
-
-Change platform at factory.talos.dev when generating schematic.
-
-## Best Practices
-
-1. **Version Control**:
-   - Commit Packer files to Git
-   - Don't commit `talos.auto.pkrvars.hcl` (contains credentials)
-   - Use SOPS for encrypted credentials
-
-2. **Template Naming**:
-   - Include version number: `talos-1.11.5-nvidia-template`
-   - Include timestamp for rebuilds
-   - Use consistent naming across environments
-
-3. **Testing**:
-   - Test template in dev environment first
-   - Verify all extensions are loaded: `talosctl get extensions`
-   - Check QEMU agent: `qm agent <vmid> ping`
-   - Validate GPU detection (if applicable): `nvidia-smi` in container
-
-4. **Security**:
-   - Use API tokens instead of passwords
-   - Restrict token permissions to minimum required
-   - Rotate tokens regularly
-   - Use SOPS for credential storage
-
-5. **Documentation**:
-   - Document schematic ID and extensions used
-   - Record build date and Talos version
-   - Note any customizations or deviations
-
-## Resources
+## References
 
 - **Talos Documentation**: https://www.talos.dev/
 - **Talos Factory**: https://factory.talos.dev/
-- **Talos on Proxmox Guide**: https://www.talos.dev/v1.10/talos-guides/install/virtualized-platforms/proxmox/
-- **Packer Proxmox Builder**: https://www.packer.io/plugins/builders/proxmox
+- **Talos on Proxmox**: https://www.talos.dev/v1.12/talos-guides/install/virtualized-platforms/proxmox/
 - **System Extensions**: https://github.com/siderolabs/extensions
+- **Why Not Packer**: https://www.siderolabs.com/blog/linux-artifacts-without-packer-and-bash/
 
-## Support
+## Version History
 
-For issues specific to this Packer template, check:
-1. This README
-2. `docs/versions.md` for version compatibility
-3. `secrets/README.md` for SOPS setup
-4. `CLAUDE.md` for project guidelines
-
-For Talos issues:
-- Talos Documentation: https://www.talos.dev/
-- Talos GitHub Issues: https://github.com/siderolabs/talos/issues
-- Talos Slack: https://slack.dev.talos-systems.io/
+- **2026-01-11**: Switched from Packer to direct disk image import (recommended approach)
+- **2026-01-10**: Updated to Talos v1.12.1
+- **2025-11-23**: Initial Packer template (deprecated)
 
 ---
 
-**Next Steps**: After building the template, proceed to `terraform/` to deploy Talos VMs and configure the Kubernetes cluster.
+**Last Updated**: 2026-01-11
+**Talos Version**: v1.12.1
+**Template ID**: 9000
+**Build Time**: ~2-5 minutes
