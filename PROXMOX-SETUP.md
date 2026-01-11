@@ -249,6 +249,58 @@ Before running `terraform apply`, ensure:
 
 ---
 
+## Packer/Terraform Authentication Format
+
+### Environment Variables
+
+When using Packer and Terraform, set environment variables in the correct format:
+
+```bash
+# For Packer (separate username and token)
+export PROXMOX_USERNAME="terraform@pve!terraform-token"  # Token ID format
+export PROXMOX_TOKEN="secret-value-only"                  # Just the secret
+
+# For Terraform (full token format)
+export PROXMOX_API_TOKEN="PVEAPIToken=terraform@pve!terraform-token=secret"
+```
+
+### SOPS Secrets File Format
+
+Store credentials in `secrets/proxmox-creds.enc.yaml`:
+
+```yaml
+proxmox_url: "https://pve.home-infra.net:8006/api2/json"
+proxmox_user: "terraform@pve"           # User@realm (NOT @pam)
+proxmox_token_id: "terraform-token"      # Just token ID (NOT full format)
+proxmox_token_secret: "your-secret-here" # Just the secret value
+proxmox_node: "pve"
+proxmox_storage_pool: "tank"
+```
+
+### Packer Variables
+
+All `packer/*/variables.pkr.hcl` files use:
+
+```hcl
+variable "proxmox_username" {
+  type        = string
+  description = "Proxmox token ID (format: user@realm!tokenid)"
+  default     = env("PROXMOX_USERNAME")  # terraform@pve!terraform-token
+  sensitive   = true
+}
+
+variable "proxmox_token" {
+  type        = string
+  description = "Proxmox API token secret"
+  default     = env("PROXMOX_TOKEN")  # Just the secret value
+  sensitive   = true
+}
+```
+
+**Reference**: [Official Packer Proxmox Plugin Docs](https://developer.hashicorp.com/packer/integrations/hashicorp/proxmox/latest/components/builder/clone)
+
+---
+
 ## Quick Reference
 
 ### Terraform API Token Format
@@ -316,6 +368,31 @@ pveversion
 **Solution**:
 1. List pools: `zpool list`
 2. Update `terraform.tfvars`: `node_disk_storage = "tank"`  # Replace "tank" with your pool name
+
+### VM Clone Boot Failure
+
+**Error**: "PARTUUID does not exist. Dropping to a shell!"
+
+**Cause**: Linked clone doesn't properly copy disk partitions.
+
+**Solution**: Use full clone in Packer templates:
+```hcl
+full_clone = true  # Use full clone instead of linked clone
+```
+
+### Cloud-init Exit Code 2
+
+**Error**: `Script exited with non-zero exit status: 2`
+
+**Cause**: Proxmox cloud-init generates deprecation warnings about using `user` instead of `users`, causing "degraded done" status (exit code 2).
+
+**Solution**: Accept exit code 2 as valid in Packer provisioners:
+```hcl
+provisioner "shell" {
+  inline = ["cloud-init status --wait"]
+  valid_exit_codes = [0, 2]  # Accept degraded/done
+}
+```
 
 ---
 
