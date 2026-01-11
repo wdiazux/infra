@@ -2,27 +2,26 @@
 
 **Comprehensive documentation for Talos Kubernetes homelab on Proxmox**
 
-Last Updated: 2025-11-23
+Last Updated: 2026-01-11
 
 ---
 
-## 📁 Documentation Structure
+## Documentation Structure
 
 ```
 docs/
 ├── guides/              # User-facing implementation guides
 │   ├── getting-started/ # Getting started with Talos
-│   ├── deployment/      # OS deployment guides (6 OS)
+│   ├── deployment/      # OS deployment guides + integration docs
 │   └── services/        # Production services guide
 ├── research/            # Research reports and analysis
 ├── secrets/             # Secrets management guides (SOPS + FluxCD)
-├── comparisons/         # Infrastructure comparisons and analysis
 └── archive/             # Historical reports (preserved for reference)
 ```
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 **New to this infrastructure?**
 
@@ -33,23 +32,26 @@ docs/
 
 ---
 
-## 📚 Documentation Categories
+## Documentation Categories
 
 ### Getting Started Guides
 
 | Guide | Description | Audience |
 |-------|-------------|----------|
 | [TALOS-GETTING-STARTED.md](guides/getting-started/TALOS-GETTING-STARTED.md) | Complete beginner's guide to Talos operations | New users |
+| [TALOS-FACTORY-GUIDE.md](guides/getting-started/TALOS-FACTORY-GUIDE.md) | Generate custom Talos images with extensions | All users |
 
 ### Deployment Guides
 
-| Guide | OS | Type |
-|-------|----|----|
+| Guide | OS/Topic | Type |
+|-------|----------|------|
 | [TALOS-DEPLOYMENT-GUIDE.md](guides/deployment/TALOS-DEPLOYMENT-GUIDE.md) | Talos Linux | Primary |
 | [DEBIAN-DEPLOYMENT-GUIDE.md](guides/deployment/DEBIAN-DEPLOYMENT-GUIDE.md) | Debian 13 | Traditional VM |
+| [DEBIAN-DEPLOYMENT-EXAMPLE.md](guides/deployment/DEBIAN-DEPLOYMENT-EXAMPLE.md) | Debian 13 Terraform | Example |
 | [ARCH-DEPLOYMENT-GUIDE.md](guides/deployment/ARCH-DEPLOYMENT-GUIDE.md) | Arch Linux | Traditional VM |
 | [NIXOS-DEPLOYMENT-GUIDE.md](guides/deployment/NIXOS-DEPLOYMENT-GUIDE.md) | NixOS | Traditional VM |
 | [WINDOWS-DEPLOYMENT-GUIDE.md](guides/deployment/WINDOWS-DEPLOYMENT-GUIDE.md) | Windows Server | Traditional VM |
+| [LONGHORN-INTEGRATION.md](guides/deployment/LONGHORN-INTEGRATION.md) | Longhorn Storage | Integration |
 
 ### Production Services
 
@@ -74,22 +76,15 @@ docs/
 | [ANSIBLE_RESEARCH_REPORT.md](research/ANSIBLE_RESEARCH_REPORT.md) | Ansible best practices | 31 sources |
 | [talos-research-report.md](research/talos-research-report.md) | Talos Linux research | 30+ sources |
 
-### Infrastructure Comparisons
-
-| Report | Description | Scope |
-|--------|-------------|-------|
-| [COMPARISON-EXECUTIVE-SUMMARY.md](comparisons/COMPARISON-EXECUTIVE-SUMMARY.md) | Executive summary | Top 20% rating |
-| [INFRASTRUCTURE-COMPARISON-REPORT.md](comparisons/INFRASTRUCTURE-COMPARISON-REPORT.md) | Detailed comparison | 10 GitHub projects |
-| [ACTION-PLAN-FROM-COMPARISON.md](comparisons/ACTION-PLAN-FROM-COMPARISON.md) | Improvement roadmap | Path to Top 10% |
-
 ---
 
-## 📖 Documentation by Use Case
+## Documentation by Use Case
 
 ### "I'm new to Talos"
 1. [Getting Started](guides/getting-started/TALOS-GETTING-STARTED.md)
-2. [Deployment Guide](guides/deployment/TALOS-DEPLOYMENT-GUIDE.md)
-3. [Services Guide](guides/services/RECOMMENDED-SERVICES-GUIDE.md)
+2. [Talos Factory Guide](guides/getting-started/TALOS-FACTORY-GUIDE.md)
+3. [Deployment Guide](guides/deployment/TALOS-DEPLOYMENT-GUIDE.md)
+4. [Services Guide](guides/services/RECOMMENDED-SERVICES-GUIDE.md)
 
 ### "I need to deploy a service"
 1. [Services Guide](guides/services/RECOMMENDED-SERVICES-GUIDE.md) - Complete examples
@@ -102,14 +97,13 @@ docs/
 
 ### "I want to learn best practices"
 1. [Research Reports](research/) - 90+ sources
-2. [Comparison Reports](comparisons/) - Community validation
-3. Project root: `CLAUDE.md` - Complete conventions guide
+2. Project root: `CLAUDE.md` - Complete conventions guide
 
 ---
 
-## 📊 Documentation Metrics
+## Documentation Metrics
 
-- **Total Documentation**: 60+ files
+- **Total Documentation**: 50+ files
 - **Lines of Documentation**: 15,000+
 - **Words**: 150,000+
 - **Research Sources**: 90+ official sources
@@ -117,12 +111,12 @@ docs/
 
 ---
 
-## 🔗 Related Documentation
+## Related Documentation
 
 **In Project Root:**
 - [README.md](../README.md) - Project overview
-- [CLAUDE.md](../CLAUDE.md) - Complete project guide (2,600+ lines)
-- [TODO.md](../TODO.md) - Project roadmap
+- [CLAUDE.md](../CLAUDE.md) - Complete project guide
+- [PROXMOX-SETUP.md](../PROXMOX-SETUP.md) - Proxmox VE setup and authentication
 - [DEPLOYMENT-CHECKLIST.md](../DEPLOYMENT-CHECKLIST.md) - Deployment validation
 - [INFRASTRUCTURE-ASSUMPTIONS.md](../INFRASTRUCTURE-ASSUMPTIONS.md) - Hard-coded values
 
@@ -134,7 +128,7 @@ docs/
 
 ---
 
-## 🎯 Quick Links
+## Quick Links
 
 | I want to... | Go here |
 |-------------|---------|
@@ -143,9 +137,8 @@ docs/
 | Deploy production services | [guides/services/](guides/services/) |
 | Set up secrets management | [secrets/](secrets/) |
 | Learn from research | [research/](research/) |
-| Compare with other projects | [comparisons/](comparisons/) |
 | Find historical reports | [archive/](archive/) |
 
 ---
 
-**Navigate:** [📁 Getting Started](guides/getting-started/) | [🚀 Deployment](guides/deployment/) | [⚙️ Services](guides/services/) | [🔐 Secrets](secrets/)
+**Navigate:** [Getting Started](guides/getting-started/) | [Deployment](guides/deployment/) | [Services](guides/services/) | [Secrets](secrets/)

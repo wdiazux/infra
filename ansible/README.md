@@ -120,13 +120,13 @@ ansible windows_vms -m win_ping
 
 **Configure all VMs:**
 ```bash
-ansible-playbook playbooks/day1-all-vms.yml
+ansible-playbook playbooks/day1_all_vms.yml
 ```
 
 **Or configure specific OS:**
 ```bash
-ansible-playbook playbooks/day1-ubuntu-baseline.yml
-ansible-playbook playbooks/day1-debian-baseline.yml
+ansible-playbook playbooks/day1_ubuntu_baseline.yml
+ansible-playbook playbooks/day1_debian_baseline.yml
 ```
 
 ## Available Playbooks
@@ -135,11 +135,11 @@ ansible-playbook playbooks/day1-debian-baseline.yml
 
 | Playbook | Purpose | Target Hosts |
 |----------|---------|--------------|
-| `day0-proxmox-prep.yml` | Prepare Proxmox host (IOMMU, GPU, ZFS) | `proxmox` |
+| `day0_proxmox_prep.yml` | Prepare Proxmox host (IOMMU, GPU, ZFS) | `proxmox` |
 
 **Run before deploying VMs:**
 ```bash
-ansible-playbook playbooks/day0-proxmox-prep.yml
+ansible-playbook playbooks/day0_proxmox_prep.yml
 ```
 
 **Features:**
@@ -277,31 +277,31 @@ ansible windows_vms -m win_shell -a "Get-ComputerInfo"
 
 **Override variables:**
 ```bash
-ansible-playbook playbooks/day1-ubuntu-baseline.yml \
+ansible-playbook playbooks/day1_ubuntu_baseline.yml \
   -e "install_docker=true" \
   -e "timezone=America/Los_Angeles"
 ```
 
 **Limit to specific hosts:**
 ```bash
-ansible-playbook playbooks/day1-ubuntu-baseline.yml --limit ubuntu-vm
+ansible-playbook playbooks/day1_ubuntu_baseline.yml --limit ubuntu-vm
 ```
 
 **Dry run (check mode):**
 ```bash
-ansible-playbook playbooks/day1-ubuntu-baseline.yml --check
+ansible-playbook playbooks/day1_ubuntu_baseline.yml --check
 ```
 
 **Verbose output:**
 ```bash
-ansible-playbook playbooks/day1-ubuntu-baseline.yml -vvv
+ansible-playbook playbooks/day1_ubuntu_baseline.yml -vvv
 ```
 
 ### Workflow: Complete Deployment
 
 ```bash
 # 1. Prepare Proxmox host (one-time)
-ansible-playbook playbooks/day0-proxmox-prep.yml
+ansible-playbook playbooks/day0_proxmox_prep.yml
 
 # 2. Build Packer templates (run from packer directory)
 cd ../packer/ubuntu && packer build .
@@ -314,7 +314,7 @@ sleep 120
 
 # 5. Configure all VMs with Ansible
 cd ../ansible
-ansible-playbook playbooks/day1-all-vms.yml
+ansible-playbook playbooks/day1_all_vms.yml
 
 # 6. Verify configuration
 ansible all -m ping
