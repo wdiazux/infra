@@ -37,6 +37,14 @@ resource "talos_machine_secrets" "cluster" {
   talos_version = var.talos_version
 }
 
+# Generate client configuration for talosctl
+data "talos_client_configuration" "cluster" {
+  cluster_name         = var.cluster_name
+  client_configuration = talos_machine_secrets.cluster.client_configuration
+  endpoints            = [var.node_ip]
+  nodes                = [var.node_ip]
+}
+
 # ============================================================================
 # Talos Machine Configuration
 # ============================================================================
@@ -49,10 +57,6 @@ data "talos_machine_configuration" "node" {
   machine_secrets    = talos_machine_secrets.cluster.machine_secrets
   talos_version      = var.talos_version
   kubernetes_version = var.kubernetes_version
-
-  # Network configuration
-  docs_enabled     = false
-  examples_enabled = false
 
   # Disable default CNI (we'll install Cilium)
   config_patches = concat([
@@ -335,12 +339,6 @@ resource "talos_machine_configuration_apply" "node" {
   depends_on = [
     proxmox_virtual_environment_vm.talos_node
   ]
-
-  # Wait for API to be available
-  timeouts {
-    create = "10m"
-    update = "10m"
-  }
 }
 
 # ============================================================================
@@ -358,10 +356,6 @@ resource "talos_machine_bootstrap" "cluster" {
   depends_on = [
     talos_machine_configuration_apply.node
   ]
-
-  timeouts {
-    create = "15m"
-  }
 }
 
 # ============================================================================
@@ -475,10 +469,6 @@ data "talos_cluster_kubeconfig" "cluster" {
   depends_on = [
     talos_machine_bootstrap.cluster
   ]
-
-  timeouts {
-    read = "5m"
-  }
 }
 
 # Save kubeconfig to file
@@ -492,7 +482,7 @@ resource "local_file" "kubeconfig" {
 
 # Save talosconfig to file
 resource "local_file" "talosconfig" {
-  content         = talos_machine_secrets.cluster.talos_config
+  content         = data.talos_client_configuration.cluster.talos_config
   filename        = local.talosconfig_path
   file_permission = "0600"
 }
