@@ -48,9 +48,9 @@ output "node_vm_id" {
 output "node_resources" {
   description = "Node hardware resources"
   value = {
-    cpu_cores = var.node_cpu_cores
-    memory_mb = var.node_memory
-    disk_gb   = var.node_disk_size
+    cpu_cores   = var.node_cpu_cores
+    memory_mb   = var.node_memory
+    disk_gb     = var.node_disk_size
     gpu_enabled = var.enable_gpu_passthrough
   }
 }
@@ -75,41 +75,7 @@ output "talosconfig_path" {
 
 output "access_instructions" {
   description = "Instructions for accessing the cluster"
-  value = var.auto_bootstrap ? <<-EOT
-    Talos Kubernetes Cluster Deployed Successfully!
-
-    Cluster Information:
-    - Name: ${var.cluster_name}
-    - Endpoint: ${local.cluster_endpoint}
-    - Node IP: ${var.node_ip}
-
-    Access the cluster:
-
-    1. Export kubeconfig:
-       export KUBECONFIG=${local.kubeconfig_path}
-
-    2. Verify cluster:
-       kubectl get nodes
-       kubectl get pods -A
-
-    3. Use talosctl (for Talos operations):
-       export TALOSCONFIG=${local.talosconfig_path}
-       talosctl --nodes ${var.node_ip} version
-       talosctl --nodes ${var.node_ip} dashboard
-
-    Next steps:
-    - Install Cilium CNI: helm install cilium cilium/cilium --namespace kube-system -f ../kubernetes/cilium/cilium-values.yaml
-    - Install Longhorn Storage: helm install longhorn longhorn/longhorn --namespace longhorn-system -f ../kubernetes/longhorn/longhorn-values.yaml
-    - Install NVIDIA GPU Operator (if GPU enabled): helm install gpu-operator nvidia/gpu-operator --namespace gpu-operator
-    - Install FluxCD: flux bootstrap github ...
-
-    Documentation:
-    - Talos: https://www.talos.dev/
-    - Cilium: https://docs.cilium.io/
-    - NVIDIA GPU Operator: https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/
-
-  EOT
-  : "Cluster not bootstrapped yet. Set auto_bootstrap=true to bootstrap automatically."
+  value       = var.auto_bootstrap ? local.access_instructions_bootstrapped : "Cluster not bootstrapped yet. Set auto_bootstrap=true to bootstrap automatically."
 }
 
 # ============================================================================
@@ -144,14 +110,7 @@ output "gpu_pci_id" {
 
 output "gpu_verification_command" {
   description = "Command to verify GPU passthrough in a pod"
-  value = var.enable_gpu_passthrough ? <<-EOT
-    # Create a test pod with GPU access:
-    kubectl run gpu-test --image=nvidia/cuda:12.0-base --restart=Never --rm -it -- nvidia-smi
-
-    # Or deploy NVIDIA device plugin and check:
-    kubectl get nodes -o json | jq '.items[].status.capacity."nvidia.com/gpu"'
-  EOT
-  : "GPU passthrough not enabled"
+  value       = var.enable_gpu_passthrough ? local.gpu_verification_instructions : "GPU passthrough not enabled"
 }
 
 # ============================================================================
@@ -161,9 +120,9 @@ output "gpu_verification_command" {
 output "storage_configuration" {
   description = "Storage configuration summary"
   value = {
-    local_disk = "${var.node_disk_size}GB"
+    local_disk      = "${var.node_disk_size}GB"
     primary_storage = "Longhorn v1.7.x (install via Helm - see kubernetes/longhorn/)"
-    backup_target = var.nfs_server != "" ? "NFS backup to ${var.nfs_server}:${var.nfs_path}" : "Not configured (optional)"
+    backup_target   = var.nfs_server != "" ? "NFS backup to ${var.nfs_server}:${var.nfs_path}" : "Not configured (optional)"
     storage_classes = [
       "longhorn (default, 1-replica for single node, expandable to 3-replica for HA)",
       "longhorn-retain (persistent data survives PVC deletion)",
@@ -171,13 +130,7 @@ output "storage_configuration" {
       "longhorn-backup (automated snapshots)",
       "longhorn-xfs (XFS filesystem support)"
     ]
-    installation_notes = <<-EOT
-      CRITICAL: Longhorn requires system extensions in Talos image:
-      - siderolabs/iscsi-tools (REQUIRED)
-      - siderolabs/util-linux-tools (REQUIRED)
-      Generate schematic at https://factory.talos.dev/
-      See packer/talos/README.md for instructions
-    EOT
+    installation_notes = local.storage_installation_notes
   }
 }
 
@@ -188,9 +141,9 @@ output "storage_configuration" {
 output "network_configuration" {
   description = "Network configuration summary"
   value = {
-    ip_address = var.node_ip
-    gateway    = var.node_gateway
-    netmask    = var.node_netmask
+    ip_address  = var.node_ip
+    gateway     = var.node_gateway
+    netmask     = var.node_netmask
     dns_servers = var.dns_servers
     bridge      = var.network_bridge
     vlan        = var.network_vlan > 0 ? var.network_vlan : "none"
@@ -203,31 +156,7 @@ output "network_configuration" {
 
 output "useful_commands" {
   description = "Useful commands for managing the cluster"
-  value = var.auto_bootstrap ? <<-EOT
-    Talos Commands:
-    - Get node status:     talosctl --nodes ${var.node_ip} version
-    - Dashboard:           talosctl --nodes ${var.node_ip} dashboard
-    - Logs:                talosctl --nodes ${var.node_ip} logs
-    - Service status:      talosctl --nodes ${var.node_ip} services
-    - Upgrade Talos:       talosctl --nodes ${var.node_ip} upgrade --image factory.talos.dev/...
-    - Upgrade Kubernetes:  talosctl --nodes ${var.node_ip} upgrade-k8s --to ${var.kubernetes_version}
-
-    Kubernetes Commands:
-    - Get nodes:           kubectl get nodes -o wide
-    - Get all pods:        kubectl get pods -A
-    - Get system pods:     kubectl get pods -n kube-system
-    - Describe node:       kubectl describe node ${var.node_name}
-    - Check GPU:           kubectl get nodes -o json | jq '.items[].status.capacity."nvidia.com/gpu"'
-    - Port forward:        kubectl port-forward -n namespace pod/name 8080:80
-
-    Troubleshooting:
-    - Talos health:        talosctl --nodes ${var.node_ip} health
-    - Talos containers:    talosctl --nodes ${var.node_ip} containers
-    - Kubernetes events:   kubectl get events -A --sort-by='.lastTimestamp'
-    - Node resources:      kubectl top node ${var.node_name}
-
-  EOT
-  : "Cluster not bootstrapped yet."
+  value       = var.auto_bootstrap ? local.useful_commands_bootstrapped : "Cluster not bootstrapped yet."
 }
 
 # ============================================================================
@@ -254,136 +183,83 @@ output "deployment_timestamp" {
 # - Network information matches the static IP configuration
 
 # ============================================================================
-# Traditional VMs Outputs
+# Traditional VMs Outputs (for_each pattern)
+# ============================================================================
+#
+# Usage:
+#   terraform output traditional_vms
+#   terraform output -json traditional_vms | jq '.["ubuntu-dev"]'
+#
 # ============================================================================
 
-# Ubuntu VM Outputs
-# ----------------------------------------------------------------------------
-
-output "ubuntu_vm_id" {
-  description = "Ubuntu VM ID"
-  value       = var.deploy_ubuntu_vm ? module.ubuntu_vm[0].vm_id : null
+output "traditional_vms" {
+  description = "All deployed traditional VMs with their details"
+  value = {
+    for name, vm in module.traditional_vm : name => {
+      vm_id          = vm.vm_id
+      vm_name        = vm.vm_name
+      ipv4_addresses = vm.ipv4_addresses
+      os_type        = local.traditional_vms[name].os_type
+      description    = local.traditional_vms[name].description
+    }
+  }
 }
 
-output "ubuntu_vm_name" {
-  description = "Ubuntu VM name"
-  value       = var.deploy_ubuntu_vm ? module.ubuntu_vm[0].vm_name : null
+output "traditional_vm_count" {
+  description = "Count of deployed traditional VMs by OS type"
+  value       = local.vm_counts
 }
 
-output "ubuntu_ip_addresses" {
-  description = "Ubuntu VM IP addresses (requires QEMU agent)"
-  value       = var.deploy_ubuntu_vm ? module.ubuntu_vm[0].ipv4_addresses : null
+output "traditional_vm_ips" {
+  description = "Quick lookup of VM IPs (name => first IP)"
+  value = {
+    for name, vm in module.traditional_vm : name => (
+      length(vm.ipv4_addresses) > 0 ? vm.ipv4_addresses[0] : "pending"
+    )
+  }
 }
 
-# Debian VM Outputs
-# ----------------------------------------------------------------------------
-
-output "debian_vm_id" {
-  description = "Debian VM ID"
-  value       = var.deploy_debian_vm ? module.debian_vm[0].vm_id : null
-}
-
-output "debian_vm_name" {
-  description = "Debian VM name"
-  value       = var.deploy_debian_vm ? module.debian_vm[0].vm_name : null
-}
-
-output "debian_ip_addresses" {
-  description = "Debian VM IP addresses (requires QEMU agent)"
-  value       = var.deploy_debian_vm ? module.debian_vm[0].ipv4_addresses : null
-}
-
-# Arch Linux VM Outputs
-# ----------------------------------------------------------------------------
-
-output "arch_vm_id" {
-  description = "Arch Linux VM ID"
-  value       = var.deploy_arch_vm ? module.arch_vm[0].vm_id : null
-}
-
-output "arch_vm_name" {
-  description = "Arch Linux VM name"
-  value       = var.deploy_arch_vm ? module.arch_vm[0].vm_name : null
-}
-
-output "arch_ip_addresses" {
-  description = "Arch Linux VM IP addresses (requires QEMU agent)"
-  value       = var.deploy_arch_vm ? module.arch_vm[0].ipv4_addresses : null
-}
-
-# NixOS VM Outputs
-# ----------------------------------------------------------------------------
-
-output "nixos_vm_id" {
-  description = "NixOS VM ID"
-  value       = var.deploy_nixos_vm ? module.nixos_vm[0].vm_id : null
-}
-
-output "nixos_vm_name" {
-  description = "NixOS VM name"
-  value       = var.deploy_nixos_vm ? module.nixos_vm[0].vm_name : null
-}
-
-output "nixos_ip_addresses" {
-  description = "NixOS VM IP addresses (requires QEMU agent)"
-  value       = var.deploy_nixos_vm ? module.nixos_vm[0].ipv4_addresses : null
-}
-
-# Windows Server VM Outputs
-# ----------------------------------------------------------------------------
-
-output "windows_vm_id" {
-  description = "Windows Server VM ID"
-  value       = var.deploy_windows_vm ? module.windows_vm[0].vm_id : null
-}
-
-output "windows_vm_name" {
-  description = "Windows Server VM name"
-  value       = var.deploy_windows_vm ? module.windows_vm[0].vm_name : null
-}
-
-output "windows_ip_addresses" {
-  description = "Windows Server VM IP addresses (requires QEMU agent)"
-  value       = var.deploy_windows_vm ? module.windows_vm[0].ipv4_addresses : null
-}
-
+# ============================================================================
 # Summary Output
-# ----------------------------------------------------------------------------
+# ============================================================================
 
 output "deployed_vms_summary" {
-  description = "Summary of all deployed VMs"
+  description = "Summary of all deployed VMs (Talos + Traditional)"
   value = {
+    # Talos Kubernetes node (always deployed)
     talos = {
       deployed    = true
-      vm_id      = proxmox_virtual_environment_vm.talos_node.vm_id
-      vm_name    = proxmox_virtual_environment_vm.talos_node.name
-      ip         = var.node_ip
+      vm_id       = proxmox_virtual_environment_vm.talos_node.vm_id
+      vm_name     = proxmox_virtual_environment_vm.talos_node.name
+      ip          = var.node_ip
       gpu_enabled = var.enable_gpu_passthrough
     }
-    ubuntu = var.deploy_ubuntu_vm ? {
-      deployed = true
-      vm_id   = module.ubuntu_vm[0].vm_id
-      vm_name = module.ubuntu_vm[0].vm_name
-    } : { deployed = false }
-    debian = var.deploy_debian_vm ? {
-      deployed = true
-      vm_id   = module.debian_vm[0].vm_id
-      vm_name = module.debian_vm[0].vm_name
-    } : { deployed = false }
-    arch = var.deploy_arch_vm ? {
-      deployed = true
-      vm_id   = module.arch_vm[0].vm_id
-      vm_name = module.arch_vm[0].vm_name
-    } : { deployed = false }
-    nixos = var.deploy_nixos_vm ? {
-      deployed = true
-      vm_id   = module.nixos_vm[0].vm_id
-      vm_name = module.nixos_vm[0].vm_name
-    } : { deployed = false }
-    windows = var.deploy_windows_vm ? {
-      deployed = true
-      vm_id   = module.windows_vm[0].vm_id
-      vm_name = module.windows_vm[0].vm_name
-    } : { deployed = false }
+
+    # Traditional VMs (from for_each)
+    traditional = {
+      total_count = local.vm_counts.total
+      vms = {
+        for name, vm in module.traditional_vm : name => {
+          vm_id   = vm.vm_id
+          vm_name = vm.vm_name
+          os_type = local.traditional_vms[name].os_type
+        }
+      }
+    }
+  }
+}
+
+# ============================================================================
+# SSH Connection Helpers
+# ============================================================================
+
+output "ssh_commands" {
+  description = "SSH commands to connect to each VM"
+  value = {
+    for name, vm in module.traditional_vm : name => (
+      local.traditional_vms[name].os_type != "windows"
+      ? "ssh ${var.cloud_init_user}@${length(vm.ipv4_addresses) > 0 ? vm.ipv4_addresses[0] : "PENDING"}"
+      : "# Windows: Use RDP to ${length(vm.ipv4_addresses) > 0 ? vm.ipv4_addresses[0] : "PENDING"}"
+    )
   }
 }

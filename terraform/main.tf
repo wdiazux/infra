@@ -43,15 +43,15 @@ resource "talos_machine_secrets" "cluster" {
 
 # Generate machine configuration for single-node cluster (control plane + worker)
 data "talos_machine_configuration" "node" {
-  cluster_name     = var.cluster_name
-  cluster_endpoint = local.cluster_endpoint
-  machine_type     = "controlplane"  # Single node is both controlplane and worker
-  machine_secrets  = talos_machine_secrets.cluster.machine_secrets
-  talos_version    = var.talos_version
+  cluster_name       = var.cluster_name
+  cluster_endpoint   = local.cluster_endpoint
+  machine_type       = "controlplane" # Single node is both controlplane and worker
+  machine_secrets    = talos_machine_secrets.cluster.machine_secrets
+  talos_version      = var.talos_version
   kubernetes_version = var.kubernetes_version
 
   # Network configuration
-  docs_enabled = false
+  docs_enabled     = false
   examples_enabled = false
 
   # Disable default CNI (we'll install Cilium)
@@ -60,10 +60,10 @@ data "talos_machine_configuration" "node" {
       cluster = {
         network = {
           cni = {
-            name = "none"  # Disable default Flannel
+            name = "none" # Disable default Flannel
           }
           proxy = {
-            disabled = true  # Disable kube-proxy (Cilium replaces it)
+            disabled = true # Disable kube-proxy (Cilium replaces it)
           }
         }
         discovery = {
@@ -93,14 +93,14 @@ data "talos_machine_configuration" "node" {
           nameservers = var.dns_servers
         }
         time = {
-          servers = var.ntp_servers
+          servers  = var.ntp_servers
           timezone = "America/El_Salvador"
         }
         install = {
-          disk = var.install_disk
-          image = "factory.talos.dev/installer/${local.talos_installer_image}"
+          disk       = var.install_disk
+          image      = "factory.talos.dev/installer/${local.talos_installer_image}"
           bootloader = true
-          wipe = false
+          wipe       = false
         }
 
         # ═══════════════════════════════════════════════════════════════
@@ -144,9 +144,9 @@ data "talos_machine_configuration" "node" {
           extraMounts = [
             {
               destination = "/var/lib/longhorn"
-              type = "bind"
-              source = "/var/lib/longhorn"
-              options = ["bind", "rshared", "rw"]
+              type        = "bind"
+              source      = "/var/lib/longhorn"
+              options     = ["bind", "rshared", "rw"]
             }
           ]
         }
@@ -198,12 +198,12 @@ resource "proxmox_virtual_environment_vm" "talos_node" {
   # Clone from Packer template
   clone {
     vm_id = data.proxmox_virtual_environment_vms.talos_template.vms[0].vm_id
-    full  = true  # Full clone (not linked)
+    full  = true # Full clone (not linked)
   }
 
   # CPU configuration
   cpu {
-    type    = var.node_cpu_type  # Must be 'host'
+    type    = var.node_cpu_type # Must be 'host'
     cores   = var.node_cpu_cores
     sockets = var.node_cpu_sockets
   }
@@ -263,12 +263,12 @@ resource "proxmox_virtual_environment_vm" "talos_node" {
   dynamic "hostpci" {
     for_each = var.enable_gpu_passthrough ? [1] : []
     content {
-      device  = "hostpci0"
+      device = "hostpci0"
       # Choose ONE of the following (see comments above):
       # id      = "0000:${var.gpu_pci_id}.0"  # METHOD 2: Requires password auth
-      mapping = var.gpu_mapping               # METHOD 1: Works with API token (RECOMMENDED)
+      mapping = var.gpu_mapping # METHOD 1: Works with API token (RECOMMENDED)
       pcie    = var.gpu_pcie
-      rombar  = var.gpu_rombar  # Boolean: true enables ROM bar, false disables
+      rombar  = var.gpu_rombar # Boolean: true enables ROM bar, false disables
     }
   }
 
@@ -374,7 +374,7 @@ locals {
 
   # Talos installer image
   # Official Factory format: SCHEMATIC_ID:VERSION or just VERSION for default
-  # Example: "376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba:v1.11.5"
+  # Example: "376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba:v1.12.1"
   # See: https://www.talos.dev/v1.10/talos-guides/install/boot-assets/
   talos_installer_image = var.talos_schematic_id != "" ? "${var.talos_schematic_id}:${var.talos_version}" : "${var.talos_version}"
 
@@ -383,6 +383,81 @@ locals {
 
   # Generate talosconfig path
   talosconfig_path = "${path.module}/talosconfig"
+
+  # Multiline output strings (defined here to avoid heredoc-in-ternary issues)
+  access_instructions_bootstrapped = <<-EOT
+    Talos Kubernetes Cluster Deployed Successfully!
+
+    Cluster Information:
+    - Name: ${var.cluster_name}
+    - Endpoint: local.cluster_endpoint
+    - Node IP: ${var.node_ip}
+
+    Access the cluster:
+
+    1. Export kubeconfig:
+       export KUBECONFIG=${local.kubeconfig_path}
+
+    2. Verify cluster:
+       kubectl get nodes
+       kubectl get pods -A
+
+    3. Use talosctl (for Talos operations):
+       export TALOSCONFIG=${local.talosconfig_path}
+       talosctl --nodes ${var.node_ip} version
+       talosctl --nodes ${var.node_ip} dashboard
+
+    Next steps:
+    - Install Cilium CNI: helm install cilium cilium/cilium --namespace kube-system -f ../kubernetes/cilium/cilium-values.yaml
+    - Install Longhorn Storage: helm install longhorn longhorn/longhorn --namespace longhorn-system -f ../kubernetes/longhorn/longhorn-values.yaml
+    - Install NVIDIA GPU Operator (if GPU enabled): helm install gpu-operator nvidia/gpu-operator --namespace gpu-operator
+    - Install FluxCD: flux bootstrap github ...
+
+    Documentation:
+    - Talos: https://www.talos.dev/
+    - Cilium: https://docs.cilium.io/
+    - NVIDIA GPU Operator: https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/
+  EOT
+
+  gpu_verification_instructions = <<-EOT
+    # Create a test pod with GPU access:
+    kubectl run gpu-test --image=nvidia/cuda:12.0-base --restart=Never --rm -it -- nvidia-smi
+
+    # Or deploy NVIDIA device plugin and check:
+    kubectl get nodes -o json | jq '.items[].status.capacity."nvidia.com/gpu"'
+  EOT
+
+  useful_commands_bootstrapped = <<-EOT
+    Talos Commands:
+    - Get node status:     talosctl --nodes ${var.node_ip} version
+    - Dashboard:           talosctl --nodes ${var.node_ip} dashboard
+    - Logs:                talosctl --nodes ${var.node_ip} logs
+    - Service status:      talosctl --nodes ${var.node_ip} services
+    - Upgrade Talos:       talosctl --nodes ${var.node_ip} upgrade --image factory.talos.dev/...
+    - Upgrade Kubernetes:  talosctl --nodes ${var.node_ip} upgrade-k8s --to ${var.kubernetes_version}
+
+    Kubernetes Commands:
+    - Get nodes:           kubectl get nodes -o wide
+    - Get all pods:        kubectl get pods -A
+    - Get system pods:     kubectl get pods -n kube-system
+    - Describe node:       kubectl describe node ${var.node_name}
+    - Check GPU:           kubectl get nodes -o json | jq '.items[].status.capacity."nvidia.com/gpu"'
+    - Port forward:        kubectl port-forward -n namespace pod/name 8080:80
+
+    Troubleshooting:
+    - Talos health:        talosctl --nodes ${var.node_ip} health
+    - Talos containers:    talosctl --nodes ${var.node_ip} containers
+    - Kubernetes events:   kubectl get events -A --sort-by='.lastTimestamp'
+    - Node resources:      kubectl top node ${var.node_name}
+  EOT
+
+  storage_installation_notes = <<-EOT
+    CRITICAL: Longhorn requires system extensions in Talos image:
+    - siderolabs/iscsi-tools (REQUIRED)
+    - siderolabs/util-linux-tools (REQUIRED)
+    Generate schematic at https://factory.talos.dev/
+    See packer/talos/README.md for instructions
+  EOT
 }
 
 # ============================================================================
@@ -417,7 +492,7 @@ resource "local_file" "kubeconfig" {
 
 # Save talosconfig to file
 resource "local_file" "talosconfig" {
-  content = talos_machine_secrets.cluster.talos_config
+  content         = talos_machine_secrets.cluster.talos_config
   filename        = local.talosconfig_path
   file_permission = "0600"
 }
