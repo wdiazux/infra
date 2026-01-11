@@ -811,7 +811,7 @@ sops -d secrets/proxmox-creds.enc.yaml
 - ✅ **Ansible baseline playbooks for all traditional VMs** (2025-11-19)
   - Day 0: Proxmox host preparation (GPU passthrough setup)
   - Day 1: Ubuntu/Debian/Arch/NixOS/Windows baseline configuration
-  - Orchestration: `day1-all-vms.yml` for automated setup
+  - Orchestration: `day1_all_vms.yml` for automated setup
 - ✅ GPU passthrough fixes (verified against official docs)
 - ✅ Best practices research (top 10% industry alignment)
 - ✅ Official documentation verification (100% correct)

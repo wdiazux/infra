@@ -4,7 +4,7 @@
 
 ---
 
-## 📁 Guide Categories
+## Guide Categories
 
 ### [Getting Started](getting-started/)
 Complete beginner's guides for Talos operations
@@ -16,14 +16,21 @@ Complete beginner's guides for Talos operations
   - Troubleshooting
   - Quick reference
 
+- **TALOS-FACTORY-GUIDE.md** - Generate custom Talos images
+  - Select Talos version
+  - Add required extensions (iscsi-tools, util-linux-tools)
+  - Generate schematic ID for Terraform
+
 ### [Deployment Guides](deployment/)
 OS-specific deployment guides for all supported operating systems
 
 - **TALOS-DEPLOYMENT-GUIDE.md** - Talos Linux (primary platform)
 - **DEBIAN-DEPLOYMENT-GUIDE.md** - Debian 13
+- **DEBIAN-DEPLOYMENT-EXAMPLE.md** - Debian Terraform deployment example
 - **ARCH-DEPLOYMENT-GUIDE.md** - Arch Linux
 - **NIXOS-DEPLOYMENT-GUIDE.md** - NixOS
 - **WINDOWS-DEPLOYMENT-GUIDE.md** - Windows Server
+- **LONGHORN-INTEGRATION.md** - Longhorn storage integration with Terraform
 
 ### [Services](services/)
 Production service deployment guides
@@ -38,13 +45,14 @@ Production service deployment guides
 
 ---
 
-## 🎯 Recommended Reading Path
+## Recommended Reading Path
 
 1. **Start Here:** [Getting Started](getting-started/TALOS-GETTING-STARTED.md)
-2. **Deploy OS:** [Deployment Guides](deployment/)
-3. **Add Services:** [Services Guide](services/RECOMMENDED-SERVICES-GUIDE.md)
-4. **Secure Secrets:** [../secrets/](../secrets/)
+2. **Generate Image:** [Talos Factory Guide](getting-started/TALOS-FACTORY-GUIDE.md)
+3. **Deploy OS:** [Deployment Guides](deployment/)
+4. **Add Services:** [Services Guide](services/RECOMMENDED-SERVICES-GUIDE.md)
+5. **Secure Secrets:** [../secrets/](../secrets/)
 
 ---
 
-[← Back to Documentation](../README.md)
+[Back to Documentation](../README.md)
