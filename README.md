@@ -28,7 +28,7 @@ This repository automates the creation and deployment of standardized virtual ma
 
 **Software:**
 - **Hypervisor**: Proxmox VE 9.0
-- **Primary OS**: Talos Linux 1.11.4 with Kubernetes 1.31.0
+- **Primary OS**: Talos Linux 1.12.1 with Kubernetes 1.31.0
 - **Traditional VMs**: Debian 12, Ubuntu 24.04, Arch Linux, NixOS 24.05, Windows Server 2022
 
 ## 📖 Documentation
@@ -294,7 +294,7 @@ infra/
 
 ### Primary Platform: Talos Linux
 
-**Talos Linux 1.11.4** - Kubernetes-native, immutable Linux distribution
+**Talos Linux 1.12.1** - Kubernetes-native, immutable Linux distribution
 
 - **Primary Use Cases:**
   - Kubernetes cluster hosting (single-node, expandable to 3-node HA)
@@ -350,7 +350,7 @@ infra/
 
 ### Kubernetes Ecosystem
 
-- **Talos Linux 1.11.4** - Kubernetes platform
+- **Talos Linux 1.12.1** - Kubernetes platform
 - **Kubernetes 1.31.0** - Container orchestration
 - **Cilium 1.18.0** - CNI and networking
 - **NFS CSI Driver** - Persistent storage (external NAS)

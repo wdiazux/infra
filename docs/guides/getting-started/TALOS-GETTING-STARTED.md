@@ -1,7 +1,7 @@
 # Talos Linux Getting Started Guide
 
 **Last Updated**: 2025-11-23
-**Talos Version**: 1.11.5
+**Talos Version**: 1.12.1
 **Kubernetes Version**: 1.31.x
 **Infrastructure**: Single-node cluster on Proxmox VE 9.0
 
@@ -105,12 +105,12 @@ talosctl version
 
 # Expected output:
 # Client:
-#   Tag:         v1.11.5
+#   Tag:         v1.12.1
 #   SHA:         ...
 #   Built:       ...
 # Server:
 #   NODE           TAG      SHA      BUILT
-#   10.10.2.10     v1.11.5  ...      ...
+#   10.10.2.10     v1.12.1  ...      ...
 ```
 
 **Success Criteria**: You should see both client and server versions displayed.
@@ -250,7 +250,7 @@ talosctl reboot
 talosctl shutdown
 
 # Upgrade Talos version
-talosctl upgrade --image factory.talos.dev/installer/<schematic-id>:v1.11.5
+talosctl upgrade --image factory.talos.dev/installer/<schematic-id>:v1.12.1
 
 # Upgrade Kubernetes version
 talosctl upgrade-k8s --to 1.31.5

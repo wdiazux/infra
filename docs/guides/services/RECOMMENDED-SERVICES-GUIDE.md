@@ -2,7 +2,7 @@
 
 **Complete service stack for production Talos Kubernetes infrastructure**
 
-Last Updated: 2025-11-23 | Talos: 1.11.5 | Kubernetes: 1.31.x
+Last Updated: 2025-11-23 | Talos: 1.12.1 | Kubernetes: 1.31.x
 
 ---
 

@@ -2,7 +2,7 @@
 
 **Report Date**: 2025-11-23
 **Infrastructure Path**: /home/user/infra
-**Talos Version**: v1.11.5
+**Talos Version**: v1.12.1
 **Terraform Talos Provider**: v0.9.0
 
 ---

@@ -3,7 +3,7 @@
 **Complete practical guide for secrets management in Talos Linux**
 
 Last Updated: 2025-11-23
-Talos: 1.11.5 | Kubernetes: 1.31.x | FluxCD: 2.4+ | SOPS: 3.9+ | Age: 1.2+
+Talos: 1.12.1 | Kubernetes: 1.31.x | FluxCD: 2.4+ | SOPS: 3.9+ | Age: 1.2+
 
 ---
 

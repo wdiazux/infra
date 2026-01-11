@@ -29,7 +29,13 @@ This is a **HOMELAB setup** - some enterprise practices are optional:
 
 ```
 infra/
-├── packer/          # Packer templates (Talos, Debian, Ubuntu, Arch, NixOS, Windows)
+├── packer/          # Golden image templates
+│   ├── talos/       # Talos (direct import - no Packer)
+│   ├── ubuntu/      # Ubuntu (Packer + cloud image)
+│   ├── debian/      # Debian (Packer + cloud image)
+│   ├── arch/        # Arch (Packer + ISO)
+│   ├── nixos/       # NixOS (Packer + ISO)
+│   └── windows/     # Windows (Packer + ISO)
 ├── terraform/       # Terraform configurations
 │   ├── modules/
 │   └── main.tf
@@ -98,10 +104,23 @@ All project dependencies are defined in `shell.nix` and automatically available 
 ### Hardware Platform
 
 - **System**: Minisforum MS-A2
-- **CPU**: AMD Ryzen AI 9 HX 370 (12 cores)
+- **CPU**: AMD Ryzen AI 9 HX 370 (12 cores, Raphael/Granite Ridge)
 - **RAM**: 96GB
-- **GPU**: NVIDIA Ada Lovelace RTX 4000 (single GPU passthrough)
+- **GPU**: NVIDIA RTX 4000 SFF Ada Generation (AD104GL)
 - **Storage**: ZFS on Proxmox (16GB ARC max, mirror vdevs recommended)
+- **NVMe**: 2x Samsung S4LV008 (Pascal controller)
+
+**Key PCI IDs for Passthrough:**
+| Device | PCI ID | Notes |
+|--------|--------|-------|
+| NVIDIA RTX 4000 SFF | `07:00.0` | GPU for passthrough |
+| NVIDIA Audio | `07:00.1` | Pass through with GPU |
+| AMD iGPU (Radeon) | `01:00.0` | Proxmox display |
+| Intel X710 10GbE | `05:00.0`, `05:00.1` | Dual SFP+ ports |
+| Intel I226-V 2.5GbE | `04:00.0` | Management NIC |
+| Realtek RTL8125 | `03:00.0` | 2.5GbE |
+
+**IOMMU**: AMD IOMMU at `00:00.2` (enabled)
 
 ## Network Configuration
 
@@ -168,6 +187,21 @@ All traditional Linux distributions use the **official cloud image approach**:
 
 ## Talos Implementation
 
+### Template Creation (Direct Import - No Packer)
+
+Talos templates are created using **direct disk image import** from Talos Factory - **not Packer**. This is the recommended approach because:
+- Talos has no SSH - Packer's communicator model doesn't work
+- Talos requires no customization - configured via API after deployment
+- Talos Factory provides pre-built images with custom extensions
+- Direct import is simpler and faster than any Packer workflow
+
+**Workflow:**
+1. Generate schematic at https://factory.talos.dev/ with required extensions
+2. Run `packer/talos/import-talos-image.sh` on Proxmox host
+3. Template created in ~2-5 minutes
+
+See `packer/talos/README.md` for full documentation.
+
 ### Single-Node Configuration
 
 **CRITICAL Requirements:**
@@ -179,9 +213,10 @@ All traditional Linux distributions use the **official cloud image approach**:
    ```
 3. **System Extensions** (via Talos Factory):
    - `siderolabs/qemu-guest-agent` (Proxmox integration)
-   - `nonfree-kmod-nvidia-production` (GPU drivers)
-   - `nvidia-container-toolkit-production` (GPU containers)
-   - `iscsi-tools`, `util-linux-tools` (Longhorn requirements)
+   - `siderolabs/iscsi-tools` (Longhorn storage - REQUIRED)
+   - `siderolabs/util-linux-tools` (Longhorn volumes - REQUIRED)
+   - `nonfree-kmod-nvidia-production` (GPU drivers - optional)
+   - `nvidia-container-toolkit-production` (GPU containers - optional)
 
 4. **Machine Config**:
    - Disable Flannel and kube-proxy (using Cilium)
@@ -380,6 +415,11 @@ export SOPS_AGE_KEY_FILE="$HOME/.config/sops/age/keys.txt"
 4. **Clean up old code** - Remove ALL obsolete implementations
 5. **Run quality tools** - Linters, security scanners, documentation generators
 6. **Test and validate** - Provide testing instructions
+7. **Sync documentation with code** - When updating code (versions, configs, features), ALWAYS update associated documentation:
+   - Version changes → Update ALL files referencing that version (use grep to find them)
+   - Config changes → Update README.md, example files, and guides
+   - Feature changes → Update relevant docs in `docs/`, `README.md`, and inline comments
+   - **Skip archive/research docs** - These are historical snapshots, don't modify them
 
 ### When Asked Questions
 
@@ -397,6 +437,21 @@ export SOPS_AGE_KEY_FILE="$HOME/.config/sops/age/keys.txt"
 6. Leaving old code when updating - remove completely
 7. Skipping linters/security scanners
 8. Not using quality tools
+
+### Documentation Sync Map
+
+When updating a component, check these associated files:
+
+| Component | Code Files | Documentation to Update |
+|-----------|------------|------------------------|
+| **Talos Version** | `packer/talos/import-talos-image.sh`, `terraform/variables.tf`, `secrets/proxmox-creds.enc.yaml` | `packer/talos/README.md`, `terraform/README.md`, `DEPLOYMENT-CHECKLIST.md` |
+| **GPU Config** | `terraform/variables.tf`, `terraform/main.tf` | `CLAUDE.md` (Hardware section), `terraform/README.md`, `packer/talos/README.md` |
+| **Traditional VMs** | `packer/{os}/*.pkr.hcl`, `terraform/traditional-vms.tf` | `packer/{os}/README.md`, `terraform/README.md`, `CLAUDE.md` (Template Details table) |
+| **Network Config** | `terraform/variables.tf`, `talos/*.yaml` | `CLAUDE.md` (Network Configuration table), `terraform/README.md` |
+| **Kubernetes Stack** | `kubernetes/**`, `talos/*.yaml` | `CLAUDE.md` (Kubernetes Stack section), `docs/guides/services/` |
+| **Tool Versions** | `shell.nix`, `npins/` | `CLAUDE.md` (Core Tools section) |
+
+**Quick version search**: `grep -r "v1\.12\." --include="*.md" --include="*.hcl" --include="*.tf" --include="*.sh" | grep -v archive | grep -v research`
 
 ## Git Workflow
 
@@ -523,6 +578,8 @@ zpool scrub poolname          # Data integrity check
 
 ## Version History
 
+- **2026-01-11**: Talos switched from Packer to direct disk image import (recommended approach by Sidero Labs)
+- **2026-01-10**: Talos v1.12.1 upgrade, GPU passthrough config (PCI 07:00), hardware documentation, documentation sync guidelines added
 - **2026-01-06**: Talos configuration review (timezone, Cilium L2 interface fix), documentation cleanup (removed orphaned roles/baseline, NixOS Ansible playbook, windows_packages.yml)
 - **2026-01-05**: NixOS cloud image implementation (using Hydra VMA, declarative config - no Ansible)
 - **2026-01-05**: Arch Linux cloud image implementation (converted from ISO to official cloud image approach, consistent with Ubuntu/Debian)
@@ -537,6 +594,6 @@ zpool scrub poolname          # Data integrity check
 
 ---
 
-**Last Updated**: 2026-01-06
+**Last Updated**: 2026-01-11
 **Project Status**: Production-Ready
 **Primary Contact**: wdiazux

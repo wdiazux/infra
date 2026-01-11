@@ -5,7 +5,7 @@
 **Prerequisites:**
 - Internet access to https://factory.talos.dev/
 - Web browser
-- Note your desired Talos version (e.g., v1.11.5)
+- Note your desired Talos version (e.g., v1.12.1)
 
 ---
 
@@ -38,8 +38,8 @@ https://factory.talos.dev/
 ### Step 2: Select Talos Version
 
 1. Click on the **version selector** dropdown
-2. Choose **v1.11.5** (or your desired version)
-   - Ensure it matches the version in `terraform/variables.tf` (default: v1.11.5)
+2. Choose **v1.12.1** (or your desired version)
+   - Ensure it matches the version in `terraform/variables.tf` (default: v1.12.1)
    - Use stable versions only (avoid alpha/beta for production)
 
 ### Step 3: Select Platform
@@ -120,19 +120,24 @@ This is the **most important step**. You must add all required extensions.
    ```
    376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba
    ```
-3. **Copy this entire string** - you'll need it for Terraform and Packer
+3. **Copy this entire string** - you'll need it for the import script and Terraform
 
 ---
 
 ## 🔧 Using the Schematic ID
 
-### In Packer (Template Building)
+### In Import Script (Template Creation)
 
-Edit `packer/talos/variables.pkr.hcl` or create `talos.auto.pkrvars.hcl`:
+Edit `packer/talos/import-talos-image.sh`:
 
-```hcl
-talos_schematic_id = "376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba"
-talos_version      = "v1.11.5"
+```bash
+TALOS_VERSION="v1.12.1"
+SCHEMATIC_ID="376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba"
+```
+
+Then run on Proxmox host:
+```bash
+./import-talos-image.sh
 ```
 
 ### In Terraform (Cluster Deployment)
@@ -141,7 +146,7 @@ Edit `terraform/terraform.tfvars`:
 
 ```hcl
 talos_schematic_id = "376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba"
-talos_version      = "v1.11.5"
+talos_version      = "v1.12.1"
 ```
 
 ---
@@ -171,7 +176,7 @@ talosctl -n <node-ip> get extensions
 ┌─────────────────────────────────────────┐
 │  Talos Factory                          │
 │                                          │
-│  Version: [v1.11.5 ▼]                   │
+│  Version: [v1.12.1 ▼]                   │
 │  Platform: [Metal ▼]                    │
 │                                          │
 │  Extensions:                             │
@@ -186,7 +191,7 @@ talosctl -n <node-ip> get extensions
 ┌─────────────────────────────────────────┐
 │  Talos Factory                          │
 │                                          │
-│  Version: v1.11.5                       │
+│  Version: v1.12.1                       │
 │  Platform: Metal                        │
 │                                          │
 │  Extensions:                             │
@@ -251,7 +256,7 @@ talosctl -n <node-ip> get extensions
 - Unexpected behavior or failures
 
 **Solution:** Keep `talos_version` consistent across:
-- packer/talos/variables.pkr.hcl
+- packer/talos/import-talos-image.sh
 - terraform/terraform.tfvars
 - Talos Factory schematic
 
@@ -263,7 +268,7 @@ talosctl -n <node-ip> get extensions
 - Must regenerate schematic (wastes time)
 - Risk of inconsistency if extensions differ
 
-**Solution:** Copy schematic ID immediately and save it in terraform.tfvars and Packer variables
+**Solution:** Copy schematic ID immediately and save it in terraform.tfvars and import-talos-image.sh
 
 ---
 
@@ -279,8 +284,8 @@ talosctl -n <node-ip> get extensions
 1. Return to https://factory.talos.dev/
 2. Repeat steps 2-7 with updated selections
 3. Copy new schematic ID
-4. Update in Packer variables
-5. **Rebuild Packer template** - schematic ID is baked into the image
+4. Update in import-talos-image.sh
+5. **Re-run import script** - schematic ID is baked into the image
 6. Update in Terraform variables (if cluster not yet deployed)
 
 **Important:** Changing schematic ID after cluster deployment requires full cluster rebuild
@@ -329,7 +334,7 @@ https://www.talos.dev/v1.11/talos-guides/install/virtualized-platforms/proxmox/
 
 ---
 
-**Guide Version:** 1.0
-**Last Updated:** December 29, 2025
-**Talos Version:** v1.11.5
+**Guide Version:** 1.1
+**Last Updated:** January 11, 2026
+**Talos Version:** v1.12.1
 **Maintained by:** Infrastructure Team

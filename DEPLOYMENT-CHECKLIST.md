@@ -75,52 +75,44 @@ This checklist ensures all components are correctly configured and will work on 
   # Or set in .auto.pkrvars.hcl files
   ```
 
-### Talos Image (Priority 1)
+### Talos Image (Priority 1) - Direct Import (No Packer)
 
 **Generate Talos Factory schematic first:**
 
 - [ ] **Visit https://factory.talos.dev/**
-- [ ] **Select platform:** "Metal" (for Talos 1.8.0+)
+- [ ] **Select platform:** "Metal" or "Nocloud"
+- [ ] **Select version:** v1.12.1
 - [ ] **Add required extensions:**
+  - [ ] `siderolabs/qemu-guest-agent` (Proxmox integration)
   - [ ] `siderolabs/iscsi-tools` (required for Longhorn)
   - [ ] `siderolabs/util-linux-tools` (required for Longhorn)
-  - [ ] `siderolabs/qemu-guest-agent` (recommended)
   - [ ] `nonfree-kmod-nvidia-production` (if using GPU)
   - [ ] `nvidia-container-toolkit-production` (if using GPU)
 - [ ] **Copy schematic ID** (64-character hex string)
-- [ ] **Save schematic ID** in `packer/talos/talos.auto.pkrvars.hcl`:
-  ```hcl
-  talos_schematic_id = "your-64-char-hex-id"
-  ```
 
-**Build Talos template:**
+**Import Talos template (run on Proxmox host):**
 
 ```bash
+# 1. Edit import script with your schematic ID
 cd packer/talos
+vim import-talos-image.sh
+# Update: SCHEMATIC_ID="your-64-char-hex-id"
 
-# 1. Create auto variables file
-cat > talos.auto.pkrvars.hcl <<EOF
-proxmox_url = "https://YOUR_PROXMOX_IP:8006/api2/json"
-proxmox_username = "root@pam"
-proxmox_token = "PVEAPIToken=root@pam!token=YOUR-SECRET"
-proxmox_node = "pve"  # Or your node name
-talos_version = "v1.11.4"
-talos_schematic_id = "your-64-char-hex-id"
-EOF
+# 2. Copy to Proxmox host
+scp import-talos-image.sh root@pve:/tmp/
 
-# 2. Initialize Packer
-packer init .
+# 3. SSH to Proxmox and run
+ssh root@pve
+cd /tmp && chmod +x import-talos-image.sh
+./import-talos-image.sh
 
-# 3. Validate template
-packer validate .
-
-# 4. Build template (takes ~5-10 minutes)
-packer build .
+# Takes ~2-5 minutes
 ```
 
-- [ ] **Packer build completed successfully**
+- [ ] **Import script completed successfully**
 - [ ] **Template visible in Proxmox UI**
-- [ ] **Template name matches:** `talos-1.11.4-nvidia-template` (or your configured name)
+- [ ] **Template name:** `talos-1.12.1-nvidia-template`
+- [ ] **Template ID:** 9000
 
 ### Traditional OS Images (Optional - build as needed)
 
@@ -682,7 +674,7 @@ grep template_name terraform/variables.tf
 ### Longhorn Volumes Fail to Attach
 
 **Cause:** Missing system extensions in Talos image
-**Solution:** Rebuild Talos image with `iscsi-tools` and `util-linux-tools`
+**Solution:** Regenerate schematic at factory.talos.dev with `iscsi-tools` and `util-linux-tools`, then re-run import script
 
 ### Pods Can't Schedule (Taint Error)
 
@@ -699,7 +691,7 @@ kubectl taint nodes --all node-role.kubernetes.io/control-plane-
 1. Enable IOMMU in BIOS
 2. Configure GRUB (see `PROXMOX-SETUP.md`)
 3. Verify GPU bound to VFIO
-4. Rebuild Talos with NVIDIA extensions
+4. Regenerate Talos schematic with NVIDIA extensions, re-run import script
 
 ---
 
@@ -714,6 +706,6 @@ kubectl taint nodes --all node-role.kubernetes.io/control-plane-
 
 ---
 
-**Checklist Version:** 1.0
-**Last Updated:** November 23, 2025
+**Checklist Version:** 1.1
+**Last Updated:** January 11, 2026
 **For Project:** wdiazux/infra

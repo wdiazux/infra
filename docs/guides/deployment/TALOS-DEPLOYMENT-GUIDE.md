@@ -1,7 +1,7 @@
 # Talos Kubernetes: Complete Deployment Guide
 
-**Date**: 2025-11-23
-**Purpose**: Step-by-step guide for creating Talos Linux golden images with Packer and deploying single-node Kubernetes cluster with Terraform
+**Date**: 2026-01-11
+**Purpose**: Step-by-step guide for creating Talos Linux templates and deploying single-node Kubernetes cluster with Terraform
 
 ---
 
@@ -9,11 +9,11 @@
 
 This guide walks through the complete workflow:
 1. **Day 0**: Generate Talos Factory schematic with required extensions
-2. **Day 1**: Build Talos golden image template with Packer
+2. **Day 1**: Import Talos template using direct disk image import (no Packer)
 3. **Day 2**: Deploy single-node Kubernetes cluster with Terraform
 4. **Day 3**: Install Cilium CNI and Longhorn storage
 
-**Total Time**: ~30-40 minutes (including Kubernetes bootstrap)
+**Total Time**: ~25-35 minutes (including Kubernetes bootstrap)
 
 ---
 
@@ -22,12 +22,14 @@ This guide walks through the complete workflow:
 ### Tools Required
 
 ```bash
-# Verify tool versions
-packer version     # Should be 1.14.2+
+# Verify tool versions (on your workstation)
 terraform version  # Should be 1.9.0+
-talosctl version   # Should be v1.11.4+
+talosctl version   # Should be v1.12.1+
 kubectl version    # Should be v1.31.0+
 helm version       # Should be v3.16.0+
+
+# On Proxmox host (for import script)
+# SSH access, wget, xz-utils (usually pre-installed)
 ```
 
 ### Proxmox Access
@@ -100,7 +102,7 @@ If you plan to use NVIDIA GPU passthrough for AI/ML workloads:
 
 1. Click "Generate Schematic"
 2. Copy the **Schematic ID** (format: `abc123def456...`)
-3. Save this ID - you'll need it for Packer
+3. Save this ID - you'll need it for the import script
 
 **Example Schematic ID**: `376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba`
 
@@ -130,77 +132,54 @@ Should show:
 
 ---
 
-## Part 2: Build Golden Image with Packer
+## Part 2: Import Talos Template (Direct Disk Image)
 
-### Step 1: Configure Packer Variables
+Unlike traditional Linux distributions that use Packer for customization, Talos templates are created by **directly importing pre-built disk images** from Talos Factory. This is the recommended approach because:
+- Talos has no SSH - Packer's communicator model doesn't work
+- Talos requires no customization - configured via API after deployment
+- Direct import is simpler and faster (~2-5 minutes vs 10-15 minutes)
+
+### Step 1: Configure Import Script
 
 ```bash
 cd packer/talos
 
-# Copy example configuration
-cp talos.auto.pkrvars.hcl.example talos.auto.pkrvars.hcl
-
-# Edit configuration
-vim talos.auto.pkrvars.hcl
+# Edit the import script with your schematic ID
+vim import-talos-image.sh
 ```
 
-**Required settings**:
-
-```hcl
-# Proxmox Connection
-proxmox_url      = "https://proxmox.local:8006/api2/json"
-proxmox_username = "terraform@pve"
-proxmox_token    = "PVEAPIToken=terraform@pve!terraform-token=xxxxxxxx"
-proxmox_node     = "pve"
-proxmox_skip_tls_verify = true
-
-# Talos Configuration
-talos_version      = "v1.11.4"
-talos_schematic_id = "376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba"  # YOUR SCHEMATIC ID
-
-# Template Configuration
-template_name        = "talos-1.11.4-nvidia-template"
-template_description = "Talos Linux v1.11.4 with Longhorn + NVIDIA support"
-vm_id                = 9200
-
-# VM Hardware
-vm_cores  = 2
-vm_memory = 2048
-vm_disk_size    = "20G"  # Minimal for template
-vm_disk_storage = "tank"
-vm_cpu_type     = "host"  # CRITICAL: Must be 'host' for Talos v1.0+ and Cilium
-
-# Network
-vm_network_bridge = "vmbr0"
-
-# Build Configuration
-boot_wait   = "10s"
-ssh_timeout = "2m"  # Talos doesn't have SSH, will timeout (expected)
-```
-
-### Step 2: Build the Template
+**Update these settings**:
 
 ```bash
-# Initialize Packer plugins
-packer init .
-
-# Validate configuration
-packer validate .
-
-# Build template
-packer build .
+# Configuration
+VM_ID="${1:-9000}"
+TALOS_VERSION="v1.12.1"
+SCHEMATIC_ID="376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba"  # YOUR SCHEMATIC ID
+STORAGE_POOL="tank"
+BRIDGE="vmbr0"
 ```
 
-**Build Process**:
-1. Packer downloads Talos Factory ISO (includes your extensions)
-2. Creates VM with ISO attached
-3. Boots Talos (automatic installation to disk)
-4. Waits for boot to complete
-5. Converts VM to template
+### Step 2: Run Import Script on Proxmox Host
 
-**Build Time**: ~10-15 minutes
+```bash
+# Copy script to Proxmox host
+scp import-talos-image.sh root@proxmox:/tmp/
 
-**Note**: Packer will timeout waiting for SSH - **this is expected** (Talos has no SSH access)
+# SSH to Proxmox and run
+ssh root@proxmox
+cd /tmp && chmod +x import-talos-image.sh
+./import-talos-image.sh
+```
+
+**Import Process**:
+1. Downloads Talos disk image from Factory (`nocloud-amd64.raw.xz`)
+2. Decompresses the image
+3. Creates VM with proper settings (UEFI, q35, virtio-scsi)
+4. Imports disk image to storage pool
+5. Resizes disk to 150GB
+6. Converts VM to template
+
+**Import Time**: ~2-5 minutes
 
 ### Step 3: Verify Template
 
@@ -210,7 +189,7 @@ ssh root@proxmox
 
 # List templates
 qm list | grep -i template
-# Should show: talos-1.11.4-nvidia-template
+# Should show: talos-1.12.1-nvidia-template
 
 # Check template configuration
 qm config 9200
@@ -248,8 +227,8 @@ proxmox_node     = "pve"
 # Talos Configuration
 deploy_talos         = true
 cluster_name         = "homelab"
-talos_template_name  = "talos-1.11.4-nvidia-template"  # Must match Packer template
-talos_version        = "v1.11.4"
+talos_template_name  = "talos-1.12.1-nvidia-template"  # Must match Packer template
+talos_version        = "v1.12.1"
 kubernetes_version   = "v1.31.0"
 
 # Node Configuration (Single-Node Cluster)
@@ -605,16 +584,30 @@ kubectl logs gpu-test
 
 ## Troubleshooting
 
-### Issue: Packer build times out waiting for SSH
+### Issue: Import script fails to download image
 
 **Symptoms**:
 ```
-Timeout waiting for SSH to become available
+wget: unable to resolve host address 'factory.talos.dev'
 ```
 
-**Solution**: This is EXPECTED behavior. Talos doesn't have SSH. Packer will timeout after `ssh_timeout` and continue.
+**Solutions**:
+1. Verify Proxmox host has internet access: `ping -c 3 factory.talos.dev`
+2. Check DNS resolution: `nslookup factory.talos.dev`
+3. Verify schematic ID is correct (64-character hex string)
 
-**Action**: No action needed. Verify template was created: `qm list | grep 9200`
+### Issue: "VM already exists" error
+
+**Symptoms**:
+```
+ERROR: VM 9000 already exists!
+```
+
+**Solution**: Delete the existing VM/template first:
+```bash
+qm destroy 9000 --purge
+./import-talos-image.sh
+```
 
 ### Issue: Node shows "NotReady" after deployment
 
@@ -641,7 +634,7 @@ Events:
 **Solutions**:
 1. **Verify system extensions**: `talosctl -n 10.10.2.10 get extensions`
    - Must show: `iscsi-tools`, `util-linux-tools`
-2. **If missing**: Rebuild Talos image with correct schematic ID (Part 1)
+2. **If missing**: Regenerate schematic at factory.talos.dev with correct extensions, then re-run import script (Part 2)
 3. **Check kernel modules**: `talosctl -n 10.10.2.10 get systemextensions`
 4. **Verify kubelet extra mounts**: See `talos/patches/longhorn-requirements.yaml`
 
@@ -713,16 +706,16 @@ kubectl describe node talos-01 | grep -i gpu
 └─────────────────────────────────────────────────────────────┘
                             ↓
 ┌─────────────────────────────────────────────────────────────┐
-│          Day 1: Build Golden Image (10-15 min)              │
+│        Day 1: Import Talos Template (2-5 min)               │
 ├─────────────────────────────────────────────────────────────┤
 │ cd packer/talos                                              │
-│ cp talos.auto.pkrvars.hcl.example talos.auto.pkrvars.hcl   │
-│ vim talos.auto.pkrvars.hcl  # Set schematic ID              │
-│ packer init .                                                │
-│ packer build .                                               │
-│ → Downloads Talos Factory ISO with extensions               │
-│ → Creates VM, boots Talos, converts to template             │
-│ → Template: "talos-1.11.4-nvidia-template"                  │
+│ vim import-talos-image.sh  # Set schematic ID               │
+│ scp import-talos-image.sh root@proxmox:/tmp/                │
+│ ssh root@proxmox                                             │
+│ ./import-talos-image.sh                                      │
+│ → Downloads Talos disk image from Factory                   │
+│ → Imports to Proxmox, converts to template                  │
+│ → Template: "talos-1.12.1-nvidia-template" (ID: 9000)       │
 └─────────────────────────────────────────────────────────────┘
                             ↓
 ┌─────────────────────────────────────────────────────────────┐
