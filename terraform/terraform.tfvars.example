@@ -238,94 +238,40 @@ install_disk = "/dev/sda"
 # Traditional VMs Configuration (Optional)
 # ============================================================================
 # Deploy traditional Linux and Windows VMs from Packer templates
-# All VMs are disabled by default - enable as needed
+#
+# IMPORTANT: VM definitions (CPU, memory, disk, IP, enabled/disabled) are
+# configured in locals-vms.tf, NOT here. This file only contains shared
+# variables like template names and cloud-init credentials.
 
 # Common Configuration
 # ----------------------------------------------------------------------------
 
-common_tags = ["homelab", "infra"]
+common_tags     = ["homelab", "infra"]
+default_storage = "tank"  # Proxmox storage pool for VM disks
 
 # Cloud-init user configuration (applies to all Linux VMs)
 cloud_init_user     = "admin"
 cloud_init_password = "changeme"  # Change this!
 # cloud_init_ssh_keys = ["ssh-rsa AAAA... user@host"]
 
+# Windows credentials (uses Cloudbase-Init)
+windows_admin_user     = "Administrator"
+windows_admin_password = "ChangeMe123!"  # Change this!
+
 # Network configuration
 default_gateway = "10.10.2.1"
-dns_servers     = ["10.10.2.1", "8.8.8.8", "8.8.4.4"]
-dns_domain      = "local"
+# dns_servers and dns_domain already set above for Talos
 
-# Ubuntu VM
+# Template Names (from Packer builds)
 # ----------------------------------------------------------------------------
+# Update these after running Packer builds
+# Find templates in Proxmox UI or via: qm list
 
-deploy_ubuntu_vm      = false  # Set to true to deploy
-ubuntu_template_name  = "ubuntu-2404-cloud-template"  # Cloud image template (5-10 min builds)
-ubuntu_vm_name        = "ubuntu-dev"
-ubuntu_vm_id          = 100
-ubuntu_cpu_cores      = 4
-ubuntu_memory         = 8192   # MB
-ubuntu_disk_size      = 40     # GB
-ubuntu_disk_storage   = "tank"
-ubuntu_ip_address     = "dhcp"  # Or "10.10.2.11/24" for static
-ubuntu_on_boot        = true
-
-# Debian VM
-# ----------------------------------------------------------------------------
-
-deploy_debian_vm      = false  # Set to true to deploy
-debian_template_name  = "debian-13-cloud-template"  # Cloud image template (5-10 min builds)
-debian_vm_name        = "debian-prod"
-debian_vm_id          = 200
-debian_cpu_cores      = 4
-debian_memory         = 8192   # MB
-debian_disk_size      = 40     # GB
-debian_disk_storage   = "tank"
-debian_ip_address     = "dhcp"  # Or "10.10.2.12/24" for static
-debian_on_boot        = true
-
-# Arch Linux VM
-# ----------------------------------------------------------------------------
-
-deploy_arch_vm      = false  # Set to true to deploy
-arch_template_name  = "arch-golden-template"  # Packer template name (no timestamp)
-arch_vm_name        = "arch-dev"
-arch_vm_id          = 300
-arch_cpu_cores      = 2
-arch_memory         = 4096   # MB
-arch_disk_size      = 30     # GB
-arch_disk_storage   = "tank"
-arch_ip_address     = "dhcp"  # Or "10.10.2.13/24" for static
-arch_on_boot        = true
-
-# NixOS VM
-# ----------------------------------------------------------------------------
-
-deploy_nixos_vm      = false  # Set to true to deploy
-nixos_template_name  = "nixos-golden-template"  # Packer template name (no timestamp)
-nixos_vm_name        = "nixos-lab"
-nixos_vm_id          = 400
-nixos_cpu_cores      = 2
-nixos_memory         = 4096   # MB
-nixos_disk_size      = 30     # GB
-nixos_disk_storage   = "tank"
-nixos_ip_address     = "dhcp"  # Or "10.10.2.14/24" for static
-nixos_on_boot        = true
-
-# Windows Server 2022 VM
-# ----------------------------------------------------------------------------
-
-deploy_windows_vm           = false  # Set to true to deploy
-windows_template_name       = "windows-11-golden-template"  # Packer template name (no timestamp)
-windows_vm_name             = "windows-server"
-windows_vm_id               = 500
-windows_cpu_cores           = 4
-windows_memory              = 8192   # MB
-windows_disk_size           = 100    # GB
-windows_disk_storage        = "tank"
-windows_ip_address          = "dhcp"  # Or "10.10.2.15/24" for static
-windows_cloud_init_user     = "Administrator"
-windows_cloud_init_password = "ChangeMe123!"  # Change this!
-windows_on_boot             = true
+ubuntu_template_name  = "ubuntu-2404-cloud-template"
+debian_template_name  = "debian-13-cloud-template"
+arch_template_name    = "arch-linux-golden-template"
+nixos_template_name   = "nixos-golden-template"
+windows_template_name = "windows-11-golden-template"
 
 # ============================================================================
 # Traditional VMs Notes
@@ -336,10 +282,11 @@ windows_on_boot             = true
 # - Packer adds timestamps: "ubuntu-24.04-golden-template-20251118-1234"
 # - Find templates in Proxmox UI or via: qm list
 #
-# VM IDs:
-# - Must be unique across entire Proxmox cluster
-# - Talos typically uses VM ID from Packer (e.g., 10000)
-# - Traditional VMs use ranges: Ubuntu 100-199, Debian 200-299, etc.
+# VM Configuration (in locals-vms.tf):
+# - VMs are defined in locals-vms.tf using for_each pattern
+# - Available VMs: ubuntu-dev (100), debian-prod (200), arch-dev (300),
+#   nixos-lab (400), windows-desktop (500)
+# - Add new VMs by adding entries in locals-vms.tf with unique name and vm_id
 #
 # Resource Allocation:
 # - Total available: ~76GB RAM, 10-11 cores (after Proxmox + Talos)
@@ -353,9 +300,10 @@ windows_on_boot             = true
 # - Ensure IPs don't conflict with existing devices
 #
 # Deployment:
-# - Deploy all: terraform apply
-# - Deploy specific VM: terraform apply -target=module.ubuntu_vm
-# - Skip VM: Set deploy_*_vm = false
+# - Deploy all enabled VMs: terraform apply
+# - Deploy specific VM: terraform apply -target='module.traditional_vm["ubuntu-dev"]'
+# - Destroy specific VM: terraform destroy -target='module.traditional_vm["ubuntu-dev"]'
+# - Enable/disable VMs: Set enabled = true/false in locals-vms.tf
 #
 # Cloud-init:
 # - All Linux templates have cloud-init pre-installed

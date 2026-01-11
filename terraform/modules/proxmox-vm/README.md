@@ -216,4 +216,7 @@ See [variables.tf](./variables.tf) for complete variable documentation.
 
 ## Examples
 
-See `../../traditional-vms.tf` for complete deployment examples using this module.
+See the following files for complete deployment examples:
+- `../../vm-traditional.tf` - Module instantiation with for_each
+- `../../locals-vms.tf` - VM definitions (CPU, memory, disk, etc.)
+- `../../README.md` - Full documentation with usage examples

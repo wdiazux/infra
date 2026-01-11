@@ -61,30 +61,31 @@ This configuration also supports deploying traditional VMs from Packer golden im
 
 ## Deploying All VMs
 
-### Supported VMs and Control Variables
+### Supported VMs
 
-All VMs are deployed from Packer golden images. You can enable/disable each VM individually:
+All VMs are deployed from Packer golden images. Traditional VMs use a `for_each` pattern for safe add/remove operations.
 
-| VM Type | Module | Control Variable | Default VM ID | Template Source |
-|---------|--------|-----------------|---------------|----------------|
-| **Talos** | Direct resource | Always deployed | 1000 | `packer/talos/` |
-| **Ubuntu** | `module.ubuntu_vm` | `deploy_ubuntu_vm` | 100-199 | `packer/ubuntu/` |
-| **Debian** | `module.debian_vm` | `deploy_debian_vm` | 200-299 | `packer/debian/` |
-| **Arch** | `module.arch_vm` | `deploy_arch_vm` | 300-399 | `packer/arch/` |
-| **NixOS** | `module.nixos_vm` | `deploy_nixos_vm` | 400-499 | `packer/nixos/` |
-| **Windows** | `module.windows_vm` | `deploy_windows_vm` | 500-599 | `packer/windows/` |
+| VM Type | Deployment | VM ID Range | Template Source | Config Location |
+|---------|-----------|-------------|-----------------|-----------------|
+| **Talos** | Direct resource (always) | 1000+ | `packer/talos/` | `main.tf` |
+| **Ubuntu** | `for_each` module | 100-199 | `packer/ubuntu/` | `locals-vms.tf` |
+| **Debian** | `for_each` module | 200-299 | `packer/debian/` | `locals-vms.tf` |
+| **Arch** | `for_each` module | 300-399 | `packer/arch/` | `locals-vms.tf` |
+| **NixOS** | `for_each` module | 400-499 | `packer/nixos/` | `locals-vms.tf` |
+| **Windows** | `for_each` module | 500-599 | `packer/windows/` | `locals-vms.tf` |
 
 ### Deployment Options
 
-#### Option 1: Deploy Everything
+#### Option 1: Enable VMs in locals-vms.tf
+
+Edit `locals-vms.tf` and set `enabled = true` for VMs you want:
 
 ```hcl
-# terraform.tfvars
-deploy_ubuntu_vm  = true
-deploy_debian_vm  = true
-deploy_arch_vm    = true
-deploy_nixos_vm   = true
-deploy_windows_vm = true
+# locals-vms.tf
+"ubuntu-dev" = {
+  enabled = true   # ← Set to true to deploy
+  # ... other config
+}
 ```
 
 Then run:
@@ -92,25 +93,30 @@ Then run:
 terraform apply
 ```
 
-#### Option 2: Deploy Specific VMs Only
-
-```hcl
-# terraform.tfvars
-deploy_ubuntu_vm  = true   # Deploy Ubuntu
-deploy_debian_vm  = true   # Deploy Debian
-deploy_arch_vm    = false  # Skip Arch
-deploy_nixos_vm   = false  # Skip NixOS
-deploy_windows_vm = false  # Skip Windows
-```
-
-#### Option 3: Deploy One VM at a Time
+#### Option 2: Deploy Specific VM Only
 
 ```bash
-# Deploy only Ubuntu
-terraform apply -target=module.ubuntu_vm
+# Deploy only ubuntu-dev
+terraform apply -target='module.traditional_vm["ubuntu-dev"]'
 
-# Deploy only Debian
-terraform apply -target=module.debian_vm
+# Deploy only debian-prod
+terraform apply -target='module.traditional_vm["debian-prod"]'
+```
+
+#### Option 3: Add Multiple VMs of Same Type
+
+```hcl
+# locals-vms.tf - Add multiple Ubuntu VMs
+"ubuntu-dev" = {
+  enabled = true
+  vm_id   = 100
+  # ...
+}
+"ubuntu-ci" = {
+  enabled = true
+  vm_id   = 101  # Different ID
+  # ...
+}
 ```
 
 ### Workflow: Build Templates → Deploy VMs
@@ -137,15 +143,17 @@ nixos_template_name   = "nixos-golden-template-20251119"
 windows_template_name = "windows-11-golden-template-20251119"
 ```
 
-**Step 3: Configure VMs (CPU, memory, IPs, etc.)**
+**Step 3: Enable and configure VMs in `locals-vms.tf`**
 ```hcl
-# Ubuntu configuration
-ubuntu_cpu_cores  = 4
-ubuntu_memory     = 12288  # 12GB
-ubuntu_disk_size  = 100    # 100GB
-ubuntu_ip_address = "192.168.1.110/24"  # or "dhcp"
-
-# Repeat for other VMs...
+# Set enabled = true and adjust resources for each VM
+"ubuntu-dev" = {
+  enabled    = true
+  cpu_cores  = 4
+  memory     = 12288      # 12GB
+  disk_size  = 100        # 100GB
+  ip_address = "10.10.2.11/24"  # or "dhcp"
+  # ...
+}
 ```
 
 **Step 4: Deploy with Terraform**
@@ -158,32 +166,35 @@ terraform apply  # Deploy all enabled VMs
 
 ### Resource Planning Example (96GB RAM Total)
 
-**Balanced Allocation:**
+**Balanced Allocation (in locals-vms.tf):**
 ```hcl
-# Talos (primary workload)
+# Talos (primary workload) - in terraform.tfvars
 node_cpu_cores = 8
 node_memory    = 32768  # 32GB
 
-# Ubuntu
-ubuntu_cpu_cores = 4
-ubuntu_memory    = 12288  # 12GB
-
-# Debian
-debian_cpu_cores = 4
-debian_memory    = 12288  # 12GB
-
-# Arch
-arch_cpu_cores   = 2
-arch_memory      = 8192   # 8GB
-
-# NixOS
-nixos_cpu_cores  = 2
-nixos_memory     = 8192   # 8GB
-
-# Windows
-windows_cpu_cores = 4
-windows_memory    = 16384  # 16GB
-
+# Traditional VMs - configure in locals-vms.tf
+local.traditional_vms = {
+  "ubuntu-dev" = {
+    cpu_cores = 4
+    memory    = 12288  # 12GB
+  }
+  "debian-prod" = {
+    cpu_cores = 4
+    memory    = 12288  # 12GB
+  }
+  "arch-dev" = {
+    cpu_cores = 2
+    memory    = 8192   # 8GB
+  }
+  "nixos-lab" = {
+    cpu_cores = 2
+    memory    = 8192   # 8GB
+  }
+  "windows-desktop" = {
+    cpu_cores = 4
+    memory    = 16384  # 16GB
+  }
+}
 # Total: 32+12+12+8+8+16 = 88GB (8GB free for Proxmox host)
 ```
 
@@ -1021,23 +1032,30 @@ In addition to Talos Linux, this Terraform configuration can deploy traditional 
 
 ```
 terraform/
-├── main.tf                  # Talos deployment
-├── traditional-vms.tf       # Traditional VMs deployment (uses module)
+├── main.tf                    # Talos deployment
+├── locals-vms.tf              # Traditional VM definitions (for_each map)
+├── vm-traditional.tf          # Traditional VMs deployment (uses module with for_each)
+├── variables-traditional.tf   # Shared variables for traditional VMs
 ├── modules/
-│   └── proxmox-vm/         # Generic reusable VM module
+│   └── proxmox-vm/            # Generic reusable VM module
 │       ├── main.tf
 │       ├── variables.tf
 │       └── outputs.tf
-├── variables.tf            # All variables (Talos + traditional VMs)
-└── outputs.tf              # All outputs (Talos + traditional VMs)
+├── variables.tf               # Talos and shared variables
+└── outputs.tf                 # All outputs (Talos + traditional VMs)
 ```
+
+**Key files:**
+- `locals-vms.tf`: Central place to define all VM configurations with `enabled = true/false`
+- `vm-traditional.tf`: Single `for_each` module call that deploys all enabled VMs
+- `variables-traditional.tf`: Template names, cloud-init credentials, common settings
 
 ### Quick Start - Traditional VMs
 
 **1. Build Packer templates:**
 
 ```bash
-# Build all templates
+# Build templates for VMs you want to deploy
 cd ../packer/ubuntu && packer build .
 cd ../packer/debian && packer build .
 cd ../packer/arch && packer build .
@@ -1045,72 +1063,92 @@ cd ../packer/nixos && packer build .
 cd ../packer/windows && packer build .
 ```
 
-**2. Configure terraform.tfvars:**
+**2. Configure VMs in `locals-vms.tf`:**
 
 ```hcl
-# Enable VMs you want to deploy
-deploy_ubuntu_vm = true
-deploy_debian_vm = true
-deploy_arch_vm   = false
-deploy_nixos_vm  = false
-deploy_windows_vm = false
+# In locals-vms.tf, enable VMs by setting enabled = true
+local.traditional_vms = {
+  "ubuntu-dev" = {
+    enabled       = true   # Set to true to deploy
+    description   = "Ubuntu 24.04 LTS - General purpose development"
+    os_type       = "ubuntu"
+    template_name = var.ubuntu_template_name
+    vm_id         = 100
+    cpu_cores     = 4
+    memory        = 8192   # MB
+    disk_size     = 40     # GB
+    ip_address    = "dhcp" # Or "10.10.2.11/24" for static
+    # ... other settings
+  }
+  "debian-prod" = {
+    enabled       = true
+    # ... configuration
+  }
+  # Add more VMs as needed
+}
+```
 
-# Update template names (from Packer output)
+**3. Configure shared settings in `terraform.tfvars`:**
+
+```hcl
+# Template names (from Packer output)
 ubuntu_template_name = "ubuntu-24.04-golden-template-20251118-1234"
-debian_template_name = "debian-12-golden-template-20251118-1234"
+debian_template_name = "debian-13-golden-template-20251118-1234"
+arch_template_name   = "arch-linux-golden-template-20251118-1234"
+nixos_template_name  = "nixos-golden-template-20251118-1234"
 
-# Configure resources
-ubuntu_cpu_cores = 4
-ubuntu_memory    = 8192   # MB
-ubuntu_disk_size = 40     # GB
-
-debian_cpu_cores = 4
-debian_memory    = 8192   # MB
-debian_disk_size = 40     # GB
-
-# Network configuration
-ubuntu_ip_address = "dhcp"  # Or "192.168.1.100/24" for static
-debian_ip_address = "dhcp"  # Or "192.168.1.101/24" for static
-
-# Cloud-init credentials
+# Cloud-init credentials (Linux VMs)
 cloud_init_user     = "admin"
 cloud_init_password = "changeme"
 # cloud_init_ssh_keys = ["ssh-rsa AAAA..."]
+
+# Windows credentials
+windows_admin_user     = "admin"
+windows_admin_password = "changeme"
 ```
 
-**3. Deploy VMs:**
+**4. Deploy VMs:**
 
 ```bash
 # Deploy all enabled VMs
 terraform apply
 
-# Or deploy specific VM
-terraform apply -target=module.ubuntu_vm
-terraform apply -target=module.debian_vm
+# Or deploy specific VM by name
+terraform apply -target='module.traditional_vm["ubuntu-dev"]'
+terraform apply -target='module.traditional_vm["debian-prod"]'
+
+# Destroy specific VM only
+terraform destroy -target='module.traditional_vm["ubuntu-dev"]'
 ```
 
-**4. Verify deployment:**
+**5. Verify deployment:**
 
 ```bash
-# Check outputs
-terraform output deployed_vms_summary
+# List all traditional VMs
+terraform output traditional_vms
 
-# SSH to VM (after cloud-init completes)
-ssh admin@<vm-ip>
+# Get quick IP lookup
+terraform output traditional_vm_ips
+
+# Get SSH commands for each VM
+terraform output ssh_commands
+
+# Get full deployment summary
+terraform output deployed_vms_summary
 ```
 
 ### Resource Allocation Guidelines
 
 **System Resources:** 96GB RAM, 12 CPU cores
 
-**Example Allocation:**
+**Example Allocation (configured in `locals-vms.tf`):**
 
 ```
 Proxmox overhead:  20GB RAM,  1-2 cores
 Talos cluster:     32GB RAM,  8 cores   (primary, has GPU)
-Ubuntu VM:         16GB RAM,  4 cores
-Debian VM:         16GB RAM,  4 cores
-Arch VM:           4GB RAM,   2 cores
+ubuntu-dev:        16GB RAM,  4 cores
+debian-prod:       16GB RAM,  4 cores
+arch-dev:          4GB RAM,   2 cores
 Free buffer:       8GB RAM
 ----------------------------------------
 Total:            96GB RAM,  ~24 threads (with SMT)
@@ -1118,9 +1156,10 @@ Total:            96GB RAM,  ~24 threads (with SMT)
 
 **Notes:**
 - Talos gets GPU (can't share with traditional VMs)
-- Adjust based on actual workload requirements
+- Adjust resources directly in `locals-vms.tf` per VM
 - Leave 5-10% RAM free for system overhead
 - Use DHCP or static IPs based on network setup
+- Enable/disable VMs with `enabled = true/false` in locals
 
 ### Proxmox VM Module Usage
 
@@ -1177,8 +1216,11 @@ qm shutdown <vm-id>
 **Enable/Disable VM Deployment:**
 
 ```hcl
-# In terraform.tfvars
-deploy_ubuntu_vm = false  # Skip deployment
+# In locals-vms.tf, set enabled = false
+"ubuntu-dev" = {
+  enabled = false  # Skip deployment
+  # ...
+}
 ```
 
 Then run `terraform apply` to destroy disabled VMs.
@@ -1186,15 +1228,16 @@ Then run `terraform apply` to destroy disabled VMs.
 **Update VM Configuration:**
 
 ```hcl
-# Change resources in terraform.tfvars
-ubuntu_cpu_cores = 8  # Increase CPUs
-ubuntu_memory    = 16384  # Increase RAM
-
-# Apply changes
-terraform apply
+# Change resources in locals-vms.tf
+"ubuntu-dev" = {
+  enabled   = true
+  cpu_cores = 8      # Increase CPUs
+  memory    = 16384  # Increase RAM
+  # ...
+}
 ```
 
-Note: Some changes require VM restart.
+Then run `terraform apply`. Note: Some changes require VM restart.
 
 **Add Additional Disks:**
 
@@ -1221,42 +1264,50 @@ module "storage_vm" {
 
 ### Deployment Scenarios
 
+All scenarios are configured in `locals-vms.tf` by setting `enabled = true/false`.
+
 **Scenario 1: Talos Only (Kubernetes Focus)**
 
 ```hcl
-# terraform.tfvars
-deploy_ubuntu_vm  = false
-deploy_debian_vm  = false
-deploy_arch_vm    = false
-deploy_nixos_vm   = false
-deploy_windows_vm = false
+# In locals-vms.tf - all traditional VMs disabled (default)
+"ubuntu-dev"       = { enabled = false, ... }
+"debian-prod"      = { enabled = false, ... }
+"arch-dev"         = { enabled = false, ... }
+"nixos-lab"        = { enabled = false, ... }
+"windows-desktop"  = { enabled = false, ... }
 ```
 
 **Scenario 2: Talos + Ubuntu Dev VM**
 
 ```hcl
-deploy_ubuntu_vm   = true
-ubuntu_cpu_cores   = 8
-ubuntu_memory      = 16384
-ubuntu_ip_address  = "192.168.1.100/24"
+# In locals-vms.tf
+"ubuntu-dev" = {
+  enabled    = true
+  cpu_cores  = 8
+  memory     = 16384
+  ip_address = "10.10.2.11/24"
+  # ...
+}
 ```
 
 **Scenario 3: Mixed Linux Environment**
 
 ```hcl
-deploy_ubuntu_vm = true  # Development
-deploy_debian_vm = true  # Production services
-deploy_arch_vm   = true  # Experimentation
+# In locals-vms.tf
+"ubuntu-dev"  = { enabled = true, ... }  # Development
+"debian-prod" = { enabled = true, ... }  # Production services
+"arch-dev"    = { enabled = true, ... }  # Experimentation
 ```
 
 **Scenario 4: Full Stack (All VMs)**
 
 ```hcl
-deploy_ubuntu_vm  = true
-deploy_debian_vm  = true
-deploy_arch_vm    = true
-deploy_nixos_vm   = true
-deploy_windows_vm = true
+# In locals-vms.tf - enable all
+"ubuntu-dev"       = { enabled = true, ... }
+"debian-prod"      = { enabled = true, ... }
+"arch-dev"         = { enabled = true, ... }
+"nixos-lab"        = { enabled = true, ... }
+"windows-desktop"  = { enabled = true, ... }
 ```
 
 Adjust resource allocation accordingly (see CLAUDE.md).
@@ -1281,22 +1332,28 @@ cloud_init_ssh_keys = [
 ]
 ```
 
-**Static IP Configuration:**
+**Static IP Configuration (in locals-vms.tf):**
 
 ```hcl
-ubuntu_ip_address = "192.168.1.100/24"
-default_gateway   = "192.168.1.1"
-dns_servers       = ["192.168.1.1", "8.8.8.8"]
-dns_domain        = "home.local"
+"ubuntu-dev" = {
+  enabled    = true
+  ip_address = "10.10.2.11/24"  # Static IP
+  # ...
+}
+
+# Gateway and DNS in terraform.tfvars
+default_gateway = "10.10.2.1"
+dns_servers     = ["8.8.8.8", "8.8.4.4"]
+dns_domain      = "local"
 ```
 
-**Windows Configuration:**
+**Windows Configuration (in terraform.tfvars):**
 
 Windows uses Cloudbase-Init (Windows equivalent of cloud-init):
 
 ```hcl
-windows_cloud_init_user     = "Administrator"
-windows_cloud_init_password = "ChangeMe123!"
+windows_admin_user     = "Administrator"
+windows_admin_password = "ChangeMe123!"
 ```
 
 ### Troubleshooting Traditional VMs
