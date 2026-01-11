@@ -194,7 +194,6 @@ A: [Talos Research](talos-research-report.md) - Section: "System Extensions"
 **Project Documentation:**
 - [CLAUDE.md](../../CLAUDE.md) - Complete project guide
 - [README.md](../../README.md) - Project overview
-- [TODO.md](../../TODO.md) - Project roadmap
 
 ---
 

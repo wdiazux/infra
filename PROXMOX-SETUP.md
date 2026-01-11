@@ -213,7 +213,7 @@ all:
 EOF
 
 # Run the playbook
-ansible-playbook playbooks/day0-proxmox-prep.yml -i inventory/hosts.yml
+ansible-playbook playbooks/day0_proxmox_prep.yml -i inventory/hosts.yml
 
 # Follow the post-configuration summary instructions
 ```
