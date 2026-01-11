@@ -505,7 +505,7 @@ terraform apply
 **Applies To**: Proxmox VE 9.0+
 **Terraform Version**: >= 1.14.2
 **Packer Version**: >= 1.14.3
-**Proxmox Provider**: bpg/proxmox >= 0.89.1
+**Proxmox Provider**: bpg/proxmox >= 0.92.0
 
 **Recent Changes**:
 - **2026-01-06**: Added Windows 11 Packer template and required permissions (Datastore.AllocateTemplate, /storage/local)

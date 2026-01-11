@@ -144,7 +144,7 @@ kubectl get nodes
 Expected output:
 ```
 NAME          STATUS   ROLES           AGE   VERSION
-talos-node    Ready    control-plane   5m    v1.31.0
+talos-node    Ready    control-plane   5m    v1.35.0
 ```
 
 **Note**: Nodes will show `NotReady` until Cilium is fully deployed!

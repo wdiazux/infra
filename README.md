@@ -335,9 +335,9 @@ infra/
   - `proxmox-clone` builder - Cloud images (PREFERRED, 3-4x faster)
   - `proxmox-iso` builder - ISO installation (fallback)
 
-- **Terraform 1.13.5** - Infrastructure deployment
-  - `siderolabs/talos` provider 0.9.0 - Talos configuration
-  - `bpg/proxmox` provider 0.86.0 - Proxmox VM provisioning
+- **Terraform 1.14.2** - Infrastructure deployment
+  - `siderolabs/talos` provider 0.10.0 - Talos configuration
+  - `bpg/proxmox` provider 0.92.0 - Proxmox VM provisioning
 
 - **Ansible 2.20.0** - Configuration management
   - Day 0 automation - Prerequisites and host preparation

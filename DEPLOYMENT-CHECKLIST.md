@@ -232,7 +232,7 @@ kubectl get nodes
 
 # Should show:
 # NAME         STATUS     ROLES           AGE   VERSION
-# talos-node   NotReady   control-plane   1m    v1.31.0
+# talos-node   NotReady   control-plane   1m    v1.35.0
 
 # Note: Node will be NotReady until CNI (Cilium) is installed
 ```
@@ -284,7 +284,7 @@ cilium status  # If cilium CLI installed
   ```bash
   kubectl get nodes
   # NAME         STATUS   ROLES           AGE   VERSION
-  # talos-node   Ready    control-plane   5m    v1.31.0
+  # talos-node   Ready    control-plane   5m    v1.35.0
   ```
 
 ### Remove Control Plane Taint (Single-Node Only)

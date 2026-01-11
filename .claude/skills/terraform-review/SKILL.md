@@ -8,8 +8,8 @@ This skill ensures Terraform code is:
 - Syntactically valid and properly formatted
 - Following HashiCorp best practices
 - Secure and following least privilege
-- Compatible with Proxmox provider (bpg/proxmox ~> 0.89.1)
-- Compatible with Talos provider (siderolabs/talos ~> 0.9.0)
+- Compatible with Proxmox provider (bpg/proxmox ~> 0.92.0)
+- Compatible with Talos provider (siderolabs/talos ~> 0.10.0)
 - Optimized for homelab single-operator workflow
 
 ## When to Use

@@ -25,7 +25,7 @@ This guide walks through the complete workflow:
 # Verify tool versions (on your workstation)
 terraform version  # Should be 1.9.0+
 talosctl version   # Should be v1.12.1+
-kubectl version    # Should be v1.31.0+
+kubectl version    # Should be v1.35.0+
 helm version       # Should be v3.16.0+
 
 # On Proxmox host (for import script)
@@ -229,7 +229,7 @@ deploy_talos         = true
 cluster_name         = "homelab"
 talos_template_name  = "talos-1.12.1-nvidia-template"  # Must match Packer template
 talos_version        = "v1.12.1"
-kubernetes_version   = "v1.31.0"
+kubernetes_version   = "v1.35.0"
 
 # Node Configuration (Single-Node Cluster)
 node_name    = "talos-01"
@@ -292,7 +292,7 @@ kubectl get nodes
 
 # Should show:
 # NAME       STATUS     ROLES           AGE   VERSION
-# talos-01   NotReady   control-plane   2m    v1.31.0
+# talos-01   NotReady   control-plane   2m    v1.35.0
 ```
 
 **Note**: Node will be "NotReady" until CNI (Cilium) is installed in Part 4.
@@ -615,7 +615,7 @@ qm destroy 9000 --purge
 ```bash
 kubectl get nodes
 # NAME       STATUS     ROLES           AGE   VERSION
-# talos-01   NotReady   control-plane   5m    v1.31.0
+# talos-01   NotReady   control-plane   5m    v1.35.0
 ```
 
 **Solutions**:
@@ -728,7 +728,7 @@ kubectl describe node talos-01 | grep -i gpu
 │ terraform apply                                              │
 │ → Clones template → creates Talos VM                        │
 │ → Generates machine config with Longhorn requirements       │
-│ → Bootstraps Kubernetes v1.31.0                             │
+│ → Bootstraps Kubernetes v1.35.0                             │
 │ → Exports kubeconfig and talosconfig                        │
 └─────────────────────────────────────────────────────────────┘
                             ↓

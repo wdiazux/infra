@@ -10,13 +10,13 @@ terraform {
     # Proxmox provider for VM management
     proxmox = {
       source  = "bpg/proxmox"
-      version = "~> 0.89.1"
+      version = "~> 0.92.0"
     }
 
     # Talos provider for machine configuration and cluster bootstrapping
     talos = {
       source  = "siderolabs/talos"
-      version = "~> 0.9.0"
+      version = "~> 0.10.0"
     }
 
     # Local provider for writing kubeconfig/talosconfig files

@@ -1473,7 +1473,7 @@ A complete verification of all Packer, Terraform, and Ansible code has been perf
 | Component | Status | Notes |
 |-----------|--------|-------|
 | **Packer** | ✅ READY | Latest version (1.14.2+), modern syntax, best practices |
-| **Terraform** | ✅ READY | Latest providers (0.86.0, 0.9.0), correctly uses golden images |
+| **Terraform** | ✅ READY | Latest providers (0.92.0, 0.10.0), correctly uses golden images |
 | **Ansible** | 🔴 GAP | Day 0 ready, missing Day 1/2 playbooks for traditional VMs |
 
 ### What Works
@@ -1486,7 +1486,7 @@ A complete verification of all Packer, Terraform, and Ansible code has been perf
    - ✅ Timestamp format fixed (YYYYMMDD)
 
 2. **Terraform Configuration:**
-   - ✅ Latest provider versions (Proxmox 0.86.0, Talos 0.9.0)
+   - ✅ Latest provider versions (Proxmox 0.92.0, Talos 0.10.0)
    - ✅ Correctly clones from Packer golden images
    - ✅ Template validation with lifecycle preconditions
    - ✅ Can deploy all VMs (Talos + 5 traditional VMs)
@@ -1523,8 +1523,8 @@ Create Ansible baseline playbooks before production deployment of traditional VM
 |-----------|---------|--------|
 | Terraform | >= 1.13.5 | ✅ CURRENT (latest: 1.14.0) |
 | Packer | >= 1.14.2 | ✅ CURRENT |
-| Proxmox Provider | ~> 0.86.0 | ✅ LATEST |
-| Talos Provider | ~> 0.9.0 | ✅ LATEST |
+| Proxmox Provider | ~> 0.92.0 | ✅ LATEST |
+| Talos Provider | ~> 0.10.0 | ✅ LATEST |
 | Proxmox VE | >= 9.0 | ✅ SUPPORTED |
 
 See the full verification report for detailed analysis and recommendations.
