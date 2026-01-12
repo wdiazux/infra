@@ -19,6 +19,12 @@ terraform {
       version = "~> 0.10.0"
     }
 
+    # SOPS provider for encrypted secrets management
+    sops = {
+      source  = "carlpett/sops"
+      version = "~> 1.1.1"
+    }
+
     # Local provider for writing kubeconfig/talosconfig files
     local = {
       source  = "hashicorp/local"
@@ -48,23 +54,20 @@ terraform {
 }
 
 # Proxmox Provider Configuration
+#
+# Credentials are loaded from SOPS-encrypted secrets file.
+# See sops.tf for the data source configuration.
+# To use variables instead, replace local.secrets.* with var.*
+#
 provider "proxmox" {
-  endpoint = var.proxmox_url
-  username = var.proxmox_username
+  endpoint = local.secrets.proxmox_url
+  username = local.secrets.proxmox_user
 
-  # Authentication Method Selection:
-  #
-  # Option 1: API Token (recommended for most operations)
-  api_token = var.proxmox_api_token
+  # API Token authentication (from SOPS-encrypted secrets)
+  api_token = local.secrets.proxmox_api_token
 
-  # Option 2: Password (required for GPU passthrough with PCI ID parameter)
-  # If using GPU passthrough, uncomment this and comment out api_token above:
-  # password = var.proxmox_password
-  #
-  # Note: Some GPU passthrough configurations require password authentication.
-  # If you encounter "403 Forbidden" errors with GPU setup, switch to password auth.
-
-  insecure = var.proxmox_insecure # For self-signed certs
+  # Skip TLS verification for self-signed certificates
+  insecure = local.secrets.proxmox_tls_insecure
 
   # Optional SSH configuration for certain operations
   # ssh {

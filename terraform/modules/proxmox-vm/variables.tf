@@ -101,6 +101,12 @@ variable "efi_disk_datastore" {
   default     = "tank"
 }
 
+variable "efi_pre_enrolled_keys" {
+  type        = bool
+  description = "Enable Secure Boot with pre-enrolled keys. Set to false for unsigned bootloaders (Arch, NixOS)."
+  default     = true
+}
+
 variable "boot_order" {
   type        = list(string)
   description = "Boot order (e.g., ['scsi0', 'net0'])"

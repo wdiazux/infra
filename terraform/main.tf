@@ -22,11 +22,8 @@ data "proxmox_virtual_environment_vms" "talos_template" {
   }
 }
 
-# Load SOPS-encrypted Proxmox credentials (optional)
-# Uncomment if using SOPS for credential management
-# data "sops_file" "proxmox_secrets" {
-#   source_file = "${path.module}/../secrets/proxmox-creds.enc.yaml"
-# }
+# SOPS-encrypted credentials are loaded in sops.tf
+# Access via: local.secrets.proxmox_url, local.secrets.ssh_public_key, etc.
 
 # ============================================================================
 # Talos Machine Secrets
@@ -459,7 +456,8 @@ locals {
 # ============================================================================
 
 # Retrieve kubeconfig after bootstrap
-data "talos_cluster_kubeconfig" "cluster" {
+# NOTE: Using resource instead of data source (data source deprecated in talos provider 0.10+)
+resource "talos_cluster_kubeconfig" "cluster" {
   count = var.generate_kubeconfig && var.auto_bootstrap ? 1 : 0
 
   client_configuration = talos_machine_secrets.cluster.client_configuration
@@ -475,7 +473,7 @@ data "talos_cluster_kubeconfig" "cluster" {
 resource "local_file" "kubeconfig" {
   count = var.generate_kubeconfig && var.auto_bootstrap ? 1 : 0
 
-  content         = data.talos_cluster_kubeconfig.cluster[0].kubeconfig_raw
+  content         = talos_cluster_kubeconfig.cluster[0].kubeconfig_raw
   filename        = local.kubeconfig_path
   file_permission = "0600"
 }

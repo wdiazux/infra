@@ -61,7 +61,7 @@ module "traditional_vm" {
   disks = [{
     datastore_id = each.value.disk_storage
     size         = each.value.disk_size
-    interface    = "scsi0"
+    interface    = each.value.disk_interface
     iothread     = true
     discard      = "on"
     ssd          = true
@@ -74,13 +74,14 @@ module "traditional_vm" {
   }]
 
   # Cloud-init configuration
+  # Credentials are loaded from SOPS-encrypted secrets (see sops.tf)
   enable_cloud_init    = var.enable_cloud_init
   cloud_init_datastore = each.value.disk_storage
 
-  # Use Windows-specific credentials or default Linux credentials
-  cloud_init_user     = each.value.os_type == "windows" ? var.windows_admin_user : var.cloud_init_user
-  cloud_init_password = each.value.os_type == "windows" ? var.windows_admin_password : var.cloud_init_password
-  cloud_init_ssh_keys = each.value.os_type == "windows" ? [] : var.cloud_init_ssh_keys
+  # Use Windows-specific credentials or default Linux credentials (from SOPS)
+  cloud_init_user     = each.value.os_type == "windows" ? local.secrets.windows_admin_user : local.secrets.cloud_init_user
+  cloud_init_password = each.value.os_type == "windows" ? local.secrets.windows_admin_password : local.secrets.cloud_init_password
+  cloud_init_ssh_keys = each.value.os_type == "windows" ? [] : [local.secrets.ssh_public_key]
 
   # IP configuration
   ip_configs = [{
@@ -91,11 +92,15 @@ module "traditional_vm" {
   dns_servers = var.dns_servers
   dns_domain  = var.dns_domain
 
-  # Boot configuration
-  bios_type          = "ovmf" # UEFI for all VMs
+  # Boot configuration (per-VM: UEFI or SeaBIOS)
+  bios_type          = each.value.bios_type
   efi_disk_datastore = each.value.disk_storage
   machine_type       = "q35"
   scsi_hardware      = "virtio-scsi-single"
+
+  # Secure Boot - Disable for Arch/NixOS (unsigned bootloaders)
+  # Only applies to UEFI VMs (NixOS uses SeaBIOS so this is ignored)
+  efi_pre_enrolled_keys = !contains(["arch", "nixos"], each.value.os_type)
 
   # QEMU Agent (required for IP reporting)
   enable_qemu_agent = true

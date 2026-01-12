@@ -90,7 +90,7 @@ output "talos_client_configuration" {
 
 output "cluster_ca_certificate" {
   description = "Kubernetes cluster CA certificate (sensitive)"
-  value       = var.auto_bootstrap ? data.talos_cluster_kubeconfig.cluster[0].kubernetes_client_configuration.ca_certificate : "Not available"
+  value       = var.auto_bootstrap ? talos_cluster_kubeconfig.cluster[0].kubernetes_client_configuration.ca_certificate : "Not available"
   sensitive   = true
 }
 
@@ -214,7 +214,9 @@ output "traditional_vm_ips" {
   description = "Quick lookup of VM IPs (name => first IP)"
   value = {
     for name, vm in module.traditional_vm : name => (
-      length(vm.ipv4_addresses) > 0 ? vm.ipv4_addresses[0] : "pending"
+      length(vm.ipv4_addresses) > 0 && length(vm.ipv4_addresses[0]) > 0
+      ? vm.ipv4_addresses[0][0]
+      : "pending"
     )
   }
 }
@@ -255,11 +257,12 @@ output "deployed_vms_summary" {
 
 output "ssh_commands" {
   description = "SSH commands to connect to each VM"
+  sensitive   = true
   value = {
     for name, vm in module.traditional_vm : name => (
       local.traditional_vms[name].os_type != "windows"
-      ? "ssh ${var.cloud_init_user}@${length(vm.ipv4_addresses) > 0 ? vm.ipv4_addresses[0] : "PENDING"}"
-      : "# Windows: Use RDP to ${length(vm.ipv4_addresses) > 0 ? vm.ipv4_addresses[0] : "PENDING"}"
+      ? "ssh ${local.secrets.cloud_init_user}@${length(vm.ipv4_addresses) > 0 && length(vm.ipv4_addresses[0]) > 0 ? vm.ipv4_addresses[0][0] : "PENDING"}"
+      : "# Windows: Use RDP to ${length(vm.ipv4_addresses) > 0 && length(vm.ipv4_addresses[0]) > 0 ? vm.ipv4_addresses[0][0] : "PENDING"}"
     )
   }
 }

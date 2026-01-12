@@ -127,7 +127,7 @@ resource "proxmox_virtual_environment_vm" "vm" {
       datastore_id      = var.efi_disk_datastore
       file_format       = "raw"
       type              = "4m"
-      pre_enrolled_keys = true
+      pre_enrolled_keys = var.efi_pre_enrolled_keys
     }
   }
 
