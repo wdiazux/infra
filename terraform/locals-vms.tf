@@ -89,6 +89,10 @@ locals {
       # Storage
       disk_storage = var.default_storage
 
+      # Boot configuration (defaults for UEFI systems)
+      bios_type      = "ovmf"
+      disk_interface = "scsi0"
+
       # Network
       ip_address = "dhcp" # Or "10.10.2.11/24" for static
       on_boot    = true
@@ -96,6 +100,28 @@ locals {
 
       # Startup order (lower = starts first)
       startup_order = 20
+    }
+
+    "ubuntu-test" = {
+      enabled       = false # Disabled
+      description   = "Ubuntu 24.04 - Lightweight test VM"
+      os_type       = "ubuntu"
+      template_name = var.ubuntu_template_name
+      vm_id         = 101
+
+      cpu_type  = "host"
+      cpu_cores = 2
+      memory    = 2048 # 2GB - minimal for testing
+      disk_size = 25   # 25GB (template is ~22GB)
+
+      disk_storage   = var.default_storage
+      bios_type      = "ovmf"
+      disk_interface = "scsi0"
+
+      ip_address    = "dhcp"
+      on_boot       = false # Don't auto-start
+      tags          = ["ubuntu", "linux", "test", "ephemeral"]
+      startup_order = 99 # Start last
     }
 
     # =========================================================================
@@ -114,12 +140,36 @@ locals {
       memory    = 8192
       disk_size = 40
 
-      disk_storage = var.default_storage
+      disk_storage   = var.default_storage
+      bios_type      = "ovmf"
+      disk_interface = "scsi0"
 
       ip_address    = "dhcp"
       on_boot       = true
       tags          = ["debian", "linux", "stable", "production"]
       startup_order = 21
+    }
+
+    "debian-test" = {
+      enabled       = false # Disabled
+      description   = "Debian 13 - Lightweight test VM"
+      os_type       = "debian"
+      template_name = var.debian_template_name
+      vm_id         = 201
+
+      cpu_type  = "host"
+      cpu_cores = 2
+      memory    = 2048 # 2GB - minimal for testing
+      disk_size = 25   # 25GB (template is 21GB)
+
+      disk_storage   = var.default_storage
+      bios_type      = "ovmf"
+      disk_interface = "scsi0"
+
+      ip_address    = "dhcp"
+      on_boot       = false # Don't auto-start
+      tags          = ["debian", "linux", "test", "ephemeral"]
+      startup_order = 99 # Start last
     }
 
     # =========================================================================
@@ -138,12 +188,36 @@ locals {
       memory    = 4096 # 4GB
       disk_size = 30
 
-      disk_storage = var.default_storage
+      disk_storage   = var.default_storage
+      bios_type      = "ovmf"
+      disk_interface = "scsi0"
 
       ip_address    = "dhcp"
       on_boot       = true
       tags          = ["arch", "linux", "rolling", "development"]
       startup_order = 22
+    }
+
+    "arch-test" = {
+      enabled       = false # Disabled
+      description   = "Arch Linux - Lightweight test VM"
+      os_type       = "arch"
+      template_name = var.arch_template_name
+      vm_id         = 301
+
+      cpu_type  = "host"
+      cpu_cores = 2
+      memory    = 2048 # 2GB - minimal for testing
+      disk_size = 25   # 25GB (template is 20GB)
+
+      disk_storage   = var.default_storage
+      bios_type      = "ovmf"
+      disk_interface = "scsi0"
+
+      ip_address    = "dhcp"
+      on_boot       = false # Don't auto-start
+      tags          = ["arch", "linux", "test", "ephemeral"]
+      startup_order = 99 # Start last
     }
 
     # =========================================================================
@@ -164,10 +238,38 @@ locals {
 
       disk_storage = var.default_storage
 
+      # NixOS cloud image uses SeaBIOS and virtio0 (not UEFI/scsi0)
+      bios_type      = "seabios"
+      disk_interface = "virtio0"
+
       ip_address    = "dhcp"
       on_boot       = true
       tags          = ["nixos", "linux", "declarative"]
       startup_order = 23
+    }
+
+    "nixos-test" = {
+      enabled       = false # Disabled
+      description   = "NixOS - Lightweight test VM"
+      os_type       = "nixos"
+      template_name = var.nixos_template_name
+      vm_id         = 401
+
+      cpu_type  = "host"
+      cpu_cores = 2
+      memory    = 2048 # 2GB - minimal for testing
+      disk_size = 25   # 25GB (template is 20GB)
+
+      disk_storage = var.default_storage
+
+      # NixOS cloud image uses SeaBIOS and virtio0 (not UEFI/scsi0)
+      bios_type      = "seabios"
+      disk_interface = "virtio0"
+
+      ip_address    = "dhcp"
+      on_boot       = false # Don't auto-start
+      tags          = ["nixos", "linux", "test", "ephemeral"]
+      startup_order = 99 # Start last
     }
 
     # =========================================================================
@@ -175,7 +277,7 @@ locals {
     # =========================================================================
 
     "windows-desktop" = {
-      enabled       = false
+      enabled       = true
       description   = "Windows 11 - Desktop applications"
       os_type       = "windows"
       template_name = var.windows_template_name
@@ -186,7 +288,9 @@ locals {
       memory    = 8192
       disk_size = 100 # Windows needs more space
 
-      disk_storage = var.default_storage
+      disk_storage   = var.default_storage
+      bios_type      = "ovmf"
+      disk_interface = "scsi0"
 
       ip_address    = "dhcp"
       on_boot       = true

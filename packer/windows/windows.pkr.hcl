@@ -187,6 +187,11 @@ build {
     ]
   }
 
+  # Debloat Windows (remove bloatware, disable telemetry)
+  provisioner "powershell" {
+    script = "${path.root}/scripts/debloat.ps1"
+  }
+
   # Cleanup
   provisioner "powershell" {
     script = "${path.root}/scripts/cleanup.ps1"

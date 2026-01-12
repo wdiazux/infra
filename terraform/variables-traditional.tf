@@ -57,7 +57,7 @@ variable "nixos_template_name" {
 variable "windows_template_name" {
   description = "Windows Packer template name in Proxmox"
   type        = string
-  default     = "windows-11-template"
+  default     = "windows-11-golden-template"
 }
 
 # =============================================================================
@@ -73,6 +73,11 @@ variable "default_storage" {
 # =============================================================================
 # Cloud-init Configuration (Linux VMs)
 # =============================================================================
+#
+# NOTE: Credentials are loaded from SOPS-encrypted secrets by default.
+# These variables serve as fallback if secrets are not found in SOPS.
+# See sops.tf for the SOPS integration.
+#
 
 variable "enable_cloud_init" {
   description = "Enable cloud-init for VM provisioning"
@@ -81,50 +86,43 @@ variable "enable_cloud_init" {
 }
 
 variable "cloud_init_user" {
-  description = "Default username for Linux VMs (set via cloud-init)"
+  description = "Fallback username if not in SOPS secrets"
   type        = string
   default     = "wdiaz"
 }
 
 variable "cloud_init_password" {
-  description = "Default password for Linux VMs (change in terraform.tfvars)"
+  description = "Fallback password if not in SOPS secrets (prefer SOPS)"
   type        = string
-  default     = "changeme"
+  default     = "" # Empty = require SOPS
   sensitive   = true
 }
 
 variable "cloud_init_ssh_keys" {
-  description = "SSH public keys for Linux VMs (recommended over password)"
+  description = "Additional SSH keys (primary key comes from SOPS)"
   type        = list(string)
   default     = []
-  # Example:
-  # cloud_init_ssh_keys = [
-  #   "ssh-ed25519 AAAA... user@workstation",
-  #   "ssh-rsa AAAA... user@laptop"
-  # ]
 }
 
 # =============================================================================
 # Windows Configuration
 # =============================================================================
+#
+# NOTE: Credentials are loaded from SOPS-encrypted secrets by default.
+# These variables serve as fallback if secrets are not found in SOPS.
+#
 
 variable "windows_admin_user" {
-  description = "Administrator username for Windows VMs"
+  description = "Fallback admin username if not in SOPS secrets"
   type        = string
   default     = "Administrator"
 }
 
 variable "windows_admin_password" {
-  description = "Administrator password for Windows VMs (must meet complexity requirements)"
+  description = "Fallback admin password if not in SOPS secrets (prefer SOPS)"
   type        = string
-  default     = "ChangeMe123!"
+  default     = "" # Empty = require SOPS
   sensitive   = true
-  # Password requirements:
-  # - Minimum 8 characters
-  # - At least one uppercase letter
-  # - At least one lowercase letter
-  # - At least one number
-  # - At least one special character (!@#$%^&*)
 }
 
 # =============================================================================
