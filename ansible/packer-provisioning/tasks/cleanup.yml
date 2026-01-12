@@ -70,6 +70,16 @@
   tags: [cleanup, arch]
 
 # =============================================================================
+# Serial Console Configuration (for Proxmox xterm.js)
+# =============================================================================
+
+- name: Enable serial console getty (ttyS0)
+  ansible.builtin.systemd:
+    name: serial-getty@ttyS0.service
+    enabled: yes
+  tags: [cleanup, console]
+
+# =============================================================================
 # Common Cleanup (All Distributions)
 # =============================================================================
 

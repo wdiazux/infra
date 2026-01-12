@@ -49,19 +49,12 @@ collections:
     version: ">=3.0.1"
     source: https://galaxy.ansible.com
 
-  # Kubernetes management (for Talos)
+  # Kubernetes management (kubectl and Helm from Ansible)
   # UPDATED: v2.x → v6.2.0 (Dec 2025)
   # Breaking changes: Requires ansible-core 2.16+, Python 3.9+, kubernetes lib 24.2.0+
   - name: kubernetes.core
     version: ">=6.2.0"
     source: https://galaxy.ansible.com
-
-# Ansible Roles (optional - reference implementations)
-roles:
-  # Talos boot/bootstrap role
-  # https://galaxy.ansible.com/sergelogvinov/talos-boot
-  # - name: sergelogvinov.talos-boot
-  #   version: ">=1.0.0"
 
 # Notes:
 # - community.sops: Required for decrypting SOPS-encrypted secrets
@@ -69,12 +62,10 @@ roles:
 # - ansible.posix: Mount points, sysctl, other POSIX utilities
 # - ansible.windows: Core Windows modules (win_feature, win_service, etc.)
 # - community.windows: Additional Windows modules (win_firewall, win_timezone, etc.)
-# - kubernetes.core: For kubectl and Helm operations (Talos Kubernetes management)
-# - Talos-specific roles are commented out as reference
-# - Most Talos operations use talosctl via shell module
-# - For comprehensive Talos management, see:
-#   * https://github.com/mgrzybek/talos-ansible-playbooks
-#   * https://galaxy.ansible.com/sergelogvinov/talos-boot
+# - kubernetes.core: For kubectl and Helm operations on Kubernetes clusters
+#
+# NOTE: Talos Linux is NOT managed via Ansible - use talosctl and Terraform.
+# kubernetes.core is for deploying apps to Kubernetes, not managing Talos itself.
 #
 # Installation:
 # 1. Install collections: ansible-galaxy collection install -r requirements.yml

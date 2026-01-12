@@ -10,23 +10,14 @@
 # Or manually update after `terraform apply`
 
 ---
+# Ansible Inventory for Terraform-Managed VMs
+#
+# NOTE: Talos Linux is NOT managed via Ansible.
+# Talos uses talosctl API for configuration - see terraform/ for Talos management.
+# This inventory is ONLY for traditional VMs (Ubuntu, Debian, Arch, NixOS, Windows).
+
 all:
   children:
-    # Talos Linux Cluster
-    talos_cluster:
-      hosts:
-        talos-node:
-          ansible_host: 10.10.2.10  # Replace with actual node_ip from Terraform output
-          ansible_connection: local  # Talos uses talosctl, not SSH
-          ansible_python_interpreter: /usr/bin/python3
-      vars:
-        # Talos-specific variables
-        talos_version: v1.12.1
-        kubernetes_version: v1.31.0
-        cluster_name: homelab-k8s
-        talosconfig_path: "{{ playbook_dir }}/../../terraform/talosconfig"
-        kubeconfig_path: "{{ playbook_dir }}/../../terraform/kubeconfig"
-
     # Traditional Linux VMs
     traditional_vms:
       children:

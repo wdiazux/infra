@@ -21,7 +21,7 @@ all:
         # REPLACE THESE VALUES WITH YOUR ACTUAL PROXMOX HOST DETAILS
         #
         # Single Proxmox VE 9.0 Host - MS-A2 (AMD Ryzen AI 9 HX 370, 96GB RAM, RTX 4000)
-        pve1:
+        pve:
           ansible_host: pve.home-infra.net  # or 10.10.2.2
           ansible_user: root
           ansible_python_interpreter: /usr/bin/python3

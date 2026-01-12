@@ -1,6 +1,6 @@
-# Day 0: Proxmox Host Preparation for Talos Linux
+# Day 0: Proxmox Host Preparation
 #
-# This playbook prepares the Proxmox VE host for deploying Talos with GPU passthrough
+# This playbook prepares the Proxmox VE host for VM deployments with GPU passthrough
 # Based on best practices from:
 # - lae.proxmox Ansible role
 # - Proxmox VE Helper-Scripts (community-scripts/ProxmoxVE)
@@ -15,7 +15,7 @@
 # - IOMMU support in BIOS (VT-d for Intel, AMD-Vi for AMD) if using GPU passthrough
 
 ---
-- name: Prepare Proxmox Host for Talos with GPU Passthrough
+- name: Prepare Proxmox Host with GPU Passthrough Support
   hosts: proxmox
   gather_facts: yes
   become: yes
@@ -626,9 +626,8 @@
           1. Reboot Proxmox host (if required)
           2. Verify IOMMU is enabled (if using GPU passthrough)
           3. Clear browser cache (if subscription nag was removed)
-          4. Run Packer to build Talos template: cd packer/talos && packer build .
-          5. Run Terraform to deploy Talos VM: cd terraform && terraform apply
-          6. Run Day 1 playbook for post-deployment tasks
+          4. Build VM templates with Packer (cd packer/<os> && packer build .)
+          5. Deploy VMs with Terraform (cd terraform && terraform apply)
 
           ============================================================
       tags: [always]
