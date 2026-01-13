@@ -10,7 +10,7 @@ set -euo pipefail
 # Configuration
 VM_ID="${1:-9000}"
 TALOS_VERSION="v1.12.1"
-SCHEMATIC_ID="c4bf8f99153627fb9c361f156baa9f81c38ecbe7fd40ca761dc6b68a1590a01b"
+SCHEMATIC_ID="b81082c1666383fec39d911b71e94a3ee21bab3ea039663c6e1aa9beee822321"
 STORAGE_POOL="tank"
 BRIDGE="vmbr0"
 
@@ -62,7 +62,7 @@ echo ""
 echo "==> Creating VM ${VM_ID}..."
 qm create "${VM_ID}" \
     --name "${TEMPLATE_NAME}" \
-    --description "Talos Linux ${TALOS_VERSION} with NVIDIA GPU, Longhorn, ZFS support" \
+    --description "Talos Linux ${TALOS_VERSION} with NVIDIA GPU, Longhorn, Pangolin support" \
     --ostype l26 \
     --machine q35 \
     --cpu host \
@@ -123,7 +123,8 @@ echo "  - iscsi-tools (Longhorn storage)"
 echo "  - util-linux-tools (Longhorn volumes)"
 echo "  - nonfree-kmod-nvidia-production (NVIDIA GPU)"
 echo "  - nvidia-container-toolkit-production (GPU containers)"
-echo "  - zfs, nfs-utils, amd-ucode, thunderbolt, uinput, newt"
+echo "  - newt (Pangolin WireGuard tunnel)"
+echo "  - amd-ucode, uinput"
 echo ""
 echo "Next steps:"
 echo "  1. Clone: qm clone ${VM_ID} 100 --name talos-node --full"
