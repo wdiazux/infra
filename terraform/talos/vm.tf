@@ -104,9 +104,9 @@ resource "proxmox_virtual_environment_vm" "talos_node" {
     for_each = var.enable_gpu_passthrough ? [1] : []
     content {
       device = "hostpci0"
-      # Choose ONE of the following (see comments above):
-      # id      = "0000:${var.gpu_pci_id}.0"  # METHOD 2: Requires password auth
-      mapping = var.gpu_mapping # METHOD 1: Works with API token (RECOMMENDED)
+      # Use GPU resource mapping (works with API token)
+      # Alternative: id = "0000:07:00.0" for direct PCI ID (requires password auth)
+      mapping = var.gpu_mapping
       pcie    = var.gpu_pcie
       rombar  = var.gpu_rombar # Boolean: true enables ROM bar, false disables
     }

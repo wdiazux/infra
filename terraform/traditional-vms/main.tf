@@ -37,7 +37,7 @@
 # ============================================================================
 
 module "traditional_vm" {
-  source = "./modules/proxmox-vm"
+  source = "../modules/proxmox-vm"
 
   # Loop over all enabled VMs from locals-vms.tf
   for_each = local.enabled_vms
@@ -81,7 +81,7 @@ module "traditional_vm" {
   # Use Windows-specific credentials or default Linux credentials (from SOPS)
   cloud_init_user     = each.value.os_type == "windows" ? local.secrets.windows_admin_user : local.secrets.cloud_init_user
   cloud_init_password = each.value.os_type == "windows" ? local.secrets.windows_admin_password : local.secrets.cloud_init_password
-  cloud_init_ssh_keys = each.value.os_type == "windows" ? [] : [local.secrets.ssh_public_key]
+  cloud_init_ssh_keys = each.value.os_type == "windows" ? [] : concat([local.secrets.ssh_public_key], var.cloud_init_ssh_keys)
 
   # IP configuration
   ip_configs = [{

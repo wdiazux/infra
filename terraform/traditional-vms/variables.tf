@@ -1,29 +1,39 @@
 # Traditional VM Shared Variables
 #
 # Variables shared across all traditional VMs (non-Talos).
-# OS-specific settings are defined in locals-vms.tf per VM.
-#
-# ============================================================================
-# Usage
-# ============================================================================
-#
-# Set these in terraform.tfvars:
-#
-#   # Cloud-init defaults (applies to all Linux VMs)
-#   cloud_init_user     = "wdiaz"
-#   cloud_init_password = "your-secure-password"
-#   cloud_init_ssh_keys = [
-#     "ssh-ed25519 AAAA... user@host"
-#   ]
-#
-#   # Windows admin (applies to all Windows VMs)
-#   windows_admin_user     = "Administrator"
-#   windows_admin_password = "YourSecureP@ss123!"
-#
-#   # Storage
-#   default_storage = "tank"
-#
-# ============================================================================
+# OS-specific settings are defined in locals.tf per VM.
+
+# =============================================================================
+# Proxmox Configuration
+# =============================================================================
+
+variable "proxmox_node" {
+  description = "Proxmox node name where VMs will be created"
+  type        = string
+  default     = "pve"
+}
+
+# =============================================================================
+# Network Configuration
+# =============================================================================
+
+variable "network_bridge" {
+  description = "Proxmox network bridge"
+  type        = string
+  default     = "vmbr0"
+}
+
+variable "dns_servers" {
+  description = "DNS servers"
+  type        = list(string)
+  default     = ["10.10.2.1", "8.8.8.8"]
+}
+
+variable "dns_domain" {
+  description = "DNS domain"
+  type        = string
+  default     = "local"
+}
 
 # =============================================================================
 # Template Names
