@@ -277,6 +277,58 @@ Proxmox Web UI → Datacenter → Permissions → API Tokens → Add
    # Use "01:00" as gpu_pci_id in terraform.tfvars
    ```
 
+5. Create GPU Resource Mapping:
+
+   **Option A: Web UI (Recommended)**
+   ```
+   Proxmox Web UI → Datacenter → Resource Mappings → PCI Devices → Add
+   - Name: nvidia-gpu
+   - Node: pve
+   - Device: Select your NVIDIA GPU (e.g., 0000:07:00.0)
+   - Check "All Functions" to include audio device
+   ```
+
+   **Option B: CLI (write config file directly)**
+
+   The `pvesh` command has a schema bug that doesn't accept `iommugroup`, so write the config file directly:
+
+   ```bash
+   # Get required information
+   lspci -nn | grep -i nvidia
+   # Output: 07:00.0 ... [10de:27b0]  <- vendor:device ID
+
+   lspci -vnn -s 07:00.0 | grep Subsystem
+   # Output: Subsystem: ... [10de:16fa]  <- subsystem ID
+
+   find /sys/kernel/iommu_groups/ -type l | grep 07:00
+   # Output: .../iommu_groups/16/...  <- iommu group number
+
+   # Create the mapping config (use TAB for indentation, not spaces!)
+   printf 'nvidia-gpu\n\tmap id=10de:27b0,iommugroup=16,node=pve,path=0000:07:00,subsystem-id=10de:16fa\n' > /etc/pve/mapping/pci.cfg
+
+   # Verify format (^I = tab)
+   cat -A /etc/pve/mapping/pci.cfg
+   ```
+
+   **Config file format** (`/etc/pve/mapping/pci.cfg`):
+   ```
+   nvidia-gpu
+   	map id=<vendor:device>,iommugroup=<group>,node=<nodename>,path=0000:<pci-slot>,subsystem-id=<subsys>
+   ```
+
+   Note: The `path` should NOT include the function (`.0`), just `0000:07:00`.
+
+6. Grant Mapping Permission to Terraform user:
+   ```bash
+   # On Proxmox host - required for Terraform to use the GPU mapping
+   pveum acl modify /mapping/pci/nvidia-gpu -user terraform@pve -role PVEAdmin
+   ```
+
+   Or via UI: Datacenter → Permissions → Add
+   - Path: `/mapping/pci/nvidia-gpu`
+   - User: `terraform@pve`
+   - Role: `PVEAdmin` (or custom role with `Mapping.Use`)
+
 ### 4. Network Preparation
 
 - Decide on static IP for Talos node
