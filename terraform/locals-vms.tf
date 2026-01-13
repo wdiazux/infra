@@ -277,7 +277,7 @@ locals {
     # =========================================================================
 
     "windows-desktop" = {
-      enabled       = true
+      enabled       = false
       description   = "Windows 11 - Desktop applications"
       os_type       = "windows"
       template_name = var.windows_template_name
