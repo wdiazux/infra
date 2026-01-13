@@ -59,9 +59,10 @@ socketLB:
   enabled: true
 
 # Node port range
+# NOTE: Don't set range here - Cilium gets it from Kubernetes API server
+# Setting it explicitly can cause parsing errors in Cilium v1.18+
 nodePort:
   enabled: true
-  range: "30000-32767"
 
 # ============================================================================
 # L2 Load Balancing (LB IPAM)
@@ -293,12 +294,14 @@ tolerations:
 # Advanced Features
 # ============================================================================
 
-# VERIFIED for Cilium v1.18.0: Bandwidth manager with BBR
-# Enables QoS (traffic shaping) and BBR TCP congestion control
+# Bandwidth manager with BBR
+# NOTE: BBR requires BPF host routing (not legacy routing), but Talos needs
+# hostLegacyRouting: true for DNS compatibility. These settings conflict.
+# Keeping bandwidth manager enabled but disabling BBR for Talos compatibility.
 # Source: https://raw.githubusercontent.com/cilium/cilium/v1.18.0/install/kubernetes/cilium/values.yaml
 bandwidthManager:
   enabled: true  # Enable bandwidth manager for QoS
-  bbr: true      # Enable BBR TCP congestion control (better throughput)
+  bbr: false     # DISABLED: Conflicts with hostLegacyRouting (required for Talos DNS)
 
 # Service topology (prefer local endpoints)
 enableServiceTopology: true
