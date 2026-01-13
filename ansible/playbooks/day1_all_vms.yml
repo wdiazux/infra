@@ -4,7 +4,7 @@
 # by running the appropriate OS-specific playbook for each VM type.
 # Baseline packages are pre-installed in Packer golden images.
 #
-# Run with: ansible-playbook playbooks/day1-all-vms.yml
+# Run with: ansible-playbook playbooks/day1_all_vms.yml
 #
 # Prerequisites:
 # - All VMs deployed from Packer golden images via Terraform

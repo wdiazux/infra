@@ -2,7 +2,7 @@
 # Group Variables for Proxmox Hosts
 # Override default playbook variables here
 #
-# Location: ansible/group_vars/proxmox_hosts.yml
+# Location: ansible/group_vars/proxmox.yml
 #
 # These variables control the behavior of day0_proxmox_prep.yml playbook
 # Adjust values based on your environment and requirements

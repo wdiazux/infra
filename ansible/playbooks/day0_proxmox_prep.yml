@@ -531,6 +531,143 @@
       tags: [gpu, info]
 
     # ========================================================================
+    # Terraform User and API Token Setup
+    # ========================================================================
+
+    - name: Check if terraform user exists
+      ansible.builtin.command: pveum user list --output-format json
+      register: pveum_users
+      changed_when: false
+      tags: [terraform, api]
+
+    - name: Create terraform user for API access
+      ansible.builtin.command: >
+        pveum user add terraform@pve
+        --comment "Terraform automation user"
+      when: "'terraform@pve' not in pveum_users.stdout"
+      tags: [terraform, api]
+
+    - name: Grant PVEVMAdmin role to terraform user
+      ansible.builtin.command: >
+        pveum acl modify / -user terraform@pve -role PVEVMAdmin
+      changed_when: false
+      tags: [terraform, api]
+
+    - name: Grant PVEDatastoreUser role to terraform user
+      ansible.builtin.command: >
+        pveum acl modify /storage -user terraform@pve -role PVEDatastoreUser
+      changed_when: false
+      tags: [terraform, api]
+
+    - name: Check if terraform API token exists
+      ansible.builtin.command: pveum user token list terraform@pve --output-format json
+      register: terraform_tokens
+      changed_when: false
+      failed_when: false
+      tags: [terraform, api]
+
+    - name: Create terraform API token
+      ansible.builtin.command: >
+        pveum user token add terraform@pve terraform-token
+        --privsep 0
+        --comment "Terraform automation token"
+      register: terraform_token_created
+      when: "'terraform-token' not in (terraform_tokens.stdout | default(''))"
+      tags: [terraform, api]
+
+    - name: Display API token (SAVE THIS!)
+      ansible.builtin.debug:
+        msg: |
+          ============================================================
+          IMPORTANT: Save this API token securely!
+          ============================================================
+          {{ terraform_token_created.stdout }}
+
+          Add to terraform/terraform.tfvars:
+          proxmox_api_token = "terraform@pve!terraform-token=<token-value>"
+          ============================================================
+      when: terraform_token_created.changed | default(false)
+      tags: [terraform, api]
+
+    # ========================================================================
+    # GPU Resource Mapping for Terraform
+    # ========================================================================
+
+    - name: Check if GPU resource mapping exists
+      ansible.builtin.command: pvesh get /cluster/mapping/pci --output-format json
+      register: pci_mappings
+      changed_when: false
+      failed_when: false
+      when: has_gpu | default(false)
+      tags: [gpu, terraform, mapping]
+
+    - name: Get GPU vendor:device ID
+      ansible.builtin.shell: lspci -nn | grep -i nvidia | head -1 | grep -oP '\[\K[0-9a-f]{4}:[0-9a-f]{4}(?=\])'
+      register: gpu_vendor_device
+      changed_when: false
+      when: has_gpu | default(false)
+      tags: [gpu, terraform, mapping]
+
+    - name: Get GPU subsystem ID
+      ansible.builtin.shell: lspci -vnn -s {{ gpu_pci.stdout.split('\n')[0] }} | grep -oP 'Subsystem:.*\[\K[0-9a-f]{4}:[0-9a-f]{4}(?=\])' | head -1
+      register: gpu_subsystem_id
+      changed_when: false
+      failed_when: false
+      when: has_gpu | default(false)
+      tags: [gpu, terraform, mapping]
+
+    - name: Get GPU IOMMU group
+      ansible.builtin.shell: find /sys/kernel/iommu_groups/ -type l | xargs -I {} sh -c 'basename $(dirname {})' 2>/dev/null | head -1
+      register: gpu_iommu_temp
+      changed_when: false
+      when: has_gpu | default(false)
+      tags: [gpu, terraform, mapping]
+
+    - name: Find GPU IOMMU group number
+      ansible.builtin.shell: |
+        for iommu_group in /sys/kernel/iommu_groups/*/devices/*; do
+          if [[ "$iommu_group" == *"{{ gpu_pci.stdout.split('\n')[0] }}"* ]]; then
+            echo "$iommu_group" | grep -oP 'iommu_groups/\K[0-9]+'
+            break
+          fi
+        done
+      register: gpu_iommu_group
+      changed_when: false
+      when: has_gpu | default(false)
+      tags: [gpu, terraform, mapping]
+
+    - name: Create GPU resource mapping config file
+      ansible.builtin.copy:
+        dest: /etc/pve/mapping/pci.cfg
+        content: |
+          nvidia-gpu
+          	map id={{ gpu_vendor_device.stdout }},iommugroup={{ gpu_iommu_group.stdout }},node={{ ansible_hostname }},path=0000:{{ gpu_pci.stdout.split('\n')[0].split('.')[0] }},subsystem-id={{ gpu_subsystem_id.stdout | default(gpu_vendor_device.stdout) }}
+        mode: '0640'
+      when:
+        - has_gpu | default(false)
+        - gpu_pci.rc == 0
+        - gpu_vendor_device.rc == 0
+        - gpu_iommu_group.stdout | length > 0
+        - "'nvidia-gpu' not in (pci_mappings.stdout | default(''))"
+      register: gpu_mapping_created
+      tags: [gpu, terraform, mapping]
+
+    - name: Grant Mapping.Use permission to terraform user
+      ansible.builtin.command: >
+        pveum acl modify /mapping/pci/nvidia-gpu -user terraform@pve -role PVEVMAdmin
+      when: has_gpu | default(false)
+      changed_when: false
+      tags: [gpu, terraform, mapping]
+
+    - name: Display GPU mapping status
+      ansible.builtin.debug:
+        msg: |
+          GPU Resource Mapping: {{ 'Created' if gpu_mapping_created.changed | default(false) else 'Already exists or skipped' }}
+          Terraform permission granted for /mapping/pci/nvidia-gpu
+      when: has_gpu | default(false)
+      tags: [gpu, terraform, mapping]
+
+    # ========================================================================
     # Verify IOMMU Groups
     # ========================================================================
 
