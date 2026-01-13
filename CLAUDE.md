@@ -37,8 +37,9 @@ infra/
 │   ├── nixos/       # NixOS (Packer + ISO)
 │   └── windows/     # Windows (Packer + ISO)
 ├── terraform/       # Terraform configurations
-│   ├── modules/
-│   └── main.tf
+│   ├── talos/       # Talos Kubernetes cluster
+│   ├── traditional-vms/  # Traditional VMs
+│   └── modules/     # Shared modules
 ├── ansible/         # Ansible playbooks for post-provisioning
 │   ├── playbooks/
 │   └── roles/
@@ -444,10 +445,10 @@ When updating a component, check these associated files:
 
 | Component | Code Files | Documentation to Update |
 |-----------|------------|------------------------|
-| **Talos Version** | `packer/talos/import-talos-image.sh`, `terraform/variables.tf`, `secrets/proxmox-creds.enc.yaml` | `packer/talos/README.md`, `terraform/README.md`, `DEPLOYMENT-CHECKLIST.md` |
-| **GPU Config** | `terraform/variables.tf`, `terraform/main.tf` | `CLAUDE.md` (Hardware section), `terraform/README.md`, `packer/talos/README.md` |
-| **Traditional VMs** | `packer/{os}/*.pkr.hcl`, `terraform/traditional-vms.tf` | `packer/{os}/README.md`, `terraform/README.md`, `CLAUDE.md` (Template Details table) |
-| **Network Config** | `terraform/variables.tf`, `talos/*.yaml` | `CLAUDE.md` (Network Configuration table), `terraform/README.md` |
+| **Talos Version** | `packer/talos/import-talos-image.sh`, `terraform/talos/variables.tf`, `secrets/proxmox-creds.enc.yaml` | `packer/talos/README.md`, `terraform/README.md`, `DEPLOYMENT-CHECKLIST.md` |
+| **GPU Config** | `terraform/talos/variables.tf`, `terraform/talos/vm.tf`, `terraform/talos/addons.tf` | `CLAUDE.md` (Hardware section), `terraform/README.md`, `packer/talos/README.md` |
+| **Traditional VMs** | `packer/{os}/*.pkr.hcl`, `terraform/traditional-vms/main.tf`, `terraform/traditional-vms/locals.tf` | `packer/{os}/README.md`, `terraform/README.md`, `CLAUDE.md` (Template Details table) |
+| **Network Config** | `terraform/talos/variables.tf`, `talos/*.yaml` | `CLAUDE.md` (Network Configuration table), `terraform/README.md` |
 | **Kubernetes Stack** | `kubernetes/**`, `talos/*.yaml` | `CLAUDE.md` (Kubernetes Stack section), `docs/guides/services/` |
 | **Tool Versions** | `shell.nix`, `npins/` | `CLAUDE.md` (Core Tools section) |
 
