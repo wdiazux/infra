@@ -70,7 +70,7 @@ variable "talos_version" {
 variable "talos_schematic_id" {
   description = "Talos Factory schematic ID with required system extensions. REQUIRED for Longhorn storage (iscsi-tools, util-linux-tools). Generate at https://factory.talos.dev/"
   type        = string
-  default     = ""
+  default     = "b81082c1666383fec39d911b71e94a3ee21bab3ea039663c6e1aa9beee822321"
   # Example: "376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba"
   #
   # CRITICAL: This infrastructure uses Longhorn as primary storage, which REQUIRES:
@@ -120,12 +120,6 @@ variable "cluster_endpoint" {
   type        = string
   # Will be set to control plane node IP if not specified
   default = ""
-}
-
-variable "cluster_vip" {
-  description = "Virtual IP for cluster endpoint (optional, for multi-node HA)"
-  type        = string
-  default     = "" # Not needed for single-node
 }
 
 # ============================================================================
@@ -243,6 +237,12 @@ variable "enable_gpu_passthrough" {
   default     = true # Set to false if not using GPU
 }
 
+variable "auto_install_gpu_operator" {
+  description = "Automatically install NVIDIA GPU Operator after cluster bootstrap (requires enable_gpu_passthrough = true)"
+  type        = bool
+  default     = true
+}
+
 variable "gpu_pci_id" {
   description = "PCI ID of the GPU to passthrough (e.g., '07:00'). Used with METHOD 2 (password auth). Find with: lspci | grep -i nvidia"
   type        = string
@@ -292,7 +292,7 @@ variable "network_model" {
 variable "dns_servers" {
   description = "DNS servers for the node"
   type        = list(string)
-  default     = ["8.8.8.8", "8.8.4.4"]
+  default     = ["10.10.2.1", "8.8.8.8"]
 }
 
 variable "dns_domain" {
@@ -361,6 +361,18 @@ variable "generate_kubeconfig" {
   description = "Generate kubeconfig file after bootstrap"
   type        = bool
   default     = true
+}
+
+variable "kubernetes_wait_timeout" {
+  description = "Maximum seconds to wait for Kubernetes API to be ready"
+  type        = number
+  default     = 300 # 5 minutes
+}
+
+variable "reset_on_destroy" {
+  description = "Reset (wipe) Talos node when destroying (resets STATE and EPHEMERAL partitions)"
+  type        = bool
+  default     = false # Safe default - don't wipe unless explicitly requested
 }
 
 variable "enable_qemu_agent" {

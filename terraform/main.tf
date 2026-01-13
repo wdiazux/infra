@@ -30,8 +30,20 @@ data "proxmox_virtual_environment_vms" "talos_template" {
 # ============================================================================
 
 # Generate Talos secrets (cluster CA, bootstrap token, etc.)
+# IMPORTANT: These secrets contain cluster CA and bootstrap tokens.
+#
+# To rotate secrets (recommended annually per Talos production notes):
+# 1. terraform state rm talos_machine_secrets.cluster
+# 2. terraform apply (will regenerate secrets)
+# 3. Reapply machine configuration to all nodes
+# 4. Manually rotate client certificates via talosctl
 resource "talos_machine_secrets" "cluster" {
   talos_version = var.talos_version
+
+  # Prevent accidental destruction of cluster secrets
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Generate client configuration for talosctl
@@ -63,9 +75,9 @@ data "talos_machine_configuration" "node" {
           cni = {
             name = "none" # Disable default Flannel
           }
-          proxy = {
-            disabled = true # Disable kube-proxy (Cilium replaces it)
-          }
+        }
+        proxy = {
+          disabled = true # Disable kube-proxy (Cilium replaces it)
         }
         discovery = {
           enabled = true
@@ -78,7 +90,9 @@ data "talos_machine_configuration" "node" {
       }
       machine = {
         network = {
-          hostname = var.node_name
+          # NOTE: hostname is intentionally NOT set here
+          # Talos will derive hostname from the VM name or DHCP
+          # Setting static hostname can conflict with maintenance mode config
           interfaces = [
             {
               interface = "eth0"
@@ -94,8 +108,7 @@ data "talos_machine_configuration" "node" {
           nameservers = var.dns_servers
         }
         time = {
-          servers  = var.ntp_servers
-          timezone = "America/El_Salvador"
+          servers = var.ntp_servers
         }
         install = {
           disk       = var.install_disk
@@ -129,12 +142,19 @@ data "talos_machine_configuration" "node" {
         # ═══════════════════════════════════════════════════════════════
 
         # Longhorn requirements: kernel modules
+        # NOTE: iscsi_generic doesn't exist in Talos kernel - removed
+        # iscsi_tcp is sufficient for Longhorn iSCSI functionality
+        # NVIDIA GPU: All four modules required per official Talos docs
+        # https://docs.siderolabs.com/talos/v1.9/configure-your-talos-cluster/hardware-and-drivers/nvidia-gpu-proprietary
         kernel = {
           modules = [
             { name = "nbd" },
             { name = "iscsi_tcp" },
-            { name = "iscsi_generic" },
-            { name = "configfs" }
+            { name = "configfs" },
+            { name = "nvidia" },
+            { name = "nvidia_uvm" },
+            { name = "nvidia_drm" },
+            { name = "nvidia_modeset" }
           ]
         }
         kubelet = {
@@ -178,6 +198,25 @@ data "talos_machine_configuration" "node" {
     var.allow_scheduling_on_control_plane ? yamlencode({
       cluster = {
         allowSchedulingOnControlPlanes = true
+      }
+    }) : "",
+    # NVIDIA Container Runtime configuration
+    # Sets nvidia as the default runtime for containerd
+    # Required per: https://docs.siderolabs.com/talos/v1.12/configure-your-talos-cluster/hardware-and-drivers/nvidia-gpu-proprietary
+    var.enable_gpu_passthrough ? yamlencode({
+      machine = {
+        files = [
+          {
+            content = <<-EOF
+              [plugins]
+                [plugins."io.containerd.cri.v1.runtime"]
+                  [plugins."io.containerd.cri.v1.runtime".containerd]
+                    default_runtime_name = "nvidia"
+              EOF
+            path = "/etc/cri/conf.d/20-customization.part"
+            op   = "create"
+          }
+        ]
       }
     }) : "",
   ], var.talos_config_patches)
@@ -280,7 +319,9 @@ resource "proxmox_virtual_environment_vm" "talos_node" {
     datastore_id      = var.node_disk_storage
     file_format       = "raw"
     type              = "4m"
-    pre_enrolled_keys = true
+    # IMPORTANT: Must be false for Talos - it doesn't support UEFI Secure Boot
+    # with Microsoft keys. Setting to true causes "Access Denied" boot failure.
+    pre_enrolled_keys = false
   }
 
   # Boot order
@@ -325,17 +366,98 @@ resource "proxmox_virtual_environment_vm" "talos_node" {
 # Talos Configuration Application
 # ============================================================================
 
-# Apply Talos machine configuration to the node
-resource "talos_machine_configuration_apply" "node" {
-  client_configuration        = talos_machine_secrets.cluster.client_configuration
-  machine_configuration_input = data.talos_machine_configuration.node.machine_configuration
-  node                        = var.node_ip
-  endpoint                    = var.node_ip
+# Wait for VM to boot and get DHCP IP (maintenance mode)
+# Talos boots with DHCP first, then we apply config to set static IP
+resource "null_resource" "wait_for_vm_dhcp" {
+  provisioner "local-exec" {
+    command = <<-EOT
+      echo "Waiting for Talos VM to boot and get DHCP IP..."
+      for i in $(seq 1 60); do
+        # Try to get IP from Proxmox QEMU guest agent
+        IP=$(curl -s -k -H "Authorization: PVEAPIToken=${local.secrets.proxmox_api_token}" \
+          "${local.secrets.proxmox_url}/nodes/${var.proxmox_node}/qemu/${var.node_vm_id}/agent/network-get-interfaces" 2>/dev/null \
+          | jq -r '.data.result[]? | select(.name != "lo") | .["ip-addresses"][]? | select(.["ip-address-type"] == "ipv4") | .["ip-address"]' \
+          | head -1)
 
-  # Apply configuration after VM is created
+        if [ -n "$IP" ] && [ "$IP" != "null" ]; then
+          echo "$IP" > ${path.module}/.talos_dhcp_ip
+          echo "VM got DHCP IP: $IP"
+          exit 0
+        fi
+        echo "Waiting for DHCP IP... ($i/60)"
+        sleep 5
+      done
+      echo "Timeout waiting for DHCP IP, trying static IP directly"
+      echo "${var.node_ip}" > ${path.module}/.talos_dhcp_ip
+    EOT
+  }
+
   depends_on = [
     proxmox_virtual_environment_vm.talos_node
   ]
+
+  triggers = {
+    vm_id = proxmox_virtual_environment_vm.talos_node.id
+  }
+}
+
+# Read the detected DHCP IP
+data "local_file" "talos_dhcp_ip" {
+  filename   = "${path.module}/.talos_dhcp_ip"
+  depends_on = [null_resource.wait_for_vm_dhcp]
+}
+
+locals {
+  # Use DHCP IP for initial config apply, then static IP for subsequent operations
+  talos_initial_ip = trimspace(data.local_file.talos_dhcp_ip.content)
+}
+
+# Apply Talos machine configuration to the node (using DHCP IP)
+resource "talos_machine_configuration_apply" "node" {
+  client_configuration        = talos_machine_secrets.cluster.client_configuration
+  machine_configuration_input = data.talos_machine_configuration.node.machine_configuration
+  node                        = local.talos_initial_ip
+  endpoint                    = local.talos_initial_ip
+
+  # Optional: Wipe STATE and EPHEMERAL partitions on destroy
+  # This provides a clean teardown but data will be lost
+  on_destroy = {
+    graceful = true           # Try graceful shutdown first
+    reboot   = false          # Don't reboot after reset
+    reset    = var.reset_on_destroy # Wipe if var.reset_on_destroy is true
+  }
+
+  # Apply configuration after VM is created and DHCP IP detected
+  depends_on = [
+    null_resource.wait_for_vm_dhcp,
+    data.local_file.talos_dhcp_ip
+  ]
+}
+
+# Wait for node to reboot with static IP after config is applied
+resource "null_resource" "wait_for_static_ip" {
+  provisioner "local-exec" {
+    command = <<-EOT
+      echo "Waiting for Talos node to reboot with static IP ${var.node_ip}..."
+      for i in $(seq 1 60); do
+        if talosctl --talosconfig ${path.module}/talosconfig --nodes ${var.node_ip} version --insecure 2>/dev/null | grep -q "Server:"; then
+          echo "Node is up with static IP ${var.node_ip}"
+          exit 0
+        fi
+        echo "Waiting for static IP... ($i/60)"
+        sleep 5
+      done
+      echo "Warning: Timeout waiting for static IP"
+    EOT
+  }
+
+  depends_on = [
+    talos_machine_configuration_apply.node
+  ]
+
+  triggers = {
+    config_applied = talos_machine_configuration_apply.node.id
+  }
 }
 
 # ============================================================================
@@ -350,8 +472,10 @@ resource "talos_machine_bootstrap" "cluster" {
   node                 = var.node_ip
   endpoint             = var.node_ip
 
+  # Wait for node to be up with static IP before bootstrapping
   depends_on = [
-    talos_machine_configuration_apply.node
+    talos_machine_configuration_apply.node,
+    null_resource.wait_for_static_ip
   ]
 }
 
@@ -495,8 +619,8 @@ resource "null_resource" "wait_for_kubernetes" {
 
   provisioner "local-exec" {
     command = <<-EOT
-      echo "Waiting for Kubernetes API to be ready..."
-      timeout 300 bash -c 'until kubectl --kubeconfig=${local.kubeconfig_path} get nodes &>/dev/null; do echo "Waiting..."; sleep 5; done'
+      echo "Waiting for Kubernetes API to be ready (timeout: ${var.kubernetes_wait_timeout}s)..."
+      timeout ${var.kubernetes_wait_timeout} bash -c 'until kubectl --kubeconfig=${local.kubeconfig_path} get nodes &>/dev/null; do echo "Waiting..."; sleep 5; done'
       echo "Kubernetes API is ready!"
     EOT
   }
@@ -543,6 +667,49 @@ resource "null_resource" "configure_longhorn_namespace" {
 
   depends_on = [
     null_resource.remove_control_plane_taint
+  ]
+}
+
+# Install NVIDIA GPU Operator (when GPU passthrough is enabled)
+resource "null_resource" "install_gpu_operator" {
+  count = var.enable_gpu_passthrough && var.auto_install_gpu_operator && var.auto_bootstrap ? 1 : 0
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      echo "Installing NVIDIA GPU Operator..."
+
+      # Add NVIDIA Helm repo
+      helm repo add nvidia https://helm.ngc.nvidia.com/nvidia 2>/dev/null || true
+      helm repo update
+
+      # Create namespace
+      kubectl --kubeconfig=${local.kubeconfig_path} create namespace gpu-operator --dry-run=client -o yaml | kubectl --kubeconfig=${local.kubeconfig_path} apply -f -
+
+      # Label namespace for privileged pods
+      kubectl --kubeconfig=${local.kubeconfig_path} label namespace gpu-operator pod-security.kubernetes.io/enforce=privileged pod-security.kubernetes.io/audit=privileged pod-security.kubernetes.io/warn=privileged --overwrite || true
+
+      # Install GPU Operator
+      # Note: Driver is provided by Talos system extension (nonfree-kmod-nvidia)
+      # so we disable driver installation and only install the toolkit/device-plugin
+      helm install gpu-operator nvidia/gpu-operator \
+        --namespace gpu-operator \
+        --kubeconfig=${local.kubeconfig_path} \
+        --set driver.enabled=false \
+        --set toolkit.enabled=true \
+        --set devicePlugin.enabled=true \
+        --set dcgmExporter.enabled=false \
+        --set migManager.enabled=false \
+        --set nodeStatusExporter.enabled=false \
+        --set gfd.enabled=true \
+        --wait --timeout 5m
+
+      echo "NVIDIA GPU Operator installed!"
+      echo "Verify with: kubectl get pods -n gpu-operator"
+    EOT
+  }
+
+  depends_on = [
+    null_resource.configure_longhorn_namespace
   ]
 }
 
