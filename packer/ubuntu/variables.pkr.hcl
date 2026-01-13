@@ -144,12 +144,6 @@ variable "ssh_public_key" {
   default     = ""
 }
 
-variable "ssh_public_key_file" {
-  type        = string
-  description = "Path to SSH public key file (e.g., ~/.ssh/id_rsa.pub)"
-  default     = ""
-}
-
 # Build Configuration
 variable "debug_mode" {
   type        = bool
