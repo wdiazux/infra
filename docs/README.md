@@ -15,8 +15,7 @@ docs/
 │   ├── deployment/      # OS deployment guides + integration docs
 │   └── services/        # Production services guide
 ├── research/            # Research reports and analysis
-├── secrets/             # Secrets management guides (SOPS + FluxCD)
-└── archive/             # Historical reports (preserved for reference)
+└── secrets/             # Secrets management guides (SOPS + FluxCD)
 ```
 
 ---
@@ -137,7 +136,6 @@ docs/
 | Deploy production services | [guides/services/](guides/services/) |
 | Set up secrets management | [secrets/](secrets/) |
 | Learn from research | [research/](research/) |
-| Find historical reports | [archive/](archive/) |
 
 ---
 
