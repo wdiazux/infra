@@ -33,6 +33,12 @@ variable "longhorn_version" {
   default     = "1.10.1"
 }
 
+variable "enable_longhorn_backups" {
+  description = "Enable Longhorn NFS backups (requires secrets/nas-backup-creds.enc.yaml)"
+  type        = bool
+  default     = true
+}
+
 # ============================================================================
 # FluxCD Configuration
 # ============================================================================

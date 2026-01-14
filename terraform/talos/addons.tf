@@ -92,6 +92,31 @@ resource "null_resource" "label_node_for_longhorn" {
 }
 
 # ============================================================================
+# Longhorn Backup Secret (NFS Credentials)
+# ============================================================================
+
+# Create secret for Longhorn NFS backup authentication
+resource "kubernetes_secret" "longhorn_backup" {
+  count = var.auto_bootstrap && var.enable_longhorn_backups ? 1 : 0
+
+  metadata {
+    name      = "longhorn-backup-secret"
+    namespace = kubernetes_namespace.longhorn[0].metadata[0].name
+  }
+
+  data = {
+    NFS_USERNAME = data.sops_file.nas_backup_secrets[0].data["nfs_username"]
+    NFS_PASSWORD = data.sops_file.nas_backup_secrets[0].data["nfs_password"]
+  }
+
+  type = "Opaque"
+
+  depends_on = [
+    kubernetes_namespace.longhorn
+  ]
+}
+
+# ============================================================================
 # NVIDIA GPU Setup (Simple Device Plugin)
 # ============================================================================
 #

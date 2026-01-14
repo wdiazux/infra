@@ -13,6 +13,12 @@ data "sops_file" "git_secrets" {
   source_file = "${path.module}/../../secrets/git-creds.enc.yaml"
 }
 
+# Load SOPS-encrypted NAS backup credentials (for Longhorn)
+data "sops_file" "nas_backup_secrets" {
+  count       = var.enable_longhorn_backups ? 1 : 0
+  source_file = "${path.module}/../../secrets/nas-backup-creds.enc.yaml"
+}
+
 locals {
   # SOPS-decrypted secrets
   secrets = {
