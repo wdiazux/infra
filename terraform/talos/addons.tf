@@ -59,6 +59,7 @@ resource "null_resource" "configure_longhorn_namespace" {
 # The simple device plugin just advertises GPUs to Kubernetes.
 
 # Create nvidia RuntimeClass
+# NOTE: Depends on Cilium being ready so the node is Ready
 resource "null_resource" "create_nvidia_runtimeclass" {
   count = var.enable_gpu_passthrough && var.auto_install_gpu_device_plugin && var.auto_bootstrap ? 1 : 0
 
@@ -77,7 +78,7 @@ EOF
   }
 
   depends_on = [
-    null_resource.configure_longhorn_namespace
+    null_resource.wait_for_cilium
   ]
 }
 
@@ -112,7 +113,7 @@ spec:
           effect: NoSchedule
       priorityClassName: system-node-critical
       containers:
-        - image: nvcr.io/nvidia/k8s-device-plugin:v0.17.0
+        - image: nvcr.io/nvidia/k8s-device-plugin:v0.18.1
           name: nvidia-device-plugin-ctr
           env:
             - name: DEVICE_DISCOVERY_STRATEGY
@@ -143,17 +144,24 @@ EOF
 # Notes
 # ============================================================================
 #
-# Post-bootstrap sequence:
+# Post-bootstrap sequence (automated):
 # 1. Wait for Kubernetes API
 # 2. Remove control-plane taint (single-node)
 # 3. Create Longhorn namespace with privileged PSS
-# 4. Create nvidia RuntimeClass
-# 5. Install NVIDIA device plugin DaemonSet
+# 4. Install Cilium CNI (via Helm) - node becomes Ready
+# 5. Configure Cilium L2 LoadBalancer IP pool
+# 6. Install Longhorn storage (via Helm)
+# 7. Create nvidia RuntimeClass
+# 8. Install NVIDIA device plugin DaemonSet
 #
 # Manual steps after Terraform:
-# - Install Cilium CNI: helm install cilium cilium/cilium -n kube-system -f ../../kubernetes/cilium/cilium-values.yaml
-# - Install Longhorn: helm install longhorn longhorn/longhorn -n longhorn-system -f ../../kubernetes/longhorn/longhorn-values.yaml
 # - Install FluxCD: flux bootstrap github ...
+#
+# Verification:
+# - kubectl get nodes (should be Ready)
+# - kubectl get pods -n kube-system -l k8s-app=cilium
+# - kubectl get pods -n longhorn-system
+# - kubectl get ciliumloadbalancerippools
 #
 # GPU Verification:
 # - kubectl describe node | grep nvidia.com/gpu

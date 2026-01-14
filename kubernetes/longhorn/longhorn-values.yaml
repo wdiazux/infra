@@ -2,9 +2,9 @@
 # This configuration optimizes Longhorn as the PRIMARY storage solution
 # for almost all services in the cluster.
 #
-# Version: Longhorn 1.7.x+
-# Talos Compatibility: v1.8+
-# Last Updated: 2025-11-22
+# Version: Longhorn 1.10.x
+# Talos Compatibility: v1.10+
+# Last Updated: 2026-01-13
 #
 # CROSS-REFERENCES:
 # - Installation guide: kubernetes/longhorn/INSTALLATION.md
