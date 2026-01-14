@@ -117,7 +117,24 @@ kubectl describe node | grep nvidia.com/gpu
 | Cilium L2 Pool | Talos inlineManifest | Talos (or FluxCD) |
 | Longhorn | Terraform Helm | FluxCD HelmRelease |
 | NVIDIA Plugin | Terraform | FluxCD Kustomize |
+| Forgejo | Terraform Helm | FluxCD HelmRelease |
 | Applications | - | FluxCD |
+
+### Service LoadBalancer IPs
+
+The following services are exposed via Cilium L2 LoadBalancer:
+
+| Service | IP Address | Port | Purpose |
+|---------|------------|------|---------|
+| Cilium Hubble UI | 10.10.2.11 | 80 | Network observability dashboard |
+| Longhorn UI | 10.10.2.12 | 80 | Storage management dashboard |
+| Forgejo HTTP | 10.10.2.13 | 3000 | Git web interface |
+| Forgejo SSH | 10.10.2.13 | 22 | Git SSH access |
+| FluxCD Webhook | 10.10.2.14 | 80 | GitOps webhook receiver |
+
+**IP Ranges:**
+- `10.10.2.11-20`: Important services (static assignments)
+- `10.10.2.240-254`: General LoadBalancer pool (dynamic)
 
 ### Why Cilium Uses inlineManifest
 

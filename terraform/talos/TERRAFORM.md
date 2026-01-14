@@ -3,6 +3,8 @@
 | Name | Version |
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.14.2 |
+| <a name="requirement_helm"></a> [helm](#requirement\_helm) | ~> 2.17.0 |
+| <a name="requirement_kubernetes"></a> [kubernetes](#requirement\_kubernetes) | ~> 2.36.0 |
 | <a name="requirement_local"></a> [local](#requirement\_local) | ~> 2.5.3 |
 | <a name="requirement_null"></a> [null](#requirement\_null) | ~> 3.2.4 |
 | <a name="requirement_proxmox"></a> [proxmox](#requirement\_proxmox) | ~> 0.92.0 |
@@ -13,6 +15,9 @@
 
 | Name | Version |
 |------|---------|
+| <a name="provider_helm"></a> [helm](#provider\_helm) | 2.17.0 |
+| <a name="provider_helm.template"></a> [helm.template](#provider\_helm.template) | 2.17.0 |
+| <a name="provider_kubernetes"></a> [kubernetes](#provider\_kubernetes) | 2.36.0 |
 | <a name="provider_local"></a> [local](#provider\_local) | 2.5.3 |
 | <a name="provider_null"></a> [null](#provider\_null) | 3.2.4 |
 | <a name="provider_proxmox"></a> [proxmox](#provider\_proxmox) | 0.92.0 |
@@ -27,12 +32,22 @@ No modules.
 
 | Name | Type |
 |------|------|
+| [helm_release.forgejo](https://registry.terraform.io/providers/hashicorp/helm/latest/docs/resources/release) | resource |
+| [helm_release.longhorn](https://registry.terraform.io/providers/hashicorp/helm/latest/docs/resources/release) | resource |
+| [kubernetes_namespace.forgejo](https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs/resources/namespace) | resource |
 | [local_file.kubeconfig](https://registry.terraform.io/providers/hashicorp/local/latest/docs/resources/file) | resource |
 | [local_file.talosconfig](https://registry.terraform.io/providers/hashicorp/local/latest/docs/resources/file) | resource |
 | [null_resource.configure_longhorn_namespace](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
 | [null_resource.create_nvidia_runtimeclass](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
+| [null_resource.create_sops_age_secret](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
+| [null_resource.flux_bootstrap](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
+| [null_resource.flux_verify](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
+| [null_resource.forgejo_create_repo](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
+| [null_resource.forgejo_generate_token](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
 | [null_resource.install_nvidia_device_plugin](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
 | [null_resource.remove_control_plane_taint](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
+| [null_resource.wait_for_cilium](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
+| [null_resource.wait_for_forgejo](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
 | [null_resource.wait_for_kubernetes](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
 | [null_resource.wait_for_static_ip](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
 | [null_resource.wait_for_vm_dhcp](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
@@ -41,8 +56,11 @@ No modules.
 | [talos_machine_bootstrap.cluster](https://registry.terraform.io/providers/siderolabs/talos/latest/docs/resources/machine_bootstrap) | resource |
 | [talos_machine_configuration_apply.node](https://registry.terraform.io/providers/siderolabs/talos/latest/docs/resources/machine_configuration_apply) | resource |
 | [talos_machine_secrets.cluster](https://registry.terraform.io/providers/siderolabs/talos/latest/docs/resources/machine_secrets) | resource |
+| [helm_template.cilium](https://registry.terraform.io/providers/hashicorp/helm/latest/docs/data-sources/template) | data source |
+| [local_file.forgejo_flux_token](https://registry.terraform.io/providers/hashicorp/local/latest/docs/data-sources/file) | data source |
 | [local_file.talos_dhcp_ip](https://registry.terraform.io/providers/hashicorp/local/latest/docs/data-sources/file) | data source |
 | [proxmox_virtual_environment_vms.talos_template](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/data-sources/virtual_environment_vms) | data source |
+| [sops_file.git_secrets](https://registry.terraform.io/providers/carlpett/sops/latest/docs/data-sources/file) | data source |
 | [sops_file.proxmox_secrets](https://registry.terraform.io/providers/carlpett/sops/latest/docs/data-sources/file) | data source |
 | [talos_client_configuration.cluster](https://registry.terraform.io/providers/siderolabs/talos/latest/docs/data-sources/client_configuration) | data source |
 | [talos_machine_configuration.node](https://registry.terraform.io/providers/siderolabs/talos/latest/docs/data-sources/machine_configuration) | data source |
@@ -54,20 +72,34 @@ No modules.
 | <a name="input_allow_scheduling_on_control_plane"></a> [allow\_scheduling\_on\_control\_plane](#input\_allow\_scheduling\_on\_control\_plane) | Allow pod scheduling on control plane (required for single-node) | `bool` | `true` | no |
 | <a name="input_auto_bootstrap"></a> [auto\_bootstrap](#input\_auto\_bootstrap) | Automatically bootstrap the cluster | `bool` | `true` | no |
 | <a name="input_auto_install_gpu_device_plugin"></a> [auto\_install\_gpu\_device\_plugin](#input\_auto\_install\_gpu\_device\_plugin) | Automatically install NVIDIA device plugin after bootstrap | `bool` | `true` | no |
+| <a name="input_cilium_lb_pool_cidr"></a> [cilium\_lb\_pool\_cidr](#input\_cilium\_lb\_pool\_cidr) | CIDR for Cilium L2 LoadBalancer IP pool | `string` | `"10.10.2.240/28"` | no |
+| <a name="input_cilium_version"></a> [cilium\_version](#input\_cilium\_version) | Cilium Helm chart version | `string` | `"1.18.5"` | no |
 | <a name="input_cluster_endpoint"></a> [cluster\_endpoint](#input\_cluster\_endpoint) | Kubernetes API endpoint (defaults to node IP) | `string` | `""` | no |
 | <a name="input_cluster_name"></a> [cluster\_name](#input\_cluster\_name) | Talos/Kubernetes cluster name | `string` | `"homelab-k8s"` | no |
 | <a name="input_description"></a> [description](#input\_description) | Description for the Proxmox VM | `string` | `"Talos Linux single-node Kubernetes cluster with NVIDIA GPU support"` | no |
 | <a name="input_dns_servers"></a> [dns\_servers](#input\_dns\_servers) | DNS servers for the node | `list(string)` | <pre>[<br/>  "10.10.2.1",<br/>  "8.8.8.8"<br/>]</pre> | no |
+| <a name="input_enable_fluxcd"></a> [enable\_fluxcd](#input\_enable\_fluxcd) | Enable FluxCD GitOps bootstrap | `bool` | `true` | no |
+| <a name="input_enable_forgejo"></a> [enable\_forgejo](#input\_enable\_forgejo) | Enable in-cluster Forgejo deployment | `bool` | `true` | no |
 | <a name="input_enable_gpu_passthrough"></a> [enable\_gpu\_passthrough](#input\_enable\_gpu\_passthrough) | Enable NVIDIA GPU passthrough | `bool` | `true` | no |
 | <a name="input_enable_qemu_agent"></a> [enable\_qemu\_agent](#input\_enable\_qemu\_agent) | Enable QEMU guest agent | `bool` | `true` | no |
+| <a name="input_fluxcd_path"></a> [fluxcd\_path](#input\_fluxcd\_path) | Path in repository for FluxCD cluster config | `string` | `"kubernetes/clusters/homelab"` | no |
+| <a name="input_forgejo_chart_version"></a> [forgejo\_chart\_version](#input\_forgejo\_chart\_version) | Forgejo Helm chart version | `string` | `"10.0.0"` | no |
+| <a name="input_forgejo_create_repo"></a> [forgejo\_create\_repo](#input\_forgejo\_create\_repo) | Automatically create the FluxCD repository in Forgejo | `bool` | `true` | no |
 | <a name="input_generate_kubeconfig"></a> [generate\_kubeconfig](#input\_generate\_kubeconfig) | Generate kubeconfig file after bootstrap | `bool` | `true` | no |
+| <a name="input_git_branch"></a> [git\_branch](#input\_git\_branch) | Git branch for FluxCD | `string` | `"main"` | no |
+| <a name="input_git_hostname"></a> [git\_hostname](#input\_git\_hostname) | Git server hostname for FluxCD (used with forgejo/gitea) | `string` | `"git.home-infra.net"` | no |
+| <a name="input_git_owner"></a> [git\_owner](#input\_git\_owner) | Git owner (username or organization) for FluxCD | `string` | `""` | no |
+| <a name="input_git_personal"></a> [git\_personal](#input\_git\_personal) | Use personal account (not organization) | `bool` | `true` | no |
+| <a name="input_git_private"></a> [git\_private](#input\_git\_private) | Repository is private | `bool` | `false` | no |
+| <a name="input_git_repository"></a> [git\_repository](#input\_git\_repository) | Git repository name for FluxCD | `string` | `"infra"` | no |
+| <a name="input_git_token"></a> [git\_token](#input\_git\_token) | Git personal access token for FluxCD bootstrap | `string` | `""` | no |
 | <a name="input_gpu_mapping"></a> [gpu\_mapping](#input\_gpu\_mapping) | GPU resource mapping name from Proxmox | `string` | `"nvidia-gpu"` | no |
-| <a name="input_gpu_pci_id"></a> [gpu\_pci\_id](#input\_gpu\_pci\_id) | PCI ID of the GPU (e.g., '07:00') | `string` | `"07:00"` | no |
 | <a name="input_gpu_pcie"></a> [gpu\_pcie](#input\_gpu\_pcie) | Enable PCIe passthrough mode | `bool` | `true` | no |
 | <a name="input_gpu_rombar"></a> [gpu\_rombar](#input\_gpu\_rombar) | Enable GPU ROM bar | `bool` | `false` | no |
 | <a name="input_install_disk"></a> [install\_disk](#input\_install\_disk) | Disk device to install Talos on | `string` | `"/dev/sda"` | no |
 | <a name="input_kubernetes_version"></a> [kubernetes\_version](#input\_kubernetes\_version) | Kubernetes version to deploy | `string` | `"v1.35.0"` | no |
 | <a name="input_kubernetes_wait_timeout"></a> [kubernetes\_wait\_timeout](#input\_kubernetes\_wait\_timeout) | Seconds to wait for Kubernetes API | `number` | `300` | no |
+| <a name="input_longhorn_version"></a> [longhorn\_version](#input\_longhorn\_version) | Longhorn Helm chart version | `string` | `"1.10.1"` | no |
 | <a name="input_network_bridge"></a> [network\_bridge](#input\_network\_bridge) | Proxmox network bridge | `string` | `"vmbr0"` | no |
 | <a name="input_network_model"></a> [network\_model](#input\_network\_model) | Network interface model | `string` | `"virtio"` | no |
 | <a name="input_network_vlan"></a> [network\_vlan](#input\_network\_vlan) | VLAN tag (0 for none) | `number` | `0` | no |
@@ -85,6 +117,7 @@ No modules.
 | <a name="input_ntp_servers"></a> [ntp\_servers](#input\_ntp\_servers) | NTP servers for time synchronization | `list(string)` | <pre>[<br/>  "time.cloudflare.com"<br/>]</pre> | no |
 | <a name="input_proxmox_node"></a> [proxmox\_node](#input\_proxmox\_node) | Proxmox node name where VMs will be created | `string` | `"pve"` | no |
 | <a name="input_reset_on_destroy"></a> [reset\_on\_destroy](#input\_reset\_on\_destroy) | Wipe Talos node when destroying | `bool` | `false` | no |
+| <a name="input_sops_age_key_file"></a> [sops\_age\_key\_file](#input\_sops\_age\_key\_file) | Path to SOPS Age key file for FluxCD secret decryption | `string` | `""` | no |
 | <a name="input_tags"></a> [tags](#input\_tags) | Tags to apply to Proxmox VM | `list(string)` | <pre>[<br/>  "talos",<br/>  "kubernetes",<br/>  "nvidia-gpu"<br/>]</pre> | no |
 | <a name="input_talos_config_patches"></a> [talos\_config\_patches](#input\_talos\_config\_patches) | Additional Talos configuration patches (YAML) | `list(string)` | `[]` | no |
 | <a name="input_talos_schematic_id"></a> [talos\_schematic\_id](#input\_talos\_schematic\_id) | Talos Factory schematic ID with required system extensions | `string` | `"b81082c1666383fec39d911b71e94a3ee21bab3ea039663c6e1aa9beee822321"` | no |
@@ -96,12 +129,15 @@ No modules.
 | Name | Description |
 |------|-------------|
 | <a name="output_access_instructions"></a> [access\_instructions](#output\_access\_instructions) | How to access the cluster |
+| <a name="output_cilium_lb_pool"></a> [cilium\_lb\_pool](#output\_cilium\_lb\_pool) | Cilium L2 LoadBalancer IP pool CIDR |
+| <a name="output_cilium_version"></a> [cilium\_version](#output\_cilium\_version) | Cilium CNI version |
 | <a name="output_cluster_endpoint"></a> [cluster\_endpoint](#output\_cluster\_endpoint) | Kubernetes API endpoint |
 | <a name="output_cluster_name"></a> [cluster\_name](#output\_cluster\_name) | Cluster name |
 | <a name="output_gpu_enabled"></a> [gpu\_enabled](#output\_gpu\_enabled) | GPU passthrough enabled |
 | <a name="output_kubeconfig"></a> [kubeconfig](#output\_kubeconfig) | Kubeconfig content |
 | <a name="output_kubeconfig_path"></a> [kubeconfig\_path](#output\_kubeconfig\_path) | Path to kubeconfig file |
 | <a name="output_kubernetes_version"></a> [kubernetes\_version](#output\_kubernetes\_version) | Kubernetes version |
+| <a name="output_longhorn_version"></a> [longhorn\_version](#output\_longhorn\_version) | Longhorn storage version |
 | <a name="output_node_ip"></a> [node\_ip](#output\_node\_ip) | Talos node IP address |
 | <a name="output_node_name"></a> [node\_name](#output\_node\_name) | Talos node name |
 | <a name="output_node_vm_id"></a> [node\_vm\_id](#output\_node\_vm\_id) | Proxmox VM ID |

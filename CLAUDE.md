@@ -141,6 +141,10 @@ All project dependencies are defined in `shell.nix` and automatically available 
 | Proxmox Host | 10.10.2.2 | Hypervisor | REQUIRED |
 | NAS | 10.10.2.5 | Longhorn backup target | OPTIONAL |
 | Talos Node | 10.10.2.10 | Kubernetes node | REQUIRED |
+| Cilium Hubble UI | 10.10.2.11 | Network observability | OPTIONAL |
+| Longhorn UI | 10.10.2.12 | Storage management | OPTIONAL |
+| Forgejo | 10.10.2.13 | Git server (HTTP:3000, SSH:22) | OPTIONAL |
+| FluxCD Webhook | 10.10.2.14 | GitOps webhook receiver | OPTIONAL |
 | Ubuntu VM | 10.10.2.51 | Traditional VM | OPTIONAL |
 | Debian VM | 10.10.2.52 | Traditional VM | OPTIONAL |
 | Arch VM | 10.10.2.53 | Traditional VM | OPTIONAL |
@@ -589,6 +593,7 @@ zpool scrub poolname          # Data integrity check
 
 ## Version History
 
+- **2026-01-14**: Service LoadBalancer IPs assigned (Hubble UI, Longhorn, Forgejo, FluxCD webhook), documentation cleanup (removed archive docs)
 - **2026-01-11**: Talos switched from Packer to direct disk image import (recommended approach by Sidero Labs)
 - **2026-01-10**: Talos v1.12.1 upgrade, GPU passthrough config (PCI 07:00), hardware documentation, documentation sync guidelines added
 - **2026-01-06**: Talos configuration review (timezone, Cilium L2 interface fix), documentation cleanup (removed orphaned roles/baseline, NixOS Ansible playbook, windows_packages.yml)
@@ -605,6 +610,6 @@ zpool scrub poolname          # Data integrity check
 
 ---
 
-**Last Updated**: 2026-01-13
+**Last Updated**: 2026-01-14
 **Project Status**: Production-Ready
 **Primary Contact**: wdiazux
