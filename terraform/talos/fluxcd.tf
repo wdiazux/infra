@@ -9,12 +9,12 @@
 # - gitlab: GitLab (flux bootstrap gitlab)
 #
 # Token Sources (in order of precedence):
-# 1. Auto-generated from in-cluster Gitea (if enable_gitea=true)
+# 1. Auto-generated from in-cluster Forgejo (if enable_forgejo=true)
 # 2. SOPS-encrypted git-creds.enc.yaml
 # 3. TF_VAR_git_token environment variable
 #
 # Prerequisites:
-# - For in-cluster Gitea: enable_gitea=true, gitea_admin_password in SOPS
+# - For in-cluster Forgejo: enable_forgejo=true, forgejo_admin_password in SOPS
 # - For external Git: git_token in SOPS or TF_VAR_git_token env var
 
 # ============================================================================
@@ -22,9 +22,9 @@
 # ============================================================================
 
 locals {
-  # Use auto-generated token from Gitea if enabled, otherwise use SOPS/variable
-  fluxcd_git_token = var.enable_gitea ? (
-    try(trimspace(data.local_file.gitea_flux_token[0].content), "")
+  # Use auto-generated token from Forgejo if enabled, otherwise use SOPS/variable
+  fluxcd_git_token = var.enable_forgejo ? (
+    try(trimspace(data.local_file.forgejo_flux_token[0].content), "")
     ) : (
     try(local.git_secrets.git_token, var.git_token)
   )
@@ -62,7 +62,7 @@ resource "null_resource" "flux_bootstrap" {
 
       # Validate token
       if [ -z "$FLUX_GIT_TOKEN" ]; then
-        echo "Error: Git token is empty. Check SOPS secrets or enable_gitea configuration."
+        echo "Error: Git token is empty. Check SOPS secrets or enable_forgejo configuration."
         exit 1
       fi
 
@@ -134,9 +134,9 @@ resource "null_resource" "flux_bootstrap" {
   depends_on = [
     helm_release.longhorn,
     null_resource.install_nvidia_device_plugin,
-    # Wait for Gitea token generation if using in-cluster Gitea
-    null_resource.gitea_generate_token,
-    null_resource.gitea_create_repo
+    # Wait for Forgejo token generation if using in-cluster Forgejo
+    null_resource.forgejo_generate_token,
+    null_resource.forgejo_create_repo
   ]
 }
 
@@ -175,9 +175,11 @@ resource "null_resource" "flux_verify" {
 # 1. Terraform creates VM and bootstraps Talos
 # 2. Cilium installed via inlineManifest (node becomes Ready)
 # 3. Longhorn installed via Helm
-# 4. FluxCD bootstrapped via CLI
-# 5. FluxCD syncs kubernetes/clusters/homelab/
-# 6. FluxCD manages all subsequent deployments
+# 4. Forgejo installed via Helm (if enable_forgejo=true)
+# 5. Forgejo token generated and repo created
+# 6. FluxCD bootstrapped via CLI
+# 7. FluxCD syncs kubernetes/clusters/homelab/
+# 8. FluxCD manages all subsequent deployments
 #
 # Manual bootstrap examples:
 #

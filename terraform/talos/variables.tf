@@ -383,23 +383,23 @@ variable "fluxcd_path" {
 }
 
 # ============================================================================
-# Gitea Configuration (In-Cluster)
+# Forgejo Configuration (In-Cluster)
 # ============================================================================
 
-variable "enable_gitea" {
-  description = "Enable in-cluster Gitea deployment"
+variable "enable_forgejo" {
+  description = "Enable in-cluster Forgejo deployment"
   type        = bool
   default     = false
 }
 
-variable "gitea_chart_version" {
-  description = "Gitea Helm chart version"
+variable "forgejo_chart_version" {
+  description = "Forgejo Helm chart version"
   type        = string
-  default     = "11.0.0"
+  default     = "10.0.0"
 }
 
-variable "gitea_create_repo" {
-  description = "Automatically create the FluxCD repository in Gitea"
+variable "forgejo_create_repo" {
+  description = "Automatically create the FluxCD repository in Forgejo"
   type        = bool
   default     = true
 }

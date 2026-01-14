@@ -7,9 +7,9 @@ data "sops_file" "proxmox_secrets" {
   source_file = "${path.module}/../../secrets/proxmox-creds.enc.yaml"
 }
 
-# Load SOPS-encrypted Git credentials (for Gitea/FluxCD)
+# Load SOPS-encrypted Git credentials (for Forgejo/FluxCD)
 data "sops_file" "git_secrets" {
-  count       = var.enable_gitea || var.enable_fluxcd ? 1 : 0
+  count       = var.enable_forgejo || var.enable_fluxcd ? 1 : 0
   source_file = "${path.module}/../../secrets/git-creds.enc.yaml"
 }
 
@@ -29,8 +29,8 @@ locals {
     proxmox_api_token = "${data.sops_file.proxmox_secrets.data["proxmox_user"]}!${data.sops_file.proxmox_secrets.data["proxmox_token_id"]}=${data.sops_file.proxmox_secrets.data["proxmox_token_secret"]}"
   }
 
-  # Git/Gitea secrets (loaded only when needed)
-  git_secrets = var.enable_gitea || var.enable_fluxcd ? {
+  # Git/Forgejo secrets (loaded only when needed)
+  git_secrets = var.enable_forgejo || var.enable_fluxcd ? {
     # Git provider settings
     git_provider   = try(data.sops_file.git_secrets[0].data["git_provider"], var.git_provider)
     git_hostname   = try(data.sops_file.git_secrets[0].data["git_hostname"], var.git_hostname)
@@ -38,9 +38,9 @@ locals {
     git_repository = try(data.sops_file.git_secrets[0].data["git_repository"], var.git_repository)
     git_token      = try(data.sops_file.git_secrets[0].data["git_token"], var.git_token)
 
-    # Gitea admin credentials (for in-cluster Gitea)
-    gitea_admin_username = try(data.sops_file.git_secrets[0].data["gitea_admin_username"], "gitea_admin")
-    gitea_admin_password = try(data.sops_file.git_secrets[0].data["gitea_admin_password"], "")
-    gitea_admin_email    = try(data.sops_file.git_secrets[0].data["gitea_admin_email"], "admin@home-infra.net")
+    # Forgejo admin credentials (for in-cluster Forgejo)
+    forgejo_admin_username = try(data.sops_file.git_secrets[0].data["forgejo_admin_username"], "forgejo_admin")
+    forgejo_admin_password = try(data.sops_file.git_secrets[0].data["forgejo_admin_password"], "")
+    forgejo_admin_email    = try(data.sops_file.git_secrets[0].data["forgejo_admin_email"], "admin@home-infra.net")
   } : {}
 }

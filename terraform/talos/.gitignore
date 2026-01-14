@@ -17,7 +17,7 @@ override.tf.json
 .talos_dhcp_ip
 kubeconfig
 talosconfig
-.gitea-flux-token
+.forgejo-flux-token
 
 # IDE
 .idea/
