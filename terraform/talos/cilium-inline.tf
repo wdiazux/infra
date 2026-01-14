@@ -143,6 +143,12 @@ data "helm_template" "cilium" {
       ui = {
         enabled  = true
         replicas = 1
+        service = {
+          type = "LoadBalancer"
+          annotations = {
+            "io.cilium/lb-ipam-ips" = "10.10.2.11"
+          }
+        }
       }
     }
 
