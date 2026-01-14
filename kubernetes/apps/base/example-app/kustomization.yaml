@@ -11,4 +11,4 @@ resources:
   - namespace.yaml
   - deployment.yaml
   - service.yaml
-  - secret.enc.yaml  # SOPS-encrypted secret (decrypted by FluxCD)
+  # - secret.enc.yaml  # SOPS-encrypted secret (create from secret.yaml.template)
