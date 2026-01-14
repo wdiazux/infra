@@ -34,17 +34,18 @@ No modules.
 |------|------|
 | [helm_release.forgejo](https://registry.terraform.io/providers/hashicorp/helm/latest/docs/resources/release) | resource |
 | [helm_release.longhorn](https://registry.terraform.io/providers/hashicorp/helm/latest/docs/resources/release) | resource |
+| [kubernetes_manifest.nvidia_device_plugin](https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs/resources/manifest) | resource |
+| [kubernetes_manifest.nvidia_runtimeclass](https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs/resources/manifest) | resource |
 | [kubernetes_namespace.forgejo](https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs/resources/namespace) | resource |
+| [kubernetes_namespace.longhorn](https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs/resources/namespace) | resource |
 | [local_file.kubeconfig](https://registry.terraform.io/providers/hashicorp/local/latest/docs/resources/file) | resource |
 | [local_file.talosconfig](https://registry.terraform.io/providers/hashicorp/local/latest/docs/resources/file) | resource |
-| [null_resource.configure_longhorn_namespace](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
-| [null_resource.create_nvidia_runtimeclass](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
 | [null_resource.create_sops_age_secret](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
 | [null_resource.flux_bootstrap](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
 | [null_resource.flux_verify](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
 | [null_resource.forgejo_create_repo](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
 | [null_resource.forgejo_generate_token](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
-| [null_resource.install_nvidia_device_plugin](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
+| [null_resource.label_node_for_longhorn](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
 | [null_resource.remove_control_plane_taint](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
 | [null_resource.wait_for_cilium](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
 | [null_resource.wait_for_forgejo](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
@@ -83,8 +84,10 @@ No modules.
 | <a name="input_enable_gpu_passthrough"></a> [enable\_gpu\_passthrough](#input\_enable\_gpu\_passthrough) | Enable NVIDIA GPU passthrough | `bool` | `true` | no |
 | <a name="input_enable_qemu_agent"></a> [enable\_qemu\_agent](#input\_enable\_qemu\_agent) | Enable QEMU guest agent | `bool` | `true` | no |
 | <a name="input_fluxcd_path"></a> [fluxcd\_path](#input\_fluxcd\_path) | Path in repository for FluxCD cluster config | `string` | `"kubernetes/clusters/homelab"` | no |
+| <a name="input_fluxcd_webhook_ip"></a> [fluxcd\_webhook\_ip](#input\_fluxcd\_webhook\_ip) | Static IP for FluxCD webhook receiver LoadBalancer | `string` | `"10.10.2.14"` | no |
 | <a name="input_forgejo_chart_version"></a> [forgejo\_chart\_version](#input\_forgejo\_chart\_version) | Forgejo Helm chart version | `string` | `"10.0.0"` | no |
 | <a name="input_forgejo_create_repo"></a> [forgejo\_create\_repo](#input\_forgejo\_create\_repo) | Automatically create the FluxCD repository in Forgejo | `bool` | `true` | no |
+| <a name="input_forgejo_ip"></a> [forgejo\_ip](#input\_forgejo\_ip) | Static IP for Forgejo LoadBalancer (HTTP and SSH) | `string` | `"10.10.2.13"` | no |
 | <a name="input_generate_kubeconfig"></a> [generate\_kubeconfig](#input\_generate\_kubeconfig) | Generate kubeconfig file after bootstrap | `bool` | `true` | no |
 | <a name="input_git_branch"></a> [git\_branch](#input\_git\_branch) | Git branch for FluxCD | `string` | `"main"` | no |
 | <a name="input_git_hostname"></a> [git\_hostname](#input\_git\_hostname) | Git server hostname for FluxCD (used with forgejo/gitea) | `string` | `"git.home-infra.net"` | no |
@@ -96,9 +99,13 @@ No modules.
 | <a name="input_gpu_mapping"></a> [gpu\_mapping](#input\_gpu\_mapping) | GPU resource mapping name from Proxmox | `string` | `"nvidia-gpu"` | no |
 | <a name="input_gpu_pcie"></a> [gpu\_pcie](#input\_gpu\_pcie) | Enable PCIe passthrough mode | `bool` | `true` | no |
 | <a name="input_gpu_rombar"></a> [gpu\_rombar](#input\_gpu\_rombar) | Enable GPU ROM bar | `bool` | `false` | no |
+| <a name="input_hubble_ui_ip"></a> [hubble\_ui\_ip](#input\_hubble\_ui\_ip) | Static IP for Cilium Hubble UI LoadBalancer | `string` | `"10.10.2.11"` | no |
+| <a name="input_important_services_ip_start"></a> [important\_services\_ip\_start](#input\_important\_services\_ip\_start) | Start IP for important services LoadBalancer pool | `string` | `"10.10.2.11"` | no |
+| <a name="input_important_services_ip_stop"></a> [important\_services\_ip\_stop](#input\_important\_services\_ip\_stop) | End IP for important services LoadBalancer pool | `string` | `"10.10.2.20"` | no |
 | <a name="input_install_disk"></a> [install\_disk](#input\_install\_disk) | Disk device to install Talos on | `string` | `"/dev/sda"` | no |
 | <a name="input_kubernetes_version"></a> [kubernetes\_version](#input\_kubernetes\_version) | Kubernetes version to deploy | `string` | `"v1.35.0"` | no |
 | <a name="input_kubernetes_wait_timeout"></a> [kubernetes\_wait\_timeout](#input\_kubernetes\_wait\_timeout) | Seconds to wait for Kubernetes API | `number` | `300` | no |
+| <a name="input_longhorn_ui_ip"></a> [longhorn\_ui\_ip](#input\_longhorn\_ui\_ip) | Static IP for Longhorn UI LoadBalancer | `string` | `"10.10.2.12"` | no |
 | <a name="input_longhorn_version"></a> [longhorn\_version](#input\_longhorn\_version) | Longhorn Helm chart version | `string` | `"1.10.1"` | no |
 | <a name="input_network_bridge"></a> [network\_bridge](#input\_network\_bridge) | Proxmox network bridge | `string` | `"vmbr0"` | no |
 | <a name="input_network_model"></a> [network\_model](#input\_network\_model) | Network interface model | `string` | `"virtio"` | no |
@@ -133,10 +140,15 @@ No modules.
 | <a name="output_cilium_version"></a> [cilium\_version](#output\_cilium\_version) | Cilium CNI version |
 | <a name="output_cluster_endpoint"></a> [cluster\_endpoint](#output\_cluster\_endpoint) | Kubernetes API endpoint |
 | <a name="output_cluster_name"></a> [cluster\_name](#output\_cluster\_name) | Cluster name |
+| <a name="output_fluxcd_webhook_url"></a> [fluxcd\_webhook\_url](#output\_fluxcd\_webhook\_url) | FluxCD webhook receiver URL |
+| <a name="output_forgejo_http_url"></a> [forgejo\_http\_url](#output\_forgejo\_http\_url) | Forgejo Git server HTTP URL |
+| <a name="output_forgejo_ssh_url"></a> [forgejo\_ssh\_url](#output\_forgejo\_ssh\_url) | Forgejo Git server SSH URL |
 | <a name="output_gpu_enabled"></a> [gpu\_enabled](#output\_gpu\_enabled) | GPU passthrough enabled |
+| <a name="output_hubble_ui_url"></a> [hubble\_ui\_url](#output\_hubble\_ui\_url) | Cilium Hubble UI URL |
 | <a name="output_kubeconfig"></a> [kubeconfig](#output\_kubeconfig) | Kubeconfig content |
 | <a name="output_kubeconfig_path"></a> [kubeconfig\_path](#output\_kubeconfig\_path) | Path to kubeconfig file |
 | <a name="output_kubernetes_version"></a> [kubernetes\_version](#output\_kubernetes\_version) | Kubernetes version |
+| <a name="output_longhorn_ui_url"></a> [longhorn\_ui\_url](#output\_longhorn\_ui\_url) | Longhorn storage management UI URL |
 | <a name="output_longhorn_version"></a> [longhorn\_version](#output\_longhorn\_version) | Longhorn storage version |
 | <a name="output_node_ip"></a> [node\_ip](#output\_node\_ip) | Talos node IP address |
 | <a name="output_node_name"></a> [node\_name](#output\_node\_name) | Talos node name |

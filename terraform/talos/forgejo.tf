@@ -135,27 +135,56 @@ resource "null_resource" "forgejo_generate_token" {
 
   provisioner "local-exec" {
     command = <<-EOT
+      set -e
+
+      # Pre-flight checks
+      for cmd in kubectl curl jq; do
+        if ! command -v $cmd &>/dev/null; then
+          echo "ERROR: Required command '$cmd' not found. Install via nix-shell."
+          exit 1
+        fi
+      done
+
       echo "Generating Forgejo access token for FluxCD..."
+
+      # Create temp netrc file for secure credential passing (avoids leaking to process list)
+      NETRC_FILE=$(mktemp)
+      chmod 600 "$NETRC_FILE"
+      cat > "$NETRC_FILE" << NETRC
+machine localhost
+login $FORGEJO_ADMIN_USER
+password $FORGEJO_ADMIN_PASS
+NETRC
 
       # Port-forward to Forgejo service
       kubectl --kubeconfig=${local.kubeconfig_path} port-forward \
         svc/forgejo-http -n forgejo 3000:3000 &
       PF_PID=$!
 
-      # Cleanup on exit
-      trap "kill $PF_PID 2>/dev/null" EXIT
+      # Cleanup on exit (port-forward and netrc file)
+      cleanup() {
+        kill $PF_PID 2>/dev/null || true
+        rm -f "$NETRC_FILE"
+      }
+      trap cleanup EXIT
 
-      # Wait for port-forward
-      sleep 5
+      # Wait for port-forward to be ready
+      echo "Waiting for port-forward..."
+      for i in $(seq 1 30); do
+        if curl -s -o /dev/null -w "" "http://localhost:3000/api/v1/version" 2>/dev/null; then
+          echo "Port-forward ready."
+          break
+        fi
+        sleep 1
+      done
 
       # Token name with timestamp to avoid conflicts
       TOKEN_NAME="flux-$(date +%Y%m%d-%H%M%S)"
 
-      # Create token via Forgejo API
-      # NOTE: Token creation requires BasicAuth with password, not token auth!
+      # Create token via Forgejo API (using netrc for secure auth)
       RESPONSE=$(curl -s -X POST \
         -H "Content-Type: application/json" \
-        -u "$FORGEJO_ADMIN_USER:$FORGEJO_ADMIN_PASS" \
+        --netrc-file "$NETRC_FILE" \
         -d "{\"name\":\"$TOKEN_NAME\",\"scopes\":[\"write:repository\",\"read:user\",\"read:organization\"]}" \
         "http://localhost:3000/api/v1/users/$FORGEJO_ADMIN_USER/tokens")
 
@@ -163,7 +192,7 @@ resource "null_resource" "forgejo_generate_token" {
       TOKEN=$(echo "$RESPONSE" | jq -r '.sha1 // empty')
 
       if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
-        echo "Error: Failed to create Forgejo token"
+        echo "Warning: Failed to create Forgejo token with name $TOKEN_NAME"
         echo "Response: $RESPONSE"
 
         # Check if token already exists (409 conflict)
@@ -172,13 +201,14 @@ resource "null_resource" "forgejo_generate_token" {
           TOKEN_NAME="flux-$(date +%s)"
           RESPONSE=$(curl -s -X POST \
             -H "Content-Type: application/json" \
-            -u "$FORGEJO_ADMIN_USER:$FORGEJO_ADMIN_PASS" \
+            --netrc-file "$NETRC_FILE" \
             -d "{\"name\":\"$TOKEN_NAME\",\"scopes\":[\"write:repository\",\"read:user\",\"read:organization\"]}" \
             "http://localhost:3000/api/v1/users/$FORGEJO_ADMIN_USER/tokens")
           TOKEN=$(echo "$RESPONSE" | jq -r '.sha1 // empty')
         fi
 
         if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
+          echo "ERROR: Failed to create Forgejo token."
           exit 1
         fi
       fi

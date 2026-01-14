@@ -75,6 +75,11 @@ variable "node_vm_id" {
   description = "Proxmox VM ID for the Talos node"
   type        = number
   default     = 1000
+
+  validation {
+    condition     = var.node_vm_id >= 100 && var.node_vm_id <= 999999999
+    error_message = "node_vm_id must be between 100 and 999999999 (Proxmox valid range)."
+  }
 }
 
 variable "node_ip" {
@@ -92,12 +97,22 @@ variable "node_gateway" {
   description = "Network gateway for the Talos node"
   type        = string
   default     = "10.10.2.1"
+
+  validation {
+    condition     = can(regex("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$", var.node_gateway))
+    error_message = "node_gateway must be a valid IPv4 address."
+  }
 }
 
 variable "node_netmask" {
   description = "Network netmask (CIDR notation)"
   type        = number
   default     = 24
+
+  validation {
+    condition     = var.node_netmask >= 1 && var.node_netmask <= 32
+    error_message = "node_netmask must be between 1 and 32."
+  }
 }
 
 # ============================================================================
@@ -120,18 +135,33 @@ variable "node_cpu_type" {
   description = "CPU type (must be 'host' for Talos)"
   type        = string
   default     = "host"
+
+  validation {
+    condition     = var.node_cpu_type == "host"
+    error_message = "node_cpu_type must be 'host' for Talos Linux (required for kernel compatibility)."
+  }
 }
 
 variable "node_memory" {
   description = "Memory in MB"
   type        = number
   default     = 32768
+
+  validation {
+    condition     = var.node_memory >= 4096
+    error_message = "node_memory must be at least 4096 MB (4GB) for Talos+Kubernetes."
+  }
 }
 
 variable "node_disk_size" {
   description = "Disk size in GB"
   type        = number
   default     = 200
+
+  validation {
+    condition     = var.node_disk_size >= 50
+    error_message = "node_disk_size must be at least 50 GB for Talos+Kubernetes+Longhorn."
+  }
 }
 
 variable "node_disk_storage" {
@@ -298,6 +328,66 @@ variable "cilium_lb_pool_cidr" {
   validation {
     condition     = can(cidrhost(var.cilium_lb_pool_cidr, 0))
     error_message = "cilium_lb_pool_cidr must be a valid CIDR notation."
+  }
+}
+
+# ============================================================================
+# Service LoadBalancer IPs (Important Services Range)
+# ============================================================================
+
+variable "important_services_ip_start" {
+  description = "Start IP for important services LoadBalancer pool"
+  type        = string
+  default     = "10.10.2.11"
+}
+
+variable "important_services_ip_stop" {
+  description = "End IP for important services LoadBalancer pool"
+  type        = string
+  default     = "10.10.2.20"
+}
+
+variable "hubble_ui_ip" {
+  description = "Static IP for Cilium Hubble UI LoadBalancer"
+  type        = string
+  default     = "10.10.2.11"
+
+  validation {
+    condition     = can(regex("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$", var.hubble_ui_ip))
+    error_message = "hubble_ui_ip must be a valid IPv4 address."
+  }
+}
+
+variable "longhorn_ui_ip" {
+  description = "Static IP for Longhorn UI LoadBalancer"
+  type        = string
+  default     = "10.10.2.12"
+
+  validation {
+    condition     = can(regex("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$", var.longhorn_ui_ip))
+    error_message = "longhorn_ui_ip must be a valid IPv4 address."
+  }
+}
+
+variable "forgejo_ip" {
+  description = "Static IP for Forgejo LoadBalancer (HTTP and SSH)"
+  type        = string
+  default     = "10.10.2.13"
+
+  validation {
+    condition     = can(regex("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$", var.forgejo_ip))
+    error_message = "forgejo_ip must be a valid IPv4 address."
+  }
+}
+
+variable "fluxcd_webhook_ip" {
+  description = "Static IP for FluxCD webhook receiver LoadBalancer"
+  type        = string
+  default     = "10.10.2.14"
+
+  validation {
+    condition     = can(regex("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$", var.fluxcd_webhook_ip))
+    error_message = "fluxcd_webhook_ip must be a valid IPv4 address."
   }
 }
 

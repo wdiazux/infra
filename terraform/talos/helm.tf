@@ -14,20 +14,29 @@ resource "null_resource" "wait_for_cilium" {
 
   provisioner "local-exec" {
     command = <<-EOT
+      set -e
+
+      if ! command -v kubectl &>/dev/null; then
+        echo "ERROR: kubectl not found. Install via nix-shell."
+        exit 1
+      fi
+
       echo "Waiting for Cilium to be ready (installed via inlineManifest)..."
       for i in $(seq 1 120); do
         # Check if cilium pods are running
-        if kubectl --kubeconfig=${local.kubeconfig_path} get pods -n kube-system -l k8s-app=cilium -o jsonpath='{.items[0].status.phase}' 2>/dev/null | grep -q "Running"; then
-          # Also check if node is Ready
-          if kubectl --kubeconfig=${local.kubeconfig_path} get nodes -o jsonpath='{.items[0].status.conditions[?(@.type=="Ready")].status}' 2>/dev/null | grep -q "True"; then
-            echo "Cilium is ready and node is Ready!"
-            exit 0
-          fi
+        CILIUM_PHASE=$(kubectl --kubeconfig=${local.kubeconfig_path} get pods -n kube-system -l k8s-app=cilium -o jsonpath='{.items[0].status.phase}' 2>/dev/null || echo "")
+        NODE_READY=$(kubectl --kubeconfig=${local.kubeconfig_path} get nodes -o jsonpath='{.items[0].status.conditions[?(@.type=="Ready")].status}' 2>/dev/null || echo "")
+
+        if [ "$CILIUM_PHASE" = "Running" ] && [ "$NODE_READY" = "True" ]; then
+          echo "Cilium is ready and node is Ready!"
+          exit 0
         fi
-        echo "Waiting for Cilium... ($i/120)"
+        echo "Waiting for Cilium... ($i/120) [Cilium: $CILIUM_PHASE, Node Ready: $NODE_READY]"
         sleep 5
       done
-      echo "Warning: Timeout waiting for Cilium"
+
+      echo "ERROR: Timeout waiting for Cilium after 10 minutes."
+      echo "Check Cilium pods: kubectl get pods -n kube-system -l k8s-app=cilium"
       exit 1
     EOT
   }
@@ -61,7 +70,8 @@ resource "helm_release" "longhorn" {
 
   depends_on = [
     null_resource.wait_for_cilium,
-    null_resource.configure_longhorn_namespace
+    kubernetes_namespace.longhorn,
+    null_resource.label_node_for_longhorn
   ]
 }
 

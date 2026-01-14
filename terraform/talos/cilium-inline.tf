@@ -146,7 +146,7 @@ data "helm_template" "cilium" {
         service = {
           type = "LoadBalancer"
           annotations = {
-            "io.cilium/lb-ipam-ips" = "10.10.2.11"
+            "io.cilium/lb-ipam-ips" = var.hubble_ui_ip
           }
         }
       }
@@ -222,9 +222,9 @@ metadata:
 spec:
   blocks:
     - cidr: "${var.cilium_lb_pool_cidr}"
-    # Important services pool (Forgejo, etc.)
-    - start: "10.10.2.11"
-      stop: "10.10.2.20"
+    # Important services pool (Hubble UI, Longhorn, Forgejo, FluxCD, etc.)
+    - start: "${var.important_services_ip_start}"
+      stop: "${var.important_services_ip_stop}"
   serviceSelector:
     matchLabels: {}
 ---

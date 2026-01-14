@@ -102,6 +102,35 @@ output "longhorn_version" {
 }
 
 # ============================================================================
+# Service URLs
+# ============================================================================
+
+output "hubble_ui_url" {
+  description = "Cilium Hubble UI URL"
+  value       = "http://${var.hubble_ui_ip}"
+}
+
+output "longhorn_ui_url" {
+  description = "Longhorn storage management UI URL"
+  value       = "http://${var.longhorn_ui_ip}"
+}
+
+output "forgejo_http_url" {
+  description = "Forgejo Git server HTTP URL"
+  value       = var.enable_forgejo ? "http://${var.forgejo_ip}:3000" : "Not enabled"
+}
+
+output "forgejo_ssh_url" {
+  description = "Forgejo Git server SSH URL"
+  value       = var.enable_forgejo ? "ssh://git@${var.forgejo_ip}:22" : "Not enabled"
+}
+
+output "fluxcd_webhook_url" {
+  description = "FluxCD webhook receiver URL"
+  value       = var.enable_fluxcd ? "http://${var.fluxcd_webhook_ip}" : "Not enabled"
+}
+
+# ============================================================================
 # Access Instructions
 # ============================================================================
 
