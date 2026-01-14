@@ -1,31 +1,13 @@
 # Longhorn Storage Classes for Single-Node Talos Cluster
 # These storage classes provide different characteristics for various workloads
 #
+# NOTE: The default 'longhorn' StorageClass is managed by Helm (Terraform).
+# This file only defines additional storage classes for specific use cases.
+#
 # Usage:
 #   kubectl apply -f longhorn-storage-classes.yaml
 #
-# Last Updated: 2025-11-22
-
----
-# Default Storage Class: General Purpose
-# Use this for most workloads - databases, application data, etc.
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: longhorn
-  annotations:
-    storageclass.kubernetes.io/is-default-class: "true"
-provisioner: driver.longhorn.io
-allowVolumeExpansion: true
-reclaimPolicy: Delete
-volumeBindingMode: Immediate
-parameters:
-  numberOfReplicas: "1"
-  staleReplicaTimeout: "30"
-  fromBackup: ""
-  fsType: "ext4"
-  dataLocality: "best-effort"
-  migratable: "false"
+# Last Updated: 2026-01-14
 
 ---
 # High-Performance Storage Class
