@@ -37,7 +37,11 @@ resource "null_resource" "configure_longhorn_namespace" {
       echo "Configuring Longhorn namespace with pod security labels..."
       kubectl --kubeconfig=${local.kubeconfig_path} create namespace longhorn-system --dry-run=client -o yaml | kubectl --kubeconfig=${local.kubeconfig_path} apply -f -
       kubectl --kubeconfig=${local.kubeconfig_path} label namespace longhorn-system pod-security.kubernetes.io/enforce=privileged pod-security.kubernetes.io/audit=privileged pod-security.kubernetes.io/warn=privileged --overwrite || true
-      echo "Longhorn namespace configured!"
+
+      echo "Labeling node for Longhorn default disk creation..."
+      NODE_NAME=$(kubectl --kubeconfig=${local.kubeconfig_path} get nodes -o jsonpath='{.items[0].metadata.name}')
+      kubectl --kubeconfig=${local.kubeconfig_path} label node "$NODE_NAME" node.longhorn.io/create-default-disk=true --overwrite || true
+      echo "Longhorn namespace and node configured!"
     EOT
   }
 

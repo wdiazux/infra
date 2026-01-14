@@ -318,7 +318,7 @@ variable "longhorn_version" {
 variable "enable_fluxcd" {
   description = "Enable FluxCD GitOps bootstrap"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "sops_age_key_file" {
@@ -386,7 +386,7 @@ variable "fluxcd_path" {
 variable "enable_forgejo" {
   description = "Enable in-cluster Forgejo deployment"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "forgejo_chart_version" {
