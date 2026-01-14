@@ -20,14 +20,12 @@ Last Updated: 2025-11-23
 | Guide | Type | Size | Description |
 |-------|------|------|-------------|
 | [SOPS-FLUXCD-IMPLEMENTATION-GUIDE.md](SOPS-FLUXCD-IMPLEMENTATION-GUIDE.md) | Implementation | 18KB | **Recommended**: Production-ready SOPS + FluxCD + Age setup |
-| [TALOS-SOPS-INTEGRATION-REPORT.md](TALOS-SOPS-INTEGRATION-REPORT.md) | Integration | Report | Talos-specific SOPS integration details |
 
 ### Deep-Dive Analysis
 
 | Guide | Type | Size | Description |
 |-------|------|------|-------------|
 | [KUBERNETES_SECRETS_MANAGEMENT_GUIDE.md](KUBERNETES_SECRETS_MANAGEMENT_GUIDE.md) | Comprehensive | 40+ pages | Complete comparison of 6 secrets management solutions |
-| [SECRETS-MANAGEMENT-COMPARISON.md](SECRETS-MANAGEMENT-COMPARISON.md) | Comparison | Analysis | Alternative solutions comparison |
 
 ---
 
@@ -42,12 +40,11 @@ Last Updated: 2025-11-23
 ### Already Using SOPS?
 
 1. **Checklist**: [Action Checklist](SOPS-ACTION-CHECKLIST.md) - Verify your setup
-2. **Integration**: [Talos Integration](TALOS-SOPS-INTEGRATION-REPORT.md) - Talos-specific details
+2. **Implementation**: [SOPS + FluxCD Guide](SOPS-FLUXCD-IMPLEMENTATION-GUIDE.md) - Complete setup
 
 ### Evaluating Solutions?
 
-1. **Quick Comparison**: [Comparison Guide](SECRETS-MANAGEMENT-COMPARISON.md)
-2. **Full Analysis**: [Complete Guide](KUBERNETES_SECRETS_MANAGEMENT_GUIDE.md) - 90+ sources
+1. **Full Analysis**: [Complete Guide](KUBERNETES_SECRETS_MANAGEMENT_GUIDE.md) - 90+ sources
 
 ---
 
@@ -145,7 +142,6 @@ flux reconcile kustomization flux-system
 | Full implementation guide | [Implementation Guide](SOPS-FLUXCD-IMPLEMENTATION-GUIDE.md) |
 | Compare all solutions | [Complete Guide](KUBERNETES_SECRETS_MANAGEMENT_GUIDE.md) |
 | Verify my setup | [Action Checklist](SOPS-ACTION-CHECKLIST.md) |
-| Talos-specific details | [Talos Integration](TALOS-SOPS-INTEGRATION-REPORT.md) |
 
 ---
 
