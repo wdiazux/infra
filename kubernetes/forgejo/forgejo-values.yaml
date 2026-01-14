@@ -88,12 +88,13 @@ service:
   http:
     type: LoadBalancer
     port: 3000
-    # Cilium will assign an IP from the L2 pool
+    loadBalancerIP: "10.10.2.12"
     annotations: {}
 
   ssh:
     type: LoadBalancer
     port: 22
+    loadBalancerIP: "10.10.2.13"
     annotations: {}
 
 # ============================================================================
