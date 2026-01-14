@@ -8,8 +8,8 @@
 #
 # CROSS-REFERENCES:
 # - Installation guide: kubernetes/longhorn/INSTALLATION.md
-# - Storage classes: kubernetes/storage-classes/longhorn-storage-classes.yaml
-# - Terraform Talos config: terraform/main.tf (lines 130-149 for Longhorn requirements)
+# - Storage classes: kubernetes/infrastructure/configs/longhorn-storage-classes.yaml
+# - Terraform Talos config: terraform/talos/helm.tf
 
 # Default Settings
 defaultSettings:

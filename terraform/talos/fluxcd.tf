@@ -1,28 +1,26 @@
-# FluxCD Bootstrap
+# FluxCD Bootstrap for Forgejo
 #
 # Automatically bootstraps FluxCD for GitOps management after the cluster
 # is ready. FluxCD will then manage all Kubernetes resources from Git.
 #
-# Supported Git Providers:
-# - forgejo: Self-hosted Forgejo/Gitea (flux bootstrap git)
-# - github: GitHub (flux bootstrap github)
-# - gitlab: GitLab (flux bootstrap gitlab)
+# Bootstrap Flow:
+# 1. Talos cluster ready with Cilium (inline manifest)
+# 2. Longhorn installed via Helm
+# 3. Forgejo installed via Helm (if enable_forgejo=true)
+# 4. Forgejo token auto-generated
+# 5. FluxCD bootstrapped to Forgejo repository
+# 6. FluxCD syncs kubernetes/clusters/homelab/
 #
-# Token Sources (in order of precedence):
-# 1. Auto-generated from in-cluster Forgejo (if enable_forgejo=true)
-# 2. SOPS-encrypted git-creds.enc.yaml
-# 3. TF_VAR_git_token environment variable
-#
-# Prerequisites:
-# - For in-cluster Forgejo: enable_forgejo=true, forgejo_admin_password in SOPS
-# - For external Git: git_token in SOPS or TF_VAR_git_token env var
+# Token Sources:
+# - Auto-generated from in-cluster Forgejo (if enable_forgejo=true)
+# - OR from SOPS-encrypted git-creds.enc.yaml (external Forgejo)
 
 # ============================================================================
-# Computed Token Value
+# Computed Values
 # ============================================================================
 
 locals {
-  # Use auto-generated token from Forgejo if enabled, otherwise use SOPS/variable
+  # Git token: auto-generated from Forgejo or from SOPS
   fluxcd_git_token = var.enable_forgejo ? (
     try(trimspace(data.local_file.forgejo_flux_token[0].content), "")
     ) : (
@@ -33,7 +31,6 @@ locals {
   fluxcd_git_hostname   = try(local.git_secrets.git_hostname, var.git_hostname)
   fluxcd_git_owner      = try(local.git_secrets.git_owner, var.git_owner)
   fluxcd_git_repository = try(local.git_secrets.git_repository, var.git_repository)
-  fluxcd_git_provider   = try(local.git_secrets.git_provider, var.git_provider)
 }
 
 # ============================================================================
@@ -41,100 +38,62 @@ locals {
 # ============================================================================
 
 resource "null_resource" "flux_bootstrap" {
-  count = var.auto_bootstrap && var.enable_fluxcd ? 1 : 0
+  count = var.enable_fluxcd ? 1 : 0
 
   triggers = {
-    # Re-run if git settings change
     git_owner      = local.fluxcd_git_owner
     git_repository = local.fluxcd_git_repository
-    git_provider   = local.fluxcd_git_provider
+    git_hostname   = local.fluxcd_git_hostname
   }
 
   provisioner "local-exec" {
     command = <<-EOT
-      echo "Bootstrapping FluxCD with provider: ${local.fluxcd_git_provider}..."
+      echo "=== FluxCD Bootstrap for Forgejo ==="
+      echo "Hostname: ${local.fluxcd_git_hostname}"
+      echo "Owner: ${local.fluxcd_git_owner}"
+      echo "Repository: ${local.fluxcd_git_repository}"
+      echo "Path: ${var.fluxcd_path}"
 
-      # Check if flux is installed
+      # Validate flux CLI
       if ! command -v flux &> /dev/null; then
-        echo "Error: flux CLI not found. Install with: nix-shell or brew install fluxcd/tap/flux"
+        echo "Error: flux CLI not found. Install via nix-shell."
         exit 1
       fi
 
       # Validate token
-      if [ -z "$FLUX_GIT_TOKEN" ]; then
-        echo "Error: Git token is empty. Check SOPS secrets or enable_forgejo configuration."
+      if [ -z "$GITEA_TOKEN" ]; then
+        echo "Error: Git token is empty."
+        echo "For in-cluster Forgejo: ensure enable_forgejo=true and forgejo_admin_password is set"
+        echo "For external Forgejo: ensure git_token is set in git-creds.enc.yaml"
         exit 1
       fi
 
-      # Check prerequisites
-      if ! flux check --pre --kubeconfig=${local.kubeconfig_path}; then
-        echo "Warning: FluxCD prerequisites check failed, attempting bootstrap anyway..."
-      fi
+      # Pre-flight check
+      flux check --pre --kubeconfig=${local.kubeconfig_path} || true
 
-      # Bootstrap based on provider
-      case "${local.fluxcd_git_provider}" in
-        forgejo|gitea)
-          echo "Using Gitea bootstrap for Forgejo/Gitea..."
-          echo "  Hostname: ${local.fluxcd_git_hostname}"
-          echo "  Owner: ${local.fluxcd_git_owner}"
-          echo "  Repository: ${local.fluxcd_git_repository}"
+      # Bootstrap FluxCD to Forgejo
+      # Note: Forgejo is API-compatible with Gitea, so we use 'flux bootstrap gitea'
+      flux bootstrap gitea \
+        --kubeconfig=${local.kubeconfig_path} \
+        --hostname=${local.fluxcd_git_hostname} \
+        --owner=${local.fluxcd_git_owner} \
+        --repository=${local.fluxcd_git_repository} \
+        --branch=${var.git_branch} \
+        --path=${var.fluxcd_path} \
+        --personal=${var.git_personal} \
+        --private=${var.git_private} \
+        --token-auth
 
-          # Set token for flux CLI
-          export GITEA_TOKEN="$FLUX_GIT_TOKEN"
-
-          flux bootstrap gitea \
-            --kubeconfig=${local.kubeconfig_path} \
-            --hostname=${local.fluxcd_git_hostname} \
-            --owner=${local.fluxcd_git_owner} \
-            --repository=${local.fluxcd_git_repository} \
-            --branch=${var.git_branch} \
-            --path=${var.fluxcd_path} \
-            --personal=${var.git_personal} \
-            --private=${var.git_private}
-          ;;
-        github)
-          echo "Using GitHub bootstrap..."
-          export GITHUB_TOKEN="$FLUX_GIT_TOKEN"
-
-          flux bootstrap github \
-            --kubeconfig=${local.kubeconfig_path} \
-            --owner=${local.fluxcd_git_owner} \
-            --repository=${local.fluxcd_git_repository} \
-            --path=${var.fluxcd_path} \
-            --branch=${var.git_branch} \
-            --personal=${var.git_personal} \
-            --private=${var.git_private}
-          ;;
-        gitlab)
-          echo "Using GitLab bootstrap..."
-          export GITLAB_TOKEN="$FLUX_GIT_TOKEN"
-
-          flux bootstrap gitlab \
-            --kubeconfig=${local.kubeconfig_path} \
-            --owner=${local.fluxcd_git_owner} \
-            --repository=${local.fluxcd_git_repository} \
-            --path=${var.fluxcd_path} \
-            --branch=${var.git_branch} \
-            --personal=${var.git_personal}
-          ;;
-        *)
-          echo "Error: Unknown git provider: ${local.fluxcd_git_provider}"
-          exit 1
-          ;;
-      esac
-
-      echo "FluxCD bootstrap complete!"
+      echo "=== FluxCD Bootstrap Complete ==="
     EOT
 
     environment = {
-      FLUX_GIT_TOKEN = local.fluxcd_git_token
+      GITEA_TOKEN = local.fluxcd_git_token
     }
   }
 
   depends_on = [
     helm_release.longhorn,
-    null_resource.install_nvidia_device_plugin,
-    # Wait for Forgejo token generation if using in-cluster Forgejo
     null_resource.forgejo_generate_token,
     null_resource.forgejo_create_repo
   ]
@@ -145,20 +104,20 @@ resource "null_resource" "flux_bootstrap" {
 # ============================================================================
 
 resource "null_resource" "flux_verify" {
-  count = var.auto_bootstrap && var.enable_fluxcd ? 1 : 0
+  count = var.enable_fluxcd ? 1 : 0
 
   provisioner "local-exec" {
     command = <<-EOT
-      echo "Verifying FluxCD installation..."
-      sleep 30  # Wait for FluxCD to reconcile
+      echo "Waiting for FluxCD to reconcile..."
+      sleep 30
 
-      # Check FluxCD status
+      echo "=== FluxCD Status ==="
       kubectl --kubeconfig=${local.kubeconfig_path} get pods -n flux-system
 
-      # Check kustomizations
-      flux get kustomizations --kubeconfig=${local.kubeconfig_path} -A
+      echo "=== Kustomizations ==="
+      flux get kustomizations --kubeconfig=${local.kubeconfig_path} -A || true
 
-      echo "FluxCD verification complete!"
+      echo "=== FluxCD Verification Complete ==="
     EOT
   }
 
@@ -168,40 +127,34 @@ resource "null_resource" "flux_verify" {
 }
 
 # ============================================================================
-# Notes
+# SOPS Age Secret for Application Secrets
 # ============================================================================
-#
-# FluxCD Bootstrap Flow:
-# 1. Terraform creates VM and bootstraps Talos
-# 2. Cilium installed via inlineManifest (node becomes Ready)
-# 3. Longhorn installed via Helm
-# 4. Forgejo installed via Helm (if enable_forgejo=true)
-# 5. Forgejo token generated and repo created
-# 6. FluxCD bootstrapped via CLI
-# 7. FluxCD syncs kubernetes/clusters/homelab/
-# 8. FluxCD manages all subsequent deployments
-#
-# Manual bootstrap examples:
-#
-# Forgejo/Gitea:
-#   export GITEA_TOKEN=<token>
-#   flux bootstrap gitea \
-#     --hostname=git.home-infra.net \
-#     --owner=<username> \
-#     --repository=infra \
-#     --branch=main \
-#     --path=kubernetes/clusters/homelab \
-#     --personal
-#
-# GitHub:
-#   export GITHUB_TOKEN=<token>
-#   flux bootstrap github \
-#     --owner=<github-user> \
-#     --repository=infra \
-#     --path=kubernetes/clusters/homelab \
-#     --personal
-#
-# Verification:
-#   flux check
-#   flux get all -A
-#   kubectl get pods -n flux-system
+# Creates the sops-age secret that FluxCD uses to decrypt encrypted secrets.
+# This enables GitOps for secrets: encrypt with SOPS, commit to Git, FluxCD decrypts.
+
+resource "null_resource" "create_sops_age_secret" {
+  count = var.enable_fluxcd && var.sops_age_key_file != "" ? 1 : 0
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      echo "Creating SOPS Age secret for FluxCD..."
+
+      # Check if secret already exists
+      if kubectl --kubeconfig=${local.kubeconfig_path} get secret sops-age -n flux-system &>/dev/null; then
+        echo "sops-age secret already exists, skipping"
+        exit 0
+      fi
+
+      # Create the secret
+      kubectl --kubeconfig=${local.kubeconfig_path} create secret generic sops-age \
+        --namespace=flux-system \
+        --from-file=age.agekey=${var.sops_age_key_file}
+
+      echo "SOPS Age secret created successfully"
+    EOT
+  }
+
+  depends_on = [
+    null_resource.flux_bootstrap
+  ]
+}

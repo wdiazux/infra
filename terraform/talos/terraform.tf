@@ -40,6 +40,7 @@ terraform {
       source  = "hashicorp/kubernetes"
       version = "~> 2.36.0"
     }
+
   }
 
   # Backend configuration for remote state (optional)

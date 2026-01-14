@@ -321,15 +321,12 @@ variable "enable_fluxcd" {
   default     = false
 }
 
-variable "git_provider" {
-  description = "Git provider for FluxCD (forgejo, github, gitlab)"
+variable "sops_age_key_file" {
+  description = "Path to SOPS Age key file for FluxCD secret decryption"
   type        = string
-  default     = "forgejo"
-
-  validation {
-    condition     = contains(["forgejo", "gitea", "github", "gitlab"], var.git_provider)
-    error_message = "git_provider must be one of: forgejo, gitea, github, gitlab"
-  }
+  default     = ""
+  # Example: ~/.config/sops/age/keys.txt
+  # If set, creates sops-age secret in flux-system namespace
 }
 
 variable "git_token" {

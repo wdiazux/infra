@@ -2,11 +2,9 @@
 #
 # Cluster-wide configurations and additional resources.
 #
-# NOTE: Cilium and L2 configuration are embedded in Talos inlineManifest
-# (see terraform/talos/cilium-inline.tf) and applied during bootstrap.
-#
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-resources: []
-# Add cluster-wide ConfigMaps, Secrets, or other configs here
+resources:
+  # Longhorn storage classes for different workload types
+  - longhorn-storage-classes.yaml
