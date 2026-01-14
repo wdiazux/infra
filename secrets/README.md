@@ -366,17 +366,34 @@ ansible_password: "secure-password-here"
 ansible_become_password: "sudo-password-here"
 ```
 
-### NFS/NAS Credentials
+### NAS Backup Credentials (Longhorn)
 
-File: `secrets/nas-creds.enc.yaml`
+File: `secrets/nas-backup-creds.enc.yaml`
+
+Used by Terraform to create the `longhorn-backup-secret` Kubernetes secret for NFS backup authentication.
 
 ```yaml
-# NAS/NFS credentials
-nas_ip: "192.168.1.100"
-nfs_server: "nas.local"
-nfs_path: "/mnt/tank/k8s-storage"
-smb_username: "k8s-user"
-smb_password: "secure-password"
+# NFS credentials for Longhorn backup target
+nfs_username: "your-nas-username"
+nfs_password: "your-nas-password"
+```
+
+### Git/Forgejo Credentials
+
+File: `secrets/git-creds.enc.yaml`
+
+Used by Terraform for Forgejo admin setup and FluxCD bootstrap.
+
+```yaml
+# Forgejo admin credentials
+forgejo_admin_username: "admin"
+forgejo_admin_password: "secure-password"
+forgejo_admin_email: "admin@home-infra.net"
+
+# Git settings (optional overrides)
+git_hostname: "git.home-infra.net"
+git_owner: "wdiaz"
+git_repository: "infra"
 ```
 
 ## CI/CD Integration

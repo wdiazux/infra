@@ -317,55 +317,51 @@ kubectl get storageclass
 
 ## Optional: Configure Backups
 
-To enable backups to your external NAS:
+Backups are configured automatically via Terraform when `enable_longhorn_backups = true` (default).
 
-### Step 1: Create NFS Share on Your NAS
+### Automated Setup (via Terraform)
 
-Create a directory on your NAS for Longhorn backups:
-- Example: `/mnt/storage/longhorn-backups`
-- Ensure Talos node can access the NFS share
+Terraform automatically:
+1. Creates `longhorn-backup-secret` with NFS credentials from `secrets/nas-backup-creds.enc.yaml`
+2. Configures backup target in `longhorn-values.yaml`: `nfs://10.10.2.5:/backups/longhorn`
+3. Enables recurring job selector for scheduled backups
 
-### Step 2: Test NFS Mount from Talos
+**Prerequisites**:
+1. Create NFS share on your NAS at `/backups/longhorn`
+2. Create encrypted credentials file:
+   ```bash
+   # Create from template
+   cp secrets/TEMPLATE-nas-backup-creds.yaml /tmp/nas-backup-creds.yaml
+   # Edit with your NFS username/password
+   nano /tmp/nas-backup-creds.yaml
+   # Encrypt
+   sops -e /tmp/nas-backup-creds.yaml > secrets/nas-backup-creds.enc.yaml
+   rm /tmp/nas-backup-creds.yaml
+   ```
 
-```bash
-talosctl -n <node-ip> read /proc/mounts | grep nfs
-```
+### Manual Setup (Alternative)
 
-### Step 3: Create Backup Target Secret (if needed)
+If not using Terraform automation:
 
-If your NFS requires authentication, create a secret:
+**Step 1: Create Backup Secret**
 
 ```bash
 kubectl create secret generic longhorn-backup-secret \
-  --from-literal=AWS_ACCESS_KEY_ID=<key> \
-  --from-literal=AWS_SECRET_ACCESS_KEY=<secret> \
+  --from-literal=NFS_USERNAME=<username> \
+  --from-literal=NFS_PASSWORD=<password> \
   -n longhorn-system
 ```
 
-### Step 4: Configure Backup Target in Longhorn
+**Step 2: Configure Backup Target**
 
-**Via Helm values** (update `kubernetes/longhorn/longhorn-values.yaml`):
-
-```yaml
-defaultSettings:
-  backupTarget: "nfs://192.168.1.100:/mnt/storage/longhorn-backups"
-  backupTargetCredentialSecret: "longhorn-backup-secret"  # if needed
-```
-
-Then upgrade:
-```bash
-helm upgrade longhorn longhorn/longhorn \
-  --namespace longhorn-system \
-  --values kubernetes/longhorn/longhorn-values.yaml
-```
-
-**Via Longhorn UI**:
-1. Access Longhorn UI (see above)
+Via Longhorn UI:
+1. Access Longhorn UI at http://10.10.2.12
 2. Go to Settings → General
-3. Set Backup Target: `nfs://192.168.1.100:/mnt/storage/longhorn-backups`
-4. Save
+3. Set Backup Target: `nfs://10.10.2.5:/backups/longhorn`
+4. Set Backup Target Credential Secret: `longhorn-backup-secret`
+5. Save
 
-### Step 5: Create Recurring Backup Job (Optional)
+### Create Recurring Backup Job
 
 In Longhorn UI:
 1. Go to Recurring Job

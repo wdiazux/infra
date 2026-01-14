@@ -38,6 +38,7 @@ No modules.
 | [kubernetes_manifest.nvidia_runtimeclass](https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs/resources/manifest) | resource |
 | [kubernetes_namespace.forgejo](https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs/resources/namespace) | resource |
 | [kubernetes_namespace.longhorn](https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs/resources/namespace) | resource |
+| [kubernetes_secret.longhorn_backup](https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs/resources/secret) | resource |
 | [local_file.kubeconfig](https://registry.terraform.io/providers/hashicorp/local/latest/docs/resources/file) | resource |
 | [local_file.talosconfig](https://registry.terraform.io/providers/hashicorp/local/latest/docs/resources/file) | resource |
 | [null_resource.create_sops_age_secret](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
@@ -62,6 +63,7 @@ No modules.
 | [local_file.talos_dhcp_ip](https://registry.terraform.io/providers/hashicorp/local/latest/docs/data-sources/file) | data source |
 | [proxmox_virtual_environment_vms.talos_template](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/data-sources/virtual_environment_vms) | data source |
 | [sops_file.git_secrets](https://registry.terraform.io/providers/carlpett/sops/latest/docs/data-sources/file) | data source |
+| [sops_file.nas_backup_secrets](https://registry.terraform.io/providers/carlpett/sops/latest/docs/data-sources/file) | data source |
 | [sops_file.proxmox_secrets](https://registry.terraform.io/providers/carlpett/sops/latest/docs/data-sources/file) | data source |
 | [talos_client_configuration.cluster](https://registry.terraform.io/providers/siderolabs/talos/latest/docs/data-sources/client_configuration) | data source |
 | [talos_machine_configuration.node](https://registry.terraform.io/providers/siderolabs/talos/latest/docs/data-sources/machine_configuration) | data source |
@@ -82,6 +84,7 @@ No modules.
 | <a name="input_enable_fluxcd"></a> [enable\_fluxcd](#input\_enable\_fluxcd) | Enable FluxCD GitOps bootstrap | `bool` | `true` | no |
 | <a name="input_enable_forgejo"></a> [enable\_forgejo](#input\_enable\_forgejo) | Enable in-cluster Forgejo deployment | `bool` | `true` | no |
 | <a name="input_enable_gpu_passthrough"></a> [enable\_gpu\_passthrough](#input\_enable\_gpu\_passthrough) | Enable NVIDIA GPU passthrough | `bool` | `true` | no |
+| <a name="input_enable_longhorn_backups"></a> [enable\_longhorn\_backups](#input\_enable\_longhorn\_backups) | Enable Longhorn NFS backups (requires secrets/nas-backup-creds.enc.yaml) | `bool` | `true` | no |
 | <a name="input_enable_qemu_agent"></a> [enable\_qemu\_agent](#input\_enable\_qemu\_agent) | Enable QEMU guest agent | `bool` | `true` | no |
 | <a name="input_fluxcd_path"></a> [fluxcd\_path](#input\_fluxcd\_path) | Path in repository for FluxCD cluster config | `string` | `"kubernetes/clusters/homelab"` | no |
 | <a name="input_fluxcd_webhook_ip"></a> [fluxcd\_webhook\_ip](#input\_fluxcd\_webhook\_ip) | Static IP for FluxCD webhook receiver LoadBalancer | `string` | `"10.10.2.14"` | no |
