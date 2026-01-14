@@ -344,28 +344,6 @@ proxmox_token_id: "terraform-token"
 proxmox_token_secret: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 ```
 
-### Talos Machine Configuration Secrets
-
-File: `secrets/talos-secrets.enc.yaml`
-
-```yaml
-# Talos cluster secrets
-cluster_name: "homelab-k8s"
-cluster_secret: "base64-encoded-secret-here"
-bootstrap_token: "token-value-here"
-```
-
-### Ansible Credentials
-
-File: `secrets/ansible-creds.enc.yaml`
-
-```yaml
-# Ansible SSH and sudo credentials
-ansible_user: "admin"
-ansible_password: "secure-password-here"
-ansible_become_password: "sudo-password-here"
-```
-
 ### NAS Backup Credentials (Longhorn)
 
 File: `secrets/nas-backup-creds.enc.yaml`
