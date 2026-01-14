@@ -56,13 +56,13 @@ resource "null_resource" "flux_bootstrap" {
 
       # Validate flux CLI
       if ! command -v flux &> /dev/null; then
-        echo "Error: flux CLI not found. Install via nix-shell."
+        echo "ERROR: flux CLI not found. Install via nix-shell."
         exit 1
       fi
 
       # Validate token
       if [ -z "$GITEA_TOKEN" ]; then
-        echo "Error: Git token is empty."
+        echo "ERROR: Git token is empty."
         echo "For in-cluster Forgejo: ensure enable_forgejo=true and forgejo_admin_password is set"
         echo "For external Forgejo: ensure git_token is set in git-creds.enc.yaml"
         exit 1
