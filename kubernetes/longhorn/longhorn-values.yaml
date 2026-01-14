@@ -87,7 +87,8 @@ ingress:
 # Service configuration
 service:
   ui:
-    type: ClusterIP
+    type: LoadBalancer
+    loadBalancerIP: "10.10.2.12"
     nodePort: null
   manager:
     type: ClusterIP
