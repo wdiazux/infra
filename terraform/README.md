@@ -8,7 +8,7 @@ This directory contains Terraform configurations for deploying infrastructure on
 terraform/
 ├── talos/                  # Talos Kubernetes cluster
 │   ├── terraform.tf        # Provider versions
-│   ├── providers.tf        # Proxmox + Talos providers
+│   ├── providers.tf        # Proxmox + Talos + Helm providers
 │   ├── sops.tf             # Secrets integration
 │   ├── variables.tf        # Input variables
 │   ├── locals.tf           # Computed values
@@ -18,26 +18,60 @@ terraform/
 │   ├── vm.tf               # Proxmox VM resource
 │   ├── apply.tf            # Config application
 │   ├── bootstrap.tf        # Cluster bootstrap
-│   └── addons.tf           # Post-bootstrap setup
+│   ├── cilium-inline.tf    # Cilium CNI (inline manifest)
+│   ├── helm.tf             # Longhorn storage (Helm)
+│   ├── addons.tf           # NVIDIA GPU setup
+│   └── fluxcd.tf           # FluxCD bootstrap (optional)
 │
 ├── traditional-vms/        # Traditional VMs (Ubuntu, Debian, etc.)
-│   ├── terraform.tf        # Provider versions
-│   ├── providers.tf        # Proxmox provider
-│   ├── sops.tf             # Secrets integration
-│   ├── variables.tf        # Input variables
-│   ├── locals.tf           # VM definitions
-│   ├── outputs.tf          # VM outputs
-│   └── main.tf             # VM resources
+│   └── ...
 │
 └── modules/                # Shared modules
     └── proxmox-vm/         # Generic Proxmox VM module
 ```
 
-## Deployment
+## Talos Kubernetes Cluster
 
-Each subdirectory is an independent Terraform root module with its own state.
+### Bootstrap Flow
 
-### Talos Kubernetes Cluster
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ Stage 1: Terraform Creates Infrastructure                       │
+│                                                                 │
+│   terraform apply                                               │
+│   ├── Creates Proxmox VM from Talos template                   │
+│   ├── Generates Talos machine config                           │
+│   ├── Applies config (includes Cilium as inlineManifest)       │
+│   ├── Bootstraps Kubernetes cluster                            │
+│   └── Waits for API to be ready                                │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│ Stage 2: Cilium CNI (Automatic via inlineManifest)              │
+│                                                                 │
+│   ├── Cilium deployed during Talos bootstrap                   │
+│   ├── L2 LoadBalancer IP pool configured                       │
+│   └── Node becomes Ready immediately                           │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│ Stage 3: Additional Components (Terraform Helm)                 │
+│                                                                 │
+│   ├── Longhorn storage installed                               │
+│   ├── NVIDIA RuntimeClass created                              │
+│   └── NVIDIA device plugin deployed                            │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│ Stage 4: FluxCD Bootstrap (Optional)                            │
+│                                                                 │
+│   ├── FluxCD controllers installed                             │
+│   ├── Syncs kubernetes/clusters/homelab/                       │
+│   └── GitOps management begins                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Quick Start
 
 ```bash
 cd talos
@@ -46,15 +80,57 @@ terraform plan
 terraform apply
 ```
 
-After deployment:
+### With FluxCD (GitOps)
+
+```bash
+cd talos
+
+# Set FluxCD variables
+export TF_VAR_enable_fluxcd=true
+export TF_VAR_github_token="<your-github-token>"
+export TF_VAR_github_owner="<your-github-username>"
+
+terraform apply
+```
+
+### Post-Deployment
+
 ```bash
 export KUBECONFIG=$(pwd)/kubeconfig
 export TALOSCONFIG=$(pwd)/talosconfig
+
+# Verify cluster
 kubectl get nodes
 talosctl dashboard
+
+# Verify components
+kubectl get pods -n kube-system -l k8s-app=cilium
+kubectl get pods -n longhorn-system
+kubectl describe node | grep nvidia.com/gpu
 ```
 
-### Traditional VMs
+### Component Management
+
+| Component | Bootstrap Method | Ongoing Management |
+|-----------|-----------------|-------------------|
+| Cilium CNI | Talos inlineManifest | Talos (or FluxCD) |
+| Cilium L2 Pool | Talos inlineManifest | Talos (or FluxCD) |
+| Longhorn | Terraform Helm | FluxCD HelmRelease |
+| NVIDIA Plugin | Terraform | FluxCD Kustomize |
+| Applications | - | FluxCD |
+
+### Why Cilium Uses inlineManifest
+
+Cilium is embedded in the Talos machine configuration (not installed via Helm) to solve the **chicken-and-egg problem**:
+
+1. FluxCD needs a working CNI to sync from Git
+2. But FluxCD would normally install the CNI
+3. By embedding Cilium in Talos config, it's applied during bootstrap
+4. Node becomes Ready immediately, allowing FluxCD to work
+
+FluxCD can optionally take over Cilium management later by uncommenting the HelmRelease in `kubernetes/infrastructure/controllers/kustomization.yaml`.
+
+## Traditional VMs
 
 ```bash
 cd traditional-vms
@@ -76,6 +152,12 @@ terraform apply
    - Talos: `packer/talos/import-talos-image.sh`
    - Traditional: `packer/<os>/` directories
 
+4. **GitHub Token** (if using FluxCD):
+   ```bash
+   export TF_VAR_github_token="<token>"
+   export TF_VAR_github_owner="<username>"
+   ```
+
 ## State Management
 
 - Each subdirectory has independent Terraform state
@@ -91,6 +173,41 @@ The Talos cluster includes NVIDIA GPU passthrough:
 
 GPU Operator is **NOT** used - it conflicts with Talos's immutable design.
 
+## FluxCD Variables
+
+Supports multiple Git providers: **Forgejo** (default), GitHub, GitLab.
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `enable_fluxcd` | Enable FluxCD bootstrap | `false` |
+| `git_provider` | Git provider (forgejo, gitea, github, gitlab) | `"forgejo"` |
+| `git_token` | Git PAT with repo permissions | `""` |
+| `git_hostname` | Git server hostname (for Forgejo/Gitea) | `"git.home-infra.net"` |
+| `git_owner` | Git username or organization | `""` |
+| `git_repository` | Repository name | `"infra"` |
+| `git_branch` | Branch to sync | `"main"` |
+| `git_personal` | Use personal account (not org) | `true` |
+| `git_private` | Repository is private | `false` |
+| `fluxcd_path` | Path in repo for cluster config | `"kubernetes/clusters/homelab"` |
+
+### Forgejo Example
+
+Credentials can be auto-loaded via direnv + SOPS (see `secrets/git-creds.yaml.example`):
+
+```bash
+# Option 1: Auto-load via SOPS (recommended)
+# Copy and encrypt: cp secrets/git-creds.yaml.example /tmp/git-creds.yaml
+# Edit credentials, then: sops -e /tmp/git-creds.yaml > secrets/git-creds.enc.yaml
+# direnv will auto-load TF_VAR_* from the encrypted file
+
+# Option 2: Manual export
+export TF_VAR_enable_fluxcd=true
+export TF_VAR_git_token="<forgejo-token>"
+export TF_VAR_git_owner="<username>"
+
+terraform apply
+```
+
 ## Documentation
 
 Generate documentation with terraform-docs:
@@ -101,7 +218,11 @@ cd traditional-vms && terraform-docs markdown . > TERRAFORM.md
 
 ## Related Documentation
 
+- [Kubernetes GitOps README](../kubernetes/README.md)
 - [Talos Linux](https://www.talos.dev/)
+- [Cilium](https://docs.cilium.io/)
+- [Longhorn](https://longhorn.io/)
+- [FluxCD](https://fluxcd.io/)
 - [Proxmox VE](https://pve.proxmox.com/)
 - [bpg/proxmox Provider](https://registry.terraform.io/providers/bpg/proxmox/latest)
 - [siderolabs/talos Provider](https://registry.terraform.io/providers/siderolabs/talos/latest)

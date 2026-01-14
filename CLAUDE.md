@@ -126,6 +126,14 @@ All project dependencies are defined in `shell.nix` and automatically available 
 ## Network Configuration
 
 **Network**: 10.10.2.0/24
+**Domain**: home-infra.net, .local
+
+**IP Allocation Scheme**:
+- 10.10.2.1-10: Physical computers & core infrastructure
+- 10.10.2.11-20: Important services (management, monitoring)
+- 10.10.2.21-50: Applications & services
+- 10.10.2.51-70: Virtual machines
+- 10.10.2.240-254: Kubernetes LoadBalancer pool
 
 | Component | IP Address | Purpose | Status |
 |-----------|------------|---------|--------|
@@ -133,12 +141,14 @@ All project dependencies are defined in `shell.nix` and automatically available 
 | Proxmox Host | 10.10.2.2 | Hypervisor | REQUIRED |
 | NAS | 10.10.2.5 | Longhorn backup target | OPTIONAL |
 | Talos Node | 10.10.2.10 | Kubernetes node | REQUIRED |
-| Ubuntu VM | 10.10.2.11 | Traditional VM | OPTIONAL |
-| Debian VM | 10.10.2.12 | Traditional VM | OPTIONAL |
-| Arch VM | 10.10.2.13 | Traditional VM | OPTIONAL |
-| NixOS VM | 10.10.2.14 | Traditional VM | OPTIONAL |
-| Windows VM | 10.10.2.15 | Traditional VM | OPTIONAL |
+| Ubuntu VM | 10.10.2.51 | Traditional VM | OPTIONAL |
+| Debian VM | 10.10.2.52 | Traditional VM | OPTIONAL |
+| Arch VM | 10.10.2.53 | Traditional VM | OPTIONAL |
+| NixOS VM | 10.10.2.54 | Traditional VM | OPTIONAL |
+| Windows VM | 10.10.2.55 | Traditional VM | OPTIONAL |
 | Cilium LB Pool | 10.10.2.240-254 | K8s LoadBalancer (15 IPs) | REQUIRED |
+
+See `docs/SERVICES.md` for complete network documentation.
 
 ## Supported Operating Systems
 
@@ -595,6 +605,6 @@ zpool scrub poolname          # Data integrity check
 
 ---
 
-**Last Updated**: 2026-01-11
+**Last Updated**: 2026-01-13
 **Project Status**: Production-Ready
 **Primary Contact**: wdiazux
