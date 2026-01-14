@@ -88,7 +88,7 @@ service:
   http:
     type: LoadBalancer
     port: 3000
-    loadBalancerIP: "10.10.2.12"
+    loadBalancerIP: "10.10.2.13"
     annotations: {}
 
   ssh:
