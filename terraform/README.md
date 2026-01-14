@@ -173,24 +173,80 @@ The Talos cluster includes NVIDIA GPU passthrough:
 
 GPU Operator is **NOT** used - it conflicts with Talos's immutable design.
 
-## FluxCD Variables
+## Destroy and Recreate
 
-Supports multiple Git providers: **Forgejo** (default), GitHub, GitLab.
+### Proper Destroy Procedure
+
+When destroying the Talos cluster, follow this procedure to avoid state issues:
+
+```bash
+cd talos
+
+# 1. If cluster is running, destroy normally
+terraform destroy -auto-approve
+
+# 2. If cluster is DOWN and destroy fails with connection errors:
+#    Remove Helm releases from state (they can't be deleted without API)
+terraform state rm helm_release.longhorn
+terraform state rm helm_release.forgejo  # if enabled
+
+#    Remove protected secrets (required for full destroy)
+terraform state rm talos_machine_secrets.cluster
+
+#    Then destroy remaining resources
+terraform destroy -auto-approve -refresh=false
+```
+
+### Common Destroy Errors
+
+| Error | Solution |
+|-------|----------|
+| `Kubernetes cluster unreachable` | Remove Helm releases from state: `terraform state rm helm_release.longhorn` |
+| `prevent_destroy` on secrets | Remove from state: `terraform state rm talos_machine_secrets.cluster` |
+| `BackoffLimitExceeded` | Cluster is down, remove Helm from state |
+
+### Clean Recreate
+
+After destroy, recreate with fresh state:
+
+```bash
+# Verify clean state
+terraform state list  # Should be empty or only data sources
+
+# Recreate cluster
+terraform apply
+```
+
+## FluxCD Variables (Forgejo)
+
+FluxCD is configured for **Forgejo** (API-compatible with Gitea).
 
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `enable_fluxcd` | Enable FluxCD bootstrap | `false` |
-| `git_provider` | Git provider (forgejo, gitea, github, gitlab) | `"forgejo"` |
+| `enable_forgejo` | Deploy in-cluster Forgejo | `false` |
 | `git_token` | Git PAT with repo permissions | `""` |
-| `git_hostname` | Git server hostname (for Forgejo/Gitea) | `"git.home-infra.net"` |
+| `git_hostname` | Git server hostname | `"git.home-infra.net"` |
 | `git_owner` | Git username or organization | `""` |
 | `git_repository` | Repository name | `"infra"` |
 | `git_branch` | Branch to sync | `"main"` |
 | `git_personal` | Use personal account (not org) | `true` |
 | `git_private` | Repository is private | `false` |
 | `fluxcd_path` | Path in repo for cluster config | `"kubernetes/clusters/homelab"` |
+| `sops_age_key_file` | Path to Age key for SOPS | `""` |
 
-### Forgejo Example
+### In-Cluster Forgejo
+
+Deploy Forgejo inside the cluster for a self-hosted Git server:
+
+```bash
+export TF_VAR_enable_forgejo=true
+export TF_VAR_enable_fluxcd=true
+# Forgejo token is auto-generated
+terraform apply
+```
+
+### External Forgejo Example
 
 Credentials can be auto-loaded via direnv + SOPS (see `secrets/git-creds.yaml.example`):
 

@@ -31,8 +31,7 @@ locals {
 
   # Git/Forgejo secrets (loaded only when needed)
   git_secrets = var.enable_forgejo || var.enable_fluxcd ? {
-    # Git provider settings
-    git_provider   = try(data.sops_file.git_secrets[0].data["git_provider"], var.git_provider)
+    # Git settings (Forgejo-only)
     git_hostname   = try(data.sops_file.git_secrets[0].data["git_hostname"], var.git_hostname)
     git_owner      = try(data.sops_file.git_secrets[0].data["git_owner"], var.git_owner)
     git_repository = try(data.sops_file.git_secrets[0].data["git_repository"], var.git_repository)
