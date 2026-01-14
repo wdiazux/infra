@@ -31,9 +31,9 @@ defaultSettings:
   # Automatically create default disk on labeled nodes
   createDefaultDiskLabeledNodes: true
 
-  # Backup configuration (configure later with NAS or S3)
-  # backupTarget: "nfs://10.10.2.5:/longhorn-backups"
-  # backupTargetCredentialSecret: "longhorn-backup-secret"
+  # Backup configuration (NFS to external NAS)
+  backupTarget: "nfs://10.10.2.5:/backups/longhorn"
+  backupTargetCredentialSecret: "longhorn-backup-secret"
 
   # Snapshot settings
   snapshotDataIntegrity: "enabled"
@@ -73,7 +73,7 @@ persistence:
   reclaimPolicy: Delete
   migratable: false
   recurringJobSelector:
-    enable: false
+    enable: true
 
 # Ingress for Longhorn UI (optional - configure if using ingress controller)
 ingress:
