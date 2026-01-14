@@ -46,11 +46,11 @@ This repository automates the creation and deployment of standardized virtual ma
 ### Prerequisites
 
 **Required Tools:**
-- [Packer](https://www.packer.io/downloads) 1.14.2+
-- [Terraform](https://www.terraform.io/downloads) 1.13.5+
-- [Ansible](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html) 2.20.0+
-- [SOPS](https://github.com/getsops/sops) 3.9.3+
-- [Age](https://github.com/FiloSottile/age) 1.3.0+
+- [Packer](https://www.packer.io/downloads) 1.14.3+
+- [Terraform](https://www.terraform.io/downloads) 1.14.2+
+- [Ansible](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html) 2.17.0+
+- [SOPS](https://github.com/getsops/sops) latest
+- [Age](https://github.com/FiloSottile/age) latest
 - [TFLint](https://github.com/terraform-linters/tflint) (linting)
 - [Trivy](https://aquasecurity.github.io/trivy/) (security scanning)
 - [ansible-lint](https://ansible-lint.readthedocs.io/) (Ansible linting)
@@ -331,20 +331,20 @@ infra/
 
 ### Infrastructure Tools
 
-- **Packer 1.14.2** - Golden image creation
+- **Packer 1.14.3+** - Golden image creation
   - `proxmox-clone` builder - Cloud images (PREFERRED, 3-4x faster)
   - `proxmox-iso` builder - ISO installation (fallback)
 
-- **Terraform 1.14.2** - Infrastructure deployment
+- **Terraform 1.14.2+** - Infrastructure deployment
   - `siderolabs/talos` provider 0.10.0 - Talos configuration
   - `bpg/proxmox` provider 0.92.0 - Proxmox VM provisioning
 
-- **Ansible 2.20.0** - Configuration management
+- **Ansible 2.17.0+** - Configuration management
   - Day 0 automation - Prerequisites and host preparation
   - Day 1 automation - Cluster deployment and setup
   - Day 2 automation - Ongoing operations and upgrades
 
-- **SOPS 3.9.3 + Age 1.3.0** - Secrets encryption
+- **SOPS + Age** - Secrets encryption
   - Version-controlled secrets
   - Age encryption for modern security
 
@@ -859,7 +859,7 @@ For questions or issues, please open a GitHub issue.
 
 ---
 
-**Last Updated:** 2025-11-20
+**Last Updated:** 2026-01-13
 **Project Version:** 1.0.0
 **Documentation Status:** ✅ Complete and Production Ready
 
