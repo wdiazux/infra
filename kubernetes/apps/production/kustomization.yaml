@@ -1,13 +1,19 @@
 # Production Applications
 #
 # Applications deployed to the homelab cluster.
-# Add application directories here as they're created.
+# Uses base definitions, can add patches for production-specific settings.
+#
+# To add a new app:
+#   1. Create kubernetes/apps/base/<app-name>/
+#   2. Add kustomization.yaml, deployment.yaml, service.yaml
+#   3. Create secret.yaml.template, encrypt to secret.enc.yaml
+#   4. Add to resources below
 #
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-resources: []
-  # Example applications (uncomment when created):
-  # - plex/
-  # - jellyfin/
-  # - home-assistant/
+resources:
+  - ../base/example-app/  # Example app (remove and add your own)
+  # - ../base/jellyfin/
+  # - ../base/home-assistant/
+  # - ../base/nextcloud/

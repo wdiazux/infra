@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example-app
+  labels:
+    app.kubernetes.io/name: example-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: example-app
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: example-app
+    spec:
+      containers:
+        - name: example-app
+          image: nginx:alpine
+          ports:
+            - containerPort: 80
+          env:
+            # Reference secrets from the SOPS-encrypted secret
+            - name: API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: example-app-secret
+                  key: api-key
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: example-app-secret
+                  key: database-url
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi

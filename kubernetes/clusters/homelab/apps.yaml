@@ -1,0 +1,29 @@
+# FluxCD Kustomization for Applications
+#
+# Deploys applications AFTER infrastructure is ready.
+# SOPS decryption enabled for encrypted secrets.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: apps
+  namespace: flux-system
+spec:
+  interval: 10m
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: ./kubernetes/apps/production
+  prune: true
+  wait: true
+  # SOPS decryption configuration
+  # Requires: kubectl create secret generic sops-age --from-file=age.agekey=...
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
+  # Deploy apps only after infrastructure is ready
+  dependsOn:
+    - name: infrastructure-controllers
+    - name: infrastructure-configs

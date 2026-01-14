@@ -1,0 +1,8 @@
+# Base Applications
+#
+# Common application definitions. Production overlays can extend these.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - example-app/  # Example app template (remove when adding real apps)

@@ -1,0 +1,14 @@
+# Example Application with SOPS Secret
+#
+# This demonstrates how to structure an app with encrypted secrets.
+# Copy this directory as a template for new applications.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: example-app
+
+resources:
+  - namespace.yaml
+  - deployment.yaml
+  - service.yaml
+  - secret.enc.yaml  # SOPS-encrypted secret (decrypted by FluxCD)

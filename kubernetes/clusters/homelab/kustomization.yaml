@@ -1,21 +1,26 @@
 # Cluster Entry Point for Homelab
 #
-# This is the main entry point for FluxCD. It references all resources
-# that should be deployed to this cluster.
+# This is the main entry point for FluxCD. It references FluxCD Kustomization
+# CRs that manage infrastructure and applications with proper dependency ordering.
 #
-# Bootstrap command:
-#   flux bootstrap github \
-#     --owner=<github-user> \
+# Bootstrap command (Forgejo):
+#   flux bootstrap gitea \
+#     --hostname=git.home-infra.net \
+#     --owner=<username> \
 #     --repository=infra \
 #     --path=kubernetes/clusters/homelab \
 #     --personal
+#
+# SOPS Setup (one-time, after bootstrap):
+#   cat ~/.config/sops/age/keys.txt | kubectl create secret generic sops-age \
+#     --namespace=flux-system \
+#     --from-file=age.agekey=/dev/stdin
 #
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  # Infrastructure components (CNI, storage, monitoring)
-  - ../../infrastructure/controllers
-  - ../../infrastructure/configs
-  # Applications
-  # - ../../apps/production  # Uncomment when ready to deploy apps
+  # FluxCD Kustomization CRs (not native kustomize paths)
+  # These define what FluxCD deploys and in what order
+  - infrastructure.yaml  # CNI, storage, monitoring (no SOPS)
+  - apps.yaml            # Applications (with SOPS decryption)
