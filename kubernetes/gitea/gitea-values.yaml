@@ -1,0 +1,178 @@
+# Gitea Helm Chart Values
+#
+# In-cluster Gitea for GitOps with FluxCD
+# Chart: https://gitea.com/gitea/helm-chart
+# Docs: https://docs.gitea.com/installation/install-on-kubernetes
+#
+# Admin credentials are injected via Terraform from SOPS secrets.
+# Do NOT put passwords in this file.
+
+# ============================================================================
+# Global Settings
+# ============================================================================
+
+global:
+  storageClass: "longhorn"
+
+# ============================================================================
+# Gitea Configuration
+# ============================================================================
+
+gitea:
+  # Admin user is created automatically
+  # Credentials injected by Terraform from SOPS
+  admin:
+    existingSecret: ""  # Using Terraform set values instead
+
+  # Gitea application config (app.ini)
+  config:
+    APP_NAME: "Homelab Git"
+
+    server:
+      DOMAIN: git.home-infra.net
+      ROOT_URL: https://git.home-infra.net/
+      SSH_DOMAIN: git.home-infra.net
+      SSH_PORT: 22
+      LFS_START_SERVER: true
+
+    repository:
+      DEFAULT_BRANCH: main
+      DEFAULT_PRIVATE: false
+
+    service:
+      DISABLE_REGISTRATION: true  # Admin only creates users
+      REQUIRE_SIGNIN_VIEW: false
+      DEFAULT_KEEP_EMAIL_PRIVATE: true
+
+    security:
+      INSTALL_LOCK: true  # Skip installer, use admin from config
+
+    database:
+      DB_TYPE: sqlite3  # Simple for homelab, use PostgreSQL for production
+
+    cache:
+      ADAPTER: memory
+
+    session:
+      PROVIDER: memory
+
+    log:
+      MODE: console
+      LEVEL: Info
+
+    # Webhook settings for FluxCD notifications
+    webhook:
+      ALLOWED_HOST_LIST: "*"
+
+# ============================================================================
+# Persistence
+# ============================================================================
+
+persistence:
+  enabled: true
+  size: 10Gi
+  storageClass: "longhorn"
+  accessModes:
+    - ReadWriteOnce
+
+# ============================================================================
+# Service Configuration
+# ============================================================================
+
+service:
+  http:
+    type: LoadBalancer
+    port: 3000
+    # Cilium will assign an IP from the L2 pool
+    annotations: {}
+
+  ssh:
+    type: LoadBalancer
+    port: 22
+    annotations: {}
+
+# ============================================================================
+# Ingress (Optional - using LoadBalancer instead)
+# ============================================================================
+
+ingress:
+  enabled: false
+  # Enable if using ingress controller instead of LoadBalancer
+  # className: ""
+  # hosts:
+  #   - host: git.home-infra.net
+  #     paths:
+  #       - path: /
+  #         pathType: Prefix
+
+# ============================================================================
+# Resources
+# ============================================================================
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+
+# ============================================================================
+# PostgreSQL (Disabled - using SQLite)
+# ============================================================================
+
+postgresql:
+  enabled: false
+
+postgresql-ha:
+  enabled: false
+
+# ============================================================================
+# Redis (Disabled - using memory cache)
+# ============================================================================
+
+redis-cluster:
+  enabled: false
+
+# ============================================================================
+# Init Container
+# ============================================================================
+
+# Ensure proper permissions on data directory
+initContainers:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+
+# ============================================================================
+# Notes
+# ============================================================================
+#
+# Storage:
+# - Uses Longhorn for persistent storage
+# - 10Gi default, adjust as needed
+# - SQLite database stored in PVC
+#
+# Networking:
+# - HTTP on port 3000 via LoadBalancer (Cilium L2)
+# - SSH on port 22 via LoadBalancer
+# - IP will be assigned from Cilium L2 pool (10.10.2.240-254)
+#
+# Security:
+# - Registration disabled (admin creates users)
+# - Install lock enabled (no web installer)
+# - Admin credentials from SOPS
+#
+# Access:
+# - Web UI: https://git.home-infra.net/
+# - SSH: git@git.home-infra.net:owner/repo.git
+# - HTTP: https://git.home-infra.net/owner/repo.git
+#
+# Verification:
+#   kubectl get pods -n gitea
+#   kubectl get svc -n gitea
+#   kubectl logs -n gitea -l app.kubernetes.io/name=gitea

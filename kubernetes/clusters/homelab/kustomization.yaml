@@ -1,0 +1,21 @@
+# Cluster Entry Point for Homelab
+#
+# This is the main entry point for FluxCD. It references all resources
+# that should be deployed to this cluster.
+#
+# Bootstrap command:
+#   flux bootstrap github \
+#     --owner=<github-user> \
+#     --repository=infra \
+#     --path=kubernetes/clusters/homelab \
+#     --personal
+#
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  # Infrastructure components (CNI, storage, monitoring)
+  - ../../infrastructure/controllers
+  - ../../infrastructure/configs
+  # Applications
+  # - ../../apps/production  # Uncomment when ready to deploy apps

@@ -1,0 +1,153 @@
+# Cilium CNI HelmRelease
+#
+# Cilium is deployed as the CNI and kube-proxy replacement.
+# This is the first infrastructure component and must be healthy
+# before other components can be deployed.
+#
+# Full values reference: kubernetes/cilium/cilium-values.yaml
+#
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: cilium
+  namespace: kube-system
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: cilium
+      version: "1.18.5"
+      sourceRef:
+        kind: HelmRepository
+        name: cilium
+        namespace: flux-system
+      interval: 12h
+  install:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  upgrade:
+    crds: CreateReplace
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  # Inline values for Talos compatibility
+  # See kubernetes/cilium/cilium-values.yaml for full documentation
+  values:
+    cluster:
+      name: homelab-k8s
+      id: 0
+    # CRITICAL: KubePrism for API server access
+    k8sServiceHost: localhost
+    k8sServicePort: 7445
+    # IPAM
+    ipam:
+      mode: kubernetes
+      operator:
+        clusterPoolIPv4PodCIDRList:
+          - "10.244.0.0/16"
+    # kube-proxy replacement
+    kubeProxyReplacement: true
+    socketLB:
+      enabled: true
+    nodePort:
+      enabled: true
+    # L2 Load Balancing
+    l2announcements:
+      enabled: true
+    externalIPs:
+      enabled: true
+    # BGP disabled
+    bgpControlPlane:
+      enabled: false
+    # CNI
+    cni:
+      install: true
+      exclusive: true
+    # Networking
+    tunnelProtocol: vxlan
+    ipv4:
+      enabled: true
+    ipv6:
+      enabled: false
+    # eBPF - CRITICAL for Talos
+    bpf:
+      masquerade: true
+      hostLegacyRouting: true
+      tproxy: true
+    bpfMapDynamicSizeRatio: 0.0025
+    # Cgroups - CRITICAL for Talos
+    cgroup:
+      autoMount:
+        enabled: false
+      hostRoot: /sys/fs/cgroup
+    # Security
+    encryption:
+      enabled: false
+    policyEnforcementMode: default
+    # Operator
+    operator:
+      enabled: true
+      replicas: 1
+      resources:
+        limits:
+          cpu: 1000m
+          memory: 1Gi
+        requests:
+          cpu: 100m
+          memory: 128Mi
+    # Agent resources
+    resources:
+      limits:
+        cpu: 4000m
+        memory: 4Gi
+      requests:
+        cpu: 100m
+        memory: 512Mi
+    # Hubble
+    hubble:
+      enabled: true
+      relay:
+        enabled: true
+        replicas: 1
+      ui:
+        enabled: true
+        replicas: 1
+    # Prometheus
+    prometheus:
+      enabled: true
+      serviceMonitor:
+        enabled: false
+    # Bandwidth manager
+    bandwidthManager:
+      enabled: true
+      bbr: false
+    enableServiceTopology: true
+    # Security context - CRITICAL for Talos
+    securityContext:
+      capabilities:
+        ciliumAgent:
+          - CHOWN
+          - KILL
+          - NET_ADMIN
+          - NET_RAW
+          - IPC_LOCK
+          - SYS_ADMIN
+          - SYS_RESOURCE
+          - DAC_OVERRIDE
+          - FOWNER
+          - SETGID
+          - SETUID
+        cleanCiliumState:
+          - NET_ADMIN
+          - SYS_ADMIN
+          - SYS_RESOURCE
+    # Tolerations
+    tolerations:
+      - operator: Exists
+    # Update strategy
+    updateStrategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 1

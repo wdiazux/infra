@@ -1,0 +1,101 @@
+# Longhorn Storage HelmRelease
+#
+# Longhorn provides distributed block storage for Kubernetes.
+# Depends on Cilium being healthy (nodes must be Ready).
+#
+# Full values reference: kubernetes/longhorn/longhorn-values.yaml
+#
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: longhorn-system
+  labels:
+    # Required for Longhorn privileged containers
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: longhorn
+  namespace: longhorn-system
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: longhorn
+      version: "1.10.1"
+      sourceRef:
+        kind: HelmRepository
+        name: longhorn
+        namespace: flux-system
+      interval: 12h
+  # NOTE: Cilium dependency removed - Cilium is installed via Talos inlineManifest
+  # and will be Ready before FluxCD starts. Uncomment if transitioning Cilium to FluxCD.
+  # dependsOn:
+  #   - name: cilium
+  #     namespace: kube-system
+  install:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  upgrade:
+    crds: CreateReplace
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  # Inline values for single-node Talos cluster
+  # See kubernetes/longhorn/longhorn-values.yaml for full documentation
+  values:
+    defaultSettings:
+      defaultDataPath: /var/lib/longhorn
+      defaultReplicaCount: 1
+      storageReservedPercentageForDefaultDisk: 25
+      replicaSoftAntiAffinity: "false"
+      createDefaultDiskLabeledNodes: true
+      snapshotDataIntegrity: "enabled"
+      snapshotMaxCount: 10
+      orphanAutoDeletion: true
+      storageMinimalAvailablePercentage: 10
+      guaranteedInstanceManagerCPU: 5
+      disableSchedulingOnCordonedNode: true
+      replicaAutoBalance: "best-effort"
+      nodeDownPodDeletionPolicy: "delete-both-statefulset-and-deployment-pod"
+      concurrentAutomaticEngineUpgradePerNodeLimit: 1
+      concurrentReplicaRebuildPerNodeLimit: 2
+      concurrentVolumeBackupRestorePerNodeLimit: 2
+      replicaReplenishmentWaitInterval: 300
+    persistence:
+      defaultClass: true
+      defaultFsType: ext4
+      defaultClassReplicaCount: 1
+      defaultDataLocality: best-effort
+      reclaimPolicy: Delete
+      migratable: false
+    ingress:
+      enabled: false
+    service:
+      ui:
+        type: ClusterIP
+      manager:
+        type: ClusterIP
+    csi:
+      attacherReplicaCount: 1
+      provisionerReplicaCount: 1
+      resizerReplicaCount: 1
+      snapshotterReplicaCount: 1
+    longhornUI:
+      replicas: 1
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+      requests:
+        cpu: 500m
+        memory: 1Gi
+    metrics:
+      serviceMonitor:
+        enabled: false
+    enablePSP: false

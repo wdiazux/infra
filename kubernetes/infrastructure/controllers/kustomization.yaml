@@ -1,0 +1,28 @@
+# Infrastructure Controllers
+#
+# Core cluster infrastructure components deployed via Helm.
+# These are deployed in order due to dependencies.
+#
+# BOOTSTRAP NOTE:
+# Cilium is installed via Talos inlineManifest during cluster bootstrap
+# (see terraform/talos/cilium-inline.tf). This solves the chicken-and-egg
+# problem where FluxCD needs CNI to work.
+#
+# To transition Cilium management to FluxCD (optional):
+# 1. Uncomment cilium.yaml below
+# 2. Commit and push changes
+# 3. FluxCD will adopt the existing Cilium installation
+#
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  # Helm repositories
+  - helm-repositories.yaml
+  # CNI - DISABLED: Installed via Talos inlineManifest
+  # Uncomment to transition management to FluxCD:
+  # - cilium.yaml
+  # Storage (depends on CNI)
+  - longhorn.yaml
+  # GPU support (depends on CNI for node Ready status)
+  - nvidia-gpu.yaml

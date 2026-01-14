@@ -1,0 +1,13 @@
+# Production Applications
+#
+# Applications deployed to the homelab cluster.
+# Add application directories here as they're created.
+#
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources: []
+  # Example applications (uncomment when created):
+  # - plex/
+  # - jellyfin/
+  # - home-assistant/
