@@ -223,7 +223,7 @@ ansible-playbook playbooks/day1_windows_baseline.yml
 **Features Provided:**
 - System updates and baseline packages
 - SSH hardening and firewall configuration (UFW/Windows Firewall)
-- fail2ban (Linux) and security policies (Windows)
+- CrowdSec (Linux) and security policies (Windows)
 - Automatic security updates
 - Optional Docker/Podman installation
 - NFS mount configuration

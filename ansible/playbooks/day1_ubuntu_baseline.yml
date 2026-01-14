@@ -51,7 +51,7 @@
     firewall_allowed_ports:
       - 22   # SSH
 
-    # Fail2ban configuration
+    # CrowdSec configuration
     crowdsec_maxretry: 5
     crowdsec_findtime: 600
     crowdsec_bantime: 3600
@@ -207,7 +207,7 @@
         var: ufw_status.stdout_lines
 
     # ========================================================================
-    # Fail2ban Configuration
+    # CrowdSec Configuration
     # ========================================================================
 
     - name: Configure crowdsec jail for SSH
@@ -408,7 +408,7 @@
 
           Security:
           - UFW firewall: Enabled
-          - Fail2ban: Enabled
+          - CrowdSec: Enabled
           - SSH hardening: Applied
           - Auto security updates: {{ 'Enabled' if enable_auto_security_updates else 'Disabled' }}
 
