@@ -116,9 +116,9 @@ resource "proxmox_virtual_environment_vm" "talos_node" {
   bios = "ovmf"
 
   efi_disk {
-    datastore_id      = var.node_disk_storage
-    file_format       = "raw"
-    type              = "4m"
+    datastore_id = var.node_disk_storage
+    file_format  = "raw"
+    type         = "4m"
     # IMPORTANT: Must be false for Talos - it doesn't support UEFI Secure Boot
     # with Microsoft keys. Setting to true causes "Access Denied" boot failure.
     pre_enrolled_keys = false

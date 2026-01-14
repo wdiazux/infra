@@ -83,6 +83,25 @@ output "gpu_enabled" {
 }
 
 # ============================================================================
+# CNI and Storage Information
+# ============================================================================
+
+output "cilium_version" {
+  description = "Cilium CNI version"
+  value       = var.cilium_version
+}
+
+output "cilium_lb_pool" {
+  description = "Cilium L2 LoadBalancer IP pool CIDR"
+  value       = var.cilium_lb_pool_cidr
+}
+
+output "longhorn_version" {
+  description = "Longhorn storage version"
+  value       = var.longhorn_version
+}
+
+# ============================================================================
 # Access Instructions
 # ============================================================================
 
