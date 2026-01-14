@@ -128,3 +128,13 @@ variable "forgejo_create_repo" {
   type        = bool
   default     = true
 }
+
+# ============================================================================
+# Pangolin/Newt Configuration (WireGuard Tunnel)
+# ============================================================================
+
+variable "enable_pangolin" {
+  description = "Enable Pangolin/Newt WireGuard tunnel (requires secrets/pangolin-creds.enc.yaml)"
+  type        = bool
+  default     = true
+}

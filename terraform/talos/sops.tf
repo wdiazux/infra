@@ -19,6 +19,12 @@ data "sops_file" "nas_backup_secrets" {
   source_file = "${path.module}/../../secrets/nas-backup-creds.enc.yaml"
 }
 
+# Load SOPS-encrypted Pangolin credentials (for Newt tunnel)
+data "sops_file" "pangolin_secrets" {
+  count       = var.enable_pangolin ? 1 : 0
+  source_file = "${path.module}/../../secrets/pangolin-creds.enc.yaml"
+}
+
 locals {
   # SOPS-decrypted secrets
   secrets = {

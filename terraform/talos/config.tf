@@ -195,5 +195,23 @@ data "talos_machine_configuration" "node" {
         ]
       }
     }),
+
+    # ═══════════════════════════════════════════════════════════════
+    # PANGOLIN/NEWT WIREGUARD TUNNEL
+    # ═══════════════════════════════════════════════════════════════
+    # Newt is a WireGuard tunnel client that connects to Pangolin server
+    # for secure remote access. Configured via ExtensionServiceConfig.
+    # Requires: siderolabs/newt extension in Talos image schematic
+    # ═══════════════════════════════════════════════════════════════
+    var.enable_pangolin ? yamlencode({
+      apiVersion = "v1alpha1"
+      kind       = "ExtensionServiceConfig"
+      name       = "newt"
+      environment = [
+        "PANGOLIN_ENDPOINT=${data.sops_file.pangolin_secrets[0].data["pangolin_url"]}",
+        "NEWT_ID=${data.sops_file.pangolin_secrets[0].data["pangolin_user"]}",
+        "NEWT_SECRET=${data.sops_file.pangolin_secrets[0].data["pangolin_token"]}"
+      ]
+    }) : "",
   ], var.talos_config_patches)
 }
