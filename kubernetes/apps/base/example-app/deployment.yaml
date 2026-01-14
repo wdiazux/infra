@@ -19,18 +19,13 @@ spec:
           image: nginx:alpine
           ports:
             - containerPort: 80
-          env:
-            # Reference secrets from the SOPS-encrypted secret
-            - name: API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: example-app-secret
-                  key: api-key
-            - name: DATABASE_URL
-              valueFrom:
-                secretKeyRef:
-                  name: example-app-secret
-                  key: database-url
+          # To use SOPS secrets, uncomment and create secret.enc.yaml:
+          # env:
+          #   - name: API_KEY
+          #     valueFrom:
+          #       secretKeyRef:
+          #         name: example-app-secret
+          #         key: api-key
           resources:
             requests:
               cpu: 50m
