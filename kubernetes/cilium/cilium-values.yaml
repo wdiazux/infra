@@ -1,16 +1,15 @@
-# Cilium Helm Values for Talos Linux Single-Node Cluster
+# Cilium Helm Values - REFERENCE DOCUMENTATION
 #
-# This configuration optimizes Cilium as the CNI and kube-proxy replacement
-# for a single-node Talos cluster on Proxmox.
+# STATUS: This file is for REFERENCE ONLY.
+# ACTIVE CONFIG: terraform/talos/cilium-inline.tf (embedded in Talos bootstrap)
 #
-# Version: Cilium 1.18+
-# Talos Compatibility: v1.8+
-# Last Updated: 2025-11-22
+# Cilium is now installed via Talos inlineManifest during cluster bootstrap,
+# not via manual Helm installation. This file documents the configuration
+# values but is NOT used by automation.
 #
-# CROSS-REFERENCES:
-# - Installation guide: kubernetes/cilium/INSTALLATION.md
-# - L2 IP pool config: kubernetes/cilium/l2-ippool.yaml
-# - Terraform Talos config: terraform/main.tf (CNI disabled, kube-proxy disabled)
+# Version: Cilium 1.18.5
+# Talos Compatibility: v1.10+
+# Last Updated: 2026-01-13
 
 # ============================================================================
 # Core Configuration

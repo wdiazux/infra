@@ -167,11 +167,33 @@ data "talos_machine_configuration" "node" {
                   [plugins."io.containerd.cri.v1.runtime".containerd]
                     default_runtime_name = "nvidia"
               EOF
-            path = "/etc/cri/conf.d/20-customization.part"
-            op   = "create"
+            path    = "/etc/cri/conf.d/20-customization.part"
+            op      = "create"
           }
         ]
       }
     }) : "",
+
+    # ═══════════════════════════════════════════════════════════════
+    # CILIUM CNI INLINE MANIFEST
+    # ═══════════════════════════════════════════════════════════════
+    # Cilium is embedded directly in the Talos machine config to solve
+    # the chicken-and-egg problem: FluxCD needs CNI to work, but would
+    # normally install CNI. By embedding Cilium here, it's applied during
+    # Talos bootstrap, making nodes Ready immediately.
+    #
+    # FluxCD can later take over management via HelmRelease.
+    # Reference: https://www.talos.dev/v1.10/kubernetes-guides/network/deploying-cilium/
+    # ═══════════════════════════════════════════════════════════════
+    yamlencode({
+      cluster = {
+        inlineManifests = [
+          {
+            name     = "cilium"
+            contents = local.cilium_inline_manifest
+          }
+        ]
+      }
+    }),
   ], var.talos_config_patches)
 }

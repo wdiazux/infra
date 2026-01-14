@@ -1,18 +1,33 @@
 # Cilium Installation Guide for Talos Linux
 
-This guide provides step-by-step instructions for installing and configuring Cilium as the CNI (Container Network Interface) and kube-proxy replacement for your Talos Linux cluster.
+## ⚠️ AUTOMATIC INSTALLATION NOTE
 
-## ⚠️ CRITICAL PREREQUISITES
+**Cilium is now installed AUTOMATICALLY** via Talos inlineManifest during cluster bootstrap.
 
-**BEFORE installing Cilium, ensure:**
+When you run `terraform apply` in `terraform/talos/`, Cilium is embedded in the Talos machine configuration and deployed automatically. **Manual installation is NOT required.**
 
-1. **Talos cluster is deployed and bootstrapped** via Terraform (`terraform apply` completed successfully)
-2. **Kubernetes API is accessible** via `kubectl --kubeconfig=./kubeconfig get nodes`
-3. **NO OTHER CNI IS INSTALLED** - Cilium must be the first and only CNI
-4. **Talos machine config has `cni.name: none`** and `proxy.disabled: true` (already configured in Terraform)
-5. **KubePrism is enabled** on port 7445 (already configured in Terraform)
+**What's automatic:**
+- Cilium CNI deployment
+- L2 LoadBalancer IP pool (10.10.2.240/28)
+- L2 announcement policy
 
-**IMPORTANT**: Nodes will show `NotReady` until Cilium is installed. This is expected behavior.
+**Active configuration:** `terraform/talos/cilium-inline.tf`
+
+---
+
+## When to Use This Guide
+
+This guide is for **reference only** and covers:
+- Understanding Cilium configuration options
+- Manual troubleshooting and verification
+- Advanced configuration (encryption, BBR, etc.)
+- Accessing Hubble UI
+
+If you need to manually reinstall Cilium (rare), follow the steps below.
+
+---
+
+## Prerequisites (Manual Installation Only)
 
 ---
 
@@ -527,7 +542,8 @@ kubectl -n kube-system exec ds/cilium -- cilium config view
 
 ---
 
-**Documentation Version**: 1.0.0
-**Last Updated**: 2025-11-22
-**Cilium Version**: v1.18+
-**Talos Version**: v1.8+
+**Documentation Version**: 2.0.0
+**Last Updated**: 2026-01-13
+**Cilium Version**: v1.18.5
+**Talos Version**: v1.10+
+**Note**: Cilium is now auto-installed via Talos inlineManifest

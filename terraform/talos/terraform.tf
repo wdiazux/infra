@@ -30,6 +30,16 @@ terraform {
       source  = "hashicorp/null"
       version = "~> 3.2.4"
     }
+
+    helm = {
+      source  = "hashicorp/helm"
+      version = "~> 2.17.0"
+    }
+
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = "~> 2.36.0"
+    }
   }
 
   # Backend configuration for remote state (optional)
