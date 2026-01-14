@@ -216,6 +216,9 @@ metadata:
 spec:
   blocks:
     - cidr: "${var.cilium_lb_pool_cidr}"
+    # Important services pool (Forgejo, etc.)
+    - start: "10.10.2.11"
+      stop: "10.10.2.20"
   serviceSelector:
     matchLabels: {}
 ---
