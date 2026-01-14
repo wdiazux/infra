@@ -111,7 +111,7 @@ resource "null_resource" "wait_for_forgejo" {
         sleep 10
       done
 
-      echo "Error: Timeout waiting for Forgejo API"
+      echo "ERROR: Timeout waiting for Forgejo API"
       exit 1
     EOT
   }
@@ -147,9 +147,8 @@ resource "null_resource" "forgejo_generate_token" {
 
       echo "Generating Forgejo access token for FluxCD..."
 
-      # Create temp netrc file for secure credential passing (avoids leaking to process list)
-      NETRC_FILE=$(mktemp)
-      chmod 600 "$NETRC_FILE"
+      # Create temp netrc file with secure permissions from start (avoids race condition)
+      NETRC_FILE=$(umask 077 && mktemp)
       cat > "$NETRC_FILE" << NETRC
 machine localhost
 login $FORGEJO_ADMIN_USER
@@ -181,29 +180,38 @@ NETRC
       # Token name with timestamp to avoid conflicts
       TOKEN_NAME="flux-$(date +%Y%m%d-%H%M%S)"
 
+      # URL-encode the username to prevent injection
+      ENCODED_USER=$(printf '%s' "$FORGEJO_ADMIN_USER" | jq -sRr @uri)
+
+      # Create JSON payload safely using jq (prevents shell injection)
+      JSON_PAYLOAD=$(jq -n --arg name "$TOKEN_NAME" \
+        '{name: $name, scopes: ["write:repository", "read:user", "read:organization"]}')
+
       # Create token via Forgejo API (using netrc for secure auth)
       RESPONSE=$(curl -s -X POST \
         -H "Content-Type: application/json" \
         --netrc-file "$NETRC_FILE" \
-        -d "{\"name\":\"$TOKEN_NAME\",\"scopes\":[\"write:repository\",\"read:user\",\"read:organization\"]}" \
-        "http://localhost:3000/api/v1/users/$FORGEJO_ADMIN_USER/tokens")
+        -d "$JSON_PAYLOAD" \
+        "http://localhost:3000/api/v1/users/$ENCODED_USER/tokens")
 
       # Extract token (sha1 field)
       TOKEN=$(echo "$RESPONSE" | jq -r '.sha1 // empty')
 
       if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
-        echo "Warning: Failed to create Forgejo token with name $TOKEN_NAME"
+        echo "WARNING: Failed to create Forgejo token with name $TOKEN_NAME"
         echo "Response: $RESPONSE"
 
         # Check if token already exists (409 conflict)
         if echo "$RESPONSE" | grep -q "already exist"; then
           echo "Token with similar name may already exist. Trying with random suffix..."
           TOKEN_NAME="flux-$(date +%s)"
+          JSON_PAYLOAD=$(jq -n --arg name "$TOKEN_NAME" \
+            '{name: $name, scopes: ["write:repository", "read:user", "read:organization"]}')
           RESPONSE=$(curl -s -X POST \
             -H "Content-Type: application/json" \
             --netrc-file "$NETRC_FILE" \
-            -d "{\"name\":\"$TOKEN_NAME\",\"scopes\":[\"write:repository\",\"read:user\",\"read:organization\"]}" \
-            "http://localhost:3000/api/v1/users/$FORGEJO_ADMIN_USER/tokens")
+            -d "$JSON_PAYLOAD" \
+            "http://localhost:3000/api/v1/users/$ENCODED_USER/tokens")
           TOKEN=$(echo "$RESPONSE" | jq -r '.sha1 // empty')
         fi
 
@@ -253,37 +261,64 @@ resource "null_resource" "forgejo_create_repo" {
 
   provisioner "local-exec" {
     command = <<-EOT
+      set -e
       echo "Creating Forgejo repository: $REPO_NAME..."
+
+      # Create temp netrc file with secure permissions from start (avoids race condition)
+      NETRC_FILE=$(umask 077 && mktemp)
+      cat > "$NETRC_FILE" << NETRC
+machine localhost
+login $FORGEJO_ADMIN_USER
+password $FORGEJO_ADMIN_PASS
+NETRC
 
       # Port-forward to Forgejo service
       kubectl --kubeconfig=${local.kubeconfig_path} port-forward \
         svc/forgejo-http -n forgejo 3000:3000 &
       PF_PID=$!
 
-      trap "kill $PF_PID 2>/dev/null" EXIT
+      # Cleanup on exit (port-forward and netrc file)
+      cleanup() {
+        kill $PF_PID 2>/dev/null || true
+        rm -f "$NETRC_FILE"
+      }
+      trap cleanup EXIT
+
       sleep 5
+
+      # URL-encode variables to prevent injection
+      ENCODED_USER=$(printf '%s' "$FORGEJO_ADMIN_USER" | jq -sRr @uri)
+      ENCODED_REPO=$(printf '%s' "$REPO_NAME" | jq -sRr @uri)
 
       # Check if repo already exists
       REPO_CHECK=$(curl -s -o /dev/null -w "%%{http_code}" \
-        -u "$FORGEJO_ADMIN_USER:$FORGEJO_ADMIN_PASS" \
-        "http://localhost:3000/api/v1/repos/$FORGEJO_ADMIN_USER/$REPO_NAME")
+        --netrc-file "$NETRC_FILE" \
+        "http://localhost:3000/api/v1/repos/$ENCODED_USER/$ENCODED_REPO")
 
       if [ "$REPO_CHECK" = "200" ]; then
         echo "Repository already exists, skipping creation"
         exit 0
       fi
 
+      # Create JSON payload safely using jq (prevents shell injection)
+      JSON_PAYLOAD=$(jq -n \
+        --arg name "$REPO_NAME" \
+        --argjson private "$REPO_PRIVATE" \
+        '{name: $name, private: $private, description: "Infrastructure as Code managed by FluxCD"}')
+
       # Create repository
       RESPONSE=$(curl -s -X POST \
         -H "Content-Type: application/json" \
-        -u "$FORGEJO_ADMIN_USER:$FORGEJO_ADMIN_PASS" \
-        -d "{\"name\":\"$REPO_NAME\",\"private\":$REPO_PRIVATE,\"description\":\"Infrastructure as Code managed by FluxCD\"}" \
+        --netrc-file "$NETRC_FILE" \
+        -d "$JSON_PAYLOAD" \
         "http://localhost:3000/api/v1/user/repos")
 
-      if echo "$RESPONSE" | grep -q "\"name\":\"$REPO_NAME\""; then
+      # Check response using jq for safe parsing
+      CREATED_NAME=$(echo "$RESPONSE" | jq -r '.name // empty')
+      if [ "$CREATED_NAME" = "$REPO_NAME" ]; then
         echo "Repository created successfully!"
       else
-        echo "Warning: Repository creation response: $RESPONSE"
+        echo "WARNING: Repository creation response: $RESPONSE"
       fi
     EOT
 
