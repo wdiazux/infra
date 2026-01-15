@@ -189,6 +189,12 @@ variable "auto_install_gpu_device_plugin" {
   default     = true
 }
 
+variable "nvidia_device_plugin_version" {
+  description = "NVIDIA device plugin version"
+  type        = string
+  default     = "v0.18.1"
+}
+
 variable "gpu_mapping" {
   description = "GPU resource mapping name from Proxmox"
   type        = string

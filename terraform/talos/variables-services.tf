@@ -95,12 +95,6 @@ variable "git_branch" {
   default     = "main"
 }
 
-variable "git_personal" {
-  description = "Use personal account (not organization)"
-  type        = bool
-  default     = true
-}
-
 variable "git_private" {
   description = "Repository is private"
   type        = bool

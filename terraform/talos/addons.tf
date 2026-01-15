@@ -218,7 +218,7 @@ spec:
           effect: NoSchedule
       containers:
         - name: nvidia-device-plugin-ctr
-          image: nvcr.io/nvidia/k8s-device-plugin:v0.18.1
+          image: nvcr.io/nvidia/k8s-device-plugin:${var.nvidia_device_plugin_version}
           env:
             - name: DEVICE_DISCOVERY_STRATEGY
               value: nvml

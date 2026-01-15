@@ -59,6 +59,13 @@ resource "null_resource" "wait_for_kubernetes" {
 
   provisioner "local-exec" {
     command = <<-EOT
+      set -e
+
+      if ! command -v kubectl &>/dev/null; then
+        echo "ERROR: kubectl not found. Install via nix-shell."
+        exit 1
+      fi
+
       echo "Waiting for Kubernetes API to be ready (timeout: ${var.kubernetes_wait_timeout}s)..."
       timeout ${var.kubernetes_wait_timeout} bash -c 'until kubectl --kubeconfig=${local.kubeconfig_path} get nodes &>/dev/null; do echo "Waiting..."; sleep 5; done'
       echo "Kubernetes API is ready!"
