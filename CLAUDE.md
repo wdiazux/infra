@@ -459,14 +459,26 @@ When updating a component, check these associated files:
 
 | Component | Code Files | Documentation to Update |
 |-----------|------------|------------------------|
-| **Talos Version** | `packer/talos/import-talos-image.sh`, `terraform/talos/variables.tf`, `secrets/proxmox-creds.enc.yaml` | `packer/talos/README.md`, `terraform/README.md`, `DEPLOYMENT-CHECKLIST.md` |
-| **GPU Config** | `terraform/talos/variables.tf`, `terraform/talos/vm.tf`, `terraform/talos/addons.tf` | `CLAUDE.md` (Hardware section), `terraform/README.md`, `packer/talos/README.md` |
-| **Traditional VMs** | `packer/{os}/*.pkr.hcl`, `terraform/traditional-vms/main.tf`, `terraform/traditional-vms/locals.tf` | `packer/{os}/README.md`, `terraform/README.md`, `CLAUDE.md` (Template Details table) |
-| **Network Config** | `terraform/talos/variables.tf`, `talos/*.yaml` | `CLAUDE.md` (Network Configuration table), `terraform/README.md` |
-| **Kubernetes Stack** | `kubernetes/**`, `talos/*.yaml` | `CLAUDE.md` (Kubernetes Stack section), `docs/guides/services/` |
+| **Talos Version** | `packer/talos/import-talos-image.sh`, `terraform/talos/variables.tf` | `docs/deployment/talos.md`, `docs/reference/terraform.md`, `packer/talos/README.md` |
+| **GPU Config** | `terraform/talos/variables.tf`, `terraform/talos/vm.tf`, `terraform/talos/addons.tf` | `docs/services/gpu.md`, `docs/reference/infrastructure.md`, `CLAUDE.md` (Hardware section) |
+| **Traditional VMs** | `packer/{os}/*.pkr.hcl`, `terraform/traditional-vms/main.tf` | `packer/{os}/README.md`, `CLAUDE.md` (Template Details table) |
+| **Network Config** | `terraform/talos/variables.tf`, `terraform/talos/variables-services.tf` | `docs/reference/network.md`, `CLAUDE.md` (Network Configuration table) |
+| **Kubernetes Stack** | `kubernetes/**`, `terraform/talos/addons.tf` | `docs/services/` (cilium, longhorn, forgejo, fluxcd) |
+| **Secrets** | `secrets/*.enc.yaml`, `.sops.yaml` | `docs/operations/secrets.md` |
 | **Tool Versions** | `shell.nix`, `npins/` | `CLAUDE.md` (Core Tools section) |
 
-**Quick version search**: `grep -r "v1\.12\." --include="*.md" --include="*.hcl" --include="*.tf" --include="*.sh" | grep -v archive | grep -v research`
+**Documentation Structure:**
+```
+docs/
+├── getting-started/   # Prerequisites, quickstart
+├── deployment/        # Talos deployment, checklist
+├── services/          # Cilium, Longhorn, Forgejo, FluxCD, GPU
+├── operations/        # Secrets, backups, upgrades, destroy, troubleshooting
+├── reference/         # Network, terraform, infrastructure
+└── research/          # Historical research reports
+```
+
+**Quick version search**: `grep -r "v1\.12\." --include="*.md" --include="*.hcl" --include="*.tf" --include="*.sh" | grep -v research`
 
 ## Git Workflow
 
@@ -593,6 +605,7 @@ zpool scrub poolname          # Data integrity check
 
 ## Version History
 
+- **2026-01-15**: Documentation consolidation - reorganized 54 files into structured `docs/` hierarchy (getting-started, deployment, services, operations, reference)
 - **2026-01-14**: Service LoadBalancer IPs assigned (Hubble UI, Longhorn, Forgejo, FluxCD webhook), documentation cleanup (removed archive docs)
 - **2026-01-11**: Talos switched from Packer to direct disk image import (recommended approach by Sidero Labs)
 - **2026-01-10**: Talos v1.12.1 upgrade, GPU passthrough config (PCI 07:00), hardware documentation, documentation sync guidelines added

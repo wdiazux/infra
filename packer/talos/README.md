@@ -260,13 +260,14 @@ Sidero Labs (Talos creators) explicitly recommend against Packer for Talos image
 
 ## Version History
 
+- **2026-01-15**: Added nfs-utils extension for Longhorn NFS backup support
 - **2026-01-11**: Switched from Packer to direct disk image import (recommended approach)
 - **2026-01-10**: Updated to Talos v1.12.1
 - **2025-11-23**: Initial Packer template (deprecated)
 
 ---
 
-**Last Updated**: 2026-01-11
+**Last Updated**: 2026-01-15
 **Talos Version**: v1.12.1
 **Template ID**: 9000
 **Build Time**: ~2-5 minutes

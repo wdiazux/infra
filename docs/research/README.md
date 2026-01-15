@@ -183,13 +183,21 @@ A: [Talos Research](talos-research-report.md) - Section: "System Extensions"
 ## 📚 Related Documentation
 
 **Implementation Guides:**
-- [Getting Started with Talos](../guides/getting-started/TALOS-GETTING-STARTED.md)
-- [Talos Deployment Guide](../guides/deployment/TALOS-DEPLOYMENT-GUIDE.md)
-- [Recommended Services](../guides/services/RECOMMENDED-SERVICES-GUIDE.md)
+- [Getting Started](../getting-started/quickstart.md) - Quick start guide
+- [Prerequisites](../getting-started/prerequisites.md) - Setup requirements
+- [Talos Deployment](../deployment/talos.md) - Full deployment guide
 
-**Secrets Management:**
-- [SOPS + FluxCD Guide](../secrets/SOPS-FLUXCD-IMPLEMENTATION-GUIDE.md)
-- [Secrets Quick Start](../secrets/SECRETS_MANAGEMENT_QUICK_START.md)
+**Services:**
+- [Cilium](../services/cilium.md) - CNI and networking
+- [Longhorn](../services/longhorn.md) - Storage management
+- [Forgejo](../services/forgejo.md) - Git server
+- [FluxCD](../services/fluxcd.md) - GitOps
+- [GPU](../services/gpu.md) - NVIDIA GPU passthrough
+
+**Operations:**
+- [Secrets Management](../operations/secrets.md) - SOPS + Age encryption
+- [Backups](../operations/backups.md) - Backup procedures
+- [Upgrades](../operations/upgrades.md) - Upgrade procedures
 
 **Project Documentation:**
 - [CLAUDE.md](../../CLAUDE.md) - Complete project guide

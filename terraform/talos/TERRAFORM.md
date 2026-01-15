@@ -187,6 +187,7 @@ No modules.
 | <a name="provider_proxmox"></a> [proxmox](#provider\_proxmox) | 0.92.0 |
 | <a name="provider_sops"></a> [sops](#provider\_sops) | 1.1.1 |
 | <a name="provider_talos"></a> [talos](#provider\_talos) | 0.10.0 |
+| <a name="provider_terraform"></a> [terraform](#provider\_terraform) | n/a |
 
 ## Modules
 
@@ -227,6 +228,9 @@ No modules.
 | [talos_machine_bootstrap.cluster](https://registry.terraform.io/providers/siderolabs/talos/latest/docs/resources/machine_bootstrap) | resource |
 | [talos_machine_configuration_apply.node](https://registry.terraform.io/providers/siderolabs/talos/latest/docs/resources/machine_configuration_apply) | resource |
 | [talos_machine_secrets.cluster](https://registry.terraform.io/providers/siderolabs/talos/latest/docs/resources/machine_secrets) | resource |
+| [terraform_data.fluxcd_pre_destroy](https://registry.terraform.io/providers/hashicorp/terraform/latest/docs/resources/data) | resource |
+| [terraform_data.forgejo_pre_destroy](https://registry.terraform.io/providers/hashicorp/terraform/latest/docs/resources/data) | resource |
+| [terraform_data.longhorn_pre_destroy](https://registry.terraform.io/providers/hashicorp/terraform/latest/docs/resources/data) | resource |
 | [helm_template.cilium](https://registry.terraform.io/providers/hashicorp/helm/latest/docs/data-sources/template) | data source |
 | [local_file.forgejo_flux_token](https://registry.terraform.io/providers/hashicorp/local/latest/docs/data-sources/file) | data source |
 | [local_file.talos_dhcp_ip](https://registry.terraform.io/providers/hashicorp/local/latest/docs/data-sources/file) | data source |
@@ -280,7 +284,7 @@ No modules.
 | <a name="input_install_disk"></a> [install\_disk](#input\_install\_disk) | Disk device to install Talos on | `string` | `"/dev/sda"` | no |
 | <a name="input_kubernetes_version"></a> [kubernetes\_version](#input\_kubernetes\_version) | Kubernetes version to deploy | `string` | `"v1.35.0"` | no |
 | <a name="input_kubernetes_wait_timeout"></a> [kubernetes\_wait\_timeout](#input\_kubernetes\_wait\_timeout) | Seconds to wait for Kubernetes API | `number` | `300` | no |
-| <a name="input_longhorn_backup_target"></a> [longhorn\_backup\_target](#input\_longhorn\_backup\_target) | Longhorn backup target URL (NFS) | `string` | `"nfs://10.10.2.5:/mnt/tank/backups/longhorn"` | no |
+| <a name="input_longhorn_backup_target"></a> [longhorn\_backup\_target](#input\_longhorn\_backup\_target) | Longhorn backup target URL (NFS) | `string` | `"nfs://10.10.2.5:/mnt/tank/backups"` | no |
 | <a name="input_longhorn_ui_ip"></a> [longhorn\_ui\_ip](#input\_longhorn\_ui\_ip) | Static IP for Longhorn UI LoadBalancer | `string` | `"10.10.2.12"` | no |
 | <a name="input_longhorn_version"></a> [longhorn\_version](#input\_longhorn\_version) | Longhorn Helm chart version | `string` | `"1.10.1"` | no |
 | <a name="input_network_bridge"></a> [network\_bridge](#input\_network\_bridge) | Proxmox network bridge | `string` | `"vmbr0"` | no |

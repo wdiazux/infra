@@ -397,7 +397,7 @@ sops secrets/encrypted.enc.yaml
 - ❌ NEVER commit Age private keys to version control
 - 🔒 Store Age private keys in password manager or hardware token
 
-**See [secrets/README.md](./secrets/README.md) for complete guide.**
+**See [Secrets Management Guide](./docs/operations/secrets.md) for complete guide.**
 
 ## 🖥️ Resource Allocation
 

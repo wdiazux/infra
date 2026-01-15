@@ -56,7 +56,7 @@ Invoke this skill when:
    - Validate each secret has required fields
 
 6. **Documentation**
-   - Verify secrets/README.md is up to date
+   - Verify docs/operations/secrets.md is up to date
    - Check rotation procedures documented
    - Ensure backup procedures documented
 
@@ -66,8 +66,11 @@ Location: `/home/wdiaz/devland/infra/secrets/`
 
 Files:
 - `proxmox-creds.enc.yaml` - Proxmox API credentials and SSH keys
-- `TEMPLATE-proxmox-creds.yaml` - Template for new credentials
-- `README.md` - Secret management documentation
+- `git-creds.enc.yaml` - Forgejo admin and FluxCD credentials
+- `nas-backup-creds.enc.yaml` - NFS backup authentication
+- `pangolin-creds.enc.yaml` - WireGuard tunnel credentials
+
+Documentation: `docs/operations/secrets.md`
 
 Keys Required:
 - `proxmox_url`
