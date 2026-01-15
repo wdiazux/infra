@@ -40,12 +40,12 @@ Network infrastructure documentation for the home-infra.net homelab.
 
 | IP | Hostname | Service | Port(s) | Status |
 |----|----------|---------|---------|--------|
-| 10.10.2.11 | - | Reserved (Proxmox Backup Server) | 8007 | Planned |
-| 10.10.2.12 | - | Reserved | - | - |
-| 10.10.2.13 | - | Reserved | - | - |
-| 10.10.2.14 | - | Reserved | - | - |
-| 10.10.2.15 | - | Reserved | - | - |
-| 10.10.2.16 | - | Reserved | - | - |
+| 10.10.2.11 | hubble | Cilium Hubble UI | 80 | Active |
+| 10.10.2.12 | longhorn | Longhorn Storage UI | 80 | Active |
+| 10.10.2.13 | forgejo-direct | Forgejo HTTP (direct) | 3000 | Active |
+| 10.10.2.14 | forgejo-ssh | Forgejo SSH | 22 | Active |
+| 10.10.2.15 | fluxcd-webhook | FluxCD Webhook Receiver | 80 | Active |
+| 10.10.2.16 | forgejo | Forgejo HTTP (proxy) | 80 | Active |
 | 10.10.2.17 | - | Reserved | - | - |
 | 10.10.2.18 | - | Reserved | - | - |
 | 10.10.2.19 | - | Reserved | - | - |
@@ -157,7 +157,9 @@ Configure these DNS records in your DNS server or `/etc/hosts`:
 | proxmox.home-infra.net | 10.10.2.2 | A |
 | nas.home-infra.net | 10.10.2.5 | A |
 | talos.home-infra.net | 10.10.2.10 | A |
-| git.home-infra.net | 10.10.2.21 | A |
+| hubble.home-infra.net | 10.10.2.11 | A |
+| longhorn.home-infra.net | 10.10.2.12 | A |
+| git.home-infra.net | 10.10.2.16 | A |
 | *.home-infra.net | 10.10.2.240 | A (wildcard for K8s ingress) |
 
 ## Quick Reference
@@ -166,11 +168,14 @@ Configure these DNS records in your DNS server or `/etc/hosts`:
 
 | Service | URL | Notes |
 |---------|-----|-------|
-| Proxmox Web UI | https://proxmox.home-infra.net:8006 | Use API token from SOPS |
-| Forgejo | https://git.home-infra.net | Personal access token |
+| Proxmox Web UI | https://10.10.2.2:8006 | Use API token from SOPS |
+| Forgejo | http://10.10.2.16 | Port 80 via proxy |
+| Forgejo SSH | ssh://git@10.10.2.14 | Port 22 |
 | Kubernetes API | https://10.10.2.10:6443 | Via kubeconfig |
 | Talos API | https://10.10.2.10:50000 | Via talosconfig |
-| Longhorn UI | http://longhorn.home-infra.net | Via K8s ingress |
+| Hubble UI | http://10.10.2.11 | Cilium network observability |
+| Longhorn UI | http://10.10.2.12 | Storage management |
+| FluxCD Webhook | http://10.10.2.15 | GitOps webhook receiver |
 
 ### Common Commands
 
@@ -192,4 +197,4 @@ flux reconcile source git flux-system
 
 ---
 
-**Last Updated**: 2026-01-13
+**Last Updated**: 2026-01-15
