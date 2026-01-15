@@ -1,0 +1,25 @@
+# Twitch Channel Points Miner
+#
+# Automatically watches Twitch streams to collect channel points.
+# https://github.com/rdavydov/Twitch-Channel-Points-Miner-v2
+#
+# Files:
+#   - run.py: Edit directly to change streamers/settings
+#   - secret.enc.yaml: SOPS-encrypted credentials (TWITCH_PASSWORD)
+#
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: twitch-miner
+
+resources:
+  - namespace.yaml
+  - pvc.yaml
+  - deployment.yaml
+  - secret.enc.yaml
+
+# Generate ConfigMap from run.py file
+configMapGenerator:
+  - name: twitch-miner-config
+    files:
+      - run.py

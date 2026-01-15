@@ -1,0 +1,16 @@
+# Persistent storage for Twitch Miner
+#
+# Stores session cookies (important!), analytics data, and logs.
+# Uses Longhorn for persistent storage.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: twitch-miner-data
+  namespace: twitch-miner
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 1Gi

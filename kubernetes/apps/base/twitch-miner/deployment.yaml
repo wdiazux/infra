@@ -1,0 +1,68 @@
+# Twitch Channel Points Miner v2
+#
+# Automatically watches Twitch streams to collect channel points.
+# https://github.com/rdavydov/Twitch-Channel-Points-Miner-v2
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: twitch-miner
+  namespace: twitch-miner
+  labels:
+    app.kubernetes.io/name: twitch-miner
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate  # Single instance, avoid cookie conflicts
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: twitch-miner
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: twitch-miner
+    spec:
+      containers:
+        - name: twitch-miner
+          image: rdavidoff/twitch-channel-points-miner-v2:latest
+          stdin: true
+          tty: true
+          env:
+            - name: TZ
+              value: America/El_Salvador
+            - name: TERM
+              value: xterm-256color
+            - name: TWITCH_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: twitch-miner-credentials
+                  key: TWITCH_USERNAME
+            - name: TWITCH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: twitch-miner-credentials
+                  key: TWITCH_PASSWORD
+          volumeMounts:
+            - name: config
+              mountPath: /usr/src/app/run.py
+              subPath: run.py
+              readOnly: true
+            - name: data
+              mountPath: /usr/src/app/cookies
+              subPath: cookies
+            - name: data
+              mountPath: /usr/src/app/logs
+              subPath: logs
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+      volumes:
+        - name: config
+          configMap:
+            name: twitch-miner-config
+        - name: data
+          persistentVolumeClaim:
+            claimName: twitch-miner-data
