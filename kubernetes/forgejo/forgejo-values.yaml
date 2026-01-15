@@ -31,7 +31,10 @@ gitea:
 
     server:
       DOMAIN: git.home-infra.net
-      ROOT_URL: https://git.home-infra.net/
+      ROOT_URL: http://10.10.2.13:3000/
+      # LOCAL_ROOT_URL is used by git hooks to connect back to the server
+      # Must be accessible from within the container
+      LOCAL_ROOT_URL: http://localhost:3000/
       SSH_DOMAIN: git.home-infra.net
       SSH_PORT: 22
       LFS_START_SERVER: true
@@ -87,14 +90,14 @@ persistence:
 service:
   http:
     type: LoadBalancer
-    port: 3000
+    port: 3000  # Forgejo container listens on 3000, chart doesn't support targetPort
     loadBalancerIP: "10.10.2.13"
     annotations: {}
 
   ssh:
     type: LoadBalancer
     port: 22
-    loadBalancerIP: "10.10.2.13"
+    loadBalancerIP: "10.10.2.14"
     annotations: {}
 
 # ============================================================================

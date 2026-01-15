@@ -39,6 +39,12 @@ variable "enable_longhorn_backups" {
   default     = true
 }
 
+variable "longhorn_backup_target" {
+  description = "Longhorn backup target URL (NFS)"
+  type        = string
+  default     = "nfs://10.10.2.5:/mnt/tank/backups/longhorn"
+}
+
 # ============================================================================
 # FluxCD Configuration
 # ============================================================================

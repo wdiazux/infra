@@ -117,6 +117,46 @@ resource "kubernetes_secret" "longhorn_backup" {
 }
 
 # ============================================================================
+# Longhorn BackupTarget Configuration
+# ============================================================================
+# NOTE: In Longhorn 1.10+, backup targets are configured via BackupTarget CRD,
+# not via defaultSettings.backupTarget in values.yaml.
+
+resource "null_resource" "configure_longhorn_backup_target" {
+  count = var.auto_bootstrap && var.enable_longhorn_backups ? 1 : 0
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      set -e
+      echo "Configuring Longhorn BackupTarget..."
+
+      # Wait for BackupTarget CRD to be available
+      for i in $(seq 1 30); do
+        if kubectl --kubeconfig=${local.kubeconfig_path} get backuptarget default -n longhorn-system &>/dev/null; then
+          echo "BackupTarget CRD is available"
+          break
+        fi
+        echo "Waiting for BackupTarget CRD... ($i/30)"
+        sleep 5
+      done
+
+      # Patch the default BackupTarget with NFS URL
+      kubectl --kubeconfig=${local.kubeconfig_path} patch backuptarget default \
+        -n longhorn-system \
+        --type=merge \
+        -p '{"spec":{"backupTargetURL":"${var.longhorn_backup_target}","pollInterval":"5m0s"}}'
+
+      echo "Longhorn BackupTarget configured: ${var.longhorn_backup_target}"
+    EOT
+  }
+
+  depends_on = [
+    helm_release.longhorn,
+    kubernetes_secret.longhorn_backup
+  ]
+}
+
+# ============================================================================
 # NVIDIA GPU Setup (Simple Device Plugin)
 # ============================================================================
 #

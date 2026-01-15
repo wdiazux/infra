@@ -69,9 +69,10 @@ resource "helm_release" "forgejo" {
   }
 
   # Wait for Forgejo to be fully ready
+  # Note: Forgejo can take 12+ minutes on first startup due to init containers
   wait          = true
   wait_for_jobs = true
-  timeout       = 600
+  timeout       = 900
 
   depends_on = [
     helm_release.longhorn,
@@ -185,7 +186,7 @@ NETRC
 
       # Create JSON payload safely using jq (prevents shell injection)
       JSON_PAYLOAD=$(jq -n --arg name "$TOKEN_NAME" \
-        '{name: $name, scopes: ["write:repository", "read:user", "read:organization"]}')
+        '{name: $name, scopes: ["write:repository", "write:user", "read:user", "read:organization"]}')
 
       # Create token via Forgejo API (using netrc for secure auth)
       RESPONSE=$(curl -s -X POST \
@@ -206,7 +207,7 @@ NETRC
           echo "Token with similar name may already exist. Trying with random suffix..."
           TOKEN_NAME="flux-$(date +%s)"
           JSON_PAYLOAD=$(jq -n --arg name "$TOKEN_NAME" \
-            '{name: $name, scopes: ["write:repository", "read:user", "read:organization"]}')
+            '{name: $name, scopes: ["write:repository", "write:user", "read:user", "read:organization"]}')
           RESPONSE=$(curl -s -X POST \
             -H "Content-Type: application/json" \
             --netrc-file "$NETRC_FILE" \
@@ -332,6 +333,92 @@ NETRC
 
   depends_on = [
     null_resource.forgejo_generate_token
+  ]
+}
+
+# ============================================================================
+# Push Local Infra Repository to Forgejo
+# ============================================================================
+# After creating the empty repo in Forgejo, push the local infra content
+# so FluxCD can sync from it. This is the critical step that makes
+# GitOps work - all kubernetes/ manifests must be in Forgejo.
+
+resource "null_resource" "forgejo_push_repo" {
+  count = var.enable_forgejo && var.forgejo_create_repo ? 1 : 0
+
+  triggers = {
+    # Re-run if repository changes
+    repo_name = var.git_repository
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      set -e
+      echo "=== Pushing local infra repository to Forgejo ==="
+
+      # Get the infra repo root (parent of terraform/talos)
+      REPO_ROOT="${path.module}/../.."
+      cd "$REPO_ROOT"
+
+      # Verify we're in a git repo
+      if [ ! -d ".git" ]; then
+        echo "ERROR: Not in a git repository. Cannot push to Forgejo."
+        exit 1
+      fi
+
+      # Forgejo URL for git operations (using token auth)
+      FORGEJO_URL="http://$GIT_USER:$GIT_TOKEN@$FORGEJO_IP:3000/$GIT_USER/$REPO_NAME.git"
+
+      # Check if forgejo remote already exists
+      if git remote get-url forgejo &>/dev/null; then
+        echo "Remote 'forgejo' already exists, updating URL..."
+        git remote set-url forgejo "$FORGEJO_URL"
+      else
+        echo "Adding 'forgejo' remote..."
+        git remote add forgejo "$FORGEJO_URL"
+      fi
+
+      # Get current branch
+      CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+      echo "Current branch: $CURRENT_BRANCH"
+
+      # Ensure we have commits to push
+      if ! git rev-parse HEAD &>/dev/null; then
+        echo "ERROR: No commits in repository"
+        exit 1
+      fi
+
+      # Push to Forgejo (force to handle empty repo or diverged history)
+      echo "Pushing to Forgejo..."
+      git push -u forgejo "$CURRENT_BRANCH:$GIT_BRANCH" --force
+
+      # Also push all branches if main is different from current
+      if [ "$CURRENT_BRANCH" != "$GIT_BRANCH" ]; then
+        echo "Also pushing $GIT_BRANCH branch..."
+        git push forgejo "$GIT_BRANCH" --force 2>/dev/null || true
+      fi
+
+      # Security: Remove token from git remote URL (replace with non-token URL)
+      # This prevents the token from being exposed in .git/config
+      SAFE_URL="http://$FORGEJO_IP:3000/$GIT_USER/$REPO_NAME.git"
+      git remote set-url forgejo "$SAFE_URL"
+      echo "Git remote URL sanitized (token removed)"
+
+      echo "=== Repository pushed to Forgejo successfully ==="
+    EOT
+
+    environment = {
+      GIT_USER   = local.git_secrets.forgejo_admin_username
+      GIT_TOKEN  = trimspace(data.local_file.forgejo_flux_token[0].content)
+      FORGEJO_IP = var.forgejo_ip
+      REPO_NAME  = var.git_repository
+      GIT_BRANCH = var.git_branch
+    }
+  }
+
+  depends_on = [
+    null_resource.forgejo_create_repo,
+    data.local_file.forgejo_flux_token
   ]
 }
 

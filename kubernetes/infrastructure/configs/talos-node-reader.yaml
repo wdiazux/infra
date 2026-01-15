@@ -1,0 +1,40 @@
+# Talos Node Reader RBAC
+#
+# This ClusterRole and ClusterRoleBinding allow Talos nodes to list all nodes
+# in the cluster. This fixes the KubernetesPullController warning:
+#   "failed to list *v1.Node: nodes is forbidden: User \"system:node:xxx\"
+#   cannot list resource \"nodes\" in API group \"\" at the cluster scope"
+#
+# The warning is caused by Talos's KubernetesPullController trying to watch
+# all nodes to pre-pull container images. By default, Kubernetes NodeRestriction
+# only allows nodes to read their own node object.
+#
+# Security Note: This is safe for homelab/single-node clusters. For multi-tenant
+# environments, evaluate whether nodes need cross-node visibility.
+#
+# Apply manually: kubectl apply -f talos-node-reader.yaml
+# Or via FluxCD kustomization
+#
+# Last Updated: 2026-01-14
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: talos-node-reader
+rules:
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: talos-nodes-can-read-nodes
+subjects:
+  - kind: Group
+    name: system:nodes
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: talos-node-reader
+  apiGroup: rbac.authorization.k8s.io

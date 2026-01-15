@@ -108,6 +108,8 @@ resource "null_resource" "wait_for_static_ip" {
       for i in $(seq 1 60); do
         if talosctl --talosconfig ${path.module}/talosconfig --nodes ${var.node_ip} version --insecure 2>/dev/null | grep -q "Server:"; then
           echo "Node is up with static IP ${var.node_ip}"
+          # Update the IP file so future Terraform runs use the static IP
+          echo "${var.node_ip}" > ${path.module}/.talos_dhcp_ip
           exit 0
         fi
         echo "Waiting for static IP... ($i/60)"

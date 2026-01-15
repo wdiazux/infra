@@ -19,6 +19,7 @@ resource "talos_machine_secrets" "cluster" {
   talos_version = var.talos_version
 
   # Prevent accidental destruction of cluster secrets
+  # To destroy: terraform state rm talos_machine_secrets.cluster
   lifecycle {
     prevent_destroy = true
   }

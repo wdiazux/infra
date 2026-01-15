@@ -48,6 +48,7 @@ resource "null_resource" "flux_bootstrap" {
 
   provisioner "local-exec" {
     command = <<-EOT
+      set -e
       echo "=== FluxCD Bootstrap for Forgejo ==="
       echo "Hostname: ${local.fluxcd_git_hostname}"
       echo "Owner: ${local.fluxcd_git_owner}"
@@ -57,6 +58,13 @@ resource "null_resource" "flux_bootstrap" {
       # Validate flux CLI
       if ! command -v flux &> /dev/null; then
         echo "ERROR: flux CLI not found. Install via nix-shell."
+        exit 1
+      fi
+
+      # Validate git owner (required for FluxCD)
+      if [ -z "${local.fluxcd_git_owner}" ]; then
+        echo "ERROR: Git owner is empty."
+        echo "Set git_owner in secrets/git-creds.enc.yaml or pass via -var='git_owner=username'"
         exit 1
       fi
 
@@ -95,7 +103,7 @@ resource "null_resource" "flux_bootstrap" {
   depends_on = [
     helm_release.longhorn,
     null_resource.forgejo_generate_token,
-    null_resource.forgejo_create_repo
+    null_resource.forgejo_push_repo
   ]
 }
 

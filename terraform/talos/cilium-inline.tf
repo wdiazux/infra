@@ -243,9 +243,37 @@ spec:
     matchLabels: {}
 EOF
 
-  # Combined Cilium manifest (Helm output + L2 config)
+  # Talos Node Reader RBAC - allows nodes to list all nodes
+  # Fixes KubernetesPullController warning in Talos
+  talos_node_reader_rbac = <<-EOF
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: talos-node-reader
+rules:
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: talos-nodes-can-read-nodes
+subjects:
+  - kind: Group
+    name: system:nodes
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: talos-node-reader
+  apiGroup: rbac.authorization.k8s.io
+EOF
+
+  # Combined Cilium manifest (Helm output + L2 config + RBAC)
   cilium_inline_manifest = join("\n", [
     data.helm_template.cilium.manifest,
-    local.cilium_l2_ippool
+    local.cilium_l2_ippool,
+    local.talos_node_reader_rbac
   ])
 }

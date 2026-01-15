@@ -32,7 +32,7 @@ defaultSettings:
   createDefaultDiskLabeledNodes: true
 
   # Backup configuration (NFS to external NAS)
-  backupTarget: "nfs://10.10.2.5:/backups/longhorn"
+  backupTarget: "nfs://10.10.2.5:/mnt/tank/backups/longhorn"
   backupTargetCredentialSecret: "longhorn-backup-secret"
 
   # Snapshot settings
