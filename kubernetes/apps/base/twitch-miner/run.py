@@ -74,7 +74,7 @@ twitch_miner.mine(
         "zackrawrr",
         "bunnyayu",
         "midudev",
-        "anategentile7",
+        "nategentile7",
         "lacobraaa",
         "davooxeneize",
         Streamer("nissaxter", settings=StreamerSettings(make_predictions=False)),
