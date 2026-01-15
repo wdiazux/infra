@@ -130,6 +130,41 @@ variable "forgejo_create_repo" {
 }
 
 # ============================================================================
+# Weave GitOps Configuration (FluxCD Web UI)
+# ============================================================================
+
+variable "enable_weave_gitops" {
+  description = "Enable Weave GitOps web UI for FluxCD"
+  type        = bool
+  default     = true
+}
+
+variable "weave_gitops_version" {
+  description = "Weave GitOps Helm chart version"
+  type        = string
+  default     = "4.0.36"
+}
+
+variable "weave_gitops_ip" {
+  description = "LoadBalancer IP for Weave GitOps UI"
+  type        = string
+  default     = "10.10.2.15"
+}
+
+variable "weave_gitops_admin_user" {
+  description = "Weave GitOps admin username"
+  type        = string
+  default     = "admin"
+}
+
+variable "weave_gitops_password_hash" {
+  description = "Weave GitOps admin password (bcrypt hash). Generate with: echo -n 'password' | gitops get bcrypt-hash"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+# ============================================================================
 # Pangolin/Newt Configuration (WireGuard Tunnel)
 # ============================================================================
 

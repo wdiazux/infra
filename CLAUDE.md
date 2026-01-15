@@ -145,6 +145,7 @@ All project dependencies are defined in `shell.nix` and automatically available 
 | Longhorn UI | 10.10.2.12 | Storage management | OPTIONAL |
 | Forgejo | 10.10.2.13 | Git server (HTTP:3000, SSH:22) | OPTIONAL |
 | FluxCD Webhook | 10.10.2.14 | GitOps webhook receiver | OPTIONAL |
+| Weave GitOps | 10.10.2.15 | FluxCD web UI | OPTIONAL |
 | Ubuntu VM | 10.10.2.51 | Traditional VM | OPTIONAL |
 | Debian VM | 10.10.2.52 | Traditional VM | OPTIONAL |
 | Arch VM | 10.10.2.53 | Traditional VM | OPTIONAL |
