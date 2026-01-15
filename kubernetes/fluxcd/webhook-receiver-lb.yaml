@@ -3,11 +3,11 @@
 # Exposes the FluxCD notification-controller webhook receiver
 # for external webhook integrations (GitHub, Forgejo, etc.)
 #
-# IP: 10.10.2.14 (Important services range)
+# IP: 10.10.2.15 (Important services range)
 # Port: 80 -> 9292 (webhook-receiver)
 #
 # Usage:
-#   Configure webhooks to POST to http://10.10.2.14/<receiver-name>
+#   Configure webhooks to POST to http://10.10.2.15/<receiver-name>
 #
 # Last Updated: 2026-01-14
 ---
@@ -21,7 +21,7 @@ metadata:
     app.kubernetes.io/part-of: flux
 spec:
   type: LoadBalancer
-  loadBalancerIP: "10.10.2.14"
+  loadBalancerIP: "10.10.2.15"
   ports:
     - name: http
       port: 80

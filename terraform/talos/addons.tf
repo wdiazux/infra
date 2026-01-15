@@ -87,7 +87,8 @@ resource "null_resource" "label_node_for_longhorn" {
   }
 
   depends_on = [
-    kubernetes_namespace.longhorn
+    kubernetes_namespace.longhorn,
+    null_resource.wait_for_cilium
   ]
 }
 
@@ -168,99 +169,78 @@ resource "null_resource" "configure_longhorn_backup_target" {
 #
 # The simple device plugin just advertises GPUs to Kubernetes.
 
-# Create nvidia RuntimeClass using kubernetes_manifest
-resource "kubernetes_manifest" "nvidia_runtimeclass" {
+# Create nvidia RuntimeClass and device plugin using kubectl
+# Note: Using null_resource instead of kubernetes_manifest to avoid plan-time
+# API validation which fails when the cluster doesn't exist yet.
+
+resource "null_resource" "nvidia_gpu_setup" {
   count = var.enable_gpu_passthrough && var.auto_install_gpu_device_plugin && var.auto_bootstrap ? 1 : 0
 
-  manifest = {
-    apiVersion = "node.k8s.io/v1"
-    kind       = "RuntimeClass"
-    metadata = {
-      name = "nvidia"
-    }
-    handler = "nvidia"
+  provisioner "local-exec" {
+    command = <<-EOT
+      set -e
+      echo "=== Installing NVIDIA GPU Support ==="
+
+      # Create RuntimeClass
+      echo "Creating nvidia RuntimeClass..."
+      kubectl --kubeconfig=${local.kubeconfig_path} apply -f - <<EOF
+apiVersion: node.k8s.io/v1
+kind: RuntimeClass
+metadata:
+  name: nvidia
+handler: nvidia
+EOF
+
+      # Create NVIDIA device plugin DaemonSet
+      echo "Creating NVIDIA device plugin DaemonSet..."
+      kubectl --kubeconfig=${local.kubeconfig_path} apply -f - <<EOF
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: nvidia-device-plugin-daemonset
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      name: nvidia-device-plugin-ds
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        name: nvidia-device-plugin-ds
+    spec:
+      runtimeClassName: nvidia
+      priorityClassName: system-node-critical
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
+      containers:
+        - name: nvidia-device-plugin-ctr
+          image: nvcr.io/nvidia/k8s-device-plugin:v0.18.1
+          env:
+            - name: DEVICE_DISCOVERY_STRATEGY
+              value: nvml
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: device-plugin
+              mountPath: /var/lib/kubelet/device-plugins
+      volumes:
+        - name: device-plugin
+          hostPath:
+            path: /var/lib/kubelet/device-plugins
+EOF
+
+      echo "=== NVIDIA GPU Support Installed ==="
+    EOT
   }
 
   depends_on = [
     null_resource.wait_for_cilium
-  ]
-}
-
-# Install simple NVIDIA device plugin using kubernetes_manifest
-resource "kubernetes_manifest" "nvidia_device_plugin" {
-  count = var.enable_gpu_passthrough && var.auto_install_gpu_device_plugin && var.auto_bootstrap ? 1 : 0
-
-  manifest = {
-    apiVersion = "apps/v1"
-    kind       = "DaemonSet"
-    metadata = {
-      name      = "nvidia-device-plugin-daemonset"
-      namespace = "kube-system"
-    }
-    spec = {
-      selector = {
-        matchLabels = {
-          name = "nvidia-device-plugin-ds"
-        }
-      }
-      updateStrategy = {
-        type = "RollingUpdate"
-      }
-      template = {
-        metadata = {
-          labels = {
-            name = "nvidia-device-plugin-ds"
-          }
-        }
-        spec = {
-          runtimeClassName  = "nvidia"
-          priorityClassName = "system-node-critical"
-          tolerations = [
-            {
-              key      = "nvidia.com/gpu"
-              operator = "Exists"
-              effect   = "NoSchedule"
-            }
-          ]
-          containers = [
-            {
-              name  = "nvidia-device-plugin-ctr"
-              image = "nvcr.io/nvidia/k8s-device-plugin:v0.18.1"
-              env = [
-                {
-                  name  = "DEVICE_DISCOVERY_STRATEGY"
-                  value = "nvml"
-                }
-              ]
-              securityContext = {
-                allowPrivilegeEscalation = false
-                capabilities = {
-                  drop = ["ALL"]
-                }
-              }
-              volumeMounts = [
-                {
-                  name      = "device-plugin"
-                  mountPath = "/var/lib/kubelet/device-plugins"
-                }
-              ]
-            }
-          ]
-          volumes = [
-            {
-              name = "device-plugin"
-              hostPath = {
-                path = "/var/lib/kubelet/device-plugins"
-              }
-            }
-          ]
-        }
-      }
-    }
-  }
-
-  depends_on = [
-    kubernetes_manifest.nvidia_runtimeclass
   ]
 }
 

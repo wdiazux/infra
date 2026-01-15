@@ -88,7 +88,7 @@ variable "forgejo_ip" {
 variable "fluxcd_webhook_ip" {
   description = "Static IP for FluxCD webhook receiver LoadBalancer"
   type        = string
-  default     = "10.10.2.14"
+  default     = "10.10.2.15"
 
   validation {
     condition     = can(regex("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$", var.fluxcd_webhook_ip))
