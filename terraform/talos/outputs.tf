@@ -116,13 +116,13 @@ output "longhorn_ui_url" {
 }
 
 output "forgejo_http_url" {
-  description = "Forgejo Git server HTTP URL"
-  value       = var.enable_forgejo ? "http://${var.forgejo_ip}:3000" : "Not enabled"
+  description = "Forgejo Git server HTTP URL (via proxy on port 80)"
+  value       = var.enable_forgejo ? "http://${var.forgejo_proxy_ip}" : "Not enabled"
 }
 
 output "forgejo_ssh_url" {
   description = "Forgejo Git server SSH URL"
-  value       = var.enable_forgejo ? "ssh://git@${var.forgejo_ip}:22" : "Not enabled"
+  value       = var.enable_forgejo ? "ssh://git@${var.forgejo_ssh_ip}:22" : "Not enabled"
 }
 
 output "fluxcd_webhook_url" {
