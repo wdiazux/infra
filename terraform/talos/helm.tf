@@ -63,15 +63,20 @@ resource "helm_release" "longhorn" {
   # Use values file from kubernetes/longhorn/
   values = [file("${path.module}/../../kubernetes/longhorn/longhorn-values.yaml")]
 
-  # Wait for Longhorn to be ready
+  # Wait for Longhorn to be ready (install and uninstall)
+  # NOTE: Longhorn uninstall job can take up to 15 minutes
   wait          = true
   wait_for_jobs = true
-  timeout       = 600
+  timeout       = 900 # 15 minutes for uninstall job
+
+  # Cleanup options
+  cleanup_on_fail = true
 
   depends_on = [
     null_resource.wait_for_cilium,
     kubernetes_namespace.longhorn,
-    null_resource.label_node_for_longhorn
+    null_resource.label_node_for_longhorn,
+    terraform_data.longhorn_pre_destroy # Pre-destroy runs cleanup before uninstall
   ]
 }
 

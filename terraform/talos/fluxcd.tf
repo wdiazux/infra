@@ -35,7 +35,6 @@ locals {
   )
 
   # Git settings (prefer SOPS, fall back to variables)
-  fluxcd_git_hostname   = try(local.git_secrets.git_hostname, var.git_hostname)
   fluxcd_git_repository = try(local.git_secrets.git_repository, var.git_repository)
 
   # Git owner: use Forgejo admin when in-cluster, otherwise from SOPS/variables
@@ -46,8 +45,8 @@ locals {
     try(local.git_secrets.git_owner, var.git_owner)
   )
 
-  # HTTP URL for in-cluster Forgejo (used when enable_forgejo=true)
-  forgejo_http_url = "http://${var.forgejo_ip}:3000/${local.fluxcd_git_owner}/${local.fluxcd_git_repository}.git"
+  # HTTP URL for in-cluster Forgejo via proxy (used when enable_forgejo=true)
+  forgejo_http_url = "http://${var.forgejo_proxy_ip}/${local.fluxcd_git_owner}/${local.fluxcd_git_repository}.git"
 }
 
 # ============================================================================
@@ -94,7 +93,8 @@ resource "null_resource" "flux_install" {
   depends_on = [
     helm_release.longhorn,
     null_resource.forgejo_generate_token,
-    null_resource.forgejo_push_repo
+    null_resource.forgejo_push_repo,
+    terraform_data.fluxcd_pre_destroy # Pre-destroy runs cleanup before uninstall
   ]
 }
 
