@@ -43,15 +43,10 @@ resource "helm_release" "weave_gitops" {
     value = local.git_secrets.weave_gitops_password_hash
   }
 
-  # Service configuration
+  # Disable default service (we create our own with static IP)
   set {
     name  = "service.type"
-    value = "LoadBalancer"
-  }
-
-  set {
-    name  = "service.loadBalancerIP"
-    value = var.weave_gitops_ip
+    value = "ClusterIP"
   }
 
   # Resource limits (lightweight)
@@ -84,6 +79,46 @@ resource "helm_release" "weave_gitops" {
 }
 
 # ============================================================================
+# Weave GitOps LoadBalancer Service (Static IP)
+# ============================================================================
+# Cilium L2 LoadBalancer doesn't respect loadBalancerIP in Helm values,
+# so we create a dedicated service with the correct IP.
+
+resource "kubernetes_service" "weave_gitops_lb" {
+  count = var.enable_fluxcd && var.enable_weave_gitops ? 1 : 0
+
+  metadata {
+    name      = "weave-gitops-lb"
+    namespace = "flux-system"
+    labels = {
+      "app.kubernetes.io/name"       = "weave-gitops"
+      "app.kubernetes.io/component"  = "loadbalancer"
+      "app.kubernetes.io/managed-by" = "terraform"
+    }
+  }
+
+  spec {
+    type             = "LoadBalancer"
+    load_balancer_ip = var.weave_gitops_ip
+
+    port {
+      name        = "http"
+      port        = 80
+      target_port = 9001
+      protocol    = "TCP"
+    }
+
+    selector = {
+      "app.kubernetes.io/name" = "weave-gitops"
+    }
+  }
+
+  depends_on = [
+    helm_release.weave_gitops
+  ]
+}
+
+# ============================================================================
 # Notes
 # ============================================================================
 #
@@ -92,9 +127,9 @@ resource "helm_release" "weave_gitops" {
 #   Or: htpasswd -nbBC 10 "" 'your-password' | tr -d ':\n' | sed 's/$2y/$2a/'
 #
 # Access:
-#   http://<weave_gitops_ip>:9001
+#   http://10.10.2.17 (port 80)
 #   Login with admin credentials
 #
 # Verification:
 #   kubectl get pods -n flux-system -l app.kubernetes.io/name=weave-gitops
-#   kubectl get svc -n flux-system weave-gitops
+#   kubectl get svc -n flux-system weave-gitops-lb
