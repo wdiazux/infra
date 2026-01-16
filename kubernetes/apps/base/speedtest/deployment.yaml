@@ -69,11 +69,11 @@ spec:
               mountPath: /database
           resources:
             requests:
-              cpu: 10m
-              memory: 32Mi
+              cpu: 100m
+              memory: 64Mi
             limits:
-              cpu: 500m
-              memory: 256Mi
+              cpu: 2000m
+              memory: 512Mi
           livenessProbe:
             httpGet:
               path: /
