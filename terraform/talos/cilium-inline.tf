@@ -111,8 +111,8 @@ data "helm_template" "cilium" {
       replicas = 1
       resources = {
         limits = {
-          cpu    = "1000m"
-          memory = "1Gi"
+          cpu    = "500m"
+          memory = "512Mi"
         }
         requests = {
           cpu    = "100m"
@@ -121,11 +121,12 @@ data "helm_template" "cilium" {
       }
     }
 
-    # Agent resources
+    # Agent resources (optimized for single-node homelab)
+    # Official: ~573MB max observed at 50k pods, ~438MB average
     resources = {
       limits = {
-        cpu    = "4000m"
-        memory = "4Gi"
+        cpu    = "2000m"
+        memory = "1Gi"
       }
       requests = {
         cpu    = "100m"

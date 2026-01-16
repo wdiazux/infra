@@ -22,64 +22,59 @@ resource "helm_release" "postgresql" {
   create_namespace = false
 
   # Authentication
-  set {
-    name  = "auth.database"
-    value = "forgejo"
-  }
+  set = [
+    {
+      name  = "auth.database"
+      value = "forgejo"
+    },
+    {
+      name  = "auth.username"
+      value = local.git_secrets.postgresql_username
+    },
+    # Storage - use Longhorn
+    {
+      name  = "primary.persistence.storageClass"
+      value = "longhorn"
+    },
+    {
+      name  = "primary.persistence.size"
+      value = "2Gi"
+    },
+    # Resources (reasonable for homelab)
+    {
+      name  = "primary.resources.requests.cpu"
+      value = "100m"
+    },
+    {
+      name  = "primary.resources.requests.memory"
+      value = "256Mi"
+    },
+    {
+      name  = "primary.resources.limits.cpu"
+      value = "500m"
+    },
+    {
+      name  = "primary.resources.limits.memory"
+      value = "512Mi"
+    },
+    # Disable read replicas for single-node cluster
+    {
+      name  = "readReplicas.replicaCount"
+      value = "0"
+    },
+    # Disable metrics for homelab (optional, enable if you want Prometheus scraping)
+    {
+      name  = "metrics.enabled"
+      value = "false"
+    },
+  ]
 
-  set {
-    name  = "auth.username"
-    value = local.git_secrets.postgresql_username
-  }
-
-  set_sensitive {
-    name  = "auth.password"
-    value = local.git_secrets.postgresql_password
-  }
-
-  # Storage - use Longhorn
-  set {
-    name  = "primary.persistence.storageClass"
-    value = "longhorn"
-  }
-
-  set {
-    name  = "primary.persistence.size"
-    value = "2Gi"
-  }
-
-  # Resources (reasonable for homelab)
-  set {
-    name  = "primary.resources.requests.cpu"
-    value = "100m"
-  }
-
-  set {
-    name  = "primary.resources.requests.memory"
-    value = "256Mi"
-  }
-
-  set {
-    name  = "primary.resources.limits.cpu"
-    value = "500m"
-  }
-
-  set {
-    name  = "primary.resources.limits.memory"
-    value = "512Mi"
-  }
-
-  # Disable read replicas for single-node cluster
-  set {
-    name  = "readReplicas.replicaCount"
-    value = "0"
-  }
-
-  # Disable metrics for homelab (optional, enable if you want Prometheus scraping)
-  set {
-    name  = "metrics.enabled"
-    value = "false"
-  }
+  set_sensitive = [
+    {
+      name  = "auth.password"
+      value = local.git_secrets.postgresql_password
+    },
+  ]
 
   wait    = true
   timeout = 600

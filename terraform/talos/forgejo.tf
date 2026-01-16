@@ -53,48 +53,46 @@ resource "helm_release" "forgejo" {
   values = [file("${path.module}/../../kubernetes/forgejo/forgejo-values.yaml")]
 
   # Admin credentials from SOPS (override values file)
-  set {
-    name  = "gitea.admin.username"
-    value = local.git_secrets.forgejo_admin_username
-  }
+  set = [
+    {
+      name  = "gitea.admin.username"
+      value = local.git_secrets.forgejo_admin_username
+    },
+    {
+      name  = "gitea.admin.email"
+      value = local.git_secrets.forgejo_admin_email
+    },
+    # Service IPs (override values file with Terraform variables)
+    {
+      name  = "service.http.loadBalancerIP"
+      value = var.forgejo_ip
+    },
+    {
+      name  = "service.ssh.loadBalancerIP"
+      value = var.forgejo_ssh_ip
+    },
+    # ROOT_URL uses the HTTP service IP (port 80)
+    {
+      name  = "gitea.config.server.ROOT_URL"
+      value = "http://${var.forgejo_ip}/"
+    },
+    # PostgreSQL database credentials
+    {
+      name  = "gitea.config.database.USER"
+      value = local.git_secrets.postgresql_username
+    },
+  ]
 
-  set_sensitive {
-    name  = "gitea.admin.password"
-    value = local.git_secrets.forgejo_admin_password
-  }
-
-  set {
-    name  = "gitea.admin.email"
-    value = local.git_secrets.forgejo_admin_email
-  }
-
-  # Service IPs (override values file with Terraform variables)
-  set {
-    name  = "service.http.loadBalancerIP"
-    value = var.forgejo_ip
-  }
-
-  set {
-    name  = "service.ssh.loadBalancerIP"
-    value = var.forgejo_ssh_ip
-  }
-
-  # ROOT_URL uses the HTTP service IP (port 80)
-  set {
-    name  = "gitea.config.server.ROOT_URL"
-    value = "http://${var.forgejo_ip}/"
-  }
-
-  # PostgreSQL database credentials
-  set {
-    name  = "gitea.config.database.USER"
-    value = local.git_secrets.postgresql_username
-  }
-
-  set_sensitive {
-    name  = "gitea.config.database.PASSWD"
-    value = local.git_secrets.postgresql_password
-  }
+  set_sensitive = [
+    {
+      name  = "gitea.admin.password"
+      value = local.git_secrets.forgejo_admin_password
+    },
+    {
+      name  = "gitea.config.database.PASSWD"
+      value = local.git_secrets.postgresql_password
+    },
+  ]
 
   # Wait for Forgejo to be fully ready
   # Note: Forgejo can take 12+ minutes on first startup due to init containers
@@ -105,8 +103,8 @@ resource "helm_release" "forgejo" {
   depends_on = [
     helm_release.longhorn,
     kubernetes_namespace.forgejo,
-    null_resource.wait_for_postgresql,    # Wait for PostgreSQL to be ready
-    terraform_data.forgejo_pre_destroy    # Pre-destroy runs cleanup before uninstall
+    null_resource.wait_for_postgresql, # Wait for PostgreSQL to be ready
+    terraform_data.forgejo_pre_destroy # Pre-destroy runs cleanup before uninstall
   ]
 }
 
@@ -128,25 +126,17 @@ resource "null_resource" "wait_for_forgejo" {
 
       echo "Waiting for Forgejo API to be ready..."
 
-      # Port-forward to Forgejo service
-      kubectl --kubeconfig=${local.kubeconfig_path} port-forward \
-        svc/forgejo-http -n forgejo 3000:3000 &
-      PF_PID=$!
-
-      # Cleanup on exit
-      trap "kill $PF_PID 2>/dev/null" EXIT
-
-      # Wait for port-forward to be ready
-      sleep 5
+      # Use LoadBalancer IP directly (more reliable than port-forward)
+      FORGEJO_URL="http://${var.forgejo_ip}/api/v1/version"
 
       # Poll Forgejo API
       for i in $(seq 1 60); do
-        if curl -s http://localhost:3000/api/v1/version 2>/dev/null | grep -q "version"; then
+        if curl -s "$FORGEJO_URL" 2>/dev/null | grep -q "version"; then
           echo "Forgejo API is ready!"
           exit 0
         fi
         echo "Waiting for Forgejo API... ($i/60)"
-        sleep 10
+        sleep 5
       done
 
       echo "ERROR: Timeout waiting for Forgejo API"
@@ -185,35 +175,19 @@ resource "null_resource" "forgejo_generate_token" {
 
       echo "Generating Forgejo access token for FluxCD..."
 
+      # Use LoadBalancer IP directly
+      FORGEJO_HOST="${var.forgejo_ip}"
+
       # Create temp netrc file with secure permissions from start (avoids race condition)
       NETRC_FILE=$(umask 077 && mktemp)
       cat > "$NETRC_FILE" << NETRC
-machine localhost
+machine $FORGEJO_HOST
 login $FORGEJO_ADMIN_USER
 password $FORGEJO_ADMIN_PASS
 NETRC
 
-      # Port-forward to Forgejo service
-      kubectl --kubeconfig=${local.kubeconfig_path} port-forward \
-        svc/forgejo-http -n forgejo 3000:3000 &
-      PF_PID=$!
-
-      # Cleanup on exit (port-forward and netrc file)
-      cleanup() {
-        kill $PF_PID 2>/dev/null || true
-        rm -f "$NETRC_FILE"
-      }
-      trap cleanup EXIT
-
-      # Wait for port-forward to be ready
-      echo "Waiting for port-forward..."
-      for i in $(seq 1 30); do
-        if curl -s -o /dev/null -w "" "http://localhost:3000/api/v1/version" 2>/dev/null; then
-          echo "Port-forward ready."
-          break
-        fi
-        sleep 1
-      done
+      # Cleanup on exit
+      trap "rm -f \"$NETRC_FILE\"" EXIT
 
       # Token name with timestamp to avoid conflicts
       TOKEN_NAME="flux-$(date +%Y%m%d-%H%M%S)"
@@ -230,7 +204,7 @@ NETRC
         -H "Content-Type: application/json" \
         --netrc-file "$NETRC_FILE" \
         -d "$JSON_PAYLOAD" \
-        "http://localhost:3000/api/v1/users/$ENCODED_USER/tokens")
+        "http://$FORGEJO_HOST/api/v1/users/$ENCODED_USER/tokens")
 
       # Extract token (sha1 field)
       TOKEN=$(echo "$RESPONSE" | jq -r '.sha1 // empty')
@@ -249,7 +223,7 @@ NETRC
             -H "Content-Type: application/json" \
             --netrc-file "$NETRC_FILE" \
             -d "$JSON_PAYLOAD" \
-            "http://localhost:3000/api/v1/users/$ENCODED_USER/tokens")
+            "http://$FORGEJO_HOST/api/v1/users/$ENCODED_USER/tokens")
           TOKEN=$(echo "$RESPONSE" | jq -r '.sha1 // empty')
         fi
 
@@ -302,27 +276,19 @@ resource "null_resource" "forgejo_create_repo" {
       set -e
       echo "Creating Forgejo repository: $REPO_NAME..."
 
+      # Use LoadBalancer IP directly
+      FORGEJO_HOST="$FORGEJO_IP"
+
       # Create temp netrc file with secure permissions from start (avoids race condition)
       NETRC_FILE=$(umask 077 && mktemp)
       cat > "$NETRC_FILE" << NETRC
-machine localhost
+machine $FORGEJO_HOST
 login $FORGEJO_ADMIN_USER
 password $FORGEJO_ADMIN_PASS
 NETRC
 
-      # Port-forward to Forgejo service
-      kubectl --kubeconfig=${local.kubeconfig_path} port-forward \
-        svc/forgejo-http -n forgejo 3000:3000 &
-      PF_PID=$!
-
-      # Cleanup on exit (port-forward and netrc file)
-      cleanup() {
-        kill $PF_PID 2>/dev/null || true
-        rm -f "$NETRC_FILE"
-      }
-      trap cleanup EXIT
-
-      sleep 5
+      # Cleanup on exit
+      trap "rm -f \"$NETRC_FILE\"" EXIT
 
       # URL-encode variables to prevent injection
       ENCODED_USER=$(printf '%s' "$FORGEJO_ADMIN_USER" | jq -sRr @uri)
@@ -331,7 +297,7 @@ NETRC
       # Check if repo already exists
       REPO_CHECK=$(curl -s -o /dev/null -w "%%{http_code}" \
         --netrc-file "$NETRC_FILE" \
-        "http://localhost:3000/api/v1/repos/$ENCODED_USER/$ENCODED_REPO")
+        "http://$FORGEJO_HOST/api/v1/repos/$ENCODED_USER/$ENCODED_REPO")
 
       if [ "$REPO_CHECK" = "200" ]; then
         echo "Repository already exists, skipping creation"
@@ -349,7 +315,7 @@ NETRC
         -H "Content-Type: application/json" \
         --netrc-file "$NETRC_FILE" \
         -d "$JSON_PAYLOAD" \
-        "http://localhost:3000/api/v1/user/repos")
+        "http://$FORGEJO_HOST/api/v1/user/repos")
 
       # Check response using jq for safe parsing
       CREATED_NAME=$(echo "$RESPONSE" | jq -r '.name // empty')
@@ -363,6 +329,7 @@ NETRC
     environment = {
       FORGEJO_ADMIN_USER = local.git_secrets.forgejo_admin_username
       FORGEJO_ADMIN_PASS = local.git_secrets.forgejo_admin_password
+      FORGEJO_IP         = var.forgejo_ip
       REPO_NAME          = var.git_repository
       REPO_PRIVATE       = var.git_private ? "true" : "false"
     }

@@ -45,8 +45,8 @@ terraform apply -auto-approve
 | Provider | Version | Purpose |
 |----------|---------|---------|
 | `siderolabs/talos` | ~> 0.10.0 | Talos configuration |
-| `bpg/proxmox` | ~> 0.92.0 | VM provisioning |
-| `hashicorp/helm` | ~> 2.17.0 | Helm releases |
+| `bpg/proxmox` | ~> 0.93.0 | VM provisioning |
+| `hashicorp/helm` | ~> 3.1.0 | Helm releases |
 | `hashicorp/kubernetes` | ~> 2.36.0 | K8s resources |
 | `carlpett/sops` | ~> 1.1.1 | Secrets decryption |
 

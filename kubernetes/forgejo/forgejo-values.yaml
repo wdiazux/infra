@@ -121,16 +121,18 @@ ingress:
   #         pathType: Prefix
 
 # ============================================================================
-# Resources
+# Resources (optimized for homelab)
 # ============================================================================
+# Official: 256MB min, 1GB recommended
+# Forgejo is lightweight - can run on Raspberry Pi
 
 resources:
   requests:
     cpu: 100m
     memory: 256Mi
   limits:
-    cpu: 1000m
-    memory: 1Gi
+    cpu: 500m
+    memory: 512Mi
 
 # ============================================================================
 # PostgreSQL (Disabled - using SQLite)

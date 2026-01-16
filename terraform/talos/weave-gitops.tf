@@ -27,48 +27,47 @@ resource "helm_release" "weave_gitops" {
   namespace        = "flux-system"
   create_namespace = false # flux-system already exists
 
-  # Admin credentials
-  set {
-    name  = "adminUser.create"
-    value = "true"
-  }
+  # Admin credentials and service config
+  set = [
+    {
+      name  = "adminUser.create"
+      value = "true"
+    },
+    {
+      name  = "adminUser.username"
+      value = var.weave_gitops_admin_user
+    },
+    # Disable default service (we create our own with static IP)
+    {
+      name  = "service.type"
+      value = "ClusterIP"
+    },
+    # Resource limits (optimized for homelab)
+    # Official: 100m CPU, 128Mi memory suggested
+    {
+      name  = "resources.requests.cpu"
+      value = "50m"
+    },
+    {
+      name  = "resources.requests.memory"
+      value = "64Mi"
+    },
+    {
+      name  = "resources.limits.cpu"
+      value = "200m"
+    },
+    {
+      name  = "resources.limits.memory"
+      value = "128Mi"
+    },
+  ]
 
-  set {
-    name  = "adminUser.username"
-    value = var.weave_gitops_admin_user
-  }
-
-  set_sensitive {
-    name  = "adminUser.passwordHash"
-    value = local.git_secrets.weave_gitops_password_hash
-  }
-
-  # Disable default service (we create our own with static IP)
-  set {
-    name  = "service.type"
-    value = "ClusterIP"
-  }
-
-  # Resource limits (lightweight)
-  set {
-    name  = "resources.requests.cpu"
-    value = "50m"
-  }
-
-  set {
-    name  = "resources.requests.memory"
-    value = "64Mi"
-  }
-
-  set {
-    name  = "resources.limits.cpu"
-    value = "500m"
-  }
-
-  set {
-    name  = "resources.limits.memory"
-    value = "256Mi"
-  }
+  set_sensitive = [
+    {
+      name  = "adminUser.passwordHash"
+      value = local.git_secrets.weave_gitops_password_hash
+    },
+  ]
 
   wait    = true
   timeout = 300

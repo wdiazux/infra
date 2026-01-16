@@ -25,7 +25,7 @@ provider "helm" {
 
 # Helm Provider - for installing Longhorn (requires cluster)
 provider "helm" {
-  kubernetes {
+  kubernetes = {
     host                   = "https://${var.node_ip}:6443"
     client_certificate     = base64decode(try(talos_cluster_kubeconfig.cluster[0].kubernetes_client_configuration.client_certificate, ""))
     client_key             = base64decode(try(talos_cluster_kubeconfig.cluster[0].kubernetes_client_configuration.client_key, ""))
