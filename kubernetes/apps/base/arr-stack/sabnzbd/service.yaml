@@ -1,0 +1,23 @@
+# SABnzbd LoadBalancer Service
+#
+# Static IP via Cilium L2 LoadBalancer
+apiVersion: v1
+kind: Service
+metadata:
+  name: sabnzbd
+  namespace: arr-stack
+  labels:
+    app.kubernetes.io/name: sabnzbd
+    app.kubernetes.io/part-of: arr-stack
+  annotations:
+    io.cilium/lb-ipam-ips: "10.10.2.40"
+spec:
+  type: LoadBalancer
+  loadBalancerIP: "10.10.2.40"
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: sabnzbd

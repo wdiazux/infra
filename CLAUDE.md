@@ -149,6 +149,12 @@ All project dependencies are defined in `shell.nix` and automatically available 
 | Weave GitOps | 10.10.2.16 | FluxCD web UI | OPTIONAL |
 | IT-Tools | 10.10.2.32 | Developer toolbox | OPTIONAL |
 | LibreSpeed | 10.10.2.33 | Network speed test | OPTIONAL |
+| SABnzbd | 10.10.2.40 | Usenet downloader | OPTIONAL |
+| qBittorrent | 10.10.2.41 | Torrent downloader | OPTIONAL |
+| Prowlarr | 10.10.2.42 | Indexer manager | OPTIONAL |
+| Radarr | 10.10.2.43 | Movie manager | OPTIONAL |
+| Sonarr | 10.10.2.44 | TV series manager | OPTIONAL |
+| Bazarr | 10.10.2.45 | Subtitle manager | OPTIONAL |
 | Ubuntu VM | 10.10.2.151 | Traditional VM | OPTIONAL |
 | Debian VM | 10.10.2.152 | Traditional VM | OPTIONAL |
 | Arch VM | 10.10.2.153 | Traditional VM | OPTIONAL |

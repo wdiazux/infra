@@ -1,0 +1,101 @@
+# Longhorn PersistentVolumeClaims for arr-stack service configs
+#
+# Each service needs its own config volume for SQLite databases.
+# SQLite does NOT work on NFS - must use block storage (Longhorn).
+# Sizes can be expanded later via Longhorn if needed.
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sabnzbd-config
+  namespace: arr-stack
+  labels:
+    app.kubernetes.io/name: sabnzbd
+    app.kubernetes.io/part-of: arr-stack
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 256Mi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: qbittorrent-config
+  namespace: arr-stack
+  labels:
+    app.kubernetes.io/name: qbittorrent
+    app.kubernetes.io/part-of: arr-stack
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 256Mi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prowlarr-config
+  namespace: arr-stack
+  labels:
+    app.kubernetes.io/name: prowlarr
+    app.kubernetes.io/part-of: arr-stack
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 256Mi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: radarr-config
+  namespace: arr-stack
+  labels:
+    app.kubernetes.io/name: radarr
+    app.kubernetes.io/part-of: arr-stack
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 512Mi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sonarr-config
+  namespace: arr-stack
+  labels:
+    app.kubernetes.io/name: sonarr
+    app.kubernetes.io/part-of: arr-stack
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 512Mi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: bazarr-config
+  namespace: arr-stack
+  labels:
+    app.kubernetes.io/name: bazarr
+    app.kubernetes.io/part-of: arr-stack
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 256Mi

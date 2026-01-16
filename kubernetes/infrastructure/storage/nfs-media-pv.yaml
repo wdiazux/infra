@@ -1,6 +1,18 @@
 # NFS PersistentVolume for media storage
 # Mount: /mnt/tank/media from NAS (10.10.2.5)
-# Subdirectories: movies, music, photos, tvseries, videos
+#
+# Directory structure:
+#   downloads/
+#     usenet/
+#       complete/{tv,movies,music,prowlarr,anime,software,audio}
+#       incomplete/
+#     torrents/
+#   movies/       - Radarr target
+#   tvseries/     - Sonarr target
+#   music/        - Lidarr target (future)
+#   videos/       - General videos
+#
+# Used by: arr-stack (sonarr, radarr, bazarr, prowlarr, sabnzbd, qbittorrent)
 apiVersion: v1
 kind: PersistentVolume
 metadata:

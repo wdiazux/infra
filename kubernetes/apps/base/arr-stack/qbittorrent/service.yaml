@@ -1,0 +1,23 @@
+# qBittorrent LoadBalancer Service
+#
+# Static IP via Cilium L2 LoadBalancer
+apiVersion: v1
+kind: Service
+metadata:
+  name: qbittorrent
+  namespace: arr-stack
+  labels:
+    app.kubernetes.io/name: qbittorrent
+    app.kubernetes.io/part-of: arr-stack
+  annotations:
+    io.cilium/lb-ipam-ips: "10.10.2.41"
+spec:
+  type: LoadBalancer
+  loadBalancerIP: "10.10.2.41"
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: qbittorrent

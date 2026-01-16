@@ -1,0 +1,31 @@
+# Arr-Stack - Media automation services
+#
+# Services (all on port 80):
+#   - SABnzbd:     http://10.10.2.40  (Usenet downloader)
+#   - qBittorrent: http://10.10.2.41  (Torrent downloader)
+#   - Prowlarr:    http://10.10.2.42  (Indexer manager)
+#   - Radarr:      http://10.10.2.43  (Movie manager)
+#   - Sonarr:      http://10.10.2.44  (TV series manager)
+#   - Bazarr:      http://10.10.2.45  (Subtitle manager)
+#
+# Storage:
+#   - Config: Longhorn PVCs (SQLite databases - must be block storage)
+#   - Media:  NFS PVC from NAS (10.10.2.5:/mnt/tank/media)
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: arr-stack
+
+resources:
+  # Storage
+  - storage.yaml
+  # Download clients
+  - sabnzbd
+  - qbittorrent
+  # Indexer manager
+  - prowlarr
+  # Media managers
+  - radarr
+  - sonarr
+  # Subtitle manager
+  - bazarr
