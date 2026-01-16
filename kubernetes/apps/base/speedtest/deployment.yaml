@@ -51,6 +51,12 @@ spec:
                 secretKeyRef:
                   name: speedtest-credentials
                   key: PASSWORD
+            # GDPR contact email (required when telemetry is enabled)
+            - name: EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: speedtest-credentials
+                  key: EMAIL
             # IPInfo API key (optional, for geolocation)
             - name: IPINFO_APIKEY
               valueFrom:
