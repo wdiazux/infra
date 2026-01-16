@@ -94,7 +94,7 @@ locals {
       disk_interface = "scsi0"
 
       # Network
-      ip_address = "dhcp" # Or "10.10.2.11/24" for static
+      ip_address = "dhcp" # Or "10.10.2.51/24" for static
       on_boot    = true
       tags       = ["ubuntu", "linux", "lts", "development"]
 

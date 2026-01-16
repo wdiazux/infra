@@ -100,10 +100,10 @@ terraform apply -auto-approve
 |----------|---------|-------------|
 | `hubble_ui_ip` | `10.10.2.11` | Cilium Hubble UI |
 | `longhorn_ui_ip` | `10.10.2.12` | Longhorn UI |
-| `forgejo_ip` | `10.10.2.13` | Forgejo HTTP (3000) |
+| `forgejo_ip` | `10.10.2.13` | Forgejo HTTP (port 80) |
 | `forgejo_ssh_ip` | `10.10.2.14` | Forgejo SSH |
 | `fluxcd_webhook_ip` | `10.10.2.15` | FluxCD webhook |
-| `forgejo_proxy_ip` | `10.10.2.16` | Forgejo proxy (80) |
+| `weave_gitops_ip` | `10.10.2.16` | Weave GitOps UI |
 | `cilium_lb_pool_cidr` | `10.10.2.240/28` | LoadBalancer pool |
 
 ---

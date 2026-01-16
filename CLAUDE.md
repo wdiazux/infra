@@ -143,11 +143,10 @@ All project dependencies are defined in `shell.nix` and automatically available 
 | Talos Node | 10.10.2.10 | Kubernetes node | REQUIRED |
 | Cilium Hubble UI | 10.10.2.11 | Network observability | OPTIONAL |
 | Longhorn UI | 10.10.2.12 | Storage management | OPTIONAL |
-| Forgejo HTTP | 10.10.2.13 | Git server (port 3000) | OPTIONAL |
+| Forgejo | 10.10.2.13 | Git server (HTTP:80) | OPTIONAL |
 | Forgejo SSH | 10.10.2.14 | Git SSH access (port 22) | OPTIONAL |
 | FluxCD Webhook | 10.10.2.15 | GitOps webhook receiver | OPTIONAL |
-| Forgejo Proxy | 10.10.2.16 | Git HTTP proxy (port 80) | OPTIONAL |
-| Weave GitOps | 10.10.2.17 | FluxCD web UI | OPTIONAL |
+| Weave GitOps | 10.10.2.16 | FluxCD web UI | OPTIONAL |
 | Ubuntu VM | 10.10.2.51 | Traditional VM | OPTIONAL |
 | Debian VM | 10.10.2.52 | Traditional VM | OPTIONAL |
 | Arch VM | 10.10.2.53 | Traditional VM | OPTIONAL |

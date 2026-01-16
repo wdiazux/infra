@@ -79,10 +79,10 @@ resource "helm_release" "forgejo" {
     value = var.forgejo_ssh_ip
   }
 
-  # ROOT_URL uses the proxy IP (port 80)
+  # ROOT_URL uses the HTTP service IP (port 80)
   set {
     name  = "gitea.config.server.ROOT_URL"
-    value = "http://${var.forgejo_proxy_ip}/"
+    value = "http://${var.forgejo_ip}/"
   }
 
   # Wait for Forgejo to be fully ready
@@ -95,48 +95,6 @@ resource "helm_release" "forgejo" {
     helm_release.longhorn,
     kubernetes_namespace.forgejo,
     terraform_data.forgejo_pre_destroy # Pre-destroy runs cleanup before uninstall
-  ]
-}
-
-# ============================================================================
-# Forgejo HTTP Proxy Service (port 80)
-# ============================================================================
-# Provides access to Forgejo on standard HTTP port 80 instead of 3000
-# Access: http://10.10.2.16 -> Forgejo (port 3000)
-
-resource "kubernetes_service" "forgejo_http_proxy" {
-  count = var.enable_forgejo ? 1 : 0
-
-  metadata {
-    name      = "forgejo-http-proxy"
-    namespace = kubernetes_namespace.forgejo[0].metadata[0].name
-    labels = {
-      "app"                          = "forgejo"
-      "app.kubernetes.io/name"       = "forgejo"
-      "app.kubernetes.io/component"  = "http-proxy"
-      "app.kubernetes.io/managed-by" = "terraform"
-    }
-  }
-
-  spec {
-    type             = "LoadBalancer"
-    load_balancer_ip = var.forgejo_proxy_ip
-
-    port {
-      name        = "http"
-      port        = 80
-      target_port = 3000
-      protocol    = "TCP"
-    }
-
-    selector = {
-      "app.kubernetes.io/instance" = "forgejo"
-      "app.kubernetes.io/name"     = "forgejo"
-    }
-  }
-
-  depends_on = [
-    helm_release.forgejo
   ]
 }
 
@@ -433,8 +391,8 @@ resource "null_resource" "forgejo_push_repo" {
         exit 1
       fi
 
-      # Forgejo URL for git operations (using token auth via proxy on port 80)
-      FORGEJO_URL="http://$GIT_USER:$GIT_TOKEN@$FORGEJO_PROXY_IP/$GIT_USER/$REPO_NAME.git"
+      # Forgejo URL for git operations (using token auth on port 80)
+      FORGEJO_URL="http://$GIT_USER:$GIT_TOKEN@$FORGEJO_IP/$GIT_USER/$REPO_NAME.git"
 
       # Check if forgejo remote already exists
       if git remote get-url forgejo &>/dev/null; then
@@ -467,7 +425,7 @@ resource "null_resource" "forgejo_push_repo" {
 
       # Security: Remove token from git remote URL (replace with non-token URL)
       # This prevents the token from being exposed in .git/config
-      SAFE_URL="http://$FORGEJO_PROXY_IP/$GIT_USER/$REPO_NAME.git"
+      SAFE_URL="http://$FORGEJO_IP/$GIT_USER/$REPO_NAME.git"
       git remote set-url forgejo "$SAFE_URL"
       echo "Git remote URL sanitized (token removed)"
 
@@ -475,11 +433,11 @@ resource "null_resource" "forgejo_push_repo" {
     EOT
 
     environment = {
-      GIT_USER         = local.git_secrets.forgejo_admin_username
-      GIT_TOKEN        = trimspace(data.local_file.forgejo_flux_token[0].content)
-      FORGEJO_PROXY_IP = var.forgejo_proxy_ip
-      REPO_NAME        = var.git_repository
-      GIT_BRANCH       = var.git_branch
+      GIT_USER   = local.git_secrets.forgejo_admin_username
+      GIT_TOKEN  = trimspace(data.local_file.forgejo_flux_token[0].content)
+      FORGEJO_IP = var.forgejo_ip
+      REPO_NAME  = var.git_repository
+      GIT_BRANCH = var.git_branch
     }
   }
 

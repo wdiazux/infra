@@ -127,7 +127,7 @@ resource "kubernetes_service" "weave_gitops_lb" {
 #   Or: htpasswd -nbBC 10 "" 'your-password' | tr -d ':\n' | sed 's/$2y/$2a/'
 #
 # Access:
-#   http://10.10.2.17 (port 80)
+#   http://10.10.2.16 (port 80)
 #   Login with admin credentials
 #
 # Verification:

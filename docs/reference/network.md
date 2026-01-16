@@ -47,10 +47,10 @@ LoadBalancer IPs assigned to Kubernetes services.
 |----|---------|------|-----------|
 | 10.10.2.11 | Hubble UI | 80 | kube-system |
 | 10.10.2.12 | Longhorn UI | 80 | longhorn-system |
-| 10.10.2.13 | Forgejo HTTP | 3000 | forgejo |
+| 10.10.2.13 | Forgejo HTTP | 80 | forgejo |
 | 10.10.2.14 | Forgejo SSH | 22 | forgejo |
 | 10.10.2.15 | FluxCD Webhook | 80 | flux-system |
-| 10.10.2.16 | Forgejo Proxy | 80 | forgejo |
+| 10.10.2.16 | Weave GitOps | 80 | flux-system |
 | 10.10.2.17-20 | Reserved | - | - |
 
 ---
@@ -91,8 +91,9 @@ spec:
 | Talos API | https://10.10.2.10:50000 | talosconfig |
 | Hubble UI | http://10.10.2.11 | None |
 | Longhorn UI | http://10.10.2.12 | None |
-| Forgejo | http://10.10.2.16 | Username/Password |
+| Forgejo | http://10.10.2.13 | Username/Password |
 | Forgejo SSH | ssh://git@10.10.2.14 | SSH Key |
+| Weave GitOps | http://10.10.2.16 | Username/Password |
 
 ---
 
@@ -107,7 +108,8 @@ Configure in your DNS server or `/etc/hosts`:
 10.10.2.10   talos.home-infra.net
 10.10.2.11   hubble.home-infra.net
 10.10.2.12   longhorn.home-infra.net
-10.10.2.16   git.home-infra.net forgejo.home-infra.net
+10.10.2.13   git.home-infra.net forgejo.home-infra.net
+10.10.2.16   gitops.home-infra.net weave.home-infra.net
 ```
 
 ---
@@ -124,7 +126,8 @@ kubectl get ciliumloadbalancerippool -A
 # Test service connectivity
 curl -s http://10.10.2.11  # Hubble
 curl -s http://10.10.2.12  # Longhorn
-curl -s http://10.10.2.16  # Forgejo
+curl -s http://10.10.2.13  # Forgejo
+curl -s http://10.10.2.16  # Weave GitOps
 ```
 
 ---

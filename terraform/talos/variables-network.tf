@@ -75,7 +75,7 @@ variable "longhorn_ui_ip" {
 }
 
 variable "forgejo_ip" {
-  description = "Static IP for Forgejo direct HTTP LoadBalancer (port 3000). Must match kubernetes/forgejo/forgejo-values.yaml"
+  description = "Static IP for Forgejo HTTP LoadBalancer (port 80). Must match kubernetes/forgejo/forgejo-values.yaml"
   type        = string
   default     = "10.10.2.13"
 
@@ -93,17 +93,6 @@ variable "forgejo_ssh_ip" {
   validation {
     condition     = can(regex("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$", var.forgejo_ssh_ip))
     error_message = "forgejo_ssh_ip must be a valid IPv4 address."
-  }
-}
-
-variable "forgejo_proxy_ip" {
-  description = "Static IP for Forgejo HTTP proxy (port 80)"
-  type        = string
-  default     = "10.10.2.16"
-
-  validation {
-    condition     = can(regex("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$", var.forgejo_proxy_ip))
-    error_message = "forgejo_proxy_ip must be a valid IPv4 address."
   }
 }
 

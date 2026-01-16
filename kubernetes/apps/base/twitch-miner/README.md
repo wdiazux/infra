@@ -101,6 +101,29 @@ If you have cookies from a previous setup:
 kubectl cp /path/to/cookies/ twitch-miner/<pod-name>:/usr/src/app/cookies/
 ```
 
+## Resizing Storage
+
+PVCs can only expand, not shrink. To change size:
+
+```bash
+# 1. Edit pvc.yaml with new size
+#    resources.requests.storage: 500Mi
+
+# 2. Delete pod (releases PVC)
+kubectl delete pod -n twitch-miner -l app.kubernetes.io/name=twitch-miner --force --grace-period=0
+
+# 3. Delete PVC
+kubectl delete pvc twitch-miner-data -n twitch-miner
+
+# 4. Trigger FluxCD to recreate
+flux reconcile kustomization apps -n flux-system
+
+# 5. Verify new size
+kubectl get pvc -n twitch-miner
+```
+
+**Note**: Longhorn has a minimum size of 1Gi. Requests smaller than this will be rounded up.
+
 ## Troubleshooting
 
 | Issue | Solution |

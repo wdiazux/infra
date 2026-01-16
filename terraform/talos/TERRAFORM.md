@@ -265,8 +265,7 @@ No modules.
 | <a name="input_fluxcd_webhook_ip"></a> [fluxcd\_webhook\_ip](#input\_fluxcd\_webhook\_ip) | Static IP for FluxCD webhook receiver LoadBalancer | `string` | `"10.10.2.15"` | no |
 | <a name="input_forgejo_chart_version"></a> [forgejo\_chart\_version](#input\_forgejo\_chart\_version) | Forgejo Helm chart version | `string` | `"10.0.0"` | no |
 | <a name="input_forgejo_create_repo"></a> [forgejo\_create\_repo](#input\_forgejo\_create\_repo) | Automatically create the FluxCD repository in Forgejo | `bool` | `true` | no |
-| <a name="input_forgejo_ip"></a> [forgejo\_ip](#input\_forgejo\_ip) | Static IP for Forgejo direct HTTP LoadBalancer (port 3000). Must match kubernetes/forgejo/forgejo-values.yaml | `string` | `"10.10.2.13"` | no |
-| <a name="input_forgejo_proxy_ip"></a> [forgejo\_proxy\_ip](#input\_forgejo\_proxy\_ip) | Static IP for Forgejo HTTP proxy (port 80) | `string` | `"10.10.2.16"` | no |
+| <a name="input_forgejo_ip"></a> [forgejo\_ip](#input\_forgejo\_ip) | Static IP for Forgejo HTTP LoadBalancer (port 80). Must match kubernetes/forgejo/forgejo-values.yaml | `string` | `"10.10.2.13"` | no |
 | <a name="input_forgejo_ssh_ip"></a> [forgejo\_ssh\_ip](#input\_forgejo\_ssh\_ip) | Static IP for Forgejo SSH LoadBalancer | `string` | `"10.10.2.14"` | no |
 | <a name="input_generate_kubeconfig"></a> [generate\_kubeconfig](#input\_generate\_kubeconfig) | Generate kubeconfig file after bootstrap | `bool` | `true` | no |
 | <a name="input_git_branch"></a> [git\_branch](#input\_git\_branch) | Git branch for FluxCD | `string` | `"main"` | no |

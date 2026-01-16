@@ -45,8 +45,8 @@ locals {
     try(local.git_secrets.git_owner, var.git_owner)
   )
 
-  # HTTP URL for in-cluster Forgejo via proxy (used when enable_forgejo=true)
-  forgejo_http_url = "http://${var.forgejo_proxy_ip}/${local.fluxcd_git_owner}/${local.fluxcd_git_repository}.git"
+  # HTTP URL for in-cluster Forgejo (used when enable_forgejo=true)
+  forgejo_http_url = "http://${var.forgejo_ip}/${local.fluxcd_git_owner}/${local.fluxcd_git_repository}.git"
 }
 
 # ============================================================================

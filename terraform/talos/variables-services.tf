@@ -148,7 +148,7 @@ variable "weave_gitops_version" {
 variable "weave_gitops_ip" {
   description = "LoadBalancer IP for Weave GitOps UI"
   type        = string
-  default     = "10.10.2.17"
+  default     = "10.10.2.16"
 }
 
 variable "weave_gitops_admin_user" {

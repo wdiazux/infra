@@ -31,7 +31,7 @@ gitea:
 
     server:
       DOMAIN: git.home-infra.net
-      ROOT_URL: http://10.10.2.16/  # Overridden by Terraform var.forgejo_proxy_ip
+      ROOT_URL: http://10.10.2.13/  # Overridden by Terraform var.forgejo_ip
       # LOCAL_ROOT_URL is used by git hooks to connect back to the server
       # Must be accessible from within the container
       LOCAL_ROOT_URL: http://localhost:3000/
@@ -90,7 +90,7 @@ persistence:
 service:
   http:
     type: LoadBalancer
-    port: 3000  # Forgejo container listens on 3000
+    port: 80  # External port (routes to container port 3000)
     loadBalancerIP: "10.10.2.13"  # Overridden by Terraform var.forgejo_ip
     annotations: {}
 
@@ -167,9 +167,9 @@ initContainers:
 # - SQLite database stored in PVC
 #
 # Networking:
-# - HTTP on port 3000 via LoadBalancer (Cilium L2)
-# - SSH on port 22 via LoadBalancer
-# - IP will be assigned from Cilium L2 pool (10.10.2.240-254)
+# - HTTP on port 80 via LoadBalancer (10.10.2.13)
+# - SSH on port 22 via LoadBalancer (10.10.2.14)
+# - Cilium L2 provides static IPs
 #
 # Security:
 # - Registration disabled (admin creates users)

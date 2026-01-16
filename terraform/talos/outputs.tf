@@ -116,8 +116,8 @@ output "longhorn_ui_url" {
 }
 
 output "forgejo_http_url" {
-  description = "Forgejo Git server HTTP URL (via proxy on port 80)"
-  value       = var.enable_forgejo ? "http://${var.forgejo_proxy_ip}" : "Not enabled"
+  description = "Forgejo Git server HTTP URL (port 80)"
+  value       = var.enable_forgejo ? "http://${var.forgejo_ip}" : "Not enabled"
 }
 
 output "forgejo_ssh_url" {
