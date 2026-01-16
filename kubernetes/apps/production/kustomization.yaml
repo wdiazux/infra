@@ -3,21 +3,24 @@
 # Applications deployed to the homelab cluster.
 # Uses base definitions, can add patches for production-specific settings.
 #
-# Note: Namespaces (tools, misc) are managed in infrastructure/namespaces/
-# and deployed by FluxCD before apps.
+# Note: Namespaces (tools, misc, arr-stack, media) are managed in
+# infrastructure/namespaces/ and deployed by FluxCD before apps.
+#
+# Structure:
+#   apps/base/<namespace>/           - Namespace folder
+#   apps/base/<namespace>/<service>/ - Service subfolder
 #
 # To add a new app:
-#   1. Create kubernetes/apps/base/<app-name>/
+#   1. Create kubernetes/apps/base/<namespace>/<service>/
 #   2. Add kustomization.yaml, deployment.yaml, service.yaml
-#   3. Create secret.yaml.template, encrypt to secret.enc.yaml
-#   4. Add to resources below
+#   3. Create secret.yaml.template, encrypt with SOPS
+#   4. Add service to namespace kustomization.yaml
 #
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  - ../base/it-tools/
-  - ../base/speedtest/
-  - ../base/twitch-miner/
+  - ../base/tools/
+  - ../base/misc/
   - ../base/arr-stack/
   - ../base/media/

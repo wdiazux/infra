@@ -6,32 +6,59 @@ This directory contains application deployments managed by FluxCD with SOPS-encr
 
 ```
 apps/
-├── base/                    # Base application definitions
-│   └── <app-name>/
-│       ├── kustomization.yaml
-│       ├── deployment.yaml
-│       ├── service.yaml
-│       ├── pvc.yaml              # Optional: persistent storage
-│       ├── secret.yaml.template  # Template (DO NOT commit plaintext)
-│       └── secret.enc.yaml       # SOPS-encrypted secret (safe to commit)
+├── base/                        # Base application definitions
+│   ├── <namespace>/             # Namespace folder (e.g., tools, media)
+│   │   ├── kustomization.yaml   # Lists services in this namespace
+│   │   ├── storage.yaml         # Optional: shared PVCs
+│   │   └── <service>/           # Service subfolder
+│   │       ├── kustomization.yaml
+│   │       ├── deployment.yaml
+│   │       ├── service.yaml
+│   │       └── secret.yaml      # SOPS-encrypted (or .enc.yaml)
+│   │
+│   ├── tools/                   # Developer utilities
+│   │   ├── it-tools/
+│   │   └── speedtest/
+│   ├── misc/                    # Miscellaneous apps
+│   │   └── twitch-miner/
+│   ├── arr-stack/               # Media acquisition (Sonarr, Radarr, etc.)
+│   │   ├── sabnzbd/
+│   │   ├── qbittorrent/
+│   │   ├── prowlarr/
+│   │   ├── radarr/
+│   │   ├── sonarr/
+│   │   └── bazarr/
+│   └── media/                   # Media streaming
+│       ├── emby/
+│       └── navidrome/
 │
-└── production/              # Production overlay
-    └── kustomization.yaml   # References base apps
+└── production/                  # Production overlay
+    └── kustomization.yaml       # References namespace folders
 
-# Namespaces are defined in infrastructure/namespaces/ (not per-app)
+# Namespaces are defined in infrastructure/namespaces/
 ```
 
 ## Adding a New Application
 
-### 1. Create the app directory
+### 1. Choose or create a namespace folder
+
+Applications are organized by namespace:
+- `tools/` - Developer utilities
+- `misc/` - Miscellaneous apps
+- `arr-stack/` - Media acquisition
+- `media/` - Media streaming
 
 ```bash
-mkdir -p kubernetes/apps/base/my-app
+# Add to existing namespace
+mkdir -p kubernetes/apps/base/tools/my-app
+
+# Or create new namespace folder
+mkdir -p kubernetes/apps/base/my-namespace/my-app
 ```
 
 ### 2. Add namespace (if new)
 
-If your app needs a new namespace, add it to `infrastructure/namespaces/`:
+If creating a new namespace folder, add it to `infrastructure/namespaces/`:
 
 ```yaml
 # kubernetes/infrastructure/namespaces/my-namespace.yaml
@@ -45,28 +72,34 @@ metadata:
 
 And reference it in `infrastructure/namespaces/kustomization.yaml`.
 
-### 3. Create the kustomization.yaml
+### 3. Create the service kustomization.yaml
 
 ```yaml
-# kubernetes/apps/base/my-app/kustomization.yaml
+# kubernetes/apps/base/<namespace>/my-app/kustomization.yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-
-namespace: my-namespace  # Must exist in infrastructure/namespaces/
 
 resources:
   - deployment.yaml
   - service.yaml
-  - secret.enc.yaml  # Encrypted secret
+  - secret.yaml  # SOPS-encrypted
 ```
 
-### 4. Create your Kubernetes manifests
+### 4. Add to namespace kustomization
+
+```yaml
+# kubernetes/apps/base/<namespace>/kustomization.yaml
+resources:
+  - my-app
+```
+
+### 5. Create your Kubernetes manifests
 
 - `deployment.yaml` - Deployment with secret references
 - `service.yaml` - Service definition
 - `pvc.yaml` - PersistentVolumeClaim (optional)
 
-### 5. Create and encrypt secrets
+### 6. Create and encrypt secrets
 
 ```bash
 # Create plaintext secret (NEVER commit this!)
@@ -88,19 +121,11 @@ sops -e /tmp/secret.yaml > kubernetes/apps/base/my-app/secret.enc.yaml
 rm /tmp/secret.yaml
 ```
 
-### 6. Add to production
-
-```yaml
-# kubernetes/apps/production/kustomization.yaml
-resources:
-  - ../base/my-app/
-```
-
 ### 7. Commit and push
 
 ```bash
-git add kubernetes/apps/base/my-app/
-git commit -m "feat(apps): Add my-app deployment"
+git add kubernetes/apps/base/<namespace>/my-app/
+git commit -m "feat(apps): Add my-app to <namespace>"
 git push
 ```
 

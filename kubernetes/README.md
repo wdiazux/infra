@@ -52,17 +52,31 @@ kubernetes/
 │   │   └── webhook-receiver-lb.yaml
 │   ├── namespaces/           # Application namespaces
 │   │   ├── kustomization.yaml
-│   │   ├── tools.yaml        # speedtest, it-tools
-│   │   └── misc.yaml         # twitch-miner
+│   │   ├── tools.yaml        # it-tools, speedtest
+│   │   ├── misc.yaml         # twitch-miner
+│   │   ├── arr-stack.yaml    # media acquisition services
+│   │   └── media.yaml        # media streaming services
 │   └── values/               # Helm values (reference/used by Terraform)
 │       ├── cilium-values.yaml
 │       ├── longhorn-values.yaml
 │       └── forgejo-values.yaml
 ├── apps/
 │   ├── base/                 # Base application manifests
-│   │   ├── it-tools/
-│   │   ├── speedtest/
-│   │   └── twitch-miner/
+│   │   ├── tools/            # Tools namespace
+│   │   │   ├── it-tools/
+│   │   │   └── speedtest/
+│   │   ├── misc/             # Misc namespace
+│   │   │   └── twitch-miner/
+│   │   ├── arr-stack/        # Media acquisition
+│   │   │   ├── sabnzbd/
+│   │   │   ├── qbittorrent/
+│   │   │   ├── prowlarr/
+│   │   │   ├── radarr/
+│   │   │   ├── sonarr/
+│   │   │   └── bazarr/
+│   │   └── media/            # Media streaming
+│   │       ├── emby/
+│   │       └── navidrome/
 │   └── production/           # Production overlays
 │       └── kustomization.yaml
 └── flux-system/              # FluxCD components (auto-generated)
