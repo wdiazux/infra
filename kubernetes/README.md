@@ -34,26 +34,38 @@ This directory contains the Kubernetes manifests managed by FluxCD for the homel
 ```
 kubernetes/
 ├── clusters/
-│   └── homelab/           # Cluster entry point
-│       └── kustomization.yaml
+│   └── homelab/              # Cluster entry point (FluxCD)
+│       ├── kustomization.yaml
+│       ├── infrastructure.yaml
+│       └── apps.yaml
 ├── infrastructure/
-│   ├── controllers/       # Core infrastructure (storage, GPU)
+│   ├── controllers/          # Core infrastructure (storage, GPU)
 │   │   ├── kustomization.yaml
 │   │   ├── helm-repositories.yaml
-│   │   ├── cilium.yaml    # DISABLED: Installed via Talos inlineManifest
-│   │   ├── longhorn.yaml
+│   │   ├── cilium.yaml       # DISABLED: Installed via Talos inlineManifest
+│   │   ├── longhorn.yaml     # DISABLED: Installed via Terraform
 │   │   └── nvidia-gpu.yaml
-│   └── configs/           # Cluster configurations
-│       ├── kustomization.yaml
-│       └── cilium-l2-config.yaml  # Reference only (in inlineManifest)
+│   ├── configs/              # Cluster configurations
+│   │   ├── kustomization.yaml
+│   │   ├── longhorn-storage-classes.yaml
+│   │   ├── talos-node-reader.yaml
+│   │   └── webhook-receiver-lb.yaml
+│   ├── namespaces/           # Application namespaces
+│   │   ├── kustomization.yaml
+│   │   ├── tools.yaml        # speedtest, it-tools
+│   │   └── misc.yaml         # twitch-miner
+│   └── values/               # Helm values (reference/used by Terraform)
+│       ├── cilium-values.yaml
+│       ├── longhorn-values.yaml
+│       └── forgejo-values.yaml
 ├── apps/
-│   ├── base/              # Base application manifests
-│   └── production/        # Production overlays
-├── cilium/                # Cilium Helm values (reference)
-│   └── cilium-values.yaml
-├── longhorn/              # Longhorn Helm values (reference)
-│   └── longhorn-values.yaml
-└── flux-system/           # FluxCD components (auto-generated)
+│   ├── base/                 # Base application manifests
+│   │   ├── it-tools/
+│   │   ├── speedtest/
+│   │   └── twitch-miner/
+│   └── production/           # Production overlays
+│       └── kustomization.yaml
+└── flux-system/              # FluxCD components (auto-generated)
 ```
 
 ## Quick Start

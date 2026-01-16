@@ -9,14 +9,16 @@ apps/
 ├── base/                    # Base application definitions
 │   └── <app-name>/
 │       ├── kustomization.yaml
-│       ├── namespace.yaml
 │       ├── deployment.yaml
 │       ├── service.yaml
+│       ├── pvc.yaml              # Optional: persistent storage
 │       ├── secret.yaml.template  # Template (DO NOT commit plaintext)
 │       └── secret.enc.yaml       # SOPS-encrypted secret (safe to commit)
 │
 └── production/              # Production overlay
     └── kustomization.yaml   # References base apps
+
+# Namespaces are defined in infrastructure/namespaces/ (not per-app)
 ```
 
 ## Adding a New Application
@@ -27,29 +29,44 @@ apps/
 mkdir -p kubernetes/apps/base/my-app
 ```
 
-### 2. Create the kustomization.yaml
+### 2. Add namespace (if new)
+
+If your app needs a new namespace, add it to `infrastructure/namespaces/`:
+
+```yaml
+# kubernetes/infrastructure/namespaces/my-namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: my-namespace
+  labels:
+    app.kubernetes.io/name: my-namespace
+```
+
+And reference it in `infrastructure/namespaces/kustomization.yaml`.
+
+### 3. Create the kustomization.yaml
 
 ```yaml
 # kubernetes/apps/base/my-app/kustomization.yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-namespace: my-app
+namespace: my-namespace  # Must exist in infrastructure/namespaces/
 
 resources:
-  - namespace.yaml
   - deployment.yaml
   - service.yaml
   - secret.enc.yaml  # Encrypted secret
 ```
 
-### 3. Create your Kubernetes manifests
+### 4. Create your Kubernetes manifests
 
-- `namespace.yaml` - Namespace definition
 - `deployment.yaml` - Deployment with secret references
 - `service.yaml` - Service definition
+- `pvc.yaml` - PersistentVolumeClaim (optional)
 
-### 4. Create and encrypt secrets
+### 5. Create and encrypt secrets
 
 ```bash
 # Create plaintext secret (NEVER commit this!)
@@ -71,7 +88,7 @@ sops -e /tmp/secret.yaml > kubernetes/apps/base/my-app/secret.enc.yaml
 rm /tmp/secret.yaml
 ```
 
-### 5. Add to production
+### 6. Add to production
 
 ```yaml
 # kubernetes/apps/production/kustomization.yaml
@@ -79,7 +96,7 @@ resources:
   - ../base/my-app/
 ```
 
-### 6. Commit and push
+### 7. Commit and push
 
 ```bash
 git add kubernetes/apps/base/my-app/
