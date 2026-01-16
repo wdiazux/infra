@@ -40,7 +40,6 @@
 
 | Service | Namespace | Purpose |
 |---------|-----------|---------|
-| Example App | example-app | Demo/test application |
 | Twitch Miner | twitch-miner | Automation service |
 
 ---
