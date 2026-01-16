@@ -50,4 +50,21 @@ spec:
   path: ./kubernetes/infrastructure/configs
   prune: true
   dependsOn:
+    - name: infrastructure-storage
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: infrastructure-storage
+  namespace: flux-system
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: ./kubernetes/infrastructure/storage
+  prune: true
+  dependsOn:
     - name: infrastructure-namespaces

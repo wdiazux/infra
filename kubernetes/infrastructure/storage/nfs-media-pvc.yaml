@@ -1,0 +1,15 @@
+# PersistentVolumeClaim for media storage in arr-stack namespace
+# Used by: sonarr, radarr, bazarr, etc.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nfs-media
+  namespace: arr-stack
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  resources:
+    requests:
+      storage: 1Ti
+  volumeName: nfs-media

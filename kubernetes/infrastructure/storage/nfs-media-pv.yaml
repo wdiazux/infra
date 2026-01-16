@@ -1,0 +1,24 @@
+# NFS PersistentVolume for media storage
+# Mount: /mnt/tank/media from NAS (10.10.2.5)
+# Subdirectories: movies, music, photos, tvseries, videos
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nfs-media
+  labels:
+    type: nfs
+    purpose: media
+spec:
+  capacity:
+    storage: 1Ti
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  nfs:
+    server: 10.10.2.5
+    path: /mnt/tank/media
+  mountOptions:
+    - nfsvers=4.1
+    - hard
+    - noatime
