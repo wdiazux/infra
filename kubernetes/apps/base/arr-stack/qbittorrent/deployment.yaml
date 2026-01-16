@@ -32,6 +32,9 @@ spec:
             - name: http
               containerPort: 8080
               protocol: TCP
+            - name: bittorrent
+              containerPort: 6881
+              protocol: TCP
           env:
             - name: PUID
               value: "1000"

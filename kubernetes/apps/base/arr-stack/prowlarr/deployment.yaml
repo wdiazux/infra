@@ -42,12 +42,6 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /config
-            - name: downloads
-              mountPath: /downloads/usenet
-              subPath: usenet
-            - name: downloads
-              mountPath: /downloads/torrents
-              subPath: torrents
           resources:
             requests:
               cpu: 50m
@@ -71,6 +65,3 @@ spec:
         - name: config
           persistentVolumeClaim:
             claimName: prowlarr-config
-        - name: downloads
-          persistentVolumeClaim:
-            claimName: nfs-downloads
