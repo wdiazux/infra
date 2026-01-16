@@ -135,8 +135,10 @@ resources:
     memory: 512Mi
 
 # ============================================================================
-# PostgreSQL (Disabled - using SQLite)
+# PostgreSQL (Disabled - using external Bitnami PostgreSQL)
 # ============================================================================
+# PostgreSQL is deployed separately via terraform/talos/postgresql.tf
+# Database connection configured above in gitea.config.database
 
 postgresql:
   enabled: false
@@ -171,8 +173,8 @@ initContainers:
 #
 # Storage:
 # - Uses Longhorn for persistent storage
-# - 10Gi for Forgejo data (repos, LFS, etc.)
-# - PostgreSQL database deployed separately (see postgresql.tf)
+# - 5Gi for Forgejo data (repos, LFS, etc.)
+# - PostgreSQL 2Gi deployed separately (see postgresql.tf)
 #
 # Networking:
 # - HTTP on port 80 via LoadBalancer (10.10.2.13)
