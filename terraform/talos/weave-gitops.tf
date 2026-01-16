@@ -6,7 +6,7 @@
 # - HelmRelease status
 # - Reconciliation errors
 #
-# Access: http://10.10.2.15 (or configured IP)
+# Access: http://10.10.2.16 (or configured IP)
 #
 # Prerequisites:
 # - FluxCD installed and running
