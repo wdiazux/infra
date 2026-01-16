@@ -7,3 +7,4 @@ kind: Kustomization
 resources:
   - tools.yaml
   - misc.yaml
+  - arr-stack.yaml
