@@ -36,7 +36,7 @@ brew install ansible
 pip install ansible
 ```
 
-**Minimum version:** Ansible 2.16+
+**Minimum version:** Ansible 2.17.0+
 
 ### 2. Ansible Collections
 

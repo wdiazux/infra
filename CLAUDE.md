@@ -74,8 +74,8 @@ All project dependencies are defined in `shell.nix` and automatically available 
 - **Terraform**: >= 1.14.2
 - **Packer**: ~> 1.14.3
 - **Ansible**: ansible-core >= 2.17.0, Python >= 3.9
-- **Talos Linux**: v1.10+ (primary platform)
-- **Kubernetes**: v1.31+
+- **Talos Linux**: v1.12.1 (primary platform)
+- **Kubernetes**: v1.35.0
 - **SOPS**: latest (secrets management)
 - **Age**: latest (encryption for SOPS)
 
@@ -154,7 +154,7 @@ All project dependencies are defined in `shell.nix` and automatically available 
 | Windows VM | 10.10.2.55 | Traditional VM | OPTIONAL |
 | Cilium LB Pool | 10.10.2.240-254 | K8s LoadBalancer (15 IPs) | REQUIRED |
 
-See `docs/SERVICES.md` for complete network documentation.
+See `docs/reference/network.md` for complete network documentation.
 
 ## Supported Operating Systems
 

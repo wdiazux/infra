@@ -30,7 +30,7 @@ Production VMs (clone from template)
 
 ## Prerequisites
 
-- Ansible 2.16+ installed on Packer build machine
+- Ansible 2.17.0+ installed on Packer build machine
 - Ansible collections: `ansible-galaxy collection install -r ../../ansible/requirements.yml`
 - Proxmox VE 9.0
 - Storage pool: `tank` (or update variables)
