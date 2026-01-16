@@ -20,3 +20,4 @@ resources:
   - ../base/speedtest/
   - ../base/twitch-miner/
   - ../base/arr-stack/
+  - ../base/media/

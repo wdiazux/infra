@@ -32,7 +32,7 @@ Hardware specs, assumptions, and configuration values.
 
 ---
 
-## Storage Configuration
+## Proxmox Storage Configuration
 
 | Setting | Value |
 |---------|-------|
@@ -42,6 +42,40 @@ Hardware specs, assumptions, and configuration values.
 | VM Disk Format | raw |
 
 All VMs use ZFS storage exclusively.
+
+---
+
+## TrueNAS Storage (NAS)
+
+**System:** TrueNAS Community Edition (hostname: `atlas`)
+**IP Address:** 10.10.2.5
+
+### Storage Pools
+
+| Pool | Type | Raw Capacity | Usable Capacity | Available | Purpose |
+|------|------|--------------|-----------------|-----------|---------|
+| **tank** | RAIDZ1 (5 disks) | 3.64 TiB | 14.39 TiB | 13.69 TiB | Primary media storage |
+| **data** | Single disk | 1.86 TiB | 1.8 TiB | 1.8 TiB | General data |
+| **downloads** | Single disk | 1.82 TiB | 1.76 TiB | 1.76 TiB | Download staging |
+
+**Total Usable Capacity:** ~17.95 TiB
+
+### Pool Health & Maintenance
+
+| Pool | Health | Auto TRIM | Scrub Schedule |
+|------|--------|-----------|----------------|
+| tank | Online | On | Day 1 of month, 03:00 |
+| data | Online | On | Day 1 of month, 04:00 |
+| downloads | Online | Off | Sunday, 00:00 |
+
+### NFS Exports (Kubernetes)
+
+| Export Path | K8s PVC | Namespace | Capacity |
+|-------------|---------|-----------|----------|
+| `/mnt/tank/media` | `nfs-media` | arr-stack, media | 1 TiB |
+| `/mnt/downloads/...` | `nfs-downloads` | arr-stack | 500 Gi |
+
+**Note:** Single-disk pools (`data`, `downloads`) have no redundancy. Critical data should be stored on the RAIDZ1 `tank` pool.
 
 ---
 
@@ -172,4 +206,4 @@ gpu_mapping = "nvidia-gpu"
 
 ---
 
-**Last Updated:** 2026-01-15
+**Last Updated:** 2026-01-16

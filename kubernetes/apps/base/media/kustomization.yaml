@@ -1,0 +1,16 @@
+# Media namespace - streaming services
+#
+# Services:
+#   - Emby: Video/audio streaming (10.10.2.28)
+#   - Navidrome: Music streaming (10.10.2.29)
+#
+# Storage:
+#   - Longhorn: Config volumes (databases, metadata)
+#   - NFS: Media files from /mnt/tank/media
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - storage.yaml
+  - emby
+  - navidrome

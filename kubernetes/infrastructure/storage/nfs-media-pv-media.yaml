@@ -1,0 +1,29 @@
+# NFS PersistentVolume for media storage (media namespace)
+# Mount: /mnt/tank/media from NAS (10.10.2.5)
+#
+# Duplicate PV for media namespace - points to same NFS path as arr-stack.
+# Required because PVs can only bind to one PVC at a time.
+#
+# Used by: media namespace (emby, navidrome)
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nfs-media-media
+  labels:
+    type: nfs
+    purpose: media
+    namespace: media
+spec:
+  capacity:
+    storage: 1Ti
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  nfs:
+    server: 10.10.2.5
+    path: /mnt/tank/media
+  mountOptions:
+    - nfsvers=4.1
+    - hard
+    - noatime

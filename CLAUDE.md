@@ -147,6 +147,8 @@ All project dependencies are defined in `shell.nix` and automatically available 
 | Forgejo SSH | 10.10.2.14 | Git SSH access (port 22) | OPTIONAL |
 | FluxCD Webhook | 10.10.2.15 | GitOps webhook receiver | OPTIONAL |
 | Weave GitOps | 10.10.2.16 | FluxCD web UI | OPTIONAL |
+| Emby | 10.10.2.28 | Media streaming server | OPTIONAL |
+| Navidrome | 10.10.2.29 | Music streaming server | OPTIONAL |
 | IT-Tools | 10.10.2.32 | Developer toolbox | OPTIONAL |
 | LibreSpeed | 10.10.2.33 | Network speed test | OPTIONAL |
 | SABnzbd | 10.10.2.40 | Usenet downloader | OPTIONAL |
@@ -629,6 +631,7 @@ zpool scrub poolname          # Data integrity check
 
 ## Version History
 
+- **2026-01-16**: Media namespace for streaming services (Emby, Navidrome), duplicate NFS PV pattern for cross-namespace storage
 - **2026-01-16**: Arr-stack media automation deployment (SABnzbd, qBittorrent, Prowlarr, Radarr, Sonarr, Bazarr), dual NFS storage (media + downloads), kubeconfig documentation
 - **2026-01-15**: Documentation consolidation - reorganized 54 files into structured `docs/` hierarchy (getting-started, deployment, services, operations, reference)
 - **2026-01-14**: Service LoadBalancer IPs assigned (Hubble UI, Longhorn, Forgejo, FluxCD webhook), documentation cleanup (removed archive docs)

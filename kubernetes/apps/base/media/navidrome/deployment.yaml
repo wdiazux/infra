@@ -1,0 +1,86 @@
+# Navidrome - Music streaming server
+#
+# https://www.navidrome.org/
+# https://hub.docker.com/r/deluan/navidrome
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: navidrome
+  namespace: media
+  labels:
+    app.kubernetes.io/name: navidrome
+    app.kubernetes.io/part-of: media
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: navidrome
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: navidrome
+        app.kubernetes.io/part-of: media
+    spec:
+      securityContext:
+        fsGroup: 3001
+      containers:
+        - name: navidrome
+          image: docker.io/deluan/navidrome:latest
+          ports:
+            - name: http
+              containerPort: 4533
+              protocol: TCP
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "3001"
+            - name: TZ
+              value: America/El_Salvador
+            - name: ND_LOGLEVEL
+              value: warn
+            - name: ND_SCANSCHEDULE
+              value: "12h"
+            - name: ND_ENABLEGRAVATAR
+              value: "true"
+            - name: ND_LASTFM_ENABLED
+              value: "true"
+            - name: ND_IMAGECACHESIZE
+              value: "200MB"
+          envFrom:
+            - secretRef:
+                name: navidrome-secrets
+          volumeMounts:
+            - name: config
+              mountPath: /data
+            - name: media
+              mountPath: /music
+              subPath: music
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: navidrome-config
+        - name: media
+          persistentVolumeClaim:
+            claimName: nfs-media

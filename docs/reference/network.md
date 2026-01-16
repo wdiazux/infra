@@ -55,6 +55,8 @@ LoadBalancer IPs assigned to Kubernetes services.
 
 | IP | Service | Port | Namespace |
 |----|---------|------|-----------|
+| 10.10.2.28 | Emby | 80 | media |
+| 10.10.2.29 | Navidrome | 80 | media |
 | 10.10.2.32 | IT-Tools | 80 | tools |
 | 10.10.2.33 | LibreSpeed | 80 | tools |
 | 10.10.2.40 | SABnzbd | 80 | arr-stack |
@@ -106,6 +108,8 @@ spec:
 | Forgejo | http://10.10.2.13 | Username/Password |
 | Forgejo SSH | ssh://git@10.10.2.14 | SSH Key |
 | Weave GitOps | http://10.10.2.16 | Username/Password |
+| Emby | http://10.10.2.28 | Username/Password |
+| Navidrome | http://10.10.2.29 | Username/Password |
 | IT-Tools | http://10.10.2.32 | None |
 | LibreSpeed | http://10.10.2.33 | Password (for stats) |
 | SABnzbd | http://10.10.2.40 | Username/Password |
@@ -130,6 +134,8 @@ Configure in your DNS server or `/etc/hosts`:
 10.10.2.12   longhorn.home-infra.net
 10.10.2.13   git.home-infra.net forgejo.home-infra.net
 10.10.2.16   gitops.home-infra.net weave.home-infra.net
+10.10.2.28   emby.home-infra.net
+10.10.2.29   navidrome.home-infra.net music.home-infra.net
 10.10.2.32   it-tools.home-infra.net tools.home-infra.net
 10.10.2.33   speedtest.home-infra.net
 10.10.2.40   sabnzbd.home-infra.net
@@ -158,6 +164,10 @@ curl -s http://10.10.2.13  # Forgejo
 curl -s http://10.10.2.16  # Weave GitOps
 curl -s http://10.10.2.32  # IT-Tools
 curl -s http://10.10.2.33  # LibreSpeed
+
+# Media services
+curl -s http://10.10.2.28  # Emby
+curl -s http://10.10.2.29  # Navidrome
 
 # Arr-stack services
 curl -s http://10.10.2.40  # SABnzbd
