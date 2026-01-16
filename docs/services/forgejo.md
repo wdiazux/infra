@@ -22,8 +22,8 @@ Forgejo is deployed **automatically** via Terraform Helm release when `enable_fo
 
 | Service | URL | Port |
 |---------|-----|------|
-| Web UI | http://10.10.2.16 | 80 |
-| HTTP Clone | http://10.10.2.13:3000 | 3000 |
+| Web UI | http://10.10.2.13 | 80 |
+| HTTP Clone | http://10.10.2.13 | 80 |
 | SSH Clone | ssh://git@10.10.2.14:22 | 22 |
 
 ---
@@ -43,7 +43,7 @@ sops -d secrets/git-creds.enc.yaml
 
 ```bash
 # HTTP
-git clone http://10.10.2.16/wdiaz/infra.git
+git clone http://10.10.2.13/wdiaz/infra.git
 
 # SSH
 git clone git@10.10.2.14:wdiaz/infra.git
@@ -102,7 +102,7 @@ cat ~/.ssh/id_ed25519.pub
 # Get token from Forgejo UI: Settings → Applications → Generate Token
 TOKEN="your-token"
 
-curl -X POST "http://10.10.2.16/api/v1/user/repos" \
+curl -X POST "http://10.10.2.13/api/v1/user/repos" \
   -H "Authorization: token $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"name": "my-repo", "private": false}'
@@ -152,7 +152,7 @@ Forgejo data is stored on Longhorn volumes and backed up via NFS.
 
 ```bash
 # Export repository via API
-curl -X GET "http://10.10.2.16/api/v1/repos/wdiaz/infra/archive/main.zip" \
+curl -X GET "http://10.10.2.13/api/v1/repos/wdiaz/infra/archive/main.zip" \
   -H "Authorization: token $TOKEN" \
   -o infra-backup.zip
 ```
@@ -218,7 +218,7 @@ kubectl get gitrepository -n flux-system -o yaml
 kubectl get secret forgejo-flux-token -n flux-system
 
 # Verify repository exists
-curl http://10.10.2.16/api/v1/repos/wdiaz/infra
+curl http://10.10.2.13/api/v1/repos/wdiaz/infra
 ```
 
 ### PostgreSQL Issues

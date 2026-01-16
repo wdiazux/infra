@@ -58,7 +58,7 @@ kubectl get pods -A
 |---------|-----|-------|
 | Hubble UI | http://10.10.2.11 | Cilium network visualization |
 | Longhorn UI | http://10.10.2.12 | Storage management |
-| Forgejo | http://10.10.2.13:3000 | Git server |
+| Forgejo | http://10.10.2.13 | Git server |
 
 ### Check FluxCD
 

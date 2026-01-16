@@ -25,7 +25,7 @@ all:
         ubuntu_vms:
           hosts:
             ubuntu-dev:
-              ansible_host: 10.10.2.11  # Replace with actual IP (from Terraform output or DHCP)
+              ansible_host: 10.10.2.51  # Replace with actual IP (from Terraform output or DHCP)
               ansible_user: admin  # From cloud-init config
               ansible_become: true
               ansible_python_interpreter: /usr/bin/python3
@@ -38,7 +38,7 @@ all:
         debian_vms:
           hosts:
             debian-prod:
-              ansible_host: 10.10.2.12  # Replace with actual IP
+              ansible_host: 10.10.2.52  # Replace with actual IP
               ansible_user: admin
               ansible_become: true
               ansible_python_interpreter: /usr/bin/python3
@@ -51,7 +51,7 @@ all:
         arch_vms:
           hosts:
             arch-dev:
-              ansible_host: 10.10.2.13  # Replace with actual IP
+              ansible_host: 10.10.2.53  # Replace with actual IP
               ansible_user: admin
               ansible_become: true
               ansible_python_interpreter: /usr/bin/python3
@@ -64,7 +64,7 @@ all:
         nixos_vms:
           hosts:
             nixos-lab:
-              ansible_host: 10.10.2.14  # Replace with actual IP
+              ansible_host: 10.10.2.54  # Replace with actual IP
               ansible_user: admin
               ansible_become: true
               ansible_python_interpreter: /usr/bin/python3
@@ -82,7 +82,7 @@ all:
     windows_vms:
       hosts:
         windows-server:
-          ansible_host: 10.10.2.15  # Replace with actual IP
+          ansible_host: 10.10.2.55  # Replace with actual IP
           ansible_user: Administrator  # From Cloudbase-Init
           ansible_connection: winrm
           ansible_winrm_transport: ntlm
@@ -114,7 +114,7 @@ vars:
 # #!/bin/bash
 # cd terraform
 # TALOS_IP=$(terraform output -raw node_ip)  # Should be 10.10.2.10
-# UBUNTU_IP=$(terraform output -json ubuntu_ip_addresses | jq -r '.[0][0]')  # Should be 10.10.2.11 or DHCP
+# UBUNTU_IP=$(terraform output -json ubuntu_ip_addresses | jq -r '.[0][0]')  # Should be 10.10.2.51 or DHCP
 # # ... extract other IPs ...
 # # Generate YAML inventory programmatically
 #

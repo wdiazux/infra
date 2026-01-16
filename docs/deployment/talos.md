@@ -172,7 +172,7 @@ kubectl get pods -A
 | Talos API | https://10.10.2.10:50000 | `talosctl health` |
 | Hubble UI | http://10.10.2.11 | Cilium observability |
 | Longhorn UI | http://10.10.2.12 | Storage management |
-| Forgejo | http://10.10.2.16 | Git server |
+| Forgejo | http://10.10.2.13 | Git server |
 
 ### Check FluxCD
 

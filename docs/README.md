@@ -107,7 +107,7 @@ Historical research with 90+ official sources:
 |---------|-----|
 | Hubble UI | http://10.10.2.11 |
 | Longhorn UI | http://10.10.2.12 |
-| Forgejo | http://10.10.2.16 |
+| Forgejo | http://10.10.2.13 |
 | FluxCD Webhook | http://10.10.2.15 |
 
 ---

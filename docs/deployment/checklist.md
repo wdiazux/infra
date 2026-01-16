@@ -196,7 +196,7 @@ export TALOSCONFIG=./talosconfig
   kubectl get pods -n forgejo
   ```
 
-- [ ] Forgejo UI accessible: http://10.10.2.16
+- [ ] Forgejo UI accessible: http://10.10.2.13
 
 - [ ] Can log in with admin credentials
 
