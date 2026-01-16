@@ -7,9 +7,9 @@
 # not via manual Helm installation. This file documents the configuration
 # values but is NOT used by automation.
 #
-# Version: Cilium 1.18.5
+# Version: Cilium 1.18.6
 # Talos Compatibility: v1.10+
-# Last Updated: 2026-01-13
+# Last Updated: 2026-01-15
 
 # ============================================================================
 # Core Configuration

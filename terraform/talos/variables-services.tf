@@ -9,7 +9,7 @@
 variable "cilium_version" {
   description = "Cilium Helm chart version"
   type        = string
-  default     = "1.18.5"
+  default     = "1.18.6"
 }
 
 variable "cilium_lb_pool_cidr" {
@@ -117,10 +117,16 @@ variable "enable_forgejo" {
   default     = true
 }
 
+variable "postgresql_version" {
+  description = "PostgreSQL Helm chart version (Bitnami)"
+  type        = string
+  default     = "18.2.0"
+}
+
 variable "forgejo_chart_version" {
   description = "Forgejo Helm chart version"
   type        = string
-  default     = "10.0.0"
+  default     = "16.0.0"
 }
 
 variable "forgejo_create_repo" {

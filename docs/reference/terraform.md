@@ -91,7 +91,7 @@ terraform apply -auto-approve
 | `enable_forgejo` | `true` | Deploy Forgejo Git server |
 | `enable_fluxcd` | `true` | Bootstrap FluxCD |
 | `enable_longhorn_backups` | `true` | Enable NFS backups |
-| `cilium_version` | `1.18.5` | Cilium chart version |
+| `cilium_version` | `1.18.6` | Cilium chart version |
 | `longhorn_version` | `1.10.1` | Longhorn chart version |
 
 ### Network IPs

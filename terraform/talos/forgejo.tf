@@ -85,6 +85,17 @@ resource "helm_release" "forgejo" {
     value = "http://${var.forgejo_ip}/"
   }
 
+  # PostgreSQL database credentials
+  set {
+    name  = "gitea.config.database.USER"
+    value = local.git_secrets.postgresql_username
+  }
+
+  set_sensitive {
+    name  = "gitea.config.database.PASSWD"
+    value = local.git_secrets.postgresql_password
+  }
+
   # Wait for Forgejo to be fully ready
   # Note: Forgejo can take 12+ minutes on first startup due to init containers
   wait          = true
@@ -94,7 +105,8 @@ resource "helm_release" "forgejo" {
   depends_on = [
     helm_release.longhorn,
     kubernetes_namespace.forgejo,
-    terraform_data.forgejo_pre_destroy # Pre-destroy runs cleanup before uninstall
+    null_resource.wait_for_postgresql,    # Wait for PostgreSQL to be ready
+    terraform_data.forgejo_pre_destroy    # Pre-destroy runs cleanup before uninstall
   ]
 }
 

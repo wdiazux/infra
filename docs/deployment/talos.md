@@ -270,8 +270,10 @@ talosctl upgrade-k8s --nodes 10.10.2.10 --to v1.36.0
 | `enable_gpu_passthrough` | true | Enable NVIDIA GPU |
 | `talos_version` | v1.12.1 | Talos Linux version |
 | `kubernetes_version` | v1.35.0 | Kubernetes version |
-| `cilium_version` | 1.18.5 | Cilium chart version |
+| `cilium_version` | 1.18.6 | Cilium chart version |
 | `longhorn_version` | 1.10.1 | Longhorn chart version |
+| `forgejo_chart_version` | 16.0.0 | Forgejo chart version |
+| `postgresql_version` | 18.2.0 | PostgreSQL chart version |
 
 See `terraform/talos/TERRAFORM.md` for complete input/output reference.
 

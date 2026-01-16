@@ -259,7 +259,7 @@ flux reconcile hr cilium -n kube-system
 | Component | Version | Notes |
 |-----------|---------|-------|
 | FluxCD | Latest | Installed via bootstrap |
-| Cilium | 1.18.5 | CNI + kube-proxy replacement |
+| Cilium | 1.18.6 | CNI + kube-proxy replacement |
 | Longhorn | 1.10.1 | Distributed storage |
 | NVIDIA Device Plugin | v0.18.1 | GPU support |
 

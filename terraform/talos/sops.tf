@@ -54,6 +54,10 @@ locals {
     forgejo_admin_password = try(data.sops_file.git_secrets[0].data["forgejo_admin_password"], "")
     forgejo_admin_email    = try(data.sops_file.git_secrets[0].data["forgejo_admin_email"], "admin@home-infra.net")
 
+    # PostgreSQL credentials (for Forgejo database)
+    postgresql_username = try(data.sops_file.git_secrets[0].data["postgresql_username"], "forgejo")
+    postgresql_password = try(data.sops_file.git_secrets[0].data["postgresql_password"], "")
+
     # Weave GitOps admin password hash
     weave_gitops_password_hash = try(data.sops_file.git_secrets[0].data["weave_gitops_password_hash"], var.weave_gitops_password_hash)
   } : {}

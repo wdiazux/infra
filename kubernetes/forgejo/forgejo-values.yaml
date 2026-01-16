@@ -24,6 +24,9 @@ gitea:
   # Credentials injected by Terraform from SOPS
   admin:
     existingSecret: ""  # Using Terraform set values instead
+    # Keep password stable - don't regenerate on upgrades
+    # Valid values: keepUpdated, initialOnlyNoReset, initialOnlyRequireReset
+    passwordMode: initialOnlyNoReset
 
   # Forgejo application config (app.ini)
   config:
@@ -52,7 +55,10 @@ gitea:
       INSTALL_LOCK: true  # Skip installer, use admin from config
 
     database:
-      DB_TYPE: sqlite3  # Simple for homelab, use PostgreSQL for production
+      DB_TYPE: postgres
+      HOST: postgresql.forgejo.svc.cluster.local:5432
+      NAME: forgejo
+      # USER and PASSWD are set via Terraform from SOPS secrets
 
     cache:
       ADAPTER: memory
@@ -163,8 +169,8 @@ initContainers:
 #
 # Storage:
 # - Uses Longhorn for persistent storage
-# - 10Gi default, adjust as needed
-# - SQLite database stored in PVC
+# - 10Gi for Forgejo data (repos, LFS, etc.)
+# - PostgreSQL database deployed separately (see postgresql.tf)
 #
 # Networking:
 # - HTTP on port 80 via LoadBalancer (10.10.2.13)

@@ -10,9 +10,10 @@ Procedures for upgrading Talos, Kubernetes, and cluster components.
 |-----------|---------|----------------|
 | Talos Linux | v1.12.1 | talosctl upgrade |
 | Kubernetes | v1.35.0 | talosctl upgrade-k8s |
-| Cilium | 1.18.5 | Terraform apply |
+| Cilium | 1.18.6 | Terraform apply |
 | Longhorn | 1.10.1 | Terraform apply |
-| Forgejo | 10.0.0 | Terraform apply |
+| Forgejo | 16.0.0 | Terraform apply |
+| PostgreSQL | 18.2.0 | Terraform apply |
 
 ---
 
