@@ -147,6 +147,7 @@ All project dependencies are defined in `shell.nix` and automatically available 
 | FluxCD Webhook | 10.10.2.15 | GitOps webhook receiver | OPTIONAL |
 | Weave GitOps | 10.10.2.16 | FluxCD web UI | OPTIONAL |
 | IT-Tools | 10.10.2.32 | Developer toolbox | OPTIONAL |
+| LibreSpeed | 10.10.2.33 | Network speed test | OPTIONAL |
 | Ubuntu VM | 10.10.2.151 | Traditional VM | OPTIONAL |
 | Debian VM | 10.10.2.152 | Traditional VM | OPTIONAL |
 | Arch VM | 10.10.2.153 | Traditional VM | OPTIONAL |

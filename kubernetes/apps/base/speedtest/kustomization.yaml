@@ -1,0 +1,21 @@
+# LibreSpeed - Internet Speed Test
+#
+# Self-hosted bandwidth speed test tool.
+# https://github.com/librespeed/speedtest
+#
+# Access: http://10.10.2.33
+# Results: http://10.10.2.33/results/stats.php (requires PASSWORD)
+#
+# To update the admin password:
+#   sops kubernetes/apps/base/speedtest/secret.enc.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: speedtest
+
+resources:
+  - namespace.yaml
+  - pvc.yaml
+  - deployment.yaml
+  - service.yaml
+  - secret.enc.yaml

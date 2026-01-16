@@ -1,0 +1,16 @@
+# Persistent storage for LibreSpeed
+#
+# Stores SQLite database with telemetry/results history.
+# Uses Longhorn for persistent storage.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: speedtest-data
+  namespace: speedtest
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 100Mi
