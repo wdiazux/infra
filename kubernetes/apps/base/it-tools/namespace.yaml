@@ -1,0 +1,7 @@
+# IT-Tools Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: it-tools
+  labels:
+    app.kubernetes.io/name: it-tools

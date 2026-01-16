@@ -55,6 +55,14 @@ LoadBalancer IPs assigned to Kubernetes services.
 
 ---
 
+## Applications (10.10.2.21-50)
+
+| IP | Service | Port | Namespace |
+|----|---------|------|-----------|
+| 10.10.2.32 | IT-Tools | 80 | it-tools |
+
+---
+
 ## Traditional VMs (10.10.2.51-70)
 
 | IP | Hostname | OS | Status |
@@ -94,6 +102,7 @@ spec:
 | Forgejo | http://10.10.2.13 | Username/Password |
 | Forgejo SSH | ssh://git@10.10.2.14 | SSH Key |
 | Weave GitOps | http://10.10.2.16 | Username/Password |
+| IT-Tools | http://10.10.2.32 | None |
 
 ---
 
@@ -110,6 +119,7 @@ Configure in your DNS server or `/etc/hosts`:
 10.10.2.12   longhorn.home-infra.net
 10.10.2.13   git.home-infra.net forgejo.home-infra.net
 10.10.2.16   gitops.home-infra.net weave.home-infra.net
+10.10.2.32   it-tools.home-infra.net tools.home-infra.net
 ```
 
 ---
@@ -128,8 +138,9 @@ curl -s http://10.10.2.11  # Hubble
 curl -s http://10.10.2.12  # Longhorn
 curl -s http://10.10.2.13  # Forgejo
 curl -s http://10.10.2.16  # Weave GitOps
+curl -s http://10.10.2.32  # IT-Tools
 ```
 
 ---
 
-**Last Updated:** 2026-01-15
+**Last Updated:** 2026-01-16

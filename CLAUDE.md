@@ -147,6 +147,7 @@ All project dependencies are defined in `shell.nix` and automatically available 
 | Forgejo SSH | 10.10.2.14 | Git SSH access (port 22) | OPTIONAL |
 | FluxCD Webhook | 10.10.2.15 | GitOps webhook receiver | OPTIONAL |
 | Weave GitOps | 10.10.2.16 | FluxCD web UI | OPTIONAL |
+| IT-Tools | 10.10.2.32 | Developer toolbox | OPTIONAL |
 | Ubuntu VM | 10.10.2.51 | Traditional VM | OPTIONAL |
 | Debian VM | 10.10.2.52 | Traditional VM | OPTIONAL |
 | Arch VM | 10.10.2.53 | Traditional VM | OPTIONAL |
