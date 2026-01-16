@@ -45,7 +45,7 @@ resource "helm_release" "postgresql" {
 
   set {
     name  = "primary.persistence.size"
-    value = "3Gi"
+    value = "2Gi"
   }
 
   # Resources (reasonable for homelab)
