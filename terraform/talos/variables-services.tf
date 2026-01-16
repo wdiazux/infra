@@ -12,17 +12,6 @@ variable "cilium_version" {
   default     = "1.18.6"
 }
 
-variable "cilium_lb_pool_cidr" {
-  description = "CIDR for Cilium L2 LoadBalancer IP pool"
-  type        = string
-  default     = "10.10.2.240/28"
-
-  validation {
-    condition     = can(cidrhost(var.cilium_lb_pool_cidr, 0))
-    error_message = "cilium_lb_pool_cidr must be a valid CIDR notation."
-  }
-}
-
 # ============================================================================
 # Longhorn Storage Configuration
 # ============================================================================

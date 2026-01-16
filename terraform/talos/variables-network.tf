@@ -41,15 +41,15 @@ variable "ntp_servers" {
 # ============================================================================
 
 variable "important_services_ip_start" {
-  description = "Start IP for important services LoadBalancer pool"
+  description = "Start IP for services/apps LoadBalancer pool"
   type        = string
   default     = "10.10.2.11"
 }
 
 variable "important_services_ip_stop" {
-  description = "End IP for important services LoadBalancer pool"
+  description = "End IP for services/apps LoadBalancer pool"
   type        = string
-  default     = "10.10.2.20"
+  default     = "10.10.2.150"
 }
 
 variable "hubble_ui_ip" {

@@ -133,8 +133,8 @@ The following services are exposed via Cilium L2 LoadBalancer:
 | FluxCD Webhook | 10.10.2.14 | 80 | GitOps webhook receiver |
 
 **IP Ranges:**
-- `10.10.2.11-20`: Important services (static assignments)
-- `10.10.2.240-254`: General LoadBalancer pool (dynamic)
+- `10.10.2.11-150`: Services and applications (LoadBalancer pool)
+- `10.10.2.151-254`: Traditional VMs
 
 ### Why Cilium Uses inlineManifest
 

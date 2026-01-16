@@ -208,7 +208,7 @@ Before running `terraform apply`:
 | Gateway | 10.10.2.1 |
 | Proxmox | 10.10.2.2 |
 | Talos Node | 10.10.2.10 |
-| LoadBalancer Pool | 10.10.2.240-254 |
+| LoadBalancer Pool | 10.10.2.11-150 |
 
 ### Storage
 

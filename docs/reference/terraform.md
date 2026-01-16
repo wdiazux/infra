@@ -104,7 +104,8 @@ terraform apply -auto-approve
 | `forgejo_ssh_ip` | `10.10.2.14` | Forgejo SSH |
 | `fluxcd_webhook_ip` | `10.10.2.15` | FluxCD webhook |
 | `weave_gitops_ip` | `10.10.2.16` | Weave GitOps UI |
-| `cilium_lb_pool_cidr` | `10.10.2.240/28` | LoadBalancer pool |
+| `important_services_ip_start` | `10.10.2.11` | LoadBalancer pool start |
+| `important_services_ip_stop` | `10.10.2.150` | LoadBalancer pool end |
 
 ---
 

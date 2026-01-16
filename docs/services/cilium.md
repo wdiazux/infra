@@ -10,7 +10,7 @@ Cilium is installed **automatically** via Talos inlineManifest during `terraform
 
 **What's Automatic:**
 - Cilium CNI deployment
-- L2 LoadBalancer IP pool (10.10.2.240/28)
+- L2 LoadBalancer IP pool (10.10.2.11-150)
 - L2 announcement policy
 - Hubble UI and Relay
 
@@ -37,19 +37,13 @@ Cilium is installed **automatically** via Talos inlineManifest during `terraform
 apiVersion: cilium.io/v2alpha1
 kind: CiliumLoadBalancerIPPool
 metadata:
-  name: important-services
+  name: homelab-pool
 spec:
   blocks:
+    # Services and applications (10.10.2.11-150)
+    # Traditional VMs use 10.10.2.151-254
     - start: "10.10.2.11"
-      stop: "10.10.2.20"
----
-apiVersion: cilium.io/v2alpha1
-kind: CiliumLoadBalancerIPPool
-metadata:
-  name: default-pool
-spec:
-  blocks:
-    - cidr: "10.10.2.240/28"
+      stop: "10.10.2.150"
 ```
 
 ---

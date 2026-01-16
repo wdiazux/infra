@@ -131,9 +131,8 @@ All project dependencies are defined in `shell.nix` and automatically available 
 **IP Allocation Scheme**:
 - 10.10.2.1-10: Physical computers & core infrastructure
 - 10.10.2.11-20: Important services (management, monitoring)
-- 10.10.2.21-50: Applications & services
-- 10.10.2.51-70: Virtual machines
-- 10.10.2.240-254: Kubernetes LoadBalancer pool
+- 10.10.2.21-150: Applications & services (LoadBalancer pool)
+- 10.10.2.151-254: Traditional virtual machines
 
 | Component | IP Address | Purpose | Status |
 |-----------|------------|---------|--------|
@@ -148,12 +147,11 @@ All project dependencies are defined in `shell.nix` and automatically available 
 | FluxCD Webhook | 10.10.2.15 | GitOps webhook receiver | OPTIONAL |
 | Weave GitOps | 10.10.2.16 | FluxCD web UI | OPTIONAL |
 | IT-Tools | 10.10.2.32 | Developer toolbox | OPTIONAL |
-| Ubuntu VM | 10.10.2.51 | Traditional VM | OPTIONAL |
-| Debian VM | 10.10.2.52 | Traditional VM | OPTIONAL |
-| Arch VM | 10.10.2.53 | Traditional VM | OPTIONAL |
-| NixOS VM | 10.10.2.54 | Traditional VM | OPTIONAL |
-| Windows VM | 10.10.2.55 | Traditional VM | OPTIONAL |
-| Cilium LB Pool | 10.10.2.240-254 | K8s LoadBalancer (15 IPs) | REQUIRED |
+| Ubuntu VM | 10.10.2.151 | Traditional VM | OPTIONAL |
+| Debian VM | 10.10.2.152 | Traditional VM | OPTIONAL |
+| Arch VM | 10.10.2.153 | Traditional VM | OPTIONAL |
+| NixOS VM | 10.10.2.154 | Traditional VM | OPTIONAL |
+| Windows VM | 10.10.2.155 | Traditional VM | OPTIONAL |
 
 See `docs/reference/network.md` for complete network documentation.
 

@@ -88,7 +88,6 @@ No modules.
 | <a name="input_allow_scheduling_on_control_plane"></a> [allow\_scheduling\_on\_control\_plane](#input\_allow\_scheduling\_on\_control\_plane) | Allow pod scheduling on control plane (required for single-node) | `bool` | `true` | no |
 | <a name="input_auto_bootstrap"></a> [auto\_bootstrap](#input\_auto\_bootstrap) | Automatically bootstrap the cluster | `bool` | `true` | no |
 | <a name="input_auto_install_gpu_device_plugin"></a> [auto\_install\_gpu\_device\_plugin](#input\_auto\_install\_gpu\_device\_plugin) | Automatically install NVIDIA device plugin after bootstrap | `bool` | `true` | no |
-| <a name="input_cilium_lb_pool_cidr"></a> [cilium\_lb\_pool\_cidr](#input\_cilium\_lb\_pool\_cidr) | CIDR for Cilium L2 LoadBalancer IP pool | `string` | `"10.10.2.240/28"` | no |
 | <a name="input_cilium_version"></a> [cilium\_version](#input\_cilium\_version) | Cilium Helm chart version | `string` | `"1.18.6"` | no |
 | <a name="input_cluster_endpoint"></a> [cluster\_endpoint](#input\_cluster\_endpoint) | Kubernetes API endpoint (defaults to node IP) | `string` | `""` | no |
 | <a name="input_cluster_name"></a> [cluster\_name](#input\_cluster\_name) | Talos/Kubernetes cluster name | `string` | `"homelab-k8s"` | no |
@@ -118,8 +117,8 @@ No modules.
 | <a name="input_gpu_pcie"></a> [gpu\_pcie](#input\_gpu\_pcie) | Enable PCIe passthrough mode | `bool` | `true` | no |
 | <a name="input_gpu_rombar"></a> [gpu\_rombar](#input\_gpu\_rombar) | Enable GPU ROM bar | `bool` | `false` | no |
 | <a name="input_hubble_ui_ip"></a> [hubble\_ui\_ip](#input\_hubble\_ui\_ip) | Static IP for Cilium Hubble UI LoadBalancer | `string` | `"10.10.2.11"` | no |
-| <a name="input_important_services_ip_start"></a> [important\_services\_ip\_start](#input\_important\_services\_ip\_start) | Start IP for important services LoadBalancer pool | `string` | `"10.10.2.11"` | no |
-| <a name="input_important_services_ip_stop"></a> [important\_services\_ip\_stop](#input\_important\_services\_ip\_stop) | End IP for important services LoadBalancer pool | `string` | `"10.10.2.20"` | no |
+| <a name="input_important_services_ip_start"></a> [important\_services\_ip\_start](#input\_important\_services\_ip\_start) | Start IP for services/apps LoadBalancer pool | `string` | `"10.10.2.11"` | no |
+| <a name="input_important_services_ip_stop"></a> [important\_services\_ip\_stop](#input\_important\_services\_ip\_stop) | End IP for services/apps LoadBalancer pool | `string` | `"10.10.2.150"` | no |
 | <a name="input_install_disk"></a> [install\_disk](#input\_install\_disk) | Disk device to install Talos on | `string` | `"/dev/sda"` | no |
 | <a name="input_kubernetes_version"></a> [kubernetes\_version](#input\_kubernetes\_version) | Kubernetes version to deploy | `string` | `"v1.35.0"` | no |
 | <a name="input_kubernetes_wait_timeout"></a> [kubernetes\_wait\_timeout](#input\_kubernetes\_wait\_timeout) | Seconds to wait for Kubernetes API | `number` | `300` | no |

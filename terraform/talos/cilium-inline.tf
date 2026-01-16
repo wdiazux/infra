@@ -222,8 +222,8 @@ metadata:
   namespace: kube-system
 spec:
   blocks:
-    - cidr: "${var.cilium_lb_pool_cidr}"
-    # Important services pool (Hubble UI, Longhorn, Forgejo, FluxCD, etc.)
+    # Services and applications pool (10.10.2.11-150)
+    # Traditional VMs use 10.10.2.151-254
     - start: "${var.important_services_ip_start}"
       stop: "${var.important_services_ip_stop}"
   serviceSelector:
