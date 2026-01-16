@@ -45,12 +45,12 @@ spec:
             - name: media
               mountPath: /movies
               subPath: movies
-            - name: media
+            - name: downloads
               mountPath: /data/usenet
-              subPath: downloads/usenet
-            - name: media
+              subPath: usenet
+            - name: downloads
               mountPath: /data/torrents
-              subPath: downloads/torrents
+              subPath: torrents
           resources:
             requests:
               cpu: 100m
@@ -77,3 +77,6 @@ spec:
         - name: media
           persistentVolumeClaim:
             claimName: nfs-media
+        - name: downloads
+          persistentVolumeClaim:
+            claimName: nfs-downloads

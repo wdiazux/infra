@@ -1,0 +1,15 @@
+# PersistentVolumeClaim for downloads storage in arr-stack namespace
+# Used by: sabnzbd, qbittorrent, prowlarr, radarr, sonarr
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nfs-downloads
+  namespace: arr-stack
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  resources:
+    requests:
+      storage: 500Gi
+  volumeName: nfs-downloads

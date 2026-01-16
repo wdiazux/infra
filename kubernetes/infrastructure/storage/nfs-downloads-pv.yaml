@@ -1,0 +1,31 @@
+# NFS PersistentVolume for downloads storage
+# Mount: /mnt/downloads from NAS (10.10.2.5)
+#
+# Directory structure:
+#   usenet/
+#     complete/{tv,movies,music,prowlarr,anime,software,audio}
+#     incomplete/
+#   torrents/
+#
+# Used by: arr-stack (sabnzbd, qbittorrent, prowlarr, radarr, sonarr)
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nfs-downloads
+  labels:
+    type: nfs
+    purpose: downloads
+spec:
+  capacity:
+    storage: 500Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  nfs:
+    server: 10.10.2.5
+    path: /mnt/downloads
+  mountOptions:
+    - nfsvers=4.1
+    - hard
+    - noatime

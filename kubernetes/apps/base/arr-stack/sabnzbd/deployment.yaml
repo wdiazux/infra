@@ -42,9 +42,9 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /config
-            - name: media
+            - name: downloads
               mountPath: /data/usenet
-              subPath: downloads/usenet
+              subPath: usenet
           resources:
             requests:
               cpu: 100m
@@ -66,6 +66,6 @@ spec:
         - name: config
           persistentVolumeClaim:
             claimName: sabnzbd-config
-        - name: media
+        - name: downloads
           persistentVolumeClaim:
-            claimName: nfs-media
+            claimName: nfs-downloads

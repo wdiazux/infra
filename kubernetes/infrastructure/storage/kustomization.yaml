@@ -7,3 +7,5 @@ kind: Kustomization
 resources:
   - nfs-media-pv.yaml
   - nfs-media-pvc.yaml
+  - nfs-downloads-pv.yaml
+  - nfs-downloads-pvc.yaml
