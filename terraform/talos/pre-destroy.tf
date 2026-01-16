@@ -213,6 +213,50 @@ resource "terraform_data" "forgejo_pre_destroy" {
 }
 
 # ============================================================================
+# Weave GitOps Pre-Destroy Cleanup
+# ============================================================================
+# Cleans up Weave GitOps LoadBalancer service before deletion
+
+resource "terraform_data" "weave_gitops_pre_destroy" {
+  count = var.enable_fluxcd && var.enable_weave_gitops ? 1 : 0
+
+  triggers_replace = {
+    kubeconfig = local.kubeconfig_path
+    namespace  = "flux-system"
+  }
+
+  provisioner "local-exec" {
+    when    = destroy
+    command = <<-EOT
+      set -e
+      echo "=== Weave GitOps Pre-Destroy Cleanup ==="
+
+      KUBECONFIG="${self.triggers_replace.kubeconfig}"
+      NAMESPACE="${self.triggers_replace.namespace}"
+
+      # Check if cluster is accessible
+      if ! kubectl --kubeconfig="$KUBECONFIG" get nodes &>/dev/null 2>&1; then
+        echo "Cluster not accessible, skipping Weave GitOps cleanup"
+        exit 0
+      fi
+
+      # Delete Weave GitOps LoadBalancer service
+      echo "Deleting Weave GitOps LoadBalancer service..."
+      kubectl --kubeconfig="$KUBECONFIG" delete svc weave-gitops-lb \
+        -n "$NAMESPACE" --ignore-not-found 2>/dev/null || true
+
+      echo "=== Weave GitOps Pre-Destroy Complete ==="
+    EOT
+
+    on_failure = continue
+  }
+
+  depends_on = [
+    null_resource.wait_for_cilium
+  ]
+}
+
+# ============================================================================
 # Notes
 # ============================================================================
 #
@@ -235,10 +279,13 @@ resource "terraform_data" "forgejo_pre_destroy" {
 # 1. terraform_data.fluxcd_pre_destroy (suspend/delete FluxCD)
 # 2. terraform_data.longhorn_pre_destroy (set flag, remove webhooks)
 # 3. terraform_data.forgejo_pre_destroy (remove finalizers)
-# 4. helm_release.longhorn (Helm uninstall)
-# 5. helm_release.forgejo (Helm uninstall)
-# 6. kubernetes_namespace.* (namespace deletion)
-# 7. proxmox_virtual_environment_vm.talos_node (VM deletion)
+# 4. terraform_data.weave_gitops_pre_destroy (remove LB service)
+# 5. helm_release.weave_gitops (Helm uninstall)
+# 6. helm_release.postgresql (Helm uninstall)
+# 7. helm_release.forgejo (Helm uninstall)
+# 8. helm_release.longhorn (Helm uninstall)
+# 9. kubernetes_namespace.* (namespace deletion)
+# 10. proxmox_virtual_environment_vm.talos_node (VM deletion)
 #
 # Manual Fallback:
 # If terraform destroy still fails, use ./destroy.sh which handles

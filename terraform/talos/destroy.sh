@@ -176,6 +176,10 @@ terraform state rm 'helm_release.longhorn[0]' 2>/dev/null || true
 terraform state rm 'helm_release.longhorn' 2>/dev/null || true
 terraform state rm 'helm_release.forgejo[0]' 2>/dev/null || true
 terraform state rm 'helm_release.forgejo' 2>/dev/null || true
+terraform state rm 'helm_release.postgresql[0]' 2>/dev/null || true
+terraform state rm 'helm_release.postgresql' 2>/dev/null || true
+terraform state rm 'helm_release.weave_gitops[0]' 2>/dev/null || true
+terraform state rm 'helm_release.weave_gitops' 2>/dev/null || true
 
 echo ""
 echo "Step 4.2: Removing stuck namespaces from state..."
@@ -199,9 +203,18 @@ for resource in wait_for_forgejo forgejo_generate_token forgejo_create_repo forg
 done
 
 echo ""
-echo "Step 4.5: Removing kubernetes_service.forgejo_http_proxy from state..."
+echo "Step 4.5: Removing kubernetes services from state..."
 terraform state rm 'kubernetes_service.forgejo_http_proxy[0]' 2>/dev/null || true
 terraform state rm 'kubernetes_service.forgejo_http_proxy' 2>/dev/null || true
+terraform state rm 'kubernetes_service.weave_gitops_lb[0]' 2>/dev/null || true
+terraform state rm 'kubernetes_service.weave_gitops_lb' 2>/dev/null || true
+
+echo ""
+echo "Step 4.6: Removing terraform_data pre-destroy resources from state..."
+terraform state rm 'terraform_data.fluxcd_pre_destroy[0]' 2>/dev/null || true
+terraform state rm 'terraform_data.longhorn_pre_destroy[0]' 2>/dev/null || true
+terraform state rm 'terraform_data.forgejo_pre_destroy[0]' 2>/dev/null || true
+terraform state rm 'terraform_data.weave_gitops_pre_destroy[0]' 2>/dev/null || true
 
 echo ""
 echo "=============================================="

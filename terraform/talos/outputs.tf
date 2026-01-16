@@ -92,8 +92,8 @@ output "cilium_version" {
 }
 
 output "cilium_lb_pool" {
-  description = "Cilium L2 LoadBalancer IP pool CIDR"
-  value       = var.cilium_lb_pool_cidr
+  description = "Cilium L2 LoadBalancer IP pool range"
+  value       = "${var.important_services_ip_start}-${var.important_services_ip_stop}"
 }
 
 output "longhorn_version" {
