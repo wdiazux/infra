@@ -121,8 +121,18 @@ if cluster_accessible; then
     kctl delete job longhorn-uninstall -n longhorn-system --ignore-not-found 2>/dev/null || true
 
     echo ""
-    echo "Step 1.8: Cleaning namespace finalizers..."
-    for ns in flux-system longhorn-system forgejo; do
+    echo "Step 1.8: Deleting FluxCD-managed app resources..."
+    # Delete apps in tools and misc namespaces before namespace cleanup
+    for ns in tools misc; do
+        if kctl get namespace "$ns" &>/dev/null 2>&1; then
+            echo "  - Deleting resources in namespace: $ns"
+            kctl delete deployments,services,pvc,configmaps,secrets --all -n "$ns" --ignore-not-found 2>/dev/null || true
+        fi
+    done
+
+    echo ""
+    echo "Step 1.9: Cleaning namespace finalizers..."
+    for ns in flux-system longhorn-system forgejo tools misc; do
         if kctl get namespace "$ns" &>/dev/null 2>&1; then
             echo "  - Removing finalizers from namespace: $ns"
             kctl patch namespace "$ns" -p '{"metadata":{"finalizers":null}}' --type=merge 2>/dev/null || true
@@ -130,7 +140,7 @@ if cluster_accessible; then
     done
 
     echo ""
-    echo "Step 1.9: Deleting CRD finalizers (Longhorn)..."
+    echo "Step 1.10: Deleting CRD finalizers (Longhorn)..."
     # Longhorn CRDs can have finalizers that block deletion
     for crd in $(kctl get crd -o name 2>/dev/null | grep longhorn || true); do
         echo "  - Patching: $crd"

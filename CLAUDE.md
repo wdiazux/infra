@@ -45,8 +45,9 @@ infra/
 │   └── roles/
 ├── talos/           # Talos machine configs and patches
 ├── kubernetes/      # Kubernetes manifests and Helm values
-│   ├── longhorn/
-│   └── storage-classes/
+│   ├── apps/        # User applications (base + production overlays)
+│   ├── clusters/    # FluxCD cluster entrypoints
+│   └── infrastructure/  # Controllers, configs, namespaces, values
 ├── secrets/         # Encrypted secrets (SOPS + Age)
 ├── docs/            # Documentation
 ├── npins/           # Nix dependency pinning

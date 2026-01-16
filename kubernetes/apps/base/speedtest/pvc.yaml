@@ -6,7 +6,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: speedtest-data
-  namespace: speedtest
+  namespace: tools
 spec:
   accessModes:
     - ReadWriteOnce

@@ -1,0 +1,9 @@
+# Application Namespaces
+#
+# Namespaces for user applications (separate from system namespaces).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - tools.yaml
+  - misc.yaml

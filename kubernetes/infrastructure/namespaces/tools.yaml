@@ -1,0 +1,11 @@
+# Tools Namespace
+#
+# Developer and network utility applications.
+# Services: speedtest, it-tools
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tools
+  labels:
+    app.kubernetes.io/name: tools
+    purpose: utilities

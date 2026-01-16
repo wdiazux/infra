@@ -60,8 +60,8 @@ resource "helm_release" "longhorn" {
   namespace        = "longhorn-system"
   create_namespace = false # Already created by null_resource.configure_longhorn_namespace
 
-  # Use values file from kubernetes/longhorn/
-  values = [file("${path.module}/../../kubernetes/longhorn/longhorn-values.yaml")]
+  # Use values file from kubernetes/infrastructure/values/
+  values = [file("${path.module}/../../kubernetes/infrastructure/values/longhorn-values.yaml")]
 
   # Wait for Longhorn to be ready (install and uninstall)
   # NOTE: Longhorn uninstall job can take up to 15 minutes
@@ -99,7 +99,7 @@ resource "helm_release" "longhorn" {
 # - FluxCD HelmRelease can take over management later
 #
 # Values files:
-# - Longhorn: kubernetes/longhorn/longhorn-values.yaml
+# - Longhorn: kubernetes/infrastructure/values/longhorn-values.yaml
 #
 # Verification:
 # - kubectl get pods -n kube-system -l k8s-app=cilium

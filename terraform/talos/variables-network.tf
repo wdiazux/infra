@@ -75,7 +75,7 @@ variable "longhorn_ui_ip" {
 }
 
 variable "forgejo_ip" {
-  description = "Static IP for Forgejo HTTP LoadBalancer (port 80). Must match kubernetes/forgejo/forgejo-values.yaml"
+  description = "Static IP for Forgejo HTTP LoadBalancer (port 80). Must match kubernetes/infrastructure/values/forgejo-values.yaml"
   type        = string
   default     = "10.10.2.13"
 

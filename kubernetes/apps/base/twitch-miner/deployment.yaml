@@ -6,7 +6,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: twitch-miner
-  namespace: twitch-miner
+  namespace: misc
   labels:
     app.kubernetes.io/name: twitch-miner
 spec:

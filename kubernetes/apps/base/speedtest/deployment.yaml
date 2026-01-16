@@ -6,7 +6,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: speedtest
-  namespace: speedtest
+  namespace: tools
   labels:
     app.kubernetes.io/name: speedtest
 spec:

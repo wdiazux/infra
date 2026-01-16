@@ -68,6 +68,19 @@ resource "terraform_data" "fluxcd_pre_destroy" {
       kubectl --kubeconfig="$KUBECONFIG" patch namespace flux-system \
         -p '{"metadata":{"finalizers":null}}' --type=merge 2>/dev/null || true
 
+      # Clean up FluxCD-managed app namespaces (tools, misc)
+      echo "Cleaning up FluxCD-managed app namespaces..."
+      for ns in tools misc; do
+        if kubectl --kubeconfig="$KUBECONFIG" get namespace "$ns" &>/dev/null 2>&1; then
+          echo "  - Deleting resources in namespace: $ns"
+          kubectl --kubeconfig="$KUBECONFIG" delete deployments,services,pvc,configmaps,secrets \
+            --all -n "$ns" --ignore-not-found 2>/dev/null || true
+          echo "  - Removing finalizers from namespace: $ns"
+          kubectl --kubeconfig="$KUBECONFIG" patch namespace "$ns" \
+            -p '{"metadata":{"finalizers":null}}' --type=merge 2>/dev/null || true
+        fi
+      done
+
       echo "=== FluxCD Pre-Destroy Complete ==="
     EOT
 
@@ -276,7 +289,7 @@ resource "terraform_data" "weave_gitops_pre_destroy" {
 # - Use self.triggers_replace.* in destroy provisioners
 #
 # Destroy Order:
-# 1. terraform_data.fluxcd_pre_destroy (suspend/delete FluxCD)
+# 1. terraform_data.fluxcd_pre_destroy (suspend/delete FluxCD, cleanup tools/misc namespaces)
 # 2. terraform_data.longhorn_pre_destroy (set flag, remove webhooks)
 # 3. terraform_data.forgejo_pre_destroy (remove finalizers)
 # 4. terraform_data.weave_gitops_pre_destroy (remove LB service)
@@ -286,6 +299,11 @@ resource "terraform_data" "weave_gitops_pre_destroy" {
 # 8. helm_release.longhorn (Helm uninstall)
 # 9. kubernetes_namespace.* (namespace deletion)
 # 10. proxmox_virtual_environment_vm.talos_node (VM deletion)
+#
+# FluxCD-managed namespaces (cleaned up in step 1):
+# - flux-system (FluxCD core)
+# - tools (speedtest, it-tools)
+# - misc (twitch-miner)
 #
 # Manual Fallback:
 # If terraform destroy still fails, use ./destroy.sh which handles

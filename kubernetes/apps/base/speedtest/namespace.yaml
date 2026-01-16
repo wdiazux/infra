@@ -1,7 +1,0 @@
-# LibreSpeed Namespace
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: speedtest
-  labels:
-    app.kubernetes.io/name: speedtest

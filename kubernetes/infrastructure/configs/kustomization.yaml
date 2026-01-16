@@ -10,3 +10,5 @@ resources:
   - talos-node-reader.yaml
   # Longhorn storage classes for different workload types
   - longhorn-storage-classes.yaml
+  # FluxCD webhook receiver LoadBalancer service
+  - webhook-receiver-lb.yaml

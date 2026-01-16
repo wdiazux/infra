@@ -70,6 +70,7 @@ No modules.
 | [terraform_data.fluxcd_pre_destroy](https://registry.terraform.io/providers/hashicorp/terraform/latest/docs/resources/data) | resource |
 | [terraform_data.forgejo_pre_destroy](https://registry.terraform.io/providers/hashicorp/terraform/latest/docs/resources/data) | resource |
 | [terraform_data.longhorn_pre_destroy](https://registry.terraform.io/providers/hashicorp/terraform/latest/docs/resources/data) | resource |
+| [terraform_data.weave_gitops_pre_destroy](https://registry.terraform.io/providers/hashicorp/terraform/latest/docs/resources/data) | resource |
 | [helm_template.cilium](https://registry.terraform.io/providers/hashicorp/helm/latest/docs/data-sources/template) | data source |
 | [local_file.forgejo_flux_token](https://registry.terraform.io/providers/hashicorp/local/latest/docs/data-sources/file) | data source |
 | [local_file.talos_dhcp_ip](https://registry.terraform.io/providers/hashicorp/local/latest/docs/data-sources/file) | data source |
@@ -104,7 +105,7 @@ No modules.
 | <a name="input_fluxcd_webhook_ip"></a> [fluxcd\_webhook\_ip](#input\_fluxcd\_webhook\_ip) | Static IP for FluxCD webhook receiver LoadBalancer | `string` | `"10.10.2.15"` | no |
 | <a name="input_forgejo_chart_version"></a> [forgejo\_chart\_version](#input\_forgejo\_chart\_version) | Forgejo Helm chart version | `string` | `"16.0.0"` | no |
 | <a name="input_forgejo_create_repo"></a> [forgejo\_create\_repo](#input\_forgejo\_create\_repo) | Automatically create the FluxCD repository in Forgejo | `bool` | `true` | no |
-| <a name="input_forgejo_ip"></a> [forgejo\_ip](#input\_forgejo\_ip) | Static IP for Forgejo HTTP LoadBalancer (port 80). Must match kubernetes/forgejo/forgejo-values.yaml | `string` | `"10.10.2.13"` | no |
+| <a name="input_forgejo_ip"></a> [forgejo\_ip](#input\_forgejo\_ip) | Static IP for Forgejo HTTP LoadBalancer (port 80). Must match kubernetes/infrastructure/values/forgejo-values.yaml | `string` | `"10.10.2.13"` | no |
 | <a name="input_forgejo_ssh_ip"></a> [forgejo\_ssh\_ip](#input\_forgejo\_ssh\_ip) | Static IP for Forgejo SSH LoadBalancer | `string` | `"10.10.2.14"` | no |
 | <a name="input_generate_kubeconfig"></a> [generate\_kubeconfig](#input\_generate\_kubeconfig) | Generate kubeconfig file after bootstrap | `bool` | `true` | no |
 | <a name="input_git_branch"></a> [git\_branch](#input\_git\_branch) | Git branch for FluxCD | `string` | `"main"` | no |
@@ -135,7 +136,7 @@ No modules.
 | <a name="input_node_disk_storage"></a> [node\_disk\_storage](#input\_node\_disk\_storage) | Proxmox storage pool for node disk | `string` | `"tank"` | no |
 | <a name="input_node_gateway"></a> [node\_gateway](#input\_node\_gateway) | Network gateway for the Talos node | `string` | `"10.10.2.1"` | no |
 | <a name="input_node_ip"></a> [node\_ip](#input\_node\_ip) | Static IP address for the Talos node | `string` | `"10.10.2.10"` | no |
-| <a name="input_node_memory"></a> [node\_memory](#input\_node\_memory) | Memory in MB | `number` | `32768` | no |
+| <a name="input_node_memory"></a> [node\_memory](#input\_node\_memory) | Memory in MB | `number` | `56320` | no |
 | <a name="input_node_name"></a> [node\_name](#input\_node\_name) | Name for the Talos node VM | `string` | `"talos-node"` | no |
 | <a name="input_node_netmask"></a> [node\_netmask](#input\_node\_netmask) | Network netmask (CIDR notation) | `number` | `24` | no |
 | <a name="input_node_vm_id"></a> [node\_vm\_id](#input\_node\_vm\_id) | Proxmox VM ID for the Talos node | `number` | `1000` | no |
@@ -160,7 +161,7 @@ No modules.
 | Name | Description |
 |------|-------------|
 | <a name="output_access_instructions"></a> [access\_instructions](#output\_access\_instructions) | How to access the cluster |
-| <a name="output_cilium_lb_pool"></a> [cilium\_lb\_pool](#output\_cilium\_lb\_pool) | Cilium L2 LoadBalancer IP pool CIDR |
+| <a name="output_cilium_lb_pool"></a> [cilium\_lb\_pool](#output\_cilium\_lb\_pool) | Cilium L2 LoadBalancer IP pool range |
 | <a name="output_cilium_version"></a> [cilium\_version](#output\_cilium\_version) | Cilium CNI version |
 | <a name="output_cluster_endpoint"></a> [cluster\_endpoint](#output\_cluster\_endpoint) | Kubernetes API endpoint |
 | <a name="output_cluster_name"></a> [cluster\_name](#output\_cluster\_name) | Cluster name |

@@ -4,7 +4,7 @@
 # This is the first infrastructure component and must be healthy
 # before other components can be deployed.
 #
-# Full values reference: kubernetes/cilium/cilium-values.yaml
+# Full values reference: kubernetes/infrastructure/values/cilium-values.yaml
 #
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2
@@ -33,7 +33,7 @@ spec:
     remediation:
       retries: 3
   # Inline values for Talos compatibility
-  # See kubernetes/cilium/cilium-values.yaml for full documentation
+  # See kubernetes/infrastructure/values/cilium-values.yaml for full documentation
   values:
     cluster:
       name: homelab-k8s

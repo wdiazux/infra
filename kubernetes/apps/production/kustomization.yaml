@@ -3,6 +3,9 @@
 # Applications deployed to the homelab cluster.
 # Uses base definitions, can add patches for production-specific settings.
 #
+# Note: Namespaces (tools, misc) are managed in infrastructure/namespaces/
+# and deployed by FluxCD before apps.
+#
 # To add a new app:
 #   1. Create kubernetes/apps/base/<app-name>/
 #   2. Add kustomization.yaml, deployment.yaml, service.yaml

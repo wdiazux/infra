@@ -8,7 +8,7 @@
 # 2. Run: terraform state rm helm_release.longhorn
 # 3. FluxCD will adopt the existing Longhorn installation
 #
-# Values are loaded from kubernetes/longhorn/longhorn-values.yaml (single source of truth)
+# Values are loaded from kubernetes/infrastructure/values/longhorn-values.yaml (single source of truth)
 #
 ---
 apiVersion: v1

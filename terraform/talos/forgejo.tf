@@ -49,8 +49,8 @@ resource "helm_release" "forgejo" {
   namespace        = kubernetes_namespace.forgejo[0].metadata[0].name
   create_namespace = false
 
-  # Use values file from kubernetes/forgejo/
-  values = [file("${path.module}/../../kubernetes/forgejo/forgejo-values.yaml")]
+  # Use values file from kubernetes/infrastructure/values/
+  values = [file("${path.module}/../../kubernetes/infrastructure/values/forgejo-values.yaml")]
 
   # Admin credentials from SOPS (override values file)
   set = [

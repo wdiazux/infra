@@ -1,0 +1,11 @@
+# Misc Namespace
+#
+# Personal automation and miscellaneous applications.
+# Services: twitch-miner
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: misc
+  labels:
+    app.kubernetes.io/name: misc
+    purpose: personal
