@@ -24,6 +24,9 @@ spec:
         app.kubernetes.io/part-of: ai
     spec:
       runtimeClassName: nvidia
+      securityContext:
+        fsGroup: 3001
+        fsGroupChangePolicy: "OnRootMismatch"
       containers:
         - name: faster-whisper
           image: onerahmet/openai-whisper-asr-webservice:latest-gpu
