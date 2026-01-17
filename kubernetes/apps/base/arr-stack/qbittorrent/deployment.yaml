@@ -45,8 +45,6 @@ spec:
               value: America/El_Salvador
             - name: UMASK
               value: "002"
-            - name: WEBUI_PORTS
-              value: "8080/tcp,8080/udp"
           volumeMounts:
             - name: config
               mountPath: /config
