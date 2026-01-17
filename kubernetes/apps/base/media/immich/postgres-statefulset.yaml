@@ -29,9 +29,8 @@ spec:
         fsGroupChangePolicy: "OnRootMismatch"
       containers:
         - name: postgres
-          # Migration image with both VectorChord and pgvecto.rs
-          # After migration, can switch to: ghcr.io/immich-app/postgres:14-vectorchord0.5.3
-          image: ghcr.io/immich-app/postgres:14-vectorchord0.5.3-pgvectors0.2.0
+          # PostgreSQL 14 with VectorChord extension
+          image: ghcr.io/immich-app/postgres:14-vectorchord0.5.3
           args:
             - postgres
             - -c

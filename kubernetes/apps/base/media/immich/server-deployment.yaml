@@ -25,6 +25,8 @@ spec:
         app.kubernetes.io/component: server
         app.kubernetes.io/part-of: immich
     spec:
+      # Disable service links to prevent IMMICH_PORT conflict with Kubernetes auto-injection
+      enableServiceLinks: false
       securityContext:
         fsGroup: 1000
         fsGroupChangePolicy: "OnRootMismatch"

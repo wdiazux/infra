@@ -25,6 +25,8 @@ spec:
         app.kubernetes.io/component: machine-learning
         app.kubernetes.io/part-of: immich
     spec:
+      # Disable service links to prevent IMMICH_PORT conflict with Kubernetes auto-injection
+      enableServiceLinks: false
       runtimeClassName: nvidia
       containers:
         - name: immich-machine-learning
