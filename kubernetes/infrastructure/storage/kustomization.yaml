@@ -13,3 +13,5 @@ resources:
   - nfs-downloads-pvc.yaml
   - nfs-ai-pv.yaml
   - nfs-ai-pvc.yaml
+  - nfs-photos-pv.yaml
+  - nfs-photos-pvc.yaml

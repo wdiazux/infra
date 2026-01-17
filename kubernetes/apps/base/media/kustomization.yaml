@@ -1,12 +1,14 @@
-# Media namespace - streaming services
+# Media namespace - streaming and photo services
 #
 # Services:
-#   - Emby: Video/audio streaming (10.10.2.28)
-#   - Navidrome: Music streaming (10.10.2.29)
+#   - Emby: Video/audio streaming (10.10.2.30)
+#   - Navidrome: Music streaming (10.10.2.31)
+#   - Immich: Photo/video backup (10.10.2.22)
 #
 # Storage:
 #   - Longhorn: Config volumes (databases, metadata)
 #   - NFS: Media files from /mnt/tank/media
+#   - NFS: Photos from /mnt/tank/photos/immich
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
@@ -14,3 +16,4 @@ resources:
   - storage.yaml
   - emby
   - navidrome
+  - immich

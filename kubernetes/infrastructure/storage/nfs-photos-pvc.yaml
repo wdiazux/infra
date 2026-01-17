@@ -1,0 +1,20 @@
+# NFS PersistentVolumeClaim for Immich photos
+#
+# Binds to nfs-photos-immich PV.
+# Used by: Immich server
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: immich-photos
+  namespace: media
+  labels:
+    type: nfs
+    purpose: photos
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  volumeName: nfs-photos-immich
+  resources:
+    requests:
+      storage: 1Ti

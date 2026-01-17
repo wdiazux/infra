@@ -57,6 +57,7 @@ LoadBalancer IPs assigned to Kubernetes services.
 
 | IP | Service | Port | Namespace |
 |----|---------|------|-----------|
+| 10.10.2.22 | Immich | 80 | media |
 | 10.10.2.25 | Open WebUI | 80 | ai |
 | 10.10.2.26 | Stable Diffusion | 80 | ai |
 | 10.10.2.27 | Faster-Whisper | 80 | ai |
@@ -114,6 +115,7 @@ spec:
 | Forgejo | http://10.10.2.13 | Username/Password |
 | Forgejo SSH | ssh://git@10.10.2.14 | SSH Key |
 | Weave GitOps | http://10.10.2.16 | Username/Password |
+| Immich | http://10.10.2.22 | Username/Password |
 | Home Assistant | http://10.10.2.23 | Username/Password |
 | n8n | http://10.10.2.24 | Username/Password |
 | Open WebUI | http://10.10.2.25 | Username/Password |
@@ -146,6 +148,7 @@ Configure in your DNS server or `/etc/hosts`:
 10.10.2.12   longhorn.home-infra.net
 10.10.2.13   git.home-infra.net forgejo.home-infra.net
 10.10.2.16   gitops.home-infra.net weave.home-infra.net
+10.10.2.22   immich.home-infra.net photos.home-infra.net
 10.10.2.23   hass.home-infra.net home-assistant.home-infra.net
 10.10.2.24   n8n.home-infra.net
 10.10.2.25   openwebui.home-infra.net chat.home-infra.net

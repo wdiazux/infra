@@ -1,0 +1,19 @@
+# Immich ML Cache PersistentVolumeClaim
+#
+# Stores ML models for facial recognition and smart search.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: immich-ml-cache
+  namespace: media
+  labels:
+    app.kubernetes.io/name: immich-machine-learning
+    app.kubernetes.io/component: machine-learning
+    app.kubernetes.io/part-of: immich
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 10Gi

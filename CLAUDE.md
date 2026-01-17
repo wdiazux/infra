@@ -148,6 +148,7 @@ All project dependencies are defined in `shell.nix` and automatically available 
 | Forgejo SSH | 10.10.2.14 | Git SSH access (port 22) | OPTIONAL |
 | FluxCD Webhook | 10.10.2.15 | GitOps webhook receiver | OPTIONAL |
 | Weave GitOps | 10.10.2.16 | FluxCD web UI | OPTIONAL |
+| Immich | 10.10.2.22 | Photo/video backup | OPTIONAL |
 | Home Assistant | 10.10.2.23 | Smart home automation | OPTIONAL |
 | n8n | 10.10.2.24 | Workflow automation | OPTIONAL |
 | Open WebUI | 10.10.2.25 | LLM chat interface | OPTIONAL |

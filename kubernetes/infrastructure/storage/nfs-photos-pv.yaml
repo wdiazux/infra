@@ -1,0 +1,28 @@
+# NFS PersistentVolume for Immich photos
+# Mount: /mnt/tank/photos/immich from NAS (10.10.2.5)
+#
+# Used by: Immich (media namespace)
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nfs-photos-immich
+  labels:
+    type: nfs
+    purpose: photos
+    namespace: media
+spec:
+  capacity:
+    storage: 1Ti
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  nfs:
+    server: 10.10.2.5
+    path: /mnt/tank/photos/immich
+  mountOptions:
+    - nfsvers=4.1
+    - hard
+    - noatime
+    - rsize=1048576
+    - wsize=1048576
