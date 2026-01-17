@@ -137,7 +137,54 @@ The RTX 4000 SFF has **20GB VRAM** shared across all GPU services via time-slici
 - `OLLAMA_KEEP_ALIVE=5m` unloads models after 5 min idle
 - Sequential heavy GPU usage recommended (not simultaneous)
 
+## Image Versioning Policy
+
+**Principle**: Use `latest` for most services, pin versions only for critical or complex services.
+
+### Use `:latest` (Default)
+
+Most services can safely use `:latest`:
+
+| Category | Services | Rationale |
+|----------|----------|-----------|
+| **User Apps** | IT-Tools, LibreSpeed, Wallos, ntfy | Simple apps, breaking changes rare |
+| **Media** | Navidrome, Emby | Mature projects, stable releases |
+| **Arr-Stack** | Radarr, Sonarr, Prowlarr, Bazarr, SABnzbd, qBittorrent | Hotio images auto-update |
+| **Automation** | n8n, Home Assistant | Rolling releases preferred |
+| **AI** | Ollama, Open WebUI | Rapid development, want latest features |
+| **Monitoring** | Grafana, VictoriaMetrics | Stable APIs, backward compatible |
+
+### Pin Specific Versions
+
+Pin versions for services where:
+- Breaking changes are common
+- Multiple components must stay in sync
+- Data migrations are involved
+
+| Service | Pin Strategy | Example |
+|---------|--------------|---------|
+| **Immich** | Pin all components to same version | `v1.124.2`, `v1.124.2-cuda` |
+| **Databases** | Pin major version | `postgres:16-alpine`, `valkey:9` |
+
+### Immich Special Case
+
+Immich releases frequently with database migrations. All components must use the same version:
+
+```yaml
+# Server
+image: ghcr.io/immich-app/immich-server:v1.124.2
+
+# Machine Learning
+image: ghcr.io/immich-app/immich-machine-learning:v1.124.2-cuda
+
+# PostgreSQL (separate versioning)
+image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0
+```
+
+**Upgrade process**: Update all Immich images together, verify compatibility with Postgres extensions.
+
 ## History
 
+- **2026-01-17**: Image versioning policy added - latest for most, pin Immich
 - **2026-01-17**: Emby GPU enabled, Faster-Whisper disabled, OLLAMA_KEEP_ALIVE=5m
 - **2026-01-17**: Initial strategy - removed requests from user apps, optimized AI limits
