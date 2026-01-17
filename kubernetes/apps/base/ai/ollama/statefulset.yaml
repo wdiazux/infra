@@ -34,6 +34,8 @@ spec:
               containerPort: 11434
               protocol: TCP
           env:
+            - name: OLLAMA_HOST
+              value: "0.0.0.0"
             - name: OLLAMA_NUM_PARALLEL
               value: "2"
             - name: OLLAMA_MAX_LOADED_MODELS
@@ -55,18 +57,22 @@ spec:
             - name: models
               mountPath: /root/.ollama
               subPath: ollama
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            failureThreshold: 30
+            periodSeconds: 10
           livenessProbe:
             httpGet:
               path: /
               port: http
-            initialDelaySeconds: 60
             periodSeconds: 30
             timeoutSeconds: 10
           readinessProbe:
             httpGet:
               path: /
               port: http
-            initialDelaySeconds: 30
             periodSeconds: 10
             timeoutSeconds: 5
       volumes:

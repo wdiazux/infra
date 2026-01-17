@@ -43,6 +43,8 @@ spec:
               value: America/El_Salvador
             - name: NVIDIA_VISIBLE_DEVICES
               value: "all"
+            - name: NVIDIA_DRIVER_CAPABILITIES
+              value: "all"
           resources:
             requests:
               nvidia.com/gpu: "1"

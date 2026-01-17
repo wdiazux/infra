@@ -62,18 +62,22 @@ spec:
             - name: data
               mountPath: /stable-diffusion-webui/extensions
               subPath: stable-diffusion/extensions
+          startupProbe:
+            httpGet:
+              path: /info
+              port: http
+            failureThreshold: 60
+            periodSeconds: 10
           livenessProbe:
             httpGet:
               path: /info
               port: http
-            initialDelaySeconds: 180
             periodSeconds: 30
             timeoutSeconds: 10
           readinessProbe:
             httpGet:
               path: /info
               port: http
-            initialDelaySeconds: 120
             periodSeconds: 10
             timeoutSeconds: 5
       volumes:

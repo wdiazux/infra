@@ -40,6 +40,8 @@ spec:
               value: "3001"
             - name: TZ
               value: America/El_Salvador
+            - name: UMASK
+              value: "002"
           volumeMounts:
             - name: config
               mountPath: /config
