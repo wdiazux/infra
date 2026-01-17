@@ -68,9 +68,9 @@ It's a user app → No requests, no limits
 
 | Service | Request | Limit | Notes |
 |---------|---------|-------|-------|
-| Ollama | 100Mi + GPU | 32Gi | Supports 24GB+ models |
+| Ollama | 100Mi + GPU | 32Gi | Supports 24GB+ models, KEEP_ALIVE=5m |
 | Stable Diffusion | 100Mi + GPU | 16Gi | SDXL headroom |
-| Faster-Whisper | 100Mi + GPU | 8Gi | large-v3 model |
+| Faster-Whisper | 100Mi + GPU | 8Gi | **Disabled** (replicas: 0) |
 | Open WebUI | None | None | BestEffort - lightweight UI |
 
 ### Databases (Small Requests + Limits)
@@ -79,12 +79,18 @@ It's a user app → No requests, no limits
 |-----------|---------|---------|-------|
 | forgejo | PostgreSQL | 256Mi | 512Mi |
 
+### Media Namespace (GPU for Transcoding)
+
+| Service | Request | Limit | Notes |
+|---------|---------|-------|-------|
+| Emby | GPU | GPU | Hardware transcoding via NVENC |
+| Navidrome | None | None | BestEffort - no GPU needed |
+
 ### User Apps (No Resources)
 
 | Namespace | Services |
 |-----------|----------|
 | arr-stack | SABnzbd, qBittorrent, Prowlarr, Radarr, Sonarr, Bazarr |
-| media | Emby, Navidrome |
 | tools | IT-Tools, Speedtest |
 | misc | Twitch-Miner |
 | management | Wallos |
@@ -115,6 +121,23 @@ kubectl top pods -A
 kubectl describe node | grep -A10 "Allocated resources"
 ```
 
+## GPU Time-Slicing & VRAM Sharing
+
+The RTX 4000 SFF has **20GB VRAM** shared across all GPU services via time-slicing (4 virtual slots).
+
+**Current GPU allocation** (3/4 slots):
+| Service | Purpose |
+|---------|---------|
+| Ollama | LLM inference |
+| Stable Diffusion | Image generation |
+| Emby | Video transcoding |
+
+**VRAM management**:
+- Large Ollama models (e.g., nemotron 24GB) consume most VRAM
+- `OLLAMA_KEEP_ALIVE=5m` unloads models after 5 min idle
+- Sequential heavy GPU usage recommended (not simultaneous)
+
 ## History
 
+- **2026-01-17**: Emby GPU enabled, Faster-Whisper disabled, OLLAMA_KEEP_ALIVE=5m
 - **2026-01-17**: Initial strategy - removed requests from user apps, optimized AI limits
