@@ -9,3 +9,4 @@ resources:
   - misc.yaml
   - arr-stack.yaml
   - media.yaml
+  - management.yaml

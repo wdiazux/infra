@@ -151,6 +151,7 @@ All project dependencies are defined in `shell.nix` and automatically available 
 | Navidrome | 10.10.2.29 | Music streaming server | OPTIONAL |
 | IT-Tools | 10.10.2.32 | Developer toolbox | OPTIONAL |
 | LibreSpeed | 10.10.2.33 | Network speed test | OPTIONAL |
+| Wallos | 10.10.2.34 | Personal subscription tracker | OPTIONAL |
 | SABnzbd | 10.10.2.40 | Usenet downloader | OPTIONAL |
 | qBittorrent | 10.10.2.41 | Torrent downloader | OPTIONAL |
 | Prowlarr | 10.10.2.42 | Indexer manager | OPTIONAL |

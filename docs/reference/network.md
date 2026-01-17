@@ -59,6 +59,7 @@ LoadBalancer IPs assigned to Kubernetes services.
 | 10.10.2.29 | Navidrome | 80 | media |
 | 10.10.2.32 | IT-Tools | 80 | tools |
 | 10.10.2.33 | LibreSpeed | 80 | tools |
+| 10.10.2.34 | Wallos | 80 | management |
 | 10.10.2.40 | SABnzbd | 80 | arr-stack |
 | 10.10.2.41 | qBittorrent | 80 | arr-stack |
 | 10.10.2.42 | Prowlarr | 80 | arr-stack |
@@ -112,6 +113,7 @@ spec:
 | Navidrome | http://10.10.2.29 | Username/Password |
 | IT-Tools | http://10.10.2.32 | None |
 | LibreSpeed | http://10.10.2.33 | Password (for stats) |
+| Wallos | http://10.10.2.34 | Username/Password |
 | SABnzbd | http://10.10.2.40 | Username/Password |
 | qBittorrent | http://10.10.2.41 | Username/Password |
 | Prowlarr | http://10.10.2.42 | Username/Password |
@@ -138,6 +140,7 @@ Configure in your DNS server or `/etc/hosts`:
 10.10.2.29   navidrome.home-infra.net music.home-infra.net
 10.10.2.32   it-tools.home-infra.net tools.home-infra.net
 10.10.2.33   speedtest.home-infra.net
+10.10.2.34   wallos.home-infra.net subscriptions.home-infra.net
 10.10.2.40   sabnzbd.home-infra.net
 10.10.2.41   qbittorrent.home-infra.net
 10.10.2.42   prowlarr.home-infra.net
@@ -164,6 +167,7 @@ curl -s http://10.10.2.13  # Forgejo
 curl -s http://10.10.2.16  # Weave GitOps
 curl -s http://10.10.2.32  # IT-Tools
 curl -s http://10.10.2.33  # LibreSpeed
+curl -s http://10.10.2.34  # Wallos
 
 # Media services
 curl -s http://10.10.2.28  # Emby

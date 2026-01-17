@@ -24,3 +24,4 @@ resources:
   - ../base/misc/
   - ../base/arr-stack/
   - ../base/media/
+  - ../base/management/

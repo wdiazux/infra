@@ -1,0 +1,29 @@
+# Persistent storage for Wallos
+#
+# Stores SQLite database and uploaded logos.
+# Uses Longhorn for persistent storage.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: wallos-db
+  namespace: management
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 256Mi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: wallos-logos
+  namespace: management
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 256Mi

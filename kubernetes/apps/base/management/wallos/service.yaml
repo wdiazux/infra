@@ -1,0 +1,22 @@
+# Wallos LoadBalancer Service
+#
+# Static IP via Cilium L2 LoadBalancer
+apiVersion: v1
+kind: Service
+metadata:
+  name: wallos
+  namespace: management
+  labels:
+    app.kubernetes.io/name: wallos
+  annotations:
+    io.cilium/lb-ipam-ips: "10.10.2.34"
+spec:
+  type: LoadBalancer
+  loadBalancerIP: "10.10.2.34"
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: wallos

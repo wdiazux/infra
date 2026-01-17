@@ -1,0 +1,11 @@
+# Management Namespace
+#
+# Personal management and tracking applications.
+# Services: wallos
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: management
+  labels:
+    app.kubernetes.io/name: management
+    purpose: personal-management

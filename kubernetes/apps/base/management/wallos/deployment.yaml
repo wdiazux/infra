@@ -1,0 +1,70 @@
+# Wallos - Personal Subscription Tracker
+#
+# Track recurring subscriptions and expenses.
+# https://github.com/ellite/Wallos
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wallos
+  namespace: management
+  labels:
+    app.kubernetes.io/name: wallos
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: wallos
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: wallos
+    spec:
+      securityContext:
+        fsGroup: 3001
+      containers:
+        - name: wallos
+          image: docker.io/bellamy/wallos:latest
+          ports:
+            - name: http
+              containerPort: 8282
+              protocol: TCP
+          env:
+            - name: TZ
+              value: America/El_Salvador
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "3001"
+          volumeMounts:
+            - name: db
+              mountPath: /var/www/html/db
+            - name: logos
+              mountPath: /var/www/html/images/uploads/logos
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+      volumes:
+        - name: db
+          persistentVolumeClaim:
+            claimName: wallos-db
+        - name: logos
+          persistentVolumeClaim:
+            claimName: wallos-logos
