@@ -1,7 +1,8 @@
 # Automation Namespace
 #
-# Workflow automation tools.
-# Services: n8n
+# Workflow and smart home automation.
+# Services: n8n, Home Assistant
+# Note: Privileged for Home Assistant device discovery (mDNS, SSDP, UPnP)
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -9,3 +10,5 @@ metadata:
   labels:
     app.kubernetes.io/name: automation
     purpose: automation
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/enforce-version: latest
