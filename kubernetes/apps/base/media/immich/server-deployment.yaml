@@ -64,6 +64,9 @@ spec:
           volumeMounts:
             - name: upload
               mountPath: /usr/src/app/upload
+            - name: upload
+              mountPath: /external-library
+              subPath: upload
           startupProbe:
             httpGet:
               path: /api/server/ping
