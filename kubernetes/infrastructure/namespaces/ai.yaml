@@ -1,0 +1,11 @@
+# AI Namespace
+#
+# AI/ML services with GPU time-slicing support.
+# Services: Ollama, Open WebUI, Faster-Whisper, Stable Diffusion
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ai
+  labels:
+    app.kubernetes.io/name: ai
+    purpose: ai-ml
