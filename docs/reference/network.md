@@ -55,8 +55,11 @@ LoadBalancer IPs assigned to Kubernetes services.
 
 | IP | Service | Port | Namespace |
 |----|---------|------|-----------|
-| 10.10.2.28 | Emby | 80 | media |
-| 10.10.2.29 | Navidrome | 80 | media |
+| 10.10.2.25 | Open WebUI | 80 | ai |
+| 10.10.2.26 | Stable Diffusion | 80 | ai |
+| 10.10.2.27 | Faster-Whisper | 80 | ai |
+| 10.10.2.30 | Emby | 80 | media |
+| 10.10.2.31 | Navidrome | 80 | media |
 | 10.10.2.32 | IT-Tools | 80 | tools |
 | 10.10.2.33 | LibreSpeed | 80 | tools |
 | 10.10.2.34 | Wallos | 80 | management |
@@ -109,8 +112,11 @@ spec:
 | Forgejo | http://10.10.2.13 | Username/Password |
 | Forgejo SSH | ssh://git@10.10.2.14 | SSH Key |
 | Weave GitOps | http://10.10.2.16 | Username/Password |
-| Emby | http://10.10.2.28 | Username/Password |
-| Navidrome | http://10.10.2.29 | Username/Password |
+| Open WebUI | http://10.10.2.25 | Username/Password |
+| Stable Diffusion | http://10.10.2.26 | None (API auth optional) |
+| Faster-Whisper | http://10.10.2.27 | None (API) |
+| Emby | http://10.10.2.30 | Username/Password |
+| Navidrome | http://10.10.2.31 | Username/Password |
 | IT-Tools | http://10.10.2.32 | None |
 | LibreSpeed | http://10.10.2.33 | Password (for stats) |
 | Wallos | http://10.10.2.34 | Username/Password |
@@ -136,8 +142,11 @@ Configure in your DNS server or `/etc/hosts`:
 10.10.2.12   longhorn.home-infra.net
 10.10.2.13   git.home-infra.net forgejo.home-infra.net
 10.10.2.16   gitops.home-infra.net weave.home-infra.net
-10.10.2.28   emby.home-infra.net
-10.10.2.29   navidrome.home-infra.net music.home-infra.net
+10.10.2.25   openwebui.home-infra.net chat.home-infra.net
+10.10.2.26   sd.home-infra.net diffusion.home-infra.net
+10.10.2.27   whisper.home-infra.net
+10.10.2.30   emby.home-infra.net
+10.10.2.31   navidrome.home-infra.net music.home-infra.net
 10.10.2.32   it-tools.home-infra.net tools.home-infra.net
 10.10.2.33   speedtest.home-infra.net
 10.10.2.34   wallos.home-infra.net subscriptions.home-infra.net
@@ -169,9 +178,14 @@ curl -s http://10.10.2.32  # IT-Tools
 curl -s http://10.10.2.33  # LibreSpeed
 curl -s http://10.10.2.34  # Wallos
 
+# AI services
+curl -s http://10.10.2.25  # Open WebUI
+curl -s http://10.10.2.26  # Stable Diffusion
+curl -s http://10.10.2.27  # Faster-Whisper
+
 # Media services
-curl -s http://10.10.2.28  # Emby
-curl -s http://10.10.2.29  # Navidrome
+curl -s http://10.10.2.30  # Emby
+curl -s http://10.10.2.31  # Navidrome
 
 # Arr-stack services
 curl -s http://10.10.2.40  # SABnzbd

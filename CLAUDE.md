@@ -147,8 +147,11 @@ All project dependencies are defined in `shell.nix` and automatically available 
 | Forgejo SSH | 10.10.2.14 | Git SSH access (port 22) | OPTIONAL |
 | FluxCD Webhook | 10.10.2.15 | GitOps webhook receiver | OPTIONAL |
 | Weave GitOps | 10.10.2.16 | FluxCD web UI | OPTIONAL |
-| Emby | 10.10.2.28 | Media streaming server | OPTIONAL |
-| Navidrome | 10.10.2.29 | Music streaming server | OPTIONAL |
+| Open WebUI | 10.10.2.25 | LLM chat interface | OPTIONAL |
+| Stable Diffusion | 10.10.2.26 | Image generation UI | OPTIONAL |
+| Faster-Whisper | 10.10.2.27 | Speech-to-text API | OPTIONAL |
+| Emby | 10.10.2.30 | Media streaming server | OPTIONAL |
+| Navidrome | 10.10.2.31 | Music streaming server | OPTIONAL |
 | IT-Tools | 10.10.2.32 | Developer toolbox | OPTIONAL |
 | LibreSpeed | 10.10.2.33 | Network speed test | OPTIONAL |
 | Wallos | 10.10.2.34 | Personal subscription tracker | OPTIONAL |
@@ -632,6 +635,7 @@ zpool scrub poolname          # Data integrity check
 
 ## Version History
 
+- **2026-01-16**: AI namespace with GPU time-slicing (Ollama, Open WebUI, Faster-Whisper, Stable Diffusion), IP reorganization (Emby→10.10.2.30, Navidrome→10.10.2.31)
 - **2026-01-16**: Refactored kubernetes apps structure - organized by namespace (tools/, misc/, arr-stack/, media/)
 - **2026-01-16**: Media namespace for streaming services (Emby, Navidrome), duplicate NFS PV pattern for cross-namespace storage
 - **2026-01-16**: Arr-stack media automation deployment (SABnzbd, qBittorrent, Prowlarr, Radarr, Sonarr, Bazarr), dual NFS storage (media + downloads), kubeconfig documentation
