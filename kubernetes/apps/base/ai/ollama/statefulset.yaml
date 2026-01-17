@@ -46,6 +46,7 @@ spec:
               value: "all"
           resources:
             requests:
+              memory: 100Mi
               nvidia.com/gpu: "1"
             limits:
               memory: 32Gi

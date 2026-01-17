@@ -17,7 +17,7 @@ This is a **single-node homelab**, not a multi-tenant production cluster. Standa
 | Category | Requests | Limits | Rationale |
 |----------|----------|--------|-----------|
 | **Core Infrastructure** | Keep | Keep | Must survive memory pressure (Cilium, Longhorn, CoreDNS, Flux) |
-| **AI/GPU Workloads** | Remove | Keep (sized for models) | GPU workloads self-limit by VRAM; need headroom for large models |
+| **AI/GPU Workloads** | Small (100Mi) | Keep (sized for models) | GPU workloads self-limit by VRAM; small request prevents auto-assignment |
 | **Databases** | Keep small | Keep | Protect from OOM during queries |
 | **User Apps** | Remove | Remove | Trusted apps, single user, let them use what they need |
 
@@ -30,6 +30,10 @@ This is a **single-node homelab**, not a multi-tenant production cluster. Standa
 | **BestEffort** | no requests/limits | User apps (evicted first under pressure) |
 
 BestEffort is acceptable for homelab user apps - you'd rather have services running than "guaranteed" but unable to deploy new services.
+
+**Important**: If you specify only a `limit` without a `request`, Kubernetes auto-assigns `request = limit` (Guaranteed QoS). To avoid this, either:
+- Remove both request and limit (BestEffort), or
+- Set a small explicit request like `100Mi` (Burstable)
 
 ## Decision Flowchart for New Services
 
@@ -64,10 +68,10 @@ It's a user app → No requests, no limits
 
 | Service | Request | Limit | Notes |
 |---------|---------|-------|-------|
-| Ollama | GPU only | 32Gi | Supports 24GB+ models |
-| Stable Diffusion | GPU only | 16Gi | SDXL headroom |
-| Faster-Whisper | GPU only | 8Gi | large-v3 model |
-| Open WebUI | None | 2Gi | UI can cache |
+| Ollama | 100Mi + GPU | 32Gi | Supports 24GB+ models |
+| Stable Diffusion | 100Mi + GPU | 16Gi | SDXL headroom |
+| Faster-Whisper | 100Mi + GPU | 8Gi | large-v3 model |
+| Open WebUI | None | None | BestEffort - lightweight UI |
 
 ### Databases (Small Requests + Limits)
 
