@@ -96,7 +96,7 @@ All project dependencies are defined in `shell.nix` and automatically available 
 - **Storage**: Longhorn (primary) + NFS CSI (backup target on external NAS)
 - **GitOps**: FluxCD
 - **Secrets**: SOPS with FluxCD + Age encryption
-- **Monitoring**: kube-prometheus-stack, Loki
+- **Monitoring**: VictoriaMetrics + VMAgent + Grafana
 
 ### Required Linters/Scanners
 
@@ -640,7 +640,9 @@ zpool scrub poolname          # Data integrity check
 
 ## Version History
 
-- **2026-01-17**: n8n workflow automation with PostgreSQL in new automation namespace (10.10.2.24), homelab resource strategy optimization
+- **2026-01-17**: Monitoring stack (VictoriaMetrics + VMAgent + Grafana) at 10.10.2.17/18, Immich photo backup at 10.10.2.22 with GPU ML
+- **2026-01-17**: Home Assistant smart home platform at 10.10.2.23 in automation namespace
+- **2026-01-17**: n8n workflow automation with PostgreSQL in automation namespace (10.10.2.24), homelab resource strategy optimization
 - **2026-01-16**: AI namespace with GPU time-slicing (Ollama, Open WebUI, Faster-Whisper, Stable Diffusion), IP reorganization (Emby→10.10.2.30, Navidrome→10.10.2.31)
 - **2026-01-16**: Refactored kubernetes apps structure - organized by namespace (tools/, misc/, arr-stack/, media/)
 - **2026-01-16**: Media namespace for streaming services (Emby, Navidrome), duplicate NFS PV pattern for cross-namespace storage

@@ -316,4 +316,19 @@ kubectl get pods -A -o json | jq '.items[] | select(.spec.containers[].resources
 
 ---
 
-**Last Updated:** 2026-01-15
+## Deployed GPU Workloads
+
+Current services using GPU acceleration:
+
+| Service | Namespace | GPU Usage | Purpose |
+|---------|-----------|-----------|---------|
+| Ollama | ai | Full GPU | LLM inference (primary) |
+| Immich ML | media | CUDA | Photo/video ML processing |
+| Stable Diffusion | ai | Full GPU | Image generation |
+| Emby | media | NVENC/NVDEC | Hardware transcoding |
+
+**Note:** GPU time-slicing is configured via `nvidia.com/gpu` resource requests. Ollama keeps models in VRAM (5m keep-alive), allowing other workloads to share GPU when idle.
+
+---
+
+**Last Updated:** 2026-01-17

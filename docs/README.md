@@ -2,7 +2,7 @@
 
 Comprehensive documentation for Talos Kubernetes homelab on Proxmox VE.
 
-**Last Updated:** 2026-01-15
+**Last Updated:** 2026-01-17
 
 ---
 
@@ -45,6 +45,8 @@ See component READMEs in `packer/` for Ubuntu, Debian, Arch, NixOS, and Windows 
 
 ## Services
 
+### Infrastructure Services
+
 | Service | Description |
 |---------|-------------|
 | [Cilium](services/cilium.md) | CNI with eBPF, L2 LoadBalancer announcements |
@@ -52,6 +54,7 @@ See component READMEs in `packer/` for Ubuntu, Debian, Arch, NixOS, and Windows 
 | [Forgejo](services/forgejo.md) | In-cluster Git server for GitOps |
 | [FluxCD](services/fluxcd.md) | GitOps continuous delivery |
 | [GPU](services/gpu.md) | NVIDIA GPU passthrough and container toolkit |
+| [Monitoring](services/monitoring.md) | VictoriaMetrics + Grafana observability stack |
 
 ---
 
@@ -109,6 +112,13 @@ Historical research with 90+ official sources:
 | Longhorn UI | http://10.10.2.12 |
 | Forgejo | http://10.10.2.13 |
 | FluxCD Webhook | http://10.10.2.15 |
+| Weave GitOps | http://10.10.2.16 |
+| Grafana | http://10.10.2.17 |
+| VictoriaMetrics | http://10.10.2.18 |
+| Immich | http://10.10.2.22 |
+| Home Assistant | http://10.10.2.23 |
+| n8n | http://10.10.2.24 |
+| Open WebUI | http://10.10.2.25 |
 
 ---
 
