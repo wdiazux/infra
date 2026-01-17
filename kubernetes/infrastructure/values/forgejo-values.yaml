@@ -128,10 +128,8 @@ ingress:
 
 resources:
   requests:
-    cpu: 100m
     memory: 256Mi
   limits:
-    cpu: 500m
     memory: 512Mi
 
 # ============================================================================
@@ -161,10 +159,8 @@ redis-cluster:
 initContainers:
   resources:
     requests:
-      cpu: 50m
       memory: 64Mi
     limits:
-      cpu: 100m
       memory: 128Mi
 
 # ============================================================================

@@ -52,10 +52,8 @@ spec:
               subPath: torrents
           resources:
             requests:
-              cpu: 100m
               memory: 256Mi
             limits:
-              cpu: 1000m
               memory: 2Gi
           livenessProbe:
             tcpSocket:

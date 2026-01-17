@@ -43,11 +43,9 @@ spec:
               value: "all"
           resources:
             requests:
-              cpu: "2"
               memory: 12Gi
               nvidia.com/gpu: "1"
             limits:
-              cpu: "6"
               memory: 20Gi
               nvidia.com/gpu: "1"
           volumeMounts:

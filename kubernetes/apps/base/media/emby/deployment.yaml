@@ -56,10 +56,8 @@ spec:
               subPath: videos
           resources:
             requests:
-              cpu: 100m
               memory: 512Mi
             limits:
-              cpu: 2000m
               memory: 4Gi
           livenessProbe:
             httpGet:
