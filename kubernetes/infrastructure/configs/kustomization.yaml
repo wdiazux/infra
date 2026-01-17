@@ -12,3 +12,5 @@ resources:
   - longhorn-storage-classes.yaml
   # FluxCD webhook receiver LoadBalancer service
   - webhook-receiver-lb.yaml
+  # NVIDIA GPU time-slicing configuration (shares GPU across 4 pods)
+  - nvidia-time-slicing.yaml

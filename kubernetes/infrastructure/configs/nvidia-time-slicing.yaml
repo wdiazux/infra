@@ -1,0 +1,25 @@
+# NVIDIA GPU Time-Slicing Configuration
+#
+# Enables GPU sharing across multiple pods via time-slicing.
+# Each GPU is advertised as 4 replicas, allowing 4 pods to share it.
+#
+# NOTE: No memory isolation - concurrent heavy usage may cause OOM.
+# Best for workloads with model idle timeouts (Ollama, Whisper, SD).
+#
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nvidia-device-plugin-config
+  namespace: kube-system
+data:
+  config.yaml: |
+    version: v1
+    flags:
+      migStrategy: none
+    sharing:
+      timeSlicing:
+        renameByDefault: false
+        failRequestsGreaterThanOne: false
+        resources:
+          - name: nvidia.com/gpu
+            replicas: 4

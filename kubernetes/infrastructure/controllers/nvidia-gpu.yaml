@@ -6,6 +6,9 @@
 # NOTE: We use the simple device plugin instead of GPU Operator because
 # Talos provides drivers via system extensions. GPU Operator would conflict.
 #
+# TIME-SLICING: Configured to share GPU across 4 pods via time-slicing.
+# See: kubernetes/infrastructure/configs/nvidia-time-slicing.yaml
+#
 ---
 apiVersion: node.k8s.io/v1
 kind: RuntimeClass
@@ -41,6 +44,8 @@ spec:
           env:
             - name: DEVICE_DISCOVERY_STRATEGY
               value: "nvml"
+            - name: CONFIG_FILE
+              value: "/etc/nvidia/config.yaml"
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -48,7 +53,13 @@ spec:
           volumeMounts:
             - name: device-plugin
               mountPath: /var/lib/kubelet/device-plugins
+            - name: nvidia-config
+              mountPath: /etc/nvidia
+              readOnly: true
       volumes:
         - name: device-plugin
           hostPath:
             path: /var/lib/kubelet/device-plugins
+        - name: nvidia-config
+          configMap:
+            name: nvidia-device-plugin-config
