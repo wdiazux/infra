@@ -31,15 +31,9 @@ spec:
             - name: http
               containerPort: 7860
               protocol: TCP
-          args:
-            - "--listen"
-            - "--port=7860"
-            - "--api"
-            - "--xformers"
-            - "--medvram"
-            - "--skip-torch-cuda-test"
-            - "--no-hashing"
           env:
+            - name: COMMANDLINE_ARGS
+              value: "--listen --port=7860 --api --xformers --medvram --skip-torch-cuda-test --no-hashing"
             - name: CUDA_VISIBLE_DEVICES
               value: "0"
             - name: TORCH_CUDNN_BENCHMARK
@@ -53,7 +47,7 @@ spec:
               memory: 8Gi
               nvidia.com/gpu: "1"
             limits:
-              memory: 16Gi
+              memory: 12Gi
               nvidia.com/gpu: "1"
           volumeMounts:
             - name: data
