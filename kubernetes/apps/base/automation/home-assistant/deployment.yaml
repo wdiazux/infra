@@ -47,12 +47,13 @@ spec:
           env:
             - name: TZ
               value: "America/El_Salvador"
-          securityContext:
-            privileged: true
-            capabilities:
-              add:
-                - NET_ADMIN
-                - NET_RAW
+          # Security settings for device discovery (requires privileged namespace)
+          # securityContext:
+          #   privileged: true
+          #   capabilities:
+          #     add:
+          #       - NET_ADMIN
+          #       - NET_RAW
           volumeMounts:
             - name: config
               mountPath: /config
