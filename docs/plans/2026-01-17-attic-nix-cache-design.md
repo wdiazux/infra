@@ -17,7 +17,7 @@ Deploy Attic, a multi-tenant Nix binary cache server, to the Kubernetes cluster 
 - **NFS storage** - Binary cache artifacts at `/mnt/tank/linux/attic`
 
 **Network:**
-- **Namespace:** `attic`
+- **Namespace:** `tools`
 - **IP:** `10.10.2.19`
 - **Port:** 80 → 8080
 - **URL:** `http://10.10.2.19` or `http://attic.home-infra.net`
@@ -77,23 +77,20 @@ SOPS-encrypted secrets in `secrets/attic.enc.yaml`:
 
 ```
 kubernetes/
-├── apps/base/attic/
+├── apps/base/tools/attic/
 │   ├── kustomization.yaml
-│   ├── namespace.yaml
 │   ├── configmap.yaml
 │   ├── deployment.yaml
 │   ├── service.yaml
 │   ├── postgres-statefulset.yaml
 │   ├── postgres-service.yaml
-│   └── storage.yaml
-├── apps/production/
-│   └── kustomization.yaml          # Updated
+│   └── secret.enc.yaml
+├── apps/base/tools/
+│   └── kustomization.yaml          # Updated (includes attic)
 └── infrastructure/storage/
     ├── nfs-linux-attic-pv.yaml     # New
+    ├── nfs-linux-attic-pvc.yaml    # New
     └── kustomization.yaml          # Updated
-
-secrets/
-└── attic.enc.yaml                  # New
 ```
 
 ## Deployment Order

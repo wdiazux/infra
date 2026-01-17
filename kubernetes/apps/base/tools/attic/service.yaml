@@ -1,0 +1,21 @@
+# Attic LoadBalancer Service
+#
+# External access to Attic binary cache at 10.10.2.19
+apiVersion: v1
+kind: Service
+metadata:
+  name: attic
+  namespace: tools
+  labels:
+    app.kubernetes.io/name: attic
+    app.kubernetes.io/part-of: attic
+spec:
+  type: LoadBalancer
+  loadBalancerIP: 10.10.2.19
+  selector:
+    app.kubernetes.io/name: attic
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+      protocol: TCP

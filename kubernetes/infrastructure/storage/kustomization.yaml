@@ -15,3 +15,5 @@ resources:
   - nfs-ai-pvc.yaml
   - nfs-photos-pv.yaml
   - nfs-photos-pvc.yaml
+  - nfs-linux-attic-pv.yaml
+  - nfs-linux-attic-pvc.yaml

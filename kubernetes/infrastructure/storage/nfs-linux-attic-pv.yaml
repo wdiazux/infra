@@ -1,0 +1,27 @@
+# NFS PersistentVolume for Attic Nix binary cache
+# Mount: /mnt/tank/linux/attic from NAS (10.10.2.5)
+#
+# Used by: attic namespace (attic server binary cache)
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nfs-linux-attic
+  labels:
+    type: nfs
+    purpose: nix-cache
+spec:
+  capacity:
+    storage: 1Ti
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  nfs:
+    server: 10.10.2.5
+    path: /mnt/tank/linux/attic
+  mountOptions:
+    - nfsvers=4.1
+    - hard
+    - noatime
+    - rsize=1048576
+    - wsize=1048576

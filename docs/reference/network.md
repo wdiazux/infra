@@ -50,6 +50,7 @@ LoadBalancer IPs assigned to Kubernetes services.
 | 10.10.2.16 | Weave GitOps | 80 | flux-system |
 | 10.10.2.17 | Grafana | 80 | monitoring |
 | 10.10.2.18 | VictoriaMetrics | 80 | monitoring |
+| 10.10.2.19 | Attic | 80 | tools |
 | 10.10.2.23 | Home Assistant | 80 | automation |
 | 10.10.2.24 | n8n | 80 | automation |
 
@@ -120,6 +121,7 @@ spec:
 | Weave GitOps | http://10.10.2.16 | Username/Password |
 | Grafana | http://10.10.2.17 | Username/Password |
 | VictoriaMetrics | http://10.10.2.18 | None |
+| Attic | http://10.10.2.19 | Token |
 | Immich | http://10.10.2.22 | Username/Password |
 | Home Assistant | http://10.10.2.23 | Username/Password |
 | n8n | http://10.10.2.24 | Username/Password |
@@ -156,6 +158,7 @@ Configure in your DNS server or `/etc/hosts`:
 10.10.2.16   gitops.home-infra.net weave.home-infra.net
 10.10.2.17   grafana.home-infra.net
 10.10.2.18   victoriametrics.home-infra.net vm.home-infra.net
+10.10.2.19   attic.home-infra.net cache.home-infra.net
 10.10.2.22   immich.home-infra.net photos.home-infra.net
 10.10.2.23   hass.home-infra.net home-assistant.home-infra.net
 10.10.2.24   n8n.home-infra.net

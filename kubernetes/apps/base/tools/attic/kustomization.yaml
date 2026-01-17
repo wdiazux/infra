@@ -1,0 +1,13 @@
+# Attic Nix Binary Cache
+#
+# Multi-tenant Nix binary cache server with PostgreSQL backend.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - configmap.yaml
+  - postgres-statefulset.yaml
+  - postgres-service.yaml
+  - deployment.yaml
+  - service.yaml
+  - secret.enc.yaml

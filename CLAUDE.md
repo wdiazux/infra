@@ -148,6 +148,7 @@ All project dependencies are defined in `shell.nix` and automatically available 
 | Forgejo SSH | 10.10.2.14 | Git SSH access (port 22) | OPTIONAL |
 | FluxCD Webhook | 10.10.2.15 | GitOps webhook receiver | OPTIONAL |
 | Weave GitOps | 10.10.2.16 | FluxCD web UI | OPTIONAL |
+| Attic | 10.10.2.19 | Nix binary cache | OPTIONAL |
 | Immich | 10.10.2.22 | Photo/video backup | OPTIONAL |
 | Home Assistant | 10.10.2.23 | Smart home automation | OPTIONAL |
 | n8n | 10.10.2.24 | Workflow automation | OPTIONAL |
@@ -640,6 +641,7 @@ zpool scrub poolname          # Data integrity check
 
 ## Version History
 
+- **2026-01-17**: Attic Nix binary cache at 10.10.2.19 with PostgreSQL 16 and NFS storage
 - **2026-01-17**: Monitoring stack (VictoriaMetrics + VMAgent + Grafana) at 10.10.2.17/18, Immich photo backup at 10.10.2.22 with GPU ML
 - **2026-01-17**: Home Assistant smart home platform at 10.10.2.23 in automation namespace
 - **2026-01-17**: n8n workflow automation with PostgreSQL in automation namespace (10.10.2.24), homelab resource strategy optimization

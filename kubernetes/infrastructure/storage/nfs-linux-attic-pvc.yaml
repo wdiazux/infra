@@ -1,0 +1,15 @@
+# PersistentVolumeClaim for Attic binary cache storage in tools namespace
+# Used by: attic server
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nfs-linux-attic
+  namespace: tools
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  resources:
+    requests:
+      storage: 1Ti
+  volumeName: nfs-linux-attic

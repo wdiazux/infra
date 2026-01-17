@@ -1,0 +1,20 @@
+# PostgreSQL ClusterIP Service
+#
+# Internal-only service for Attic database access.
+apiVersion: v1
+kind: Service
+metadata:
+  name: attic-db
+  namespace: tools
+  labels:
+    app.kubernetes.io/name: attic-db
+    app.kubernetes.io/part-of: attic
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: attic-db
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+      protocol: TCP
