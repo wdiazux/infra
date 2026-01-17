@@ -46,7 +46,7 @@ spec:
               value: "all"
           resources:
             requests:
-              cpu: "1"
+              cpu: 500m
               memory: 16Gi
               nvidia.com/gpu: "1"
             limits:
