@@ -1,0 +1,19 @@
+# n8n PersistentVolumeClaim
+#
+# Stores n8n local data (file uploads, credential cache).
+# Database is in PostgreSQL, this is for file-based data only.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: n8n-data
+  namespace: automation
+  labels:
+    app.kubernetes.io/name: n8n
+    app.kubernetes.io/part-of: automation
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 1Gi

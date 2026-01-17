@@ -148,6 +148,7 @@ All project dependencies are defined in `shell.nix` and automatically available 
 | Forgejo SSH | 10.10.2.14 | Git SSH access (port 22) | OPTIONAL |
 | FluxCD Webhook | 10.10.2.15 | GitOps webhook receiver | OPTIONAL |
 | Weave GitOps | 10.10.2.16 | FluxCD web UI | OPTIONAL |
+| n8n | 10.10.2.24 | Workflow automation | OPTIONAL |
 | Open WebUI | 10.10.2.25 | LLM chat interface | OPTIONAL |
 | Stable Diffusion | 10.10.2.26 | Image generation UI | OPTIONAL |
 | Faster-Whisper | 10.10.2.27 | Speech-to-text API | OPTIONAL |
@@ -637,6 +638,7 @@ zpool scrub poolname          # Data integrity check
 
 ## Version History
 
+- **2026-01-17**: n8n workflow automation with PostgreSQL in new automation namespace (10.10.2.24), homelab resource strategy optimization
 - **2026-01-16**: AI namespace with GPU time-slicing (Ollama, Open WebUI, Faster-Whisper, Stable Diffusion), IP reorganization (Emby→10.10.2.30, Navidrome→10.10.2.31)
 - **2026-01-16**: Refactored kubernetes apps structure - organized by namespace (tools/, misc/, arr-stack/, media/)
 - **2026-01-16**: Media namespace for streaming services (Emby, Navidrome), duplicate NFS PV pattern for cross-namespace storage
@@ -659,6 +661,6 @@ zpool scrub poolname          # Data integrity check
 
 ---
 
-**Last Updated**: 2026-01-16
+**Last Updated**: 2026-01-17
 **Project Status**: Production-Ready
 **Primary Contact**: wdiazux

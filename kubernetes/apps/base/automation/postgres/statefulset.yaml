@@ -1,0 +1,79 @@
+# PostgreSQL StatefulSet for n8n
+#
+# Dedicated database instance for n8n workflow data.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: n8n-postgres
+  namespace: automation
+  labels:
+    app.kubernetes.io/name: n8n-postgres
+    app.kubernetes.io/part-of: automation
+spec:
+  serviceName: n8n-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: n8n-postgres
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: n8n-postgres
+        app.kubernetes.io/part-of: automation
+    spec:
+      securityContext:
+        fsGroup: 70
+        fsGroupChangePolicy: "OnRootMismatch"
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - name: postgres
+              containerPort: 5432
+              protocol: TCP
+          env:
+            - name: POSTGRES_DB
+              value: n8n
+            - name: POSTGRES_USER
+              value: n8n
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: n8n-postgres-secrets
+                  key: POSTGRES_PASSWORD
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          resources:
+            requests:
+              memory: 256Mi
+            limits:
+              memory: 512Mi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - n8n
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - n8n
+            initialDelaySeconds: 5
+            periodSeconds: 10
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: longhorn
+        resources:
+          requests:
+            storage: 2Gi

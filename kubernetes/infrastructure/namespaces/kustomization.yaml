@@ -11,3 +11,4 @@ resources:
   - media.yaml
   - management.yaml
   - ai.yaml
+  - automation.yaml

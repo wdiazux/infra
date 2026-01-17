@@ -3,7 +3,7 @@
 # Applications deployed to the homelab cluster.
 # Uses base definitions, can add patches for production-specific settings.
 #
-# Note: Namespaces (tools, misc, arr-stack, media, ai) are managed in
+# Note: Namespaces (tools, misc, arr-stack, media, ai, automation) are managed in
 # infrastructure/namespaces/ and deployed by FluxCD before apps.
 #
 # Structure:
@@ -26,3 +26,4 @@ resources:
   - ../base/media/
   - ../base/management/
   - ../base/ai/
+  - ../base/automation/

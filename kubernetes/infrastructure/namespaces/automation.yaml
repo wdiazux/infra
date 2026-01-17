@@ -1,0 +1,11 @@
+# Automation Namespace
+#
+# Workflow automation tools.
+# Services: n8n
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: automation
+  labels:
+    app.kubernetes.io/name: automation
+    purpose: automation
