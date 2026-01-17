@@ -25,6 +25,7 @@ spec:
     spec:
       securityContext:
         fsGroup: 3001
+        fsGroupChangePolicy: "OnRootMismatch"
       containers:
         - name: bazarr
           image: ghcr.io/hotio/bazarr:latest

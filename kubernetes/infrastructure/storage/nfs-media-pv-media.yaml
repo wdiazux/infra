@@ -27,3 +27,5 @@ spec:
     - nfsvers=4.1
     - hard
     - noatime
+    - rsize=1048576
+    - wsize=1048576
