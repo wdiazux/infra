@@ -52,11 +52,6 @@ spec:
             - name: downloads
               mountPath: /data/torrents
               subPath: torrents
-          resources:
-            requests:
-              memory: 256Mi
-            limits:
-              memory: 2Gi
           livenessProbe:
             httpGet:
               path: /ping

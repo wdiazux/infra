@@ -43,10 +43,8 @@ spec:
                   name: open-webui-secrets
                   key: WEBUI_SECRET_KEY
           resources:
-            requests:
-              memory: 512Mi
             limits:
-              memory: 1Gi
+              memory: 2Gi
           volumeMounts:
             - name: data
               mountPath: /app/backend/data

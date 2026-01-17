@@ -30,11 +30,6 @@ spec:
           env:
             - name: TZ
               value: America/El_Salvador
-          resources:
-            requests:
-              memory: 32Mi
-            limits:
-              memory: 128Mi
           livenessProbe:
             httpGet:
               path: /

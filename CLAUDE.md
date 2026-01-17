@@ -24,6 +24,7 @@ This is a **HOMELAB setup** - some enterprise practices are optional:
 - ⚠️ Remote Terraform state (local state OK for solo homelab)
 - ⚠️ Multiple environments (single environment is fine)
 - ⚠️ PR reviews (you're one person)
+- ⚠️ Kubernetes resource requests (see `docs/reference/resource-strategy.md`)
 
 ## Repository Structure
 
@@ -495,6 +496,7 @@ When updating a component, check these associated files:
 | **Kubernetes Stack** | `kubernetes/**`, `terraform/talos/addons.tf` | `docs/services/` (cilium, longhorn, forgejo, fluxcd) |
 | **Secrets** | `secrets/*.enc.yaml`, `.sops.yaml` | `docs/operations/secrets.md` |
 | **Tool Versions** | `shell.nix`, `npins/` | `CLAUDE.md` (Core Tools section) |
+| **K8s Resources** | `kubernetes/apps/**/deployment.yaml` | `docs/reference/resource-strategy.md` |
 
 **Documentation Structure:**
 ```

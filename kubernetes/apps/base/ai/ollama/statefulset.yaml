@@ -46,10 +46,9 @@ spec:
               value: "all"
           resources:
             requests:
-              memory: 8Gi
               nvidia.com/gpu: "1"
             limits:
-              memory: 16Gi
+              memory: 32Gi
               nvidia.com/gpu: "1"
           volumeMounts:
             - name: models

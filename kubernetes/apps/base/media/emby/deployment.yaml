@@ -55,11 +55,6 @@ spec:
             - name: media
               mountPath: /data/videos
               subPath: videos
-          resources:
-            requests:
-              memory: 512Mi
-            limits:
-              memory: 4Gi
           livenessProbe:
             httpGet:
               path: /web/index.html

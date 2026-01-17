@@ -46,11 +46,6 @@ spec:
             - name: downloads
               mountPath: /data/usenet
               subPath: usenet
-          resources:
-            requests:
-              memory: 256Mi
-            limits:
-              memory: 1Gi
           livenessProbe:
             tcpSocket:
               port: http

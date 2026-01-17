@@ -51,11 +51,6 @@ spec:
             - name: downloads
               mountPath: /downloads/torrents
               subPath: torrents
-          resources:
-            requests:
-              memory: 128Mi
-            limits:
-              memory: 512Mi
           livenessProbe:
             tcpSocket:
               port: http

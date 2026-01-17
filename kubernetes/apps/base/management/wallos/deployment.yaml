@@ -42,11 +42,6 @@ spec:
               mountPath: /var/www/html/db
             - name: logos
               mountPath: /var/www/html/images/uploads/logos
-          resources:
-            requests:
-              memory: 64Mi
-            limits:
-              memory: 256Mi
           livenessProbe:
             httpGet:
               path: /
