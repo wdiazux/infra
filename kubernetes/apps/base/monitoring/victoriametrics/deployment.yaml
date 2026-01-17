@@ -1,0 +1,71 @@
+# VictoriaMetrics Single Deployment
+#
+# High-performance time-series database for metrics storage.
+# Prometheus-compatible with lower resource usage.
+# https://docs.victoriametrics.com/
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: victoriametrics
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: victoriametrics
+    app.kubernetes.io/component: database
+    app.kubernetes.io/part-of: monitoring
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: victoriametrics
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: victoriametrics
+        app.kubernetes.io/component: database
+        app.kubernetes.io/part-of: monitoring
+    spec:
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: "OnRootMismatch"
+      containers:
+        - name: victoriametrics
+          image: victoriametrics/victoria-metrics:v1.111.0
+          args:
+            - --storageDataPath=/victoria-metrics-data
+            - --httpListenAddr=:8428
+            - --retentionPeriod=90d
+            - --selfScrapeInterval=10s
+          ports:
+            - name: http
+              containerPort: 8428
+              protocol: TCP
+          env:
+            - name: TZ
+              value: "America/El_Salvador"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 2Gi
+          volumeMounts:
+            - name: data
+              mountPath: /victoria-metrics-data
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: victoriametrics-data

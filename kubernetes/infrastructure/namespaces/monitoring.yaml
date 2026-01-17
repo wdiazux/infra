@@ -1,0 +1,11 @@
+# Monitoring Namespace
+#
+# Observability stack for Kubernetes cluster monitoring.
+# Services: VictoriaMetrics, VMAgent, Grafana
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+  labels:
+    app.kubernetes.io/name: monitoring
+    purpose: observability

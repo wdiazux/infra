@@ -12,3 +12,4 @@ resources:
   - management.yaml
   - ai.yaml
   - automation.yaml
+  - monitoring.yaml

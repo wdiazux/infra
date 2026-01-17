@@ -1,0 +1,12 @@
+# VMAgent Kustomization
+#
+# Metrics collection agent for Kubernetes.
+# https://docs.victoriametrics.com/vmagent/
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - rbac.yaml
+  - configmap.yaml
+  - deployment.yaml
+  - service.yaml

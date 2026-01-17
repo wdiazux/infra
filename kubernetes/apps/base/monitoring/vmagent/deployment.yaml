@@ -1,0 +1,70 @@
+# VMAgent Deployment
+#
+# Metrics collection agent that scrapes Kubernetes and sends to VictoriaMetrics.
+# https://docs.victoriametrics.com/vmagent/
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vmagent
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: vmagent
+    app.kubernetes.io/component: collector
+    app.kubernetes.io/part-of: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: vmagent
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: vmagent
+        app.kubernetes.io/component: collector
+        app.kubernetes.io/part-of: monitoring
+    spec:
+      serviceAccountName: vmagent
+      containers:
+        - name: vmagent
+          image: victoriametrics/vmagent:v1.111.0
+          args:
+            - --promscrape.config=/config/scrape.yml
+            - --remoteWrite.url=http://victoriametrics:8428/api/v1/write
+            - --remoteWrite.tmpDataPath=/tmpdata
+          ports:
+            - name: http
+              containerPort: 8429
+              protocol: TCP
+          env:
+            - name: TZ
+              value: "America/El_Salvador"
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 512Mi
+          volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: true
+            - name: tmpdata
+              mountPath: /tmpdata
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: config
+          configMap:
+            name: vmagent-config
+        - name: tmpdata
+          emptyDir: {}

@@ -1,0 +1,25 @@
+# Grafana Datasources ConfigMap
+#
+# Pre-configured datasource for VictoriaMetrics.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasources
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/part-of: monitoring
+data:
+  datasources.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: VictoriaMetrics
+        type: prometheus
+        uid: victoriametrics
+        access: proxy
+        url: http://victoriametrics:8428
+        isDefault: true
+        editable: false
+        jsonData:
+          timeInterval: "30s"
+          httpMethod: POST

@@ -1,0 +1,19 @@
+# VictoriaMetrics Data PVC
+#
+# Persistent storage for time-series metrics data.
+# With 90d retention, expect ~1-5GB for a small homelab cluster.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: victoriametrics-data
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: victoriametrics
+    app.kubernetes.io/part-of: monitoring
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 10Gi

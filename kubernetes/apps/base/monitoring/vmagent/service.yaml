@@ -1,0 +1,20 @@
+# VMAgent Service
+#
+# ClusterIP for internal access to VMAgent metrics.
+apiVersion: v1
+kind: Service
+metadata:
+  name: vmagent
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: vmagent
+    app.kubernetes.io/part-of: monitoring
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: vmagent
+  ports:
+    - name: http
+      port: 8429
+      targetPort: http
+      protocol: TCP

@@ -1,0 +1,16 @@
+# Monitoring namespace - observability stack
+#
+# Services:
+#   - VictoriaMetrics: Time-series database (10.10.2.18)
+#   - VMAgent: Metrics collection
+#   - Grafana: Visualization (10.10.2.17)
+#
+# Storage:
+#   - Longhorn: VictoriaMetrics data, Grafana config
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - victoriametrics
+  - vmagent
+  - grafana

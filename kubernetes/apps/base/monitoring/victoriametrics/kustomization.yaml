@@ -1,0 +1,11 @@
+# VictoriaMetrics Kustomization
+#
+# High-performance time-series database.
+# https://docs.victoriametrics.com/
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - pvc.yaml
+  - deployment.yaml
+  - service.yaml

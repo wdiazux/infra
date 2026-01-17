@@ -27,3 +27,4 @@ resources:
   - ../base/management/
   - ../base/ai/
   - ../base/automation/
+  - ../base/monitoring/
