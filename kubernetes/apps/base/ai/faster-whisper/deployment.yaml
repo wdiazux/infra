@@ -11,7 +11,7 @@ metadata:
     app.kubernetes.io/name: faster-whisper
     app.kubernetes.io/part-of: ai
 spec:
-  replicas: 1
+  replicas: 0  # Disabled - enable by setting to 1
   strategy:
     type: Recreate
   selector:
