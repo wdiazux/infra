@@ -46,12 +46,12 @@ spec:
               value: "all"
           resources:
             requests:
-              cpu: "4"
-              memory: 24Gi
+              cpu: "2"
+              memory: 16Gi
               nvidia.com/gpu: "1"
             limits:
-              cpu: "8"
-              memory: 32Gi
+              cpu: "6"
+              memory: 24Gi
               nvidia.com/gpu: "1"
           volumeMounts:
             - name: data
