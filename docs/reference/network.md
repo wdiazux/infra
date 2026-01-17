@@ -48,6 +48,7 @@ LoadBalancer IPs assigned to Kubernetes services.
 | 10.10.2.14 | Forgejo SSH | 22 | forgejo |
 | 10.10.2.15 | FluxCD Webhook | 80 | flux-system |
 | 10.10.2.16 | Weave GitOps | 80 | flux-system |
+| 10.10.2.23 | Home Assistant | 80 | automation |
 | 10.10.2.24 | n8n | 80 | automation |
 
 ---
@@ -113,6 +114,7 @@ spec:
 | Forgejo | http://10.10.2.13 | Username/Password |
 | Forgejo SSH | ssh://git@10.10.2.14 | SSH Key |
 | Weave GitOps | http://10.10.2.16 | Username/Password |
+| Home Assistant | http://10.10.2.23 | Username/Password |
 | n8n | http://10.10.2.24 | Username/Password |
 | Open WebUI | http://10.10.2.25 | Username/Password |
 | Stable Diffusion | http://10.10.2.26 | None (API auth optional) |
@@ -144,7 +146,8 @@ Configure in your DNS server or `/etc/hosts`:
 10.10.2.12   longhorn.home-infra.net
 10.10.2.13   git.home-infra.net forgejo.home-infra.net
 10.10.2.16   gitops.home-infra.net weave.home-infra.net
-10.10.2.24   n8n.home-infra.net automation.home-infra.net
+10.10.2.23   hass.home-infra.net home-assistant.home-infra.net
+10.10.2.24   n8n.home-infra.net
 10.10.2.25   openwebui.home-infra.net chat.home-infra.net
 10.10.2.26   sd.home-infra.net diffusion.home-infra.net
 10.10.2.27   whisper.home-infra.net

@@ -1,0 +1,18 @@
+# Home Assistant PersistentVolumeClaim
+#
+# Stores Home Assistant configuration, database, and automations.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: home-assistant-config
+  namespace: automation
+  labels:
+    app.kubernetes.io/name: home-assistant
+    app.kubernetes.io/part-of: automation
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 10Gi

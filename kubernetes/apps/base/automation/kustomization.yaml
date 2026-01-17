@@ -1,9 +1,10 @@
 # Automation Namespace Applications
 #
-# Workflow automation tools.
+# Workflow and smart home automation.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
   - postgres/
   - n8n/
+  - home-assistant/

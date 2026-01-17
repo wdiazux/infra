@@ -1,0 +1,86 @@
+# Home Assistant Deployment
+#
+# Smart home automation platform.
+# https://www.home-assistant.io/
+# https://github.com/home-assistant/core
+#
+# Note: After first startup, add trusted_proxies to configuration.yaml:
+#   http:
+#     use_x_forwarded_for: true
+#     trusted_proxies:
+#       - 10.0.0.0/8
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: home-assistant
+  namespace: automation
+  labels:
+    app.kubernetes.io/name: home-assistant
+    app.kubernetes.io/part-of: automation
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: home-assistant
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: home-assistant
+        app.kubernetes.io/part-of: automation
+    spec:
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: "OnRootMismatch"
+      # hostNetwork is required for device discovery (mDNS, SSDP, UPnP)
+      # Uncomment these lines if integrations don't discover devices:
+      # hostNetwork: true
+      # dnsPolicy: ClusterFirstWithHostNet
+      containers:
+        - name: home-assistant
+          image: ghcr.io/home-assistant/home-assistant:stable
+          ports:
+            - name: http
+              containerPort: 8123
+              protocol: TCP
+          env:
+            - name: TZ
+              value: "America/El_Salvador"
+          securityContext:
+            privileged: true
+            capabilities:
+              add:
+                - NET_ADMIN
+                - NET_RAW
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            # D-Bus access for Bluetooth integrations (optional)
+            # - name: dbus
+            #   mountPath: /run/dbus
+            #   readOnly: true
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            failureThreshold: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: home-assistant-config
+        # D-Bus access for Bluetooth integrations (optional)
+        # - name: dbus
+        #   hostPath:
+        #     path: /run/dbus
