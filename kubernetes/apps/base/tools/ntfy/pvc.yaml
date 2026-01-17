@@ -1,0 +1,17 @@
+# ntfy Data PVC
+#
+# Persistent storage for ntfy cache, auth database, and attachments.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ntfy-data
+  namespace: tools
+  labels:
+    app.kubernetes.io/name: ntfy
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 1Gi

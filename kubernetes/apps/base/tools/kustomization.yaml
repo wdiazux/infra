@@ -3,9 +3,11 @@
 # Services:
 #   - IT-Tools: Developer toolbox (10.10.2.32)
 #   - LibreSpeed: Network speed test (10.10.2.33)
+#   - ntfy: Push notification service (10.10.2.35)
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
   - it-tools
   - speedtest
+  - ntfy

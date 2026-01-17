@@ -1,0 +1,11 @@
+# ntfy Kustomization
+#
+# Pub-sub notification service for push notifications.
+# https://ntfy.sh
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - pvc.yaml
+  - deployment.yaml
+  - service.yaml

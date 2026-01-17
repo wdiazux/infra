@@ -1,0 +1,74 @@
+# ntfy - Pub-Sub Notification Service
+#
+# Simple HTTP-based pub-sub notification service for push notifications.
+# https://ntfy.sh
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ntfy
+  namespace: tools
+  labels:
+    app.kubernetes.io/name: ntfy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ntfy
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ntfy
+    spec:
+      securityContext:
+        fsGroup: 1000
+      containers:
+        - name: ntfy
+          image: binwiederhier/ntfy:v2.11.0
+          args:
+            - serve
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          env:
+            - name: TZ
+              value: America/El_Salvador
+            - name: NTFY_BASE_URL
+              value: "http://10.10.2.35"
+            - name: NTFY_CACHE_FILE
+              value: "/var/lib/ntfy/cache.db"
+            - name: NTFY_AUTH_FILE
+              value: "/var/lib/ntfy/auth.db"
+            - name: NTFY_ATTACHMENT_CACHE_DIR
+              value: "/var/lib/ntfy/attachments"
+            - name: NTFY_ENABLE_LOGIN
+              value: "true"
+            - name: NTFY_AUTH_DEFAULT_ACCESS
+              value: "deny-all"
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/ntfy
+          livenessProbe:
+            httpGet:
+              path: /v1/health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /v1/health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: ntfy-data

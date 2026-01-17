@@ -1,0 +1,22 @@
+# ntfy LoadBalancer Service
+#
+# Static IP via Cilium L2 LoadBalancer
+apiVersion: v1
+kind: Service
+metadata:
+  name: ntfy
+  namespace: tools
+  labels:
+    app.kubernetes.io/name: ntfy
+  annotations:
+    io.cilium/lb-ipam-ips: "10.10.2.35"
+spec:
+  type: LoadBalancer
+  loadBalancerIP: "10.10.2.35"
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: ntfy
