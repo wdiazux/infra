@@ -23,6 +23,7 @@ spec:
         app.kubernetes.io/name: emby
         app.kubernetes.io/part-of: media
     spec:
+      runtimeClassName: nvidia
       securityContext:
         fsGroup: 3001
         fsGroupChangePolicy: "OnRootMismatch"
@@ -40,6 +41,13 @@ spec:
               value: "3001"
             - name: TZ
               value: America/El_Salvador
+            - name: NVIDIA_VISIBLE_DEVICES
+              value: "all"
+          resources:
+            requests:
+              nvidia.com/gpu: "1"
+            limits:
+              nvidia.com/gpu: "1"
           volumeMounts:
             - name: config
               mountPath: /config
