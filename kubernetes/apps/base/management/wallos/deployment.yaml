@@ -28,7 +28,7 @@ spec:
           image: docker.io/bellamy/wallos:latest
           ports:
             - name: http
-              containerPort: 8282
+              containerPort: 80
               protocol: TCP
           env:
             - name: TZ
