@@ -34,6 +34,8 @@ spec:
           args:
             - postgres
             - -c
+            - shared_preload_libraries=vchord.so
+            - -c
             - max_wal_size=2GB
             - -c
             - shared_buffers=512MB
