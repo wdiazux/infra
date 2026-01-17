@@ -29,11 +29,11 @@ spec:
           image: runpod/a1111:1.10.0.post7
           ports:
             - name: http
-              containerPort: 7860
+              containerPort: 3001
               protocol: TCP
           env:
             - name: COMMANDLINE_ARGS
-              value: "--listen --port=7860 --api --xformers --medvram --skip-torch-cuda-test --no-hashing"
+              value: "--listen --api --xformers --medvram --skip-torch-cuda-test --no-hashing"
             - name: CUDA_VISIBLE_DEVICES
               value: "0"
             - name: TORCH_CUDNN_BENCHMARK

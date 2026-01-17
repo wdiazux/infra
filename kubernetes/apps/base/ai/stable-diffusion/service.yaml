@@ -18,5 +18,5 @@ spec:
   ports:
     - name: http
       port: 80
-      targetPort: 7860
+      targetPort: 3001
       protocol: TCP
