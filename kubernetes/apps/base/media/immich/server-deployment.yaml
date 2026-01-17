@@ -28,7 +28,7 @@ spec:
       # Disable service links to prevent IMMICH_PORT conflict with Kubernetes auto-injection
       enableServiceLinks: false
       securityContext:
-        fsGroup: 1000
+        fsGroup: 3001
         fsGroupChangePolicy: "OnRootMismatch"
       containers:
         - name: immich-server
