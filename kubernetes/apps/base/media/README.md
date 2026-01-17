@@ -6,8 +6,8 @@ Media playback and streaming services.
 
 | Service | IP | Port | Description |
 |---------|-----|------|-------------|
-| Emby | 10.10.2.28 | 80 | Video/audio streaming server |
-| Navidrome | 10.10.2.29 | 80 | Music streaming server |
+| Emby | 10.10.2.30 | 80 | Video/audio streaming server |
+| Navidrome | 10.10.2.31 | 80 | Music streaming server |
 
 ## Storage
 
@@ -50,8 +50,8 @@ Required keys:
 
 | Service | URL |
 |---------|-----|
-| Emby | http://10.10.2.28 |
-| Navidrome | http://10.10.2.29 |
+| Emby | http://10.10.2.30 |
+| Navidrome | http://10.10.2.31 |
 
 ## Deployment
 

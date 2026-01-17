@@ -1,6 +1,6 @@
 # Emby LoadBalancer Service
 #
-# Exposes Emby on 10.10.2.28:80
+# Exposes Emby on 10.10.2.30:80
 apiVersion: v1
 kind: Service
 metadata:
@@ -10,7 +10,7 @@ metadata:
     app.kubernetes.io/name: emby
     app.kubernetes.io/part-of: media
   annotations:
-    io.cilium/lb-ipam-ips: "10.10.2.28"
+    io.cilium/lb-ipam-ips: "10.10.2.30"
 spec:
   type: LoadBalancer
   selector:

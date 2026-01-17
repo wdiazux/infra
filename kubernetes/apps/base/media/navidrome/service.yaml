@@ -1,6 +1,6 @@
 # Navidrome LoadBalancer Service
 #
-# Exposes Navidrome on 10.10.2.29:80
+# Exposes Navidrome on 10.10.2.31:80
 apiVersion: v1
 kind: Service
 metadata:
@@ -10,7 +10,7 @@ metadata:
     app.kubernetes.io/name: navidrome
     app.kubernetes.io/part-of: media
   annotations:
-    io.cilium/lb-ipam-ips: "10.10.2.29"
+    io.cilium/lb-ipam-ips: "10.10.2.31"
 spec:
   type: LoadBalancer
   selector:
