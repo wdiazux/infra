@@ -52,6 +52,7 @@ spec:
           volumeMounts:
             - name: models
               mountPath: /root/.cache/huggingface
+              subPath: whisper
           livenessProbe:
             httpGet:
               path: /
@@ -69,4 +70,4 @@ spec:
       volumes:
         - name: models
           persistentVolumeClaim:
-            claimName: whisper-models
+            claimName: nfs-ai-models

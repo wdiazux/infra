@@ -1,23 +1,7 @@
-# Longhorn PersistentVolumeClaims for AI services
+# Longhorn PersistentVolumeClaim for AI services
 #
-# Large storage for ML models and generated outputs.
-# All use Longhorn block storage for performance.
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: ollama-models
-  namespace: ai
-  labels:
-    app.kubernetes.io/name: ollama
-    app.kubernetes.io/part-of: ai
-spec:
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: longhorn
-  resources:
-    requests:
-      storage: 100Gi
+# Only app config/data uses Longhorn. AI models are stored on NFS.
+# See: kubernetes/infrastructure/storage/nfs-ai-pv.yaml
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -34,35 +18,3 @@ spec:
   resources:
     requests:
       storage: 10Gi
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: whisper-models
-  namespace: ai
-  labels:
-    app.kubernetes.io/name: faster-whisper
-    app.kubernetes.io/part-of: ai
-spec:
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: longhorn
-  resources:
-    requests:
-      storage: 50Gi
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: sd-data
-  namespace: ai
-  labels:
-    app.kubernetes.io/name: stable-diffusion
-    app.kubernetes.io/part-of: ai
-spec:
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: longhorn
-  resources:
-    requests:
-      storage: 150Gi

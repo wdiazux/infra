@@ -49,8 +49,9 @@ spec:
               memory: 20Gi
               nvidia.com/gpu: "1"
           volumeMounts:
-            - name: ollama-models
+            - name: models
               mountPath: /root/.ollama
+              subPath: ollama
           livenessProbe:
             httpGet:
               path: /
@@ -66,6 +67,6 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 5
       volumes:
-        - name: ollama-models
+        - name: models
           persistentVolumeClaim:
-            claimName: ollama-models
+            claimName: nfs-ai-models

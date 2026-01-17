@@ -1,0 +1,30 @@
+# NFS PersistentVolume for AI models storage
+# Mount: /mnt/tank/ai from NAS (10.10.2.5)
+#
+# Directory structure:
+#   ollama/           - Ollama LLM models
+#   whisper/          - Faster-Whisper ASR models
+#   stable-diffusion/ - SD models, outputs, extensions
+#
+# Used by: ai namespace (ollama, faster-whisper, stable-diffusion)
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nfs-ai-models
+  labels:
+    type: nfs
+    purpose: ai-models
+spec:
+  capacity:
+    storage: 500Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  nfs:
+    server: 10.10.2.5
+    path: /mnt/tank/ai
+  mountOptions:
+    - nfsvers=4.1
+    - hard
+    - noatime

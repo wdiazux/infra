@@ -58,13 +58,13 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /stable-diffusion-webui/models
-              subPath: models
+              subPath: stable-diffusion/models
             - name: data
               mountPath: /stable-diffusion-webui/outputs
-              subPath: outputs
+              subPath: stable-diffusion/outputs
             - name: data
               mountPath: /stable-diffusion-webui/extensions
-              subPath: extensions
+              subPath: stable-diffusion/extensions
           livenessProbe:
             httpGet:
               path: /info
@@ -82,4 +82,4 @@ spec:
       volumes:
         - name: data
           persistentVolumeClaim:
-            claimName: sd-data
+            claimName: nfs-ai-models

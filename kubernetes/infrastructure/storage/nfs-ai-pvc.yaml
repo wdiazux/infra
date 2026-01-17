@@ -1,0 +1,15 @@
+# PersistentVolumeClaim for AI models storage in ai namespace
+# Used by: ollama, faster-whisper, stable-diffusion
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nfs-ai-models
+  namespace: ai
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  resources:
+    requests:
+      storage: 500Gi
+  volumeName: nfs-ai-models
