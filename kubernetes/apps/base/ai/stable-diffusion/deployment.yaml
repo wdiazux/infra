@@ -36,7 +36,9 @@ spec:
             - "--port=7860"
             - "--api"
             - "--xformers"
-            - "--opt-split-attention-v2"
+            - "--medvram"
+            - "--skip-torch-cuda-test"
+            - "--no-hashing"
           env:
             - name: CUDA_VISIBLE_DEVICES
               value: "0"
@@ -44,14 +46,16 @@ spec:
               value: "1"
             - name: NVIDIA_VISIBLE_DEVICES
               value: "all"
+            - name: PYTORCH_CUDA_ALLOC_CONF
+              value: "garbage_collection_threshold:0.9,max_split_size_mb:512"
           resources:
             requests:
               cpu: 500m
-              memory: 16Gi
+              memory: 8Gi
               nvidia.com/gpu: "1"
             limits:
               cpu: "4"
-              memory: 24Gi
+              memory: 16Gi
               nvidia.com/gpu: "1"
           volumeMounts:
             - name: data
