@@ -29,14 +29,10 @@ spec:
         fsGroupChangePolicy: "OnRootMismatch"
       containers:
         - name: postgres
-          # PostgreSQL 14 with VectorChord extension
-          image: ghcr.io/immich-app/postgres:14-vectorchord0.5.3
+          # PostgreSQL 14 with VectorChord + pgvecto.rs migration support
+          image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0
           args:
             - postgres
-            - -c
-            - shared_preload_libraries=vectors.so
-            - -c
-            - search_path="$$user", public, vectors
             - -c
             - max_wal_size=2GB
             - -c
