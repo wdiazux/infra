@@ -62,6 +62,8 @@ spec:
               value: "http://10.10.2.24/"
             - name: WEBHOOK_URL
               value: "http://10.10.2.24/"
+            - name: N8N_SECURE_COOKIE
+              value: "false"
             - name: GENERIC_TIMEZONE
               value: "America/El_Salvador"
             - name: TZ
