@@ -45,7 +45,7 @@ data:
           "id": 3,
           "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
           "pluginVersion": "10.0.0",
-          "targets": [{"datasource": {"type": "prometheus", "uid": "victoriametrics"}, "expr": "count(kube_deployment_labels)", "refId": "A"}],
+          "targets": [{"datasource": {"type": "prometheus", "uid": "victoriametrics"}, "expr": "count(kube_deployment_created)", "refId": "A"}],
           "title": "Deployments",
           "type": "stat"
         },
@@ -134,7 +134,7 @@ data:
           "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
           "id": 3,
           "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
-          "targets": [{"datasource": {"type": "prometheus", "uid": "victoriametrics"}, "expr": "(1 - (node_filesystem_avail_bytes{mountpoint=\"/\"} / node_filesystem_size_bytes{mountpoint=\"/\"})) * 100", "refId": "A"}],
+          "targets": [{"datasource": {"type": "prometheus", "uid": "victoriametrics"}, "expr": "(1 - (node_filesystem_avail_bytes{mountpoint=\"/var\"} / node_filesystem_size_bytes{mountpoint=\"/var\"})) * 100", "refId": "A"}],
           "title": "Disk Usage %",
           "type": "stat"
         },
