@@ -1,0 +1,22 @@
+# NFS PersistentVolumeClaim for Paperless documents
+#
+# Binds to nfs-documents-paperless PV.
+# Used by: Paperless-ngx server (media, export, consume directories)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: paperless-documents
+  namespace: management
+  labels:
+    type: nfs
+    purpose: documents
+    app.kubernetes.io/name: paperless
+    app.kubernetes.io/part-of: paperless
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  volumeName: nfs-documents-paperless
+  resources:
+    requests:
+      storage: 500Gi

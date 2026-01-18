@@ -1,0 +1,16 @@
+# Paperless-ngx Kustomization
+#
+# Document management and archiving system.
+# https://docs.paperless-ngx.com/
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - secret.enc.yaml
+  - postgres-statefulset.yaml
+  - redis-deployment.yaml
+  - tika-deployment.yaml
+  - gotenberg-deployment.yaml
+  - server-deployment.yaml
+  - services.yaml
+  - pvc.yaml

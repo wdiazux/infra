@@ -1,0 +1,37 @@
+# Paperless Longhorn PersistentVolumeClaims
+---
+# Paperless data PVC (search index, classification model)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: paperless-data
+  namespace: management
+  labels:
+    app.kubernetes.io/name: paperless-server
+    app.kubernetes.io/component: server
+    app.kubernetes.io/part-of: paperless
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 5Gi
+---
+# Paperless Redis data PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: paperless-redis
+  namespace: management
+  labels:
+    app.kubernetes.io/name: paperless-redis
+    app.kubernetes.io/component: cache
+    app.kubernetes.io/part-of: paperless
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 1Gi

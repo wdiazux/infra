@@ -1,0 +1,158 @@
+# Paperless-ngx Server Deployment
+#
+# Main application server for document management.
+# https://docs.paperless-ngx.com/
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: paperless-server
+  namespace: management
+  labels:
+    app.kubernetes.io/name: paperless-server
+    app.kubernetes.io/component: server
+    app.kubernetes.io/part-of: paperless
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: paperless-server
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: paperless-server
+        app.kubernetes.io/component: server
+        app.kubernetes.io/part-of: paperless
+    spec:
+      # Disable service links to prevent PAPERLESS_PORT conflict with Kubernetes auto-injection
+      enableServiceLinks: false
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: "OnRootMismatch"
+      initContainers:
+        # Wait for PostgreSQL to be ready
+        - name: wait-for-db
+          image: docker.io/library/postgres:18
+          command:
+            - sh
+            - -c
+            - |
+              until pg_isready -h paperless-postgres -p 5432 -U paperless; do
+                echo "Waiting for PostgreSQL..."
+                sleep 2
+              done
+              echo "PostgreSQL is ready"
+        # Wait for Redis to be ready
+        - name: wait-for-redis
+          image: docker.io/library/redis:8
+          command:
+            - sh
+            - -c
+            - |
+              until redis-cli -h paperless-redis ping; do
+                echo "Waiting for Redis..."
+                sleep 2
+              done
+              echo "Redis is ready"
+      containers:
+        - name: paperless
+          image: ghcr.io/paperless-ngx/paperless-ngx:latest
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          env:
+            - name: TZ
+              value: "America/El_Salvador"
+            - name: USERMAP_UID
+              value: "1000"
+            - name: USERMAP_GID
+              value: "1000"
+            # Database
+            - name: PAPERLESS_DBENGINE
+              value: "postgresql"
+            - name: PAPERLESS_DBHOST
+              value: "paperless-postgres"
+            - name: PAPERLESS_DBPORT
+              value: "5432"
+            - name: PAPERLESS_DBNAME
+              value: "paperless"
+            - name: PAPERLESS_DBUSER
+              value: "paperless"
+            - name: PAPERLESS_DBPASS
+              valueFrom:
+                secretKeyRef:
+                  name: paperless-secrets
+                  key: POSTGRES_PASSWORD
+            # Redis
+            - name: PAPERLESS_REDIS
+              value: "redis://paperless-redis:6379"
+            # Tika & Gotenberg
+            - name: PAPERLESS_TIKA_ENABLED
+              value: "1"
+            - name: PAPERLESS_TIKA_ENDPOINT
+              value: "http://paperless-tika:9998"
+            - name: PAPERLESS_TIKA_GOTENBERG_ENDPOINT
+              value: "http://paperless-gotenberg:3000"
+            # Admin user (created on first run)
+            - name: PAPERLESS_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: paperless-secrets
+                  key: PAPERLESS_ADMIN_USER
+            - name: PAPERLESS_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: paperless-secrets
+                  key: PAPERLESS_ADMIN_PASSWORD
+            # Security
+            - name: PAPERLESS_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: paperless-secrets
+                  key: PAPERLESS_SECRET_KEY
+            - name: PAPERLESS_URL
+              value: "http://10.10.2.36"
+            # OCR settings
+            - name: PAPERLESS_OCR_LANGUAGE
+              value: "spa+eng"
+            - name: PAPERLESS_TIME_ZONE
+              value: "America/El_Salvador"
+          volumeMounts:
+            - name: data
+              mountPath: /usr/src/paperless/data
+            - name: documents
+              mountPath: /usr/src/paperless/media
+              subPath: media
+            - name: documents
+              mountPath: /usr/src/paperless/export
+              subPath: export
+            - name: documents
+              mountPath: /usr/src/paperless/consume
+              subPath: consume
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            failureThreshold: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: paperless-data
+        - name: documents
+          persistentVolumeClaim:
+            claimName: paperless-documents

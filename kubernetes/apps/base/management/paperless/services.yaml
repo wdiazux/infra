@@ -1,0 +1,103 @@
+# Paperless Services
+---
+# PostgreSQL Service (ClusterIP)
+apiVersion: v1
+kind: Service
+metadata:
+  name: paperless-postgres
+  namespace: management
+  labels:
+    app.kubernetes.io/name: paperless-postgres
+    app.kubernetes.io/component: database
+    app.kubernetes.io/part-of: paperless
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: paperless-postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+      protocol: TCP
+---
+# Redis Service (ClusterIP)
+apiVersion: v1
+kind: Service
+metadata:
+  name: paperless-redis
+  namespace: management
+  labels:
+    app.kubernetes.io/name: paperless-redis
+    app.kubernetes.io/component: cache
+    app.kubernetes.io/part-of: paperless
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: paperless-redis
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: 6379
+      protocol: TCP
+---
+# Tika Service (ClusterIP)
+apiVersion: v1
+kind: Service
+metadata:
+  name: paperless-tika
+  namespace: management
+  labels:
+    app.kubernetes.io/name: paperless-tika
+    app.kubernetes.io/component: tika
+    app.kubernetes.io/part-of: paperless
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: paperless-tika
+  ports:
+    - name: http
+      port: 9998
+      targetPort: 9998
+      protocol: TCP
+---
+# Gotenberg Service (ClusterIP)
+apiVersion: v1
+kind: Service
+metadata:
+  name: paperless-gotenberg
+  namespace: management
+  labels:
+    app.kubernetes.io/name: paperless-gotenberg
+    app.kubernetes.io/component: gotenberg
+    app.kubernetes.io/part-of: paperless
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: paperless-gotenberg
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+      protocol: TCP
+---
+# Paperless Server Service (LoadBalancer)
+apiVersion: v1
+kind: Service
+metadata:
+  name: paperless
+  namespace: management
+  labels:
+    app.kubernetes.io/name: paperless-server
+    app.kubernetes.io/component: server
+    app.kubernetes.io/part-of: paperless
+  annotations:
+    io.cilium/lb-ipam-ips: "10.10.2.36"
+spec:
+  type: LoadBalancer
+  selector:
+    app.kubernetes.io/name: paperless-server
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8000
+      protocol: TCP
