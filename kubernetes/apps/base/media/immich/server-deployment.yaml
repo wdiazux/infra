@@ -32,7 +32,7 @@ spec:
         fsGroupChangePolicy: "OnRootMismatch"
       containers:
         - name: immich-server
-          image: ghcr.io/immich-app/immich-server:v1.124.2
+          image: ghcr.io/immich-app/immich-server:v2.4.0
           ports:
             - name: http
               containerPort: 2283
@@ -41,7 +41,7 @@ spec:
             - name: TZ
               value: "America/El_Salvador"
             - name: IMMICH_VERSION
-              value: "v1.124.2"
+              value: "v2.4.0"
             - name: DB_HOSTNAME
               value: immich-postgres
             - name: DB_PORT
