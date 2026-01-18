@@ -55,6 +55,8 @@ spec:
                 secretKeyRef:
                   name: attic-db-secrets
                   key: POSTGRES_PASSWORD
+            - name: ATTIC_SERVER_DATABASE_URL
+              value: "postgresql://attic:$(POSTGRES_PASSWORD)@attic-db:5432/attic"
             - name: ATTIC_SERVER_TOKEN_HS256_SECRET_BASE64
               valueFrom:
                 secretKeyRef:
