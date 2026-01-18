@@ -1,0 +1,22 @@
+# Homepage LoadBalancer Service
+#
+# Static IP via Cilium L2 LoadBalancer
+apiVersion: v1
+kind: Service
+metadata:
+  name: homepage
+  namespace: tools
+  labels:
+    app.kubernetes.io/name: homepage
+  annotations:
+    io.cilium/lb-ipam-ips: "10.10.2.21"
+spec:
+  type: LoadBalancer
+  loadBalancerIP: "10.10.2.21"
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: homepage

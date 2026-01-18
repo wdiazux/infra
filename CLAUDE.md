@@ -149,6 +149,7 @@ All project dependencies are defined in `shell.nix` and automatically available 
 | FluxCD Webhook | 10.10.2.15 | GitOps webhook receiver | OPTIONAL |
 | Weave GitOps | 10.10.2.16 | FluxCD web UI | OPTIONAL |
 | Attic | 10.10.2.19 | Nix binary cache | OPTIONAL |
+| Homepage | 10.10.2.21 | Service dashboard | OPTIONAL |
 | Immich | 10.10.2.22 | Photo/video backup | OPTIONAL |
 | Home Assistant | 10.10.2.23 | Smart home automation | OPTIONAL |
 | n8n | 10.10.2.24 | Workflow automation | OPTIONAL |

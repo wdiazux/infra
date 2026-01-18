@@ -1,0 +1,17 @@
+# Homepage Logs PVC
+#
+# Persistent storage for Homepage logs
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: homepage-logs
+  namespace: tools
+  labels:
+    app.kubernetes.io/name: homepage
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 128Mi
