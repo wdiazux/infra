@@ -1,0 +1,13 @@
+# kube-state-metrics
+#
+# Generates metrics about Kubernetes objects (pods, deployments, nodes, etc.)
+# https://github.com/kubernetes/kube-state-metrics
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: monitoring
+
+resources:
+  - deployment.yaml
+  - service.yaml
+  - rbac.yaml

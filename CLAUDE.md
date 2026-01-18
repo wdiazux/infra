@@ -504,6 +504,7 @@ When updating a component, check these associated files:
 | **Secrets** | `secrets/*.enc.yaml`, `.sops.yaml` | `docs/operations/secrets.md` |
 | **Tool Versions** | `shell.nix`, `npins/` | `CLAUDE.md` (Core Tools section) |
 | **K8s Resources** | `kubernetes/apps/**/deployment.yaml` | `docs/reference/resource-strategy.md` |
+| **Service IPs** | `kubernetes/apps/**/service.yaml` | `CLAUDE.md` (Network table), `kubernetes/apps/base/tools/homepage/configmap.yaml` |
 
 **Documentation Structure:**
 ```
