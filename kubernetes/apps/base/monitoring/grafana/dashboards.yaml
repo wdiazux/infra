@@ -25,7 +25,7 @@ data:
         {
           "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
           "id": 1,
-          "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "value"},
           "pluginVersion": "10.0.0",
           "targets": [{"datasource": {"type": "prometheus", "uid": "victoriametrics"}, "expr": "count(kube_node_info)", "refId": "A"}],
           "title": "Nodes",
@@ -34,7 +34,7 @@ data:
         {
           "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
           "id": 2,
-          "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "value"},
           "pluginVersion": "10.0.0",
           "targets": [{"datasource": {"type": "prometheus", "uid": "victoriametrics"}, "expr": "count(kube_pod_info)", "refId": "A"}],
           "title": "Pods",
@@ -43,7 +43,7 @@ data:
         {
           "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
           "id": 3,
-          "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "value"},
           "pluginVersion": "10.0.0",
           "targets": [{"datasource": {"type": "prometheus", "uid": "victoriametrics"}, "expr": "count(kube_deployment_created)", "refId": "A"}],
           "title": "Deployments",
@@ -52,7 +52,7 @@ data:
         {
           "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0},
           "id": 4,
-          "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "value"},
           "pluginVersion": "10.0.0",
           "targets": [{"datasource": {"type": "prometheus", "uid": "victoriametrics"}, "expr": "count(kube_service_info)", "refId": "A"}],
           "title": "Services",
@@ -117,7 +117,7 @@ data:
         {
           "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
           "id": 1,
-          "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "value"},
           "targets": [{"datasource": {"type": "prometheus", "uid": "victoriametrics"}, "expr": "100 - (avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)", "refId": "A"}],
           "title": "CPU Usage %",
           "type": "stat"
@@ -125,24 +125,24 @@ data:
         {
           "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
           "id": 2,
-          "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
-          "targets": [{"datasource": {"type": "prometheus", "uid": "victoriametrics"}, "expr": "(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100", "refId": "A"}],
+          "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "value"},
+          "targets": [{"datasource": {"type": "prometheus", "uid": "victoriametrics"}, "expr": "avg((1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100)", "refId": "A"}],
           "title": "Memory Usage %",
           "type": "stat"
         },
         {
           "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
           "id": 3,
-          "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
-          "targets": [{"datasource": {"type": "prometheus", "uid": "victoriametrics"}, "expr": "(1 - (node_filesystem_avail_bytes{mountpoint=\"/var\"} / node_filesystem_size_bytes{mountpoint=\"/var\"})) * 100", "refId": "A"}],
+          "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "value"},
+          "targets": [{"datasource": {"type": "prometheus", "uid": "victoriametrics"}, "expr": "avg((1 - (node_filesystem_avail_bytes{mountpoint=\"/var\"} / node_filesystem_size_bytes{mountpoint=\"/var\"})) * 100)", "refId": "A"}],
           "title": "Disk Usage %",
           "type": "stat"
         },
         {
           "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0},
           "id": 4,
-          "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
-          "targets": [{"datasource": {"type": "prometheus", "uid": "victoriametrics"}, "expr": "node_time_seconds - node_boot_time_seconds", "refId": "A"}],
+          "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "value"},
+          "targets": [{"datasource": {"type": "prometheus", "uid": "victoriametrics"}, "expr": "max(node_time_seconds - node_boot_time_seconds)", "refId": "A"}],
           "title": "Uptime (seconds)",
           "type": "stat"
         },
@@ -156,7 +156,7 @@ data:
         {
           "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
           "id": 6,
-          "targets": [{"datasource": {"type": "prometheus", "uid": "victoriametrics"}, "expr": "node_memory_MemTotal_bytes / 1024 / 1024 / 1024", "legendFormat": "Total", "refId": "A"}, {"datasource": {"type": "prometheus", "uid": "victoriametrics"}, "expr": "(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / 1024 / 1024 / 1024", "legendFormat": "Used", "refId": "B"}],
+          "targets": [{"datasource": {"type": "prometheus", "uid": "victoriametrics"}, "expr": "avg(node_memory_MemTotal_bytes) / 1024 / 1024 / 1024", "legendFormat": "Total", "refId": "A"}, {"datasource": {"type": "prometheus", "uid": "victoriametrics"}, "expr": "avg(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / 1024 / 1024 / 1024", "legendFormat": "Used", "refId": "B"}],
           "title": "Memory Usage (GB)",
           "type": "timeseries"
         }
