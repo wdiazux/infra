@@ -1,7 +1,9 @@
 # Monitoring Namespace
 #
 # Observability stack for Kubernetes cluster monitoring.
-# Services: VictoriaMetrics, VMAgent, Grafana
+# Services: VictoriaMetrics, VMAgent, Grafana, kube-state-metrics, node-exporter
+#
+# Note: Privileged PodSecurity required for node-exporter (hostNetwork, hostPID, hostPath)
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -9,3 +11,6 @@ metadata:
   labels:
     app.kubernetes.io/name: monitoring
     purpose: observability
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged
