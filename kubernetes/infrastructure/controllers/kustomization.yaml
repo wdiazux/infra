@@ -22,3 +22,5 @@ resources:
   # - longhorn.yaml
   # GPU support
   - nvidia-gpu.yaml
+  # Metrics API (enables kubectl top, k9s metrics)
+  - metrics-server.yaml

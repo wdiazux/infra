@@ -1,0 +1,33 @@
+# Metrics Server
+#
+# Provides resource metrics (CPU/memory) for kubectl top and k9s.
+# Required for Kubernetes Metrics API.
+#
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: metrics-server
+  namespace: kube-system
+spec:
+  interval: 1h
+  chart:
+    spec:
+      chart: metrics-server
+      version: "3.*"
+      sourceRef:
+        kind: HelmRepository
+        name: metrics-server
+        namespace: flux-system
+  values:
+    # Talos uses self-signed kubelet certificates
+    args:
+      - --kubelet-insecure-tls
+    # Resource limits for homelab
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi

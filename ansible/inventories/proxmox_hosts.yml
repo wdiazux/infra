@@ -49,5 +49,5 @@ all:
         ansible_connection: ssh
         ansible_port: 22
 
-        # Note: Other variables like has_gpu, zfs_arc_max_gb are in group_vars/proxmox_hosts.yml
+        # Note: Other variables like has_gpu, zfs_arc_max_gb are in group_vars/proxmox.yml
         # This keeps the inventory clean and configuration centralized
