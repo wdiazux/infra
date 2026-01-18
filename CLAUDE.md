@@ -160,6 +160,8 @@ All project dependencies are defined in `shell.nix` and automatically available 
 | IT-Tools | 10.10.2.32 | Developer toolbox | OPTIONAL |
 | LibreSpeed | 10.10.2.33 | Network speed test | OPTIONAL |
 | Wallos | 10.10.2.34 | Personal subscription tracker | OPTIONAL |
+| ntfy | 10.10.2.35 | Push notification service | OPTIONAL |
+| Paperless-ngx | 10.10.2.36 | Document management system | OPTIONAL |
 | SABnzbd | 10.10.2.40 | Usenet downloader | OPTIONAL |
 | qBittorrent | 10.10.2.41 | Torrent downloader | OPTIONAL |
 | Prowlarr | 10.10.2.42 | Indexer manager | OPTIONAL |
@@ -641,6 +643,7 @@ zpool scrub poolname          # Data integrity check
 
 ## Version History
 
+- **2026-01-17**: Paperless-ngx document management at 10.10.2.35 with PostgreSQL, Redis, Tika, Gotenberg
 - **2026-01-17**: Attic Nix binary cache at 10.10.2.19 with PostgreSQL 16 and NFS storage
 - **2026-01-17**: Monitoring stack (VictoriaMetrics + VMAgent + Grafana) at 10.10.2.17/18, Immich photo backup at 10.10.2.22 with GPU ML
 - **2026-01-17**: Home Assistant smart home platform at 10.10.2.23 in automation namespace
