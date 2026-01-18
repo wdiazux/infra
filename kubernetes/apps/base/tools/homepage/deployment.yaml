@@ -31,7 +31,7 @@ spec:
             - name: TZ
               value: America/El_Salvador
             - name: HOMEPAGE_ALLOWED_HOSTS
-              value: "10.10.2.21,homepage.home.arpa,homepage.home-infra.net,homepage.local,homepage.tools.svc.cluster.local"
+              value: "10.10.2.21,home.arpa,home.home-infra.net,home.local,homepage.tools.svc.cluster.local"
           volumeMounts:
             - name: config
               mountPath: /app/config/settings.yaml
