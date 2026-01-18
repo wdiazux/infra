@@ -27,6 +27,25 @@ spec:
         fsGroup: 1000
         seccompProfile:
           type: RuntimeDefault
+      initContainers:
+        - name: copy-config
+          image: busybox:latest
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          command:
+            - sh
+            - -c
+            - |
+              cp /config-source/* /app/config/
+              chmod 644 /app/config/*
+          volumeMounts:
+            - name: config-source
+              mountPath: /config-source
+            - name: config
+              mountPath: /app/config
       containers:
         - name: homepage
           image: ghcr.io/gethomepage/homepage:latest
@@ -47,25 +66,7 @@ spec:
               value: "10.10.2.21,home.arpa,home.home-infra.net,home.local,homepage.tools.svc.cluster.local"
           volumeMounts:
             - name: config
-              mountPath: /app/config/settings.yaml
-              subPath: settings.yaml
-            - name: config
-              mountPath: /app/config/services.yaml
-              subPath: services.yaml
-            - name: config
-              mountPath: /app/config/bookmarks.yaml
-              subPath: bookmarks.yaml
-            - name: config
-              mountPath: /app/config/widgets.yaml
-              subPath: widgets.yaml
-            - name: config
-              mountPath: /app/config/kubernetes.yaml
-              subPath: kubernetes.yaml
-            - name: config
-              mountPath: /app/config/docker.yaml
-              subPath: docker.yaml
-            - name: logs
-              mountPath: /app/config/logs
+              mountPath: /app/config
           livenessProbe:
             httpGet:
               path: /
@@ -79,9 +80,8 @@ spec:
             initialDelaySeconds: 5
             periodSeconds: 10
       volumes:
-        - name: config
+        - name: config-source
           configMap:
             name: homepage-config
-        - name: logs
-          persistentVolumeClaim:
-            claimName: homepage-logs
+        - name: config
+          emptyDir: {}
