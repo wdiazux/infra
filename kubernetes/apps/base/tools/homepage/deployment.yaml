@@ -58,6 +58,12 @@ spec:
             - name: config
               mountPath: /app/config/widgets.yaml
               subPath: widgets.yaml
+            - name: config
+              mountPath: /app/config/kubernetes.yaml
+              subPath: kubernetes.yaml
+            - name: config
+              mountPath: /app/config/docker.yaml
+              subPath: docker.yaml
             - name: logs
               mountPath: /app/config/logs
           livenessProbe:

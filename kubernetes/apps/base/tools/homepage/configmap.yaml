@@ -183,3 +183,10 @@ data:
         format:
           dateStyle: long
           timeStyle: short
+
+  kubernetes.yaml: |
+    # Kubernetes integration disabled
+    # mode: disabled
+
+  docker.yaml: |
+    # Docker integration disabled
