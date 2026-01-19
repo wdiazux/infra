@@ -93,3 +93,84 @@ Models must be manually downloaded to the `sd-data` PVC:
 |---------|------------------|
 | Ollama | http://10.10.2.25 (via Open WebUI) |
 | Stable Diffusion | http://10.10.2.26/docs |
+
+## Accessing Ollama Remotely
+
+Ollama runs as a ClusterIP service (internal only). To access it from your local machine for use with VS Code, Continue, or other clients:
+
+### Option 1: Port Forwarding (Recommended)
+
+Forward the Ollama port to your local machine:
+
+```bash
+# Set kubeconfig
+export KUBECONFIG=/path/to/infra/terraform/talos/kubeconfig
+
+# Forward Ollama port to localhost:11434
+kubectl port-forward -n ai svc/ollama 11434:11434
+
+# Keep this terminal open while using Ollama
+```
+
+Then configure your client to use `http://localhost:11434` as the Ollama URL.
+
+### Option 2: Port Forwarding in Background
+
+Run port forwarding in the background:
+
+```bash
+# Start in background
+kubectl port-forward -n ai svc/ollama 11434:11434 &
+
+# To stop later
+pkill -f "port-forward.*ollama"
+```
+
+### Client Configuration
+
+#### VS Code with Continue Extension
+
+1. Install the Continue extension in VS Code
+2. Open Continue settings
+3. Set Ollama URL: `http://localhost:11434`
+4. Select a model (must be pulled first via `ollama pull`)
+
+#### Command Line (curl)
+
+```bash
+# List models
+curl http://localhost:11434/api/tags
+
+# Generate completion
+curl http://localhost:11434/api/generate -d '{
+  "model": "llama3.2",
+  "prompt": "Hello, world!"
+}'
+
+# Chat
+curl http://localhost:11434/api/chat -d '{
+  "model": "llama3.2",
+  "messages": [{"role": "user", "content": "Hello!"}]
+}'
+```
+
+#### Python (ollama library)
+
+```python
+import ollama
+
+# Ensure OLLAMA_HOST is set or use default localhost:11434
+response = ollama.chat(model='llama3.2', messages=[
+    {'role': 'user', 'content': 'Hello!'}
+])
+print(response['message']['content'])
+```
+
+### Note on Direct LoadBalancer Access
+
+Ollama intentionally uses ClusterIP (not LoadBalancer) because:
+- API has no built-in authentication
+- Exposing directly could allow unauthorized model access
+- Port forwarding provides secure, on-demand access
+
+If you need persistent external access, consider using Open WebUI at http://10.10.2.25 which provides authentication and a web interface.
