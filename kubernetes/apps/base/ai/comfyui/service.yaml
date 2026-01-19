@@ -1,6 +1,7 @@
 # ComfyUI LoadBalancer Service
 #
 # Exposes ComfyUI on 10.10.2.26
+# Using yanwk/comfyui-boot image which exposes port 8188 directly
 apiVersion: v1
 kind: Service
 metadata:
@@ -16,18 +17,8 @@ spec:
   selector:
     app.kubernetes.io/name: comfyui
   ports:
-    # ComfyUI on port 80
+    # ComfyUI web interface on port 80
     - name: http
       port: 80
       targetPort: 8188
-      protocol: TCP
-    # Service portal on port 1111
-    - name: portal
-      port: 1111
-      targetPort: 1111
-      protocol: TCP
-    # Syncthing on port 8384
-    - name: syncthing
-      port: 8384
-      targetPort: 8384
       protocol: TCP

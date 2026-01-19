@@ -1,7 +1,7 @@
 # AI Namespace
 #
 # AI/ML services with GPU time-slicing support.
-# Services: Ollama, Open WebUI, Stable Diffusion
+# Services: Ollama, Open WebUI, Stable Diffusion, ComfyUI
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -9,3 +9,7 @@ metadata:
   labels:
     app.kubernetes.io/name: ai
     purpose: ai-ml
+    # Allow privileged pods for NVIDIA GPU workloads
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged

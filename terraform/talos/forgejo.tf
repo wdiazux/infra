@@ -27,6 +27,10 @@ resource "kubernetes_namespace" "forgejo" {
     labels = {
       "app.kubernetes.io/name"       = "forgejo"
       "app.kubernetes.io/managed-by" = "terraform"
+      # Allow privileged pods for forgejo-runner (docker-in-docker)
+      "pod-security.kubernetes.io/enforce" = "privileged"
+      "pod-security.kubernetes.io/audit"   = "privileged"
+      "pod-security.kubernetes.io/warn"    = "privileged"
     }
   }
 

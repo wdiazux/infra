@@ -53,6 +53,29 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /app/data
+            - name: static
+              mountPath: /app/static_build
+        # Configure Django Site for the LoadBalancer IP
+        - name: configure-site
+          image: ghcr.io/gabe565/obico/web:latest
+          command:
+            - python
+            - manage.py
+            - shell
+            - -c
+            - |
+              from django.contrib.sites.models import Site
+              Site.objects.update_or_create(id=1, defaults={'domain': '10.10.2.27', 'name': 'Obico'})
+              print('Site configured: 10.10.2.27')
+          envFrom:
+            - secretRef:
+                name: obico-secret
+          env:
+            - name: REDIS_URL
+              value: "redis://obico-redis:6379"
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
       containers:
         - name: server
           image: ghcr.io/gabe565/obico/web:latest
@@ -84,6 +107,8 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /app/data
+            - name: static
+              mountPath: /app/static_build
           livenessProbe:
             tcpSocket:
               port: http
@@ -128,3 +153,5 @@ spec:
         - name: data
           persistentVolumeClaim:
             claimName: obico-data
+        - name: static
+          emptyDir: {}

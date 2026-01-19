@@ -1,7 +1,7 @@
 # Printing Namespace
 #
 # 3D printing related services.
-# Services: Obico (AI-powered printer monitoring)
+# Services: Obico (AI-powered printer monitoring with GPU ML API)
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -9,5 +9,7 @@ metadata:
   labels:
     app.kubernetes.io/name: printing
     purpose: printing
-    pod-security.kubernetes.io/enforce: baseline
-    pod-security.kubernetes.io/enforce-version: latest
+    # Allow privileged pods for NVIDIA GPU workloads (Obico ML API)
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged

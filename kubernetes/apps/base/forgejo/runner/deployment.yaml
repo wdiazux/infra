@@ -34,6 +34,8 @@ spec:
       initContainers:
         - name: register
           image: code.forgejo.org/forgejo/runner:6.3.1
+          securityContext:
+            runAsUser: 0  # Run as root to access /root/.runner
           command:
             - /bin/sh
             - -c
@@ -49,7 +51,8 @@ spec:
 
               echo "Forgejo is ready. Registering runner..."
 
-              # Register runner (creates .runner file)
+              # Register runner in /data directory (creates .runner file in cwd)
+              cd /data
               forgejo-runner register \
                 --instance "$FORGEJO_INSTANCE" \
                 --token "$FORGEJO_RUNNER_TOKEN" \
@@ -58,10 +61,7 @@ spec:
                 --no-interactive
 
               echo "Runner registered successfully"
-
-              # Copy registration to shared volume
-              cp /root/.runner /data/.runner
-              chmod 644 /data/.runner
+              ls -la /data/.runner
           env:
             - name: FORGEJO_INSTANCE
               valueFrom:
@@ -81,15 +81,14 @@ spec:
         # Main runner container
         - name: runner
           image: code.forgejo.org/forgejo/runner:6.3.1
+          securityContext:
+            runAsUser: 0  # Run as root to access Docker socket
+          workingDir: /data
           command:
             - /bin/sh
             - -c
             - |
-              # Copy registration from init container
-              mkdir -p /root
-              cp /data/.runner /root/.runner
-
-              # Start runner daemon
+              # Start runner daemon (uses .runner from /data)
               exec forgejo-runner daemon --config /etc/forgejo-runner/config.yaml
           env:
             - name: DOCKER_HOST
@@ -101,7 +100,7 @@ spec:
               mountPath: /etc/forgejo-runner
               readOnly: true
             - name: docker-socket
-              mountPath: /var/run/docker.sock
+              mountPath: /var/run
           resources:
             requests:
               cpu: 250m
