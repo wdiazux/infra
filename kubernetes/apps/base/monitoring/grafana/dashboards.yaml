@@ -139,11 +139,12 @@ data:
           "type": "stat"
         },
         {
+          "fieldConfig": {"defaults": {"unit": "dtdurations"}},
           "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0},
           "id": 4,
           "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "value"},
           "targets": [{"datasource": {"type": "prometheus", "uid": "victoriametrics"}, "expr": "max(node_time_seconds - node_boot_time_seconds)", "refId": "A"}],
-          "title": "Uptime (seconds)",
+          "title": "Uptime",
           "type": "stat"
         },
         {
