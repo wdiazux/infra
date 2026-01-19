@@ -35,7 +35,7 @@ spec:
           image: ghcr.io/ai-dock/comfyui:v2-cuda-12.1.1-base-22.04-v0.2.7
           ports:
             - name: http
-              containerPort: 18188
+              containerPort: 8188
               protocol: TCP
           env:
             # Disable ai-dock service portal authentication
@@ -44,9 +44,12 @@ spec:
             # Set external address for redirects
             - name: DIRECT_ADDRESS
               value: "10.10.2.26"
-            # ComfyUI port (ai-dock uses 18188 internally)
-            - name: COMFYUI_PORT
-              value: "18188"
+            # ComfyUI exposed port (host port)
+            - name: COMFYUI_PORT_HOST
+              value: "8188"
+            # Disable Cloudflare tunnels
+            - name: CF_QUICK_TUNNELS
+              value: "false"
             # GPU configuration
             - name: NVIDIA_VISIBLE_DEVICES
               value: "all"
@@ -58,9 +61,6 @@ spec:
             # Disable auto-updates (manual control)
             - name: AUTO_UPDATE
               value: "false"
-            # Skip service manager (run ComfyUI directly)
-            - name: SUPERVISOR_START_COMFYUI
-              value: "true"
           resources:
             requests:
               memory: 512Mi
