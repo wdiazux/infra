@@ -211,4 +211,22 @@ curl -s http://10.10.2.45  # Bazarr
 
 ---
 
-**Last Updated:** 2026-01-16
+## External Access via Pangolin
+
+Services can be exposed externally via Pangolin tunneling (no port forwarding required).
+
+| External Domain | Internal Service | IP | Type |
+|----------------|------------------|-----|------|
+| photos.reynoza.org | Immich | 10.10.2.22 | Private |
+| photos.home-infra.net | Immich | 10.10.2.22 | Internal |
+
+**Architecture:**
+- Pangolin VPS at 207.246.115.3 (NixOS)
+- WireGuard tunnel via Newt extension in Talos
+- Handles domains: reynoza.org, unix.red
+
+**Configuration:** See [Pangolin documentation](../services/pangolin.md)
+
+---
+
+**Last Updated:** 2026-01-19
