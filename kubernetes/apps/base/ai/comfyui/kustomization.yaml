@@ -1,0 +1,14 @@
+# ComfyUI - Node-based Stable Diffusion Interface
+#
+# Replaces AUTOMATIC1111 WebUI with a more flexible, node-based workflow system.
+# Supports SDXL, Flux, and custom workflows.
+#
+# Docs: https://github.com/comfyanonymous/ComfyUI
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: ai
+
+resources:
+  - deployment.yaml
+  - service.yaml

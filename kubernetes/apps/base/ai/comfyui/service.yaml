@@ -1,22 +1,22 @@
-# Stable Diffusion LoadBalancer Service
+# ComfyUI LoadBalancer Service
 #
-# Exposes Stable Diffusion WebUI on 10.10.2.26:80
+# Exposes ComfyUI on 10.10.2.26:80 (same IP as previous Stable Diffusion)
 apiVersion: v1
 kind: Service
 metadata:
-  name: stable-diffusion
+  name: comfyui
   namespace: ai
   labels:
-    app.kubernetes.io/name: stable-diffusion
+    app.kubernetes.io/name: comfyui
     app.kubernetes.io/part-of: ai
   annotations:
     io.cilium/lb-ipam-ips: "10.10.2.26"
 spec:
   type: LoadBalancer
   selector:
-    app.kubernetes.io/name: stable-diffusion
+    app.kubernetes.io/name: comfyui
   ports:
     - name: http
       port: 80
-      targetPort: 3001
+      targetPort: 8188
       protocol: TCP

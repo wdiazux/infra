@@ -62,7 +62,7 @@ LoadBalancer IPs assigned to Kubernetes services.
 |----|---------|------|-----------|
 | 10.10.2.22 | Immich | 80 | media |
 | 10.10.2.25 | Open WebUI | 80 | ai |
-| 10.10.2.26 | Stable Diffusion | 80 | ai |
+| 10.10.2.26 | ComfyUI | 80 | ai |
 | 10.10.2.30 | Emby | 80 | media |
 | 10.10.2.31 | Navidrome | 80 | media |
 | 10.10.2.32 | IT-Tools | 80 | tools |
@@ -124,7 +124,7 @@ spec:
 | Home Assistant | http://10.10.2.23 | Username/Password |
 | n8n | http://10.10.2.24 | Username/Password |
 | Open WebUI | http://10.10.2.25 | Username/Password |
-| Stable Diffusion | http://10.10.2.26 | None (API auth optional) |
+| ComfyUI | http://10.10.2.26 | None (API auth optional) |
 | Emby | http://10.10.2.30 | Username/Password |
 | Navidrome | http://10.10.2.31 | Username/Password |
 | IT-Tools | http://10.10.2.32 | None |
@@ -194,7 +194,7 @@ curl -s http://10.10.2.34  # Wallos
 
 # AI services
 curl -s http://10.10.2.25  # Open WebUI
-curl -s http://10.10.2.26  # Stable Diffusion
+curl -s http://10.10.2.26  # ComfyUI
 
 # Media services
 curl -s http://10.10.2.30  # Emby

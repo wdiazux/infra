@@ -1,7 +1,7 @@
 # AI Namespace Applications
 #
 # AI/ML services with GPU time-slicing support.
-# Services: Ollama, Open WebUI, Stable Diffusion
+# Services: Ollama, Open WebUI, ComfyUI
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
@@ -11,4 +11,4 @@ resources:
   # Services
   - ollama
   - open-webui
-  - stable-diffusion
+  - comfyui  # Replaced stable-diffusion with ComfyUI

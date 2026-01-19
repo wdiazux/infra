@@ -8,7 +8,7 @@ AI/ML services with GPU time-slicing support.
 |---------|-----|------|---------|
 | Ollama | ClusterIP | 11434 | LLM inference backend |
 | Open WebUI | 10.10.2.25 | 80 | LLM chat interface |
-| Stable Diffusion | 10.10.2.26 | 80 | Image generation UI |
+| ComfyUI | 10.10.2.26 | 80 | Node-based image generation |
 
 ## GPU Configuration
 
@@ -23,23 +23,33 @@ All GPU services share the NVIDIA RTX 4000 SFF (24GB VRAM) via time-slicing:
 | Service | Model | Idle | Active |
 |---------|-------|------|--------|
 | Ollama | 13B-30B | 0 | 8-16GB |
-| Stable Diffusion | SDXL | 0 | 8-12GB |
+| ComfyUI | SDXL/Flux | 0 | 8-16GB |
 
-**Recommendation**: Avoid running Ollama and Stable Diffusion at maximum capacity simultaneously.
+**Recommendation**: Avoid running Ollama and ComfyUI at maximum capacity simultaneously.
 
 ## Storage
 
-All services use Longhorn block storage:
+All services use NFS storage for models:
 
 | PVC | Size | Purpose |
 |-----|------|---------|
-| ollama-models | 100Gi | LLM models |
-| open-webui-data | 10Gi | User data, conversations |
-| sd-data | 150Gi | Checkpoints, LoRAs, outputs |
+| nfs-ai-models | Shared | All AI models, outputs, configs |
+
+### ComfyUI Directory Structure
+
+```
+comfyui/
+├── models/           # Checkpoints, LoRAs, VAE, ControlNet
+│   ├── checkpoints/  # Main model files (SD 1.5, SDXL, Flux)
+│   ├── loras/        # LoRA models
+│   ├── vae/          # VAE models
+│   └── controlnet/   # ControlNet models
+├── output/           # Generated images
+├── input/            # Reference/input images
+└── custom_nodes/     # ComfyUI extensions
+```
 
 ## Secrets Setup
-
-Before deploying, encrypt the secrets with SOPS:
 
 ### Open WebUI
 
@@ -55,19 +65,9 @@ sops kubernetes/apps/base/ai/open-webui/secret.yaml
 sops -e --in-place kubernetes/apps/base/ai/open-webui/secret.yaml
 ```
 
-### Stable Diffusion
-
-```bash
-# Edit and encrypt
-sops kubernetes/apps/base/ai/stable-diffusion/secret.yaml
-# Replace REPLACE_WITH_SECURE_PASSWORD with a strong password
-
-sops -e --in-place kubernetes/apps/base/ai/stable-diffusion/secret.yaml
-```
-
 ## First-Time Setup
 
-### Pull Initial Models
+### Pull Ollama Models
 
 After Ollama is running:
 
@@ -79,20 +79,65 @@ kubectl exec -it -n ai ollama-0 -- ollama pull llama3.2
 kubectl exec -it -n ai ollama-0 -- ollama list
 ```
 
-### Download Stable Diffusion Models
+### Download ComfyUI Models
 
-Models must be manually downloaded to the `sd-data` PVC:
+Models must be manually downloaded to the NFS storage:
 
-1. Access the pod: `kubectl exec -it -n ai deploy/stable-diffusion -- bash`
-2. Download models to `/stable-diffusion-webui/models/Stable-diffusion/`
-3. Refresh the model list in the WebUI
+```bash
+# Access the pod
+kubectl exec -it -n ai deploy/comfyui -- bash
+
+# Download a model (example: SDXL base)
+cd /opt/ComfyUI/models/checkpoints
+wget https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors
+
+# For Flux models, you may need HuggingFace authentication
+```
+
+**Recommended Models:**
+- **SDXL**: `sd_xl_base_1.0.safetensors` (6.9GB)
+- **Flux.1-dev**: Requires HF token, ~12GB
+- **SD 1.5**: `v1-5-pruned-emaonly.safetensors` (4.3GB)
+
+### Install Custom Nodes
+
+ComfyUI supports extensions via custom nodes:
+
+```bash
+kubectl exec -it -n ai deploy/comfyui -- bash
+cd /opt/ComfyUI/custom_nodes
+
+# Example: ComfyUI Manager (recommended)
+git clone https://github.com/ltdrdata/ComfyUI-Manager.git
+
+# Restart pod to load new nodes
+kubectl rollout restart -n ai deploy/comfyui
+```
 
 ## API Endpoints
 
-| Service | Swagger/API Docs |
-|---------|------------------|
+| Service | Access |
+|---------|--------|
 | Ollama | http://10.10.2.25 (via Open WebUI) |
-| Stable Diffusion | http://10.10.2.26/docs |
+| ComfyUI | http://10.10.2.26 |
+| ComfyUI API | http://10.10.2.26/api |
+
+### ComfyUI API Usage
+
+ComfyUI has a powerful API for programmatic image generation:
+
+```bash
+# Queue a workflow
+curl -X POST http://10.10.2.26/prompt \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": {...workflow json...}}'
+
+# Get queue status
+curl http://10.10.2.26/queue
+
+# Get history
+curl http://10.10.2.26/history
+```
 
 ## Accessing Ollama Remotely
 
@@ -174,3 +219,17 @@ Ollama intentionally uses ClusterIP (not LoadBalancer) because:
 - Port forwarding provides secure, on-demand access
 
 If you need persistent external access, consider using Open WebUI at http://10.10.2.25 which provides authentication and a web interface.
+
+## ComfyUI vs AUTOMATIC1111
+
+ComfyUI was chosen over AUTOMATIC1111 (Stable Diffusion WebUI) because:
+
+| Feature | ComfyUI | AUTOMATIC1111 |
+|---------|---------|---------------|
+| Interface | Node-based workflow | Traditional UI |
+| Flexibility | Highly customizable | Extension-based |
+| Performance | More efficient | Heavier |
+| Flux Support | Native | Limited |
+| Learning Curve | Steeper | Easier |
+
+ComfyUI's node-based approach allows complex workflows that are reproducible and shareable.

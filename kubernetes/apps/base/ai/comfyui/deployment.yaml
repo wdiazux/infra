@@ -1,0 +1,103 @@
+# ComfyUI Deployment
+#
+# Node-based Stable Diffusion interface with GPU acceleration.
+# Supports SDXL, Flux, LoRAs, ControlNet, and custom workflows.
+#
+# Image: ghcr.io/ai-dock/comfyui (CUDA-enabled)
+# Docs: https://github.com/ai-dock/comfyui
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: comfyui
+  namespace: ai
+  labels:
+    app.kubernetes.io/name: comfyui
+    app.kubernetes.io/part-of: ai
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate  # GPU workload - only one instance at a time
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: comfyui
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: comfyui
+        app.kubernetes.io/part-of: ai
+    spec:
+      runtimeClassName: nvidia
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: "OnRootMismatch"
+      containers:
+        - name: comfyui
+          image: ghcr.io/ai-dock/comfyui:cuda-12.1.1-cudnn8-runtime-22.04
+          ports:
+            - name: http
+              containerPort: 8188
+              protocol: TCP
+          env:
+            # ComfyUI startup arguments
+            - name: COMFYUI_ARGS
+              value: "--listen 0.0.0.0 --port 8188"
+            # GPU configuration
+            - name: NVIDIA_VISIBLE_DEVICES
+              value: "all"
+            - name: CUDA_VISIBLE_DEVICES
+              value: "0"
+            # Memory optimization for RTX 4000 (24GB VRAM)
+            - name: PYTORCH_CUDA_ALLOC_CONF
+              value: "garbage_collection_threshold:0.9,max_split_size_mb:512"
+            # Disable auto-updates (manual control)
+            - name: AUTO_UPDATE
+              value: "false"
+            # Skip service manager (run ComfyUI directly)
+            - name: SUPERVISOR_START_COMFYUI
+              value: "true"
+          resources:
+            requests:
+              memory: 512Mi
+              nvidia.com/gpu: "1"
+            limits:
+              memory: 20Gi
+              nvidia.com/gpu: "1"
+          volumeMounts:
+            # Models directory (checkpoints, LoRAs, VAE, etc.)
+            - name: data
+              mountPath: /opt/ComfyUI/models
+              subPath: comfyui/models
+            # Output directory (generated images)
+            - name: data
+              mountPath: /opt/ComfyUI/output
+              subPath: comfyui/output
+            # Input directory (reference images)
+            - name: data
+              mountPath: /opt/ComfyUI/input
+              subPath: comfyui/input
+            # Custom nodes directory
+            - name: data
+              mountPath: /opt/ComfyUI/custom_nodes
+              subPath: comfyui/custom_nodes
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            failureThreshold: 60  # 10 minutes to start (model loading)
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: nfs-ai-models

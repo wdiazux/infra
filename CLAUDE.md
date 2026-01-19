@@ -98,7 +98,7 @@ infra/
 | Home Assistant | 10.10.2.23 | Smart home |
 | n8n | 10.10.2.24 | Workflow automation |
 | Open WebUI | 10.10.2.25 | LLM interface |
-| Stable Diffusion | 10.10.2.26 | Image generation |
+| ComfyUI | 10.10.2.26 | Image generation (node-based) |
 | Emby | 10.10.2.30 | Media server |
 | Navidrome | 10.10.2.31 | Music server |
 | IT-Tools | 10.10.2.32 | Dev toolbox |
