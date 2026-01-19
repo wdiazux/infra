@@ -1,0 +1,9 @@
+# Printing Namespace Apps
+#
+# 3D printing related services.
+# Note: Namespace created in infrastructure/namespaces/printing.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - obico

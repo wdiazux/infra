@@ -12,4 +12,5 @@ resources:
   - management.yaml
   - ai.yaml
   - automation.yaml
+  - printing.yaml
   - monitoring.yaml

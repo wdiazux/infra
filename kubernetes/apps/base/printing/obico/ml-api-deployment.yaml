@@ -6,11 +6,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: obico-ml-api
-  namespace: automation
+  namespace: printing
   labels:
     app.kubernetes.io/name: obico-ml-api
     app.kubernetes.io/component: ml
-    app.kubernetes.io/part-of: automation
+    app.kubernetes.io/part-of: printing
 spec:
   replicas: 1
   strategy:
@@ -23,7 +23,7 @@ spec:
       labels:
         app.kubernetes.io/name: obico-ml-api
         app.kubernetes.io/component: ml
-        app.kubernetes.io/part-of: automation
+        app.kubernetes.io/part-of: printing
     spec:
       # Enable GPU for ML inference (comment out if not using GPU)
       runtimeClassName: nvidia

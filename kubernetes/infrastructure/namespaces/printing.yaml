@@ -1,0 +1,13 @@
+# Printing Namespace
+#
+# 3D printing related services.
+# Services: Obico (AI-powered printer monitoring)
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: printing
+  labels:
+    app.kubernetes.io/name: printing
+    purpose: printing
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/enforce-version: latest

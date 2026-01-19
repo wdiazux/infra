@@ -74,7 +74,7 @@ LoadBalancer IPs assigned to Kubernetes services.
 | 10.10.2.43 | Radarr | 80 | arr-stack |
 | 10.10.2.44 | Sonarr | 80 | arr-stack |
 | 10.10.2.45 | Bazarr | 80 | arr-stack |
-| 10.10.2.27 | Obico | 80 | automation |
+| 10.10.2.27 | Obico | 80 | printing |
 
 ---
 
@@ -137,6 +137,7 @@ spec:
 | Radarr | http://10.10.2.43 | Username/Password |
 | Sonarr | http://10.10.2.44 | Username/Password |
 | Bazarr | http://10.10.2.45 | Username/Password |
+| Obico | http://10.10.2.27 | Username/Password |
 
 ---
 
@@ -172,6 +173,7 @@ Configure in your DNS server or `/etc/hosts`:
 10.10.2.43   radarr.home-infra.net
 10.10.2.44   sonarr.home-infra.net
 10.10.2.45   bazarr.home-infra.net
+10.10.2.27   obico.home-infra.net
 ```
 
 ---

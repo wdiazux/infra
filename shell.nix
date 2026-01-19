@@ -25,8 +25,8 @@ pkgs.mkShell {
     # Talos & Kubernetes Tools
     talosctl                   # Talos Linux CLI
     kubectl                    # Kubernetes CLI
+    kubecolor                  # Colorize kubectl output
     kubernetes-helm            # Helm package manager
-    k9s                        # Terminal UI for Kubernetes
     fluxcd                     # GitOps tool
 
     # Linters & Security Scanners
@@ -42,5 +42,6 @@ pkgs.mkShell {
     # Additional Utilities
     jq                         # JSON processor (useful for API interactions)
     yq-go                      # YAML processor
+    openssl                    # Cryptographic toolkit (key/cert generation)
   ];
 }

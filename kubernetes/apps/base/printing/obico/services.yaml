@@ -2,16 +2,36 @@
 #
 # Exposes Obico server and internal services.
 ---
+# PostgreSQL service (internal)
+apiVersion: v1
+kind: Service
+metadata:
+  name: obico-postgres
+  namespace: printing
+  labels:
+    app.kubernetes.io/name: obico-postgres
+    app.kubernetes.io/component: database
+    app.kubernetes.io/part-of: printing
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: obico-postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+      protocol: TCP
+---
 # Redis service (internal)
 apiVersion: v1
 kind: Service
 metadata:
   name: obico-redis
-  namespace: automation
+  namespace: printing
   labels:
     app.kubernetes.io/name: obico-redis
     app.kubernetes.io/component: cache
-    app.kubernetes.io/part-of: automation
+    app.kubernetes.io/part-of: printing
 spec:
   type: ClusterIP
   selector:
@@ -27,11 +47,11 @@ apiVersion: v1
 kind: Service
 metadata:
   name: obico-ml-api
-  namespace: automation
+  namespace: printing
   labels:
     app.kubernetes.io/name: obico-ml-api
     app.kubernetes.io/component: ml
-    app.kubernetes.io/part-of: automation
+    app.kubernetes.io/part-of: printing
 spec:
   type: ClusterIP
   selector:
@@ -47,11 +67,11 @@ apiVersion: v1
 kind: Service
 metadata:
   name: obico-server
-  namespace: automation
+  namespace: printing
   labels:
     app.kubernetes.io/name: obico-server
     app.kubernetes.io/component: web
-    app.kubernetes.io/part-of: automation
+    app.kubernetes.io/part-of: printing
   annotations:
     io.cilium/lb-ipam-ips: "10.10.2.27"
 spec:

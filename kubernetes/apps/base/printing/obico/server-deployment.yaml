@@ -5,11 +5,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: obico-server
-  namespace: automation
+  namespace: printing
   labels:
     app.kubernetes.io/name: obico-server
     app.kubernetes.io/component: web
-    app.kubernetes.io/part-of: automation
+    app.kubernetes.io/part-of: printing
 spec:
   replicas: 1
   strategy:
@@ -22,12 +22,24 @@ spec:
       labels:
         app.kubernetes.io/name: obico-server
         app.kubernetes.io/component: web
-        app.kubernetes.io/part-of: automation
+        app.kubernetes.io/part-of: printing
     spec:
       securityContext:
         fsGroup: 65534  # nobody group
         fsGroupChangePolicy: "OnRootMismatch"
       initContainers:
+        # Wait for PostgreSQL to be ready
+        - name: wait-postgres
+          image: postgres:16-alpine
+          command:
+            - sh
+            - -c
+            - |
+              until pg_isready -h obico-postgres -p 5432 -U obico; do
+                echo "Waiting for PostgreSQL..."
+                sleep 2
+              done
+              echo "PostgreSQL is ready"
         # Database migrations
         - name: migrate
           image: ghcr.io/gabe565/obico/web:latest

@@ -5,11 +5,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: obico-redis
-  namespace: automation
+  namespace: printing
   labels:
     app.kubernetes.io/name: obico-redis
     app.kubernetes.io/component: cache
-    app.kubernetes.io/part-of: automation
+    app.kubernetes.io/part-of: printing
 spec:
   replicas: 1
   strategy:
@@ -22,7 +22,7 @@ spec:
       labels:
         app.kubernetes.io/name: obico-redis
         app.kubernetes.io/component: cache
-        app.kubernetes.io/part-of: automation
+        app.kubernetes.io/part-of: printing
     spec:
       containers:
         - name: redis

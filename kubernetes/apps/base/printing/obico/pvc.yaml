@@ -5,11 +5,11 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: obico-data
-  namespace: automation
+  namespace: printing
   labels:
     app.kubernetes.io/name: obico
     app.kubernetes.io/component: storage
-    app.kubernetes.io/part-of: automation
+    app.kubernetes.io/part-of: printing
 spec:
   accessModes:
     - ReadWriteOnce

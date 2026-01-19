@@ -107,3 +107,5 @@ result-*
 # Claude Code (commit skills, but ignore session artifacts)
 .claude/.cache/
 .claude/sessions/
+
+TODO.md
