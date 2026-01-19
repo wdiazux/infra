@@ -26,3 +26,8 @@ spec:
       port: 1111
       targetPort: 1111
       protocol: TCP
+    # Syncthing on port 8384
+    - name: syncthing
+      port: 8384
+      targetPort: 8384
+      protocol: TCP

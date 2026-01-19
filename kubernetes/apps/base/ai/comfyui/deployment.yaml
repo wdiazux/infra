@@ -42,6 +42,10 @@ spec:
             - name: portal
               containerPort: 1111
               protocol: TCP
+            # Syncthing
+            - name: syncthing
+              containerPort: 8384
+              protocol: TCP
           env:
             # Disable ai-dock service portal authentication
             - name: WEB_ENABLE_AUTH
