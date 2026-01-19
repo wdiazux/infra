@@ -59,6 +59,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-pip \
     python3-venv \
     wget \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy compiled darknet libraries
@@ -83,10 +84,12 @@ RUN pip install --no-cache-dir --upgrade pip \
 
 WORKDIR /app
 
-# Clone ML API code (with progress)
-RUN wget --progress=dot:giga https://github.com/TheSpaghettiDetective/obico-server/archive/refs/heads/master.tar.gz \
-    && tar -xzf master.tar.gz --strip-components=2 obico-server-master/ml_api \
-    && rm master.tar.gz
+# Clone ML API code using git (more reliable than wget)
+RUN git clone --depth 1 --filter=blob:none --sparse https://github.com/TheSpaghettiDetective/obico-server.git /tmp/obico \
+    && cd /tmp/obico \
+    && git sparse-checkout set ml_api \
+    && cp -r ml_api/* /app/ \
+    && rm -rf /tmp/obico
 
 # Install additional requirements if present
 RUN if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
