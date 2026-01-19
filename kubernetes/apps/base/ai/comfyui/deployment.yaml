@@ -32,7 +32,7 @@ spec:
         fsGroupChangePolicy: "OnRootMismatch"
       containers:
         - name: comfyui
-          image: ghcr.io/ai-dock/comfyui:cuda-12.1.1-cudnn8-runtime-22.04
+          image: ghcr.io/ai-dock/comfyui:v2-cuda-12.1.1-base-22.04-v0.2.7
           ports:
             - name: http
               containerPort: 8188

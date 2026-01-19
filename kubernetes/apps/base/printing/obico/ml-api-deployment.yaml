@@ -1,7 +1,7 @@
 # Obico ML API
 #
 # Machine learning service for failure detection.
-# Running in CPU-only mode (slower but no GPU requirement).
+# Uses GPU for faster inference.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -12,9 +12,7 @@ metadata:
     app.kubernetes.io/component: ml
     app.kubernetes.io/part-of: printing
 spec:
-  # Disabled: ML API image requires CUDA even in CPU mode
-  # Enable when GPU is available and set HAS_GPU=True with nvidia runtime
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate
   selector:
@@ -27,6 +25,7 @@ spec:
         app.kubernetes.io/component: ml
         app.kubernetes.io/part-of: printing
     spec:
+      runtimeClassName: nvidia
       containers:
         - name: ml-api
           image: ghcr.io/gabe565/obico/ml-api:latest
@@ -39,14 +38,17 @@ spec:
               value: "False"
             - name: FLASK_APP
               value: "server.py"
-            # CPU-only mode
+            - name: NVIDIA_VISIBLE_DEVICES
+              value: "all"
             - name: HAS_GPU
-              value: "False"
+              value: "True"
           resources:
             requests:
               memory: 512Mi
+              nvidia.com/gpu: "1"
             limits:
-              memory: 2Gi
+              memory: 4Gi
+              nvidia.com/gpu: "1"
           livenessProbe:
             httpGet:
               path: /p/
