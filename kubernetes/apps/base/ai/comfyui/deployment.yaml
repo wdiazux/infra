@@ -35,12 +35,12 @@ spec:
           image: ghcr.io/ai-dock/comfyui:v2-cuda-12.1.1-base-22.04-v0.2.7
           ports:
             - name: http
-              containerPort: 8188
+              containerPort: 18188
               protocol: TCP
           env:
-            # ComfyUI startup arguments
-            - name: COMFYUI_ARGS
-              value: "--listen 0.0.0.0 --port 8188"
+            # ComfyUI port (ai-dock uses 18188 internally)
+            - name: COMFYUI_PORT
+              value: "18188"
             # GPU configuration
             - name: NVIDIA_VISIBLE_DEVICES
               value: "all"
