@@ -34,8 +34,9 @@ spec:
         - name: comfyui
           image: ghcr.io/ai-dock/comfyui:v2-cuda-12.1.1-base-22.04-v0.2.7
           ports:
+            # Service portal (Caddy) - main entry point
             - name: http
-              containerPort: 8188
+              containerPort: 1111
               protocol: TCP
           env:
             # Disable ai-dock service portal authentication
