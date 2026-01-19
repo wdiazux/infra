@@ -40,6 +40,11 @@ spec:
               value: "server.py"
             - name: HAS_GPU
               value: "False"
+            # Hide CUDA devices to force CPU mode
+            - name: CUDA_VISIBLE_DEVICES
+              value: ""
+            - name: NVIDIA_VISIBLE_DEVICES
+              value: "void"
           resources:
             requests:
               memory: 512Mi
