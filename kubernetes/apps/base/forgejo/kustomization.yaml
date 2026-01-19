@@ -1,0 +1,9 @@
+# Forgejo Applications
+#
+# Forgejo server is deployed via Terraform (terraform/talos/forgejo.tf).
+# This kustomization manages additional Forgejo components like the Actions runner.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - runner

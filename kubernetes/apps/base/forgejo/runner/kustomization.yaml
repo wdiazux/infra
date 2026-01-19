@@ -1,0 +1,24 @@
+# Forgejo Actions Runner
+#
+# Executes CI/CD workflows defined in .forgejo/workflows/*.yaml
+# Uses Docker-in-Docker (DinD) for container isolation.
+#
+# Prerequisites:
+# 1. Forgejo Actions enabled (gitea.config.actions.ENABLED: true)
+# 2. Runner registration secret created (see secret.yaml)
+#
+# Registration:
+# 1. Go to Forgejo UI > Site Administration > Actions > Runners
+# 2. Click "Create new Runner" to get registration token
+# 3. Update secrets/forgejo-runner.enc.yaml with the token
+# 4. Apply with: flux reconcile kustomization apps
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: forgejo
+
+resources:
+  - serviceaccount.yaml
+  - configmap.yaml
+  - secret.yaml
+  - deployment.yaml

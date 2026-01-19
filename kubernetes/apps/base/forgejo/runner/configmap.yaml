@@ -1,0 +1,46 @@
+# Forgejo Runner Configuration
+#
+# Docs: https://forgejo.org/docs/latest/admin/actions/
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: forgejo-runner-config
+  namespace: forgejo
+  labels:
+    app.kubernetes.io/name: forgejo-runner
+    app.kubernetes.io/component: runner
+    app.kubernetes.io/part-of: forgejo
+data:
+  config.yaml: |
+    log:
+      level: info
+
+    runner:
+      # Unique runner name (pod name will be appended)
+      name: "homelab-runner"
+      # Maximum concurrent jobs per runner
+      capacity: 1
+      # Job timeout
+      timeout: 3h
+      # Fetch interval for new jobs
+      fetch_timeout: 5s
+      fetch_interval: 2s
+      # Labels for job matching (format: label:schema://image)
+      labels:
+        - "ubuntu-latest:docker://node:20-bookworm"
+        - "ubuntu-22.04:docker://ubuntu:22.04"
+        - "docker:docker://docker:28-cli"
+
+    cache:
+      enabled: true
+      dir: /data/cache
+
+    container:
+      # Use bridge network for isolation
+      network: "bridge"
+      # Don't grant privileged mode to workflow containers
+      privileged: false
+      # Docker socket path (from DinD sidecar)
+      docker_host: "unix:///var/run/docker.sock"
+      # Force pull images
+      force_pull: false

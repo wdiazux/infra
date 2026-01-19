@@ -28,3 +28,4 @@ resources:
   - ../base/ai/
   - ../base/automation/
   - ../base/monitoring/
+  - ../base/forgejo/  # Runner for Forgejo Actions (namespace managed by Terraform)

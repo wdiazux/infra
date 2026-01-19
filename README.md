@@ -855,7 +855,8 @@ sops -d secrets/proxmox-creds.enc.yaml
 - 🔄 Talos Day 1/2 Ansible playbooks (Cilium, NFS CSI, GPU Operator)
   - **Note:** Currently using `talosctl`/`kubectl` directly works well
   - Ansible automation would improve repeatability for multi-node deployments
-- 🔄 Security scanning in CI/CD pipeline (Forgejo Actions + Trivy)
+- ✅ Forgejo Actions enabled (see kubernetes/apps/base/forgejo/runner/)
+- 🔄 Security scanning in Forgejo Actions pipeline (Trivy integration)
 - 🔄 Automated monthly image rebuilds
 - 🔄 Semantic versioning for templates
 - ✅ Pre-commit hooks for automated quality checks

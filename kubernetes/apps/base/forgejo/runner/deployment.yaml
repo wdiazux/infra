@@ -1,0 +1,166 @@
+# Forgejo Actions Runner Deployment
+#
+# Runs CI/CD jobs using Docker-in-Docker (DinD) for container isolation.
+# Each pod contains:
+# - Init container: Registers runner with Forgejo
+# - Runner container: Fetches and coordinates jobs
+# - DinD sidecar: Provides Docker daemon for job execution
+#
+# Docs: https://forgejo.org/docs/latest/admin/actions/
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: forgejo-runner
+  namespace: forgejo
+  labels:
+    app.kubernetes.io/name: forgejo-runner
+    app.kubernetes.io/component: runner
+    app.kubernetes.io/part-of: forgejo
+spec:
+  replicas: 1  # Single runner for homelab (increase for more parallelism)
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: forgejo-runner
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: forgejo-runner
+        app.kubernetes.io/component: runner
+        app.kubernetes.io/part-of: forgejo
+    spec:
+      serviceAccountName: forgejo-runner
+
+      # Init container: Register runner with Forgejo
+      initContainers:
+        - name: register
+          image: code.forgejo.org/forgejo/runner:6.3.1
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Waiting for Forgejo to be ready..."
+
+              # Wait for Forgejo API
+              until wget -q -O /dev/null "$FORGEJO_INSTANCE/api/v1/version" 2>/dev/null; do
+                echo "Waiting for Forgejo API..."
+                sleep 5
+              done
+
+              echo "Forgejo is ready. Registering runner..."
+
+              # Register runner (creates .runner file)
+              forgejo-runner register \
+                --instance "$FORGEJO_INSTANCE" \
+                --token "$FORGEJO_RUNNER_TOKEN" \
+                --name "$(hostname)" \
+                --labels "ubuntu-latest:docker://node:20-bookworm,docker:docker://docker:28-cli" \
+                --no-interactive
+
+              echo "Runner registered successfully"
+
+              # Copy registration to shared volume
+              cp /root/.runner /data/.runner
+              chmod 644 /data/.runner
+          env:
+            - name: FORGEJO_INSTANCE
+              valueFrom:
+                secretKeyRef:
+                  name: forgejo-runner-secret
+                  key: FORGEJO_INSTANCE
+            - name: FORGEJO_RUNNER_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: forgejo-runner-secret
+                  key: FORGEJO_RUNNER_TOKEN
+          volumeMounts:
+            - name: runner-data
+              mountPath: /data
+
+      containers:
+        # Main runner container
+        - name: runner
+          image: code.forgejo.org/forgejo/runner:6.3.1
+          command:
+            - /bin/sh
+            - -c
+            - |
+              # Copy registration from init container
+              mkdir -p /root
+              cp /data/.runner /root/.runner
+
+              # Start runner daemon
+              exec forgejo-runner daemon --config /etc/forgejo-runner/config.yaml
+          env:
+            - name: DOCKER_HOST
+              value: "unix:///var/run/docker.sock"
+          volumeMounts:
+            - name: runner-data
+              mountPath: /data
+            - name: runner-config
+              mountPath: /etc/forgejo-runner
+              readOnly: true
+            - name: docker-socket
+              mountPath: /var/run/docker.sock
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: 1
+              memory: 1Gi
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - "pgrep -f 'forgejo-runner daemon'"
+            initialDelaySeconds: 30
+            periodSeconds: 30
+
+        # Docker-in-Docker sidecar for job execution
+        - name: docker-dind
+          image: docker:28-dind
+          securityContext:
+            privileged: true  # Required for Docker daemon
+          env:
+            - name: DOCKER_TLS_CERTDIR
+              value: ""  # Disable TLS for local socket
+          volumeMounts:
+            - name: docker-socket
+              mountPath: /var/run
+            - name: docker-data
+              mountPath: /var/lib/docker
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 2
+              memory: 4Gi
+          livenessProbe:
+            exec:
+              command:
+                - docker
+                - version
+            initialDelaySeconds: 10
+            periodSeconds: 30
+
+      volumes:
+        # Runner data (registration, cache)
+        - name: runner-data
+          emptyDir: {}
+        # Runner configuration
+        - name: runner-config
+          configMap:
+            name: forgejo-runner-config
+        # Docker socket for runner <-> DinD communication
+        - name: docker-socket
+          emptyDir: {}
+        # Docker data (layers, containers) - ephemeral
+        - name: docker-data
+          emptyDir:
+            sizeLimit: 20Gi
+
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
