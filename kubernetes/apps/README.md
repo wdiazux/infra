@@ -18,7 +18,8 @@ apps/
 │   │
 │   ├── tools/                   # Developer utilities
 │   │   ├── it-tools/
-│   │   └── speedtest/
+│   │   ├── ntfy/
+│   │   └── attic/
 │   ├── misc/                    # Miscellaneous apps
 │   │   └── twitch-miner/
 │   ├── arr-stack/               # Media acquisition (Sonarr, Radarr, etc.)

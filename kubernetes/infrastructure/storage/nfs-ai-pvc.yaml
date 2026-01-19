@@ -1,5 +1,5 @@
 # PersistentVolumeClaim for AI models storage in ai namespace
-# Used by: ollama, faster-whisper, stable-diffusion
+# Used by: ollama, stable-diffusion
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:

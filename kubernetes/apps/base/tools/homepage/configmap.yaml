@@ -102,10 +102,6 @@ data:
             icon: stable-diffusion.png
             href: http://10.10.2.26
             description: Image Generation
-        - Faster Whisper:
-            icon: openai.png
-            href: http://10.10.2.27
-            description: Speech-to-Text API
 
     - Arr Stack:
         - SABnzbd:
@@ -138,10 +134,6 @@ data:
             icon: it-tools.png
             href: http://10.10.2.32
             description: Developer Toolbox
-        - LibreSpeed:
-            icon: librespeed.png
-            href: http://10.10.2.33
-            description: Speed Test
         - ntfy:
             icon: ntfy.png
             href: http://10.10.2.35

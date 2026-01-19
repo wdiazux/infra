@@ -63,11 +63,9 @@ LoadBalancer IPs assigned to Kubernetes services.
 | 10.10.2.22 | Immich | 80 | media |
 | 10.10.2.25 | Open WebUI | 80 | ai |
 | 10.10.2.26 | Stable Diffusion | 80 | ai |
-| 10.10.2.27 | Faster-Whisper | 80 | ai |
 | 10.10.2.30 | Emby | 80 | media |
 | 10.10.2.31 | Navidrome | 80 | media |
 | 10.10.2.32 | IT-Tools | 80 | tools |
-| 10.10.2.33 | LibreSpeed | 80 | tools |
 | 10.10.2.35 | ntfy | 80 | tools |
 | 10.10.2.34 | Wallos | 80 | management |
 | 10.10.2.40 | SABnzbd | 80 | arr-stack |
@@ -127,11 +125,9 @@ spec:
 | n8n | http://10.10.2.24 | Username/Password |
 | Open WebUI | http://10.10.2.25 | Username/Password |
 | Stable Diffusion | http://10.10.2.26 | None (API auth optional) |
-| Faster-Whisper | http://10.10.2.27 | None (API) |
 | Emby | http://10.10.2.30 | Username/Password |
 | Navidrome | http://10.10.2.31 | Username/Password |
 | IT-Tools | http://10.10.2.32 | None |
-| LibreSpeed | http://10.10.2.33 | Password (for stats) |
 | Wallos | http://10.10.2.34 | Username/Password |
 | ntfy | http://10.10.2.35 | Username/Password |
 | SABnzbd | http://10.10.2.40 | Username/Password |
@@ -154,22 +150,20 @@ Configure in your DNS server or `/etc/hosts`:
 10.10.2.10   talos.home-infra.net
 10.10.2.11   hubble.home-infra.net
 10.10.2.12   longhorn.home-infra.net
-10.10.2.13   git.home-infra.net forgejo.home-infra.net
-10.10.2.16   gitops.home-infra.net weave.home-infra.net
+10.10.2.13   git.home-infra.net
+10.10.2.16   gitops.home-infra.net
 10.10.2.17   grafana.home-infra.net
-10.10.2.18   victoriametrics.home-infra.net vm.home-infra.net
-10.10.2.19   attic.home-infra.net cache.home-infra.net
-10.10.2.22   immich.home-infra.net photos.home-infra.net
-10.10.2.23   hass.home-infra.net home-assistant.home-infra.net
+10.10.2.18   metrics.home-infra.net
+10.10.2.19   attic.home-infra.net
+10.10.2.22   photos.home-infra.net photos.reynoza.org
+10.10.2.23   hass.home-infra.net
 10.10.2.24   n8n.home-infra.net
-10.10.2.25   openwebui.home-infra.net chat.home-infra.net
+10.10.2.25   chat.home-infra.net
 10.10.2.26   sd.home-infra.net diffusion.home-infra.net
-10.10.2.27   whisper.home-infra.net
 10.10.2.30   emby.home-infra.net
-10.10.2.31   navidrome.home-infra.net music.home-infra.net
-10.10.2.32   it-tools.home-infra.net tools.home-infra.net
-10.10.2.33   speedtest.home-infra.net
-10.10.2.34   wallos.home-infra.net subscriptions.home-infra.net
+10.10.2.31   music.home-infra.net
+10.10.2.32   tools.home-infra.net
+10.10.2.34   wallos.home-infra.net
 10.10.2.35   ntfy.home-infra.net
 10.10.2.40   sabnzbd.home-infra.net
 10.10.2.41   qbittorrent.home-infra.net
@@ -196,13 +190,11 @@ curl -s http://10.10.2.12  # Longhorn
 curl -s http://10.10.2.13  # Forgejo
 curl -s http://10.10.2.16  # Weave GitOps
 curl -s http://10.10.2.32  # IT-Tools
-curl -s http://10.10.2.33  # LibreSpeed
 curl -s http://10.10.2.34  # Wallos
 
 # AI services
 curl -s http://10.10.2.25  # Open WebUI
 curl -s http://10.10.2.26  # Stable Diffusion
-curl -s http://10.10.2.27  # Faster-Whisper
 
 # Media services
 curl -s http://10.10.2.30  # Emby

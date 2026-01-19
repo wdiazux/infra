@@ -70,7 +70,6 @@ It's a user app → No requests, no limits
 |---------|---------|-------|-------|
 | Ollama | 100Mi + GPU | 32Gi | Supports 24GB+ models, KEEP_ALIVE=5m |
 | Stable Diffusion | 100Mi + GPU | 16Gi | SDXL headroom |
-| Faster-Whisper | 100Mi + GPU | 8Gi | **Disabled** (replicas: 0) |
 | Open WebUI | None | None | BestEffort - lightweight UI |
 
 ### Databases (Small Requests + Limits)
@@ -91,7 +90,7 @@ It's a user app → No requests, no limits
 | Namespace | Services |
 |-----------|----------|
 | arr-stack | SABnzbd, qBittorrent, Prowlarr, Radarr, Sonarr, Bazarr |
-| tools | IT-Tools, Speedtest |
+| tools | IT-Tools |
 | misc | Twitch-Miner |
 | management | Wallos |
 | forgejo | Forgejo (app, not DB) |
@@ -147,7 +146,7 @@ Most services can safely use `:latest`:
 
 | Category | Services | Rationale |
 |----------|----------|-----------|
-| **User Apps** | IT-Tools, LibreSpeed, Wallos, ntfy | Simple apps, breaking changes rare |
+| **User Apps** | IT-Tools, Wallos, ntfy | Simple apps, breaking changes rare |
 | **Media** | Navidrome, Emby | Mature projects, stable releases |
 | **Arr-Stack** | Radarr, Sonarr, Prowlarr, Bazarr, SABnzbd, qBittorrent | Hotio images auto-update |
 | **Automation** | n8n, Home Assistant | Rolling releases preferred |
@@ -186,5 +185,5 @@ image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0
 ## History
 
 - **2026-01-17**: Image versioning policy added - latest for most, pin Immich
-- **2026-01-17**: Emby GPU enabled, Faster-Whisper disabled, OLLAMA_KEEP_ALIVE=5m
+- **2026-01-17**: Emby GPU enabled, OLLAMA_KEEP_ALIVE=5m
 - **2026-01-17**: Initial strategy - removed requests from user apps, optimized AI limits

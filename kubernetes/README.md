@@ -52,7 +52,7 @@ kubernetes/
 │   │   └── webhook-receiver-lb.yaml
 │   ├── namespaces/           # Application namespaces
 │   │   ├── kustomization.yaml
-│   │   ├── tools.yaml        # it-tools, speedtest
+│   │   ├── tools.yaml        # it-tools, ntfy, attic, homepage
 │   │   ├── misc.yaml         # twitch-miner
 │   │   ├── arr-stack.yaml    # media acquisition services
 │   │   └── media.yaml        # media streaming services
@@ -64,7 +64,8 @@ kubernetes/
 │   ├── base/                 # Base application manifests
 │   │   ├── tools/            # Tools namespace
 │   │   │   ├── it-tools/
-│   │   │   └── speedtest/
+│   │   │   ├── ntfy/
+│   │   │   └── attic/
 │   │   ├── misc/             # Misc namespace
 │   │   │   └── twitch-miner/
 │   │   ├── arr-stack/        # Media acquisition

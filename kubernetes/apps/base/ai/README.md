@@ -9,7 +9,6 @@ AI/ML services with GPU time-slicing support.
 | Ollama | ClusterIP | 11434 | LLM inference backend |
 | Open WebUI | 10.10.2.25 | 80 | LLM chat interface |
 | Stable Diffusion | 10.10.2.26 | 80 | Image generation UI |
-| Faster-Whisper | 10.10.2.27 | 80 | Speech-to-text API |
 
 ## GPU Configuration
 
@@ -24,10 +23,9 @@ All GPU services share the NVIDIA RTX 4000 SFF (24GB VRAM) via time-slicing:
 | Service | Model | Idle | Active |
 |---------|-------|------|--------|
 | Ollama | 13B-30B | 0 | 8-16GB |
-| Faster-Whisper | large-v3 | 0 | 6-10GB |
 | Stable Diffusion | SDXL | 0 | 8-12GB |
 
-**Recommendation**: Avoid running all three at maximum capacity simultaneously.
+**Recommendation**: Avoid running Ollama and Stable Diffusion at maximum capacity simultaneously.
 
 ## Storage
 
@@ -37,7 +35,6 @@ All services use Longhorn block storage:
 |-----|------|---------|
 | ollama-models | 100Gi | LLM models |
 | open-webui-data | 10Gi | User data, conversations |
-| whisper-models | 50Gi | Whisper model cache |
 | sd-data | 150Gi | Checkpoints, LoRAs, outputs |
 
 ## Secrets Setup
@@ -95,5 +92,4 @@ Models must be manually downloaded to the `sd-data` PVC:
 | Service | Swagger/API Docs |
 |---------|------------------|
 | Ollama | http://10.10.2.25 (via Open WebUI) |
-| Faster-Whisper | http://10.10.2.27/docs |
 | Stable Diffusion | http://10.10.2.26/docs |

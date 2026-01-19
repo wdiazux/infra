@@ -1,7 +1,7 @@
 # AI Namespace
 #
 # AI/ML services with GPU time-slicing support.
-# Services: Ollama, Open WebUI, Faster-Whisper, Stable Diffusion
+# Services: Ollama, Open WebUI, Stable Diffusion
 apiVersion: v1
 kind: Namespace
 metadata:

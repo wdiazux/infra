@@ -1,7 +1,7 @@
 # Tools Namespace
 #
 # Developer and network utility applications.
-# Services: speedtest, it-tools
+# Services: it-tools, ntfy, attic, homepage
 apiVersion: v1
 kind: Namespace
 metadata:

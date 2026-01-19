@@ -99,11 +99,9 @@ infra/
 | n8n | 10.10.2.24 | Workflow automation |
 | Open WebUI | 10.10.2.25 | LLM interface |
 | Stable Diffusion | 10.10.2.26 | Image generation |
-| Faster-Whisper | 10.10.2.27 | Speech-to-text |
 | Emby | 10.10.2.30 | Media server |
 | Navidrome | 10.10.2.31 | Music server |
 | IT-Tools | 10.10.2.32 | Dev toolbox |
-| LibreSpeed | 10.10.2.33 | Speed test |
 | Wallos | 10.10.2.34 | Subscriptions |
 | ntfy | 10.10.2.35 | Push notifications |
 | Paperless-ngx | 10.10.2.36 | Documents |

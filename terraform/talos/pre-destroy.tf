@@ -302,7 +302,7 @@ resource "terraform_data" "weave_gitops_pre_destroy" {
 #
 # FluxCD-managed namespaces (cleaned up in step 1):
 # - flux-system (FluxCD core)
-# - tools (speedtest, it-tools)
+# - tools (it-tools, ntfy, attic, homepage)
 # - misc (twitch-miner)
 #
 # Manual Fallback:

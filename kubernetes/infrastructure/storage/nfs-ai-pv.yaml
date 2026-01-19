@@ -3,10 +3,9 @@
 #
 # Directory structure:
 #   ollama/           - Ollama LLM models
-#   whisper/          - Faster-Whisper ASR models
 #   stable-diffusion/ - SD models, outputs, extensions
 #
-# Used by: ai namespace (ollama, faster-whisper, stable-diffusion)
+# Used by: ai namespace (ollama, stable-diffusion)
 apiVersion: v1
 kind: PersistentVolume
 metadata:

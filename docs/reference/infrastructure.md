@@ -259,7 +259,6 @@ Applications deployed via FluxCD GitOps.
 | Service | Image | IP | Purpose |
 |---------|-------|-----|---------|
 | IT-Tools | corentinth/it-tools:latest | 10.10.2.32 | Developer utilities |
-| LibreSpeed | lscr.io/linuxserver/librespeed:5.4.2 | 10.10.2.33 | Speed test |
 | ntfy | binwiederhier/ntfy:v2.11.0 | 10.10.2.35 | Push notifications |
 
 ### Management (`management` namespace)

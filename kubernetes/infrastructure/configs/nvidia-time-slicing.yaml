@@ -4,7 +4,7 @@
 # Each GPU is advertised as 4 replicas, allowing 4 pods to share it.
 #
 # NOTE: No memory isolation - concurrent heavy usage may cause OOM.
-# Best for workloads with model idle timeouts (Ollama, Whisper, SD).
+# Best for workloads with model idle timeouts (Ollama, SD).
 #
 apiVersion: v1
 kind: ConfigMap
