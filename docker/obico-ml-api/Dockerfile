@@ -7,7 +7,7 @@
 # Push: docker push ghcr.io/wdiazux/obico-ml-api:cuda12
 
 # Stage 1: Build Darknet with GPU support
-FROM nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04 AS darknet_builder
+FROM docker.io/nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04 AS darknet_builder
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -49,7 +49,7 @@ RUN sed -i 's/GPU=1/GPU=0/g' Makefile \
     && cp libdarknet.so libdarknet_cpu.so
 
 # Stage 2: Runtime image
-FROM nvidia/cuda:12.4.1-cudnn-runtime-ubuntu22.04 AS ml_api
+FROM docker.io/nvidia/cuda:12.4.1-cudnn-runtime-ubuntu22.04 AS ml_api
 
 ENV DEBIAN_FRONTEND=noninteractive
 
