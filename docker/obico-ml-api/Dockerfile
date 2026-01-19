@@ -83,8 +83,8 @@ RUN pip install --no-cache-dir --upgrade pip \
 
 WORKDIR /app
 
-# Clone ML API code
-RUN wget -q https://github.com/TheSpaghettiDetective/obico-server/archive/refs/heads/master.tar.gz \
+# Clone ML API code (with progress)
+RUN wget --progress=dot:giga https://github.com/TheSpaghettiDetective/obico-server/archive/refs/heads/master.tar.gz \
     && tar -xzf master.tar.gz --strip-components=2 obico-server-master/ml_api \
     && rm master.tar.gz
 
