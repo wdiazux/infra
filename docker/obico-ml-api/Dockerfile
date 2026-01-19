@@ -7,7 +7,7 @@
 # Push: docker push ghcr.io/wdiazux/obico-ml-api:cuda12
 
 # Stage 1: Build Darknet with GPU support
-FROM nvcr.io/nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04 AS darknet_builder
+FROM nvcr.io/nvidia/cuda:12.4.1-cudnn9-devel-ubuntu22.04 AS darknet_builder
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -43,7 +43,7 @@ RUN sed -i 's/GPU=1/GPU=0/g' Makefile \
     && cp libdarknet.so libdarknet_cpu.so
 
 # Stage 2: Runtime image
-FROM nvcr.io/nvidia/cuda:12.4.1-cudnn-runtime-ubuntu22.04 AS ml_api
+FROM nvcr.io/nvidia/cuda:12.4.1-cudnn9-runtime-ubuntu22.04 AS ml_api
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -51,6 +51,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     python3 \
     python3-pip \
+    python3-venv \
     wget \
     && rm -rf /var/lib/apt/lists/*
 
@@ -58,8 +59,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=darknet_builder /darknet_build/libdarknet_gpu.so /darknet/
 COPY --from=darknet_builder /darknet_build/libdarknet_cpu.so /darknet/
 
+# Create virtual environment to avoid externally-managed-environment error
+ENV VIRTUAL_ENV=/opt/venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
 # Install Python dependencies
-RUN pip3 install --no-cache-dir \
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir \
     opencv_python_headless \
     onnxruntime-gpu \
     flask \
@@ -76,7 +83,7 @@ RUN wget -q https://github.com/TheSpaghettiDetective/obico-server/archive/refs/h
     && rm master.tar.gz
 
 # Install additional requirements if present
-RUN if [ -f requirements.txt ]; then pip3 install --no-cache-dir -r requirements.txt; fi
+RUN if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
 
 # Link darknet libraries
 ENV LD_LIBRARY_PATH=/darknet:$LD_LIBRARY_PATH
