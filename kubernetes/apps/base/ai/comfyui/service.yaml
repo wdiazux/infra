@@ -1,6 +1,6 @@
 # ComfyUI LoadBalancer Service
 #
-# Exposes ComfyUI on 10.10.2.26:80 (same IP as previous Stable Diffusion)
+# Exposes ComfyUI on 10.10.2.26
 apiVersion: v1
 kind: Service
 metadata:
@@ -16,9 +16,14 @@ spec:
   selector:
     app.kubernetes.io/name: comfyui
   ports:
-    # Service portal on port 80 (main entry)
+    # ComfyUI on port 80
     - name: http
       port: 80
+      targetPort: 8188
+      protocol: TCP
+    # Service portal on port 1111
+    - name: portal
+      port: 1111
       targetPort: 1111
       protocol: TCP
     # Syncthing on port 8384
