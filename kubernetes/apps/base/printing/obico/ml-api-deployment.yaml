@@ -12,7 +12,9 @@ metadata:
     app.kubernetes.io/component: ml
     app.kubernetes.io/part-of: printing
 spec:
-  replicas: 1
+  # Disabled: ML API image requires CUDA even in CPU mode
+  # Enable when GPU is available and set HAS_GPU=True with nvidia runtime
+  replicas: 0
   strategy:
     type: Recreate
   selector:
