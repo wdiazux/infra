@@ -1,4 +1,4 @@
-# Obico ML API with CUDA 12 support
+# Obico ML API with CUDA 12 support (Optimized)
 #
 # Based on TheSpaghettiDetective/obico-server ml_api Dockerfile
 # Modified to use CUDA 12.4 for compatibility with modern drivers
@@ -14,93 +14,69 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     build-essential \
-    gcc \
-    g++ \
-    cmake \
     git \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /darknet_build
 
-# Clone darknet and lock to specific commit for reproducibility
-RUN git clone https://github.com/AlexeyAB/darknet.git . \
-    && git checkout 59c86222c5387bffd9108a21885f80e980ece234
-
-# Build GPU version
-# Update CUDA architectures for CUDA 12 (removed deprecated compute_35, etc.)
-RUN sed -i 's/GPU=0/GPU=1/g' Makefile \
+# Clone darknet, build GPU version only (skip CPU to save space)
+RUN git clone --depth 1 https://github.com/AlexeyAB/darknet.git . \
+    && sed -i 's/GPU=0/GPU=1/g' Makefile \
     && sed -i 's/CUDNN=0/CUDNN=1/g' Makefile \
     && sed -i 's/CUDNN_HALF=0/CUDNN_HALF=1/g' Makefile \
     && sed -i 's/LIBSO=0/LIBSO=1/g' Makefile \
     && sed -i 's/-gencode arch=compute_35,code=sm_35//g' Makefile \
-    && sed -i 's/-gencode arch=compute_50,code=\[sm_50,compute_50\]/-gencode arch=compute_50,code=sm_50/g' Makefile \
-    && sed -i 's/-gencode arch=compute_52,code=\[sm_52,compute_52\]/-gencode arch=compute_52,code=sm_52/g' Makefile \
-    && sed -i 's/-gencode arch=compute_61,code=\[sm_61,compute_61\]/-gencode arch=compute_61,code=sm_61/g' Makefile \
-    && sed -i 's/-gencode arch=compute_70,code=\[sm_70,compute_70\]/-gencode arch=compute_70,code=sm_70 -gencode arch=compute_89,code=sm_89/g' Makefile \
+    && sed -i 's/-gencode arch=compute_50,code=\[sm_50,compute_50\]//g' Makefile \
+    && sed -i 's/-gencode arch=compute_52,code=\[sm_52,compute_52\]//g' Makefile \
+    && sed -i 's/-gencode arch=compute_61,code=\[sm_61,compute_61\]//g' Makefile \
+    && sed -i 's/-gencode arch=compute_70,code=\[sm_70,compute_70\]/-gencode arch=compute_89,code=sm_89/g' Makefile \
     && make -j$(nproc) \
-    && cp libdarknet.so libdarknet_gpu.so
+    && strip libdarknet.so
 
-# Build CPU version
-RUN sed -i 's/GPU=1/GPU=0/g' Makefile \
-    && sed -i 's/CUDNN=1/CUDNN=0/g' Makefile \
-    && sed -i 's/CUDNN_HALF=1/CUDNN_HALF=0/g' Makefile \
-    && make clean \
-    && make -j$(nproc) \
-    && cp libdarknet.so libdarknet_cpu.so
+# Stage 2: Runtime image (minimal)
+FROM docker.io/nvidia/cuda:12.4.1-cudnn-runtime-ubuntu22.04
 
-# Stage 2: Runtime image
-FROM docker.io/nvidia/cuda:12.4.1-cudnn-runtime-ubuntu22.04 AS ml_api
+ENV DEBIAN_FRONTEND=noninteractive \
+    VIRTUAL_ENV=/opt/venv \
+    PATH="/opt/venv/bin:$PATH" \
+    LD_LIBRARY_PATH=/darknet:$LD_LIBRARY_PATH \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
 
-ENV DEBIAN_FRONTEND=noninteractive
-
+# Install minimal dependencies, setup venv, clone code, cleanup - all in one layer
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     python3 \
     python3-pip \
     python3-venv \
-    wget \
     git \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy compiled darknet libraries
-COPY --from=darknet_builder /darknet_build/libdarknet_gpu.so /darknet/
-COPY --from=darknet_builder /darknet_build/libdarknet_cpu.so /darknet/
-
-# Create virtual environment to avoid externally-managed-environment error
-ENV VIRTUAL_ENV=/opt/venv
-RUN python3 -m venv $VIRTUAL_ENV
-ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-
-# Install Python dependencies
-RUN pip install --no-cache-dir --upgrade pip \
+    && python3 -m venv $VIRTUAL_ENV \
+    && pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir \
-    opencv_python_headless \
-    onnxruntime-gpu \
-    flask \
-    gunicorn \
-    requests \
-    pillow \
-    numpy
+        opencv_python_headless \
+        onnxruntime-gpu \
+        flask \
+        gunicorn \
+        requests \
+        pillow \
+        numpy \
+    && git clone --depth 1 --filter=blob:none --sparse https://github.com/TheSpaghettiDetective/obico-server.git /tmp/obico \
+    && cd /tmp/obico && git sparse-checkout set ml_api \
+    && mkdir -p /app && cp -r ml_api/* /app/ \
+    && rm -rf /tmp/obico \
+    && apt-get purge -y git \
+    && apt-get autoremove -y \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /root/.cache /tmp/*
 
 WORKDIR /app
 
-# Clone ML API code using git (more reliable than wget)
-RUN git clone --depth 1 --filter=blob:none --sparse https://github.com/TheSpaghettiDetective/obico-server.git /tmp/obico \
-    && cd /tmp/obico \
-    && git sparse-checkout set ml_api \
-    && cp -r ml_api/* /app/ \
-    && rm -rf /tmp/obico
+# Copy compiled darknet library (GPU only)
+COPY --from=darknet_builder /darknet_build/libdarknet.so /darknet/libdarknet_gpu.so
 
-# Install additional requirements if present
-RUN if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
-
-# Link darknet libraries
-ENV LD_LIBRARY_PATH=/darknet:$LD_LIBRARY_PATH
+# Install requirements if present
+RUN if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt && rm -rf /root/.cache; fi
 
 EXPOSE 3333
-
-# Health check endpoint
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD wget -q --spider http://localhost:3333/hc/ || exit 1
 
 CMD ["gunicorn", "--bind", "0.0.0.0:3333", "--workers", "1", "wsgi:app"]
