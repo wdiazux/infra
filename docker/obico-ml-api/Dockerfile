@@ -1,4 +1,4 @@
-# Obico ML API with CUDA 12 support (Optimized)
+# Obico ML API with CUDA 12 support
 #
 # Based on TheSpaghettiDetective/obico-server ml_api Dockerfile
 # Modified to use CUDA 12.4 for compatibility with modern drivers
@@ -50,6 +50,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-pip \
     python3-venv \
     git \
+    libxcb1 \
+    libgl1 \
+    libglib2.0-0 \
     && python3 -m venv $VIRTUAL_ENV \
     && pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir \

@@ -16,14 +16,9 @@ spec:
   selector:
     app.kubernetes.io/name: comfyui
   ports:
-    # ComfyUI direct access on port 80
+    # Service portal on port 80 (main entry)
     - name: http
       port: 80
-      targetPort: 8188
-      protocol: TCP
-    # Service portal on port 1111
-    - name: portal
-      port: 1111
       targetPort: 1111
       protocol: TCP
     # Syncthing on port 8384

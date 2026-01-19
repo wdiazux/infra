@@ -97,19 +97,19 @@ spec:
           startupProbe:
             httpGet:
               path: /
-              port: http
+              port: portal
             failureThreshold: 60  # 10 minutes to start (model loading)
             periodSeconds: 10
           livenessProbe:
             httpGet:
               path: /
-              port: http
+              port: portal
             periodSeconds: 30
             timeoutSeconds: 10
           readinessProbe:
             httpGet:
               path: /
-              port: http
+              port: portal
             periodSeconds: 10
             timeoutSeconds: 5
       volumes:
