@@ -365,7 +365,30 @@ infra/
 - **Trivy** - Security scanning (IaC + containers)
 - **ansible-lint** - Ansible best practices
 - **yamllint** - YAML linting
-- **pre-commit** - Automated code quality checks (optional)
+- **pre-commit** - Automated code quality checks
+
+### Pre-commit Hooks
+
+Pre-commit hooks automate quality checks before each commit:
+
+```bash
+# Install pre-commit (via nix-shell or pip)
+pre-commit install
+
+# Run manually on all files
+pre-commit run --all-files
+
+# Skip hooks for emergency commits (not recommended)
+git commit --no-verify
+```
+
+**Configured hooks:**
+- **File hygiene**: trailing whitespace, end-of-file fixer, YAML/JSON validation
+- **Security**: detect private keys, prevent commits to main branch
+- **Terraform**: fmt, validate, tflint, trivy security scanning
+- **YAML**: yamllint with Kubernetes-friendly rules
+- **Ansible**: ansible-lint (excludes kubernetes/ and terraform/ directories)
+- **SOPS**: prevents committing unencrypted secrets in `secrets/` directory
 
 ## 🔐 Secrets Management
 
@@ -832,10 +855,10 @@ sops -d secrets/proxmox-creds.enc.yaml
 - 🔄 Talos Day 1/2 Ansible playbooks (Cilium, NFS CSI, GPU Operator)
   - **Note:** Currently using `talosctl`/`kubectl` directly works well
   - Ansible automation would improve repeatability for multi-node deployments
-- 🔄 Security scanning in CI/CD pipeline (Trivy integration)
+- 🔄 Security scanning in CI/CD pipeline (Forgejo Actions + Trivy)
 - 🔄 Automated monthly image rebuilds
 - 🔄 Semantic versioning for templates
-- 🔄 Pre-commit hooks for automated quality checks
+- ✅ Pre-commit hooks for automated quality checks
 
 ## 🤝 Contributing
 
@@ -859,7 +882,7 @@ For questions or issues, please open a GitHub issue.
 
 ---
 
-**Last Updated:** 2026-01-13
+**Last Updated:** 2026-01-19
 **Project Version:** 1.0.0
 **Documentation Status:** ✅ Complete and Production Ready
 

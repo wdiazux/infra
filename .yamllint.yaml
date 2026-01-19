@@ -1,0 +1,49 @@
+# yamllint configuration
+# See: https://yamllint.readthedocs.io/en/stable/configuration.html
+
+extends: default
+
+rules:
+  # Allow long lines (common in Kubernetes manifests)
+  line-length:
+    max: 200
+    level: warning
+
+  # Allow multiple documents in a file (common for Kubernetes)
+  document-start: disable
+
+  # Relaxed indentation for readability
+  indentation:
+    spaces: 2
+    indent-sequences: consistent
+
+  # Allow empty values (common in Kubernetes)
+  empty-values: disable
+
+  # Truthy values - allow 'on' which is common in GitHub Actions
+  truthy:
+    allowed-values: ['true', 'false', 'yes', 'no', 'on', 'off']
+
+  # Comments can start without space after #
+  comments:
+    min-spaces-from-content: 1
+
+  # Braces spacing
+  braces:
+    min-spaces-inside: 0
+    max-spaces-inside: 1
+
+  # Brackets spacing
+  brackets:
+    min-spaces-inside: 0
+    max-spaces-inside: 1
+
+ignore: |
+  # Ignore encrypted files
+  **/*.enc.yaml
+  # Ignore Terraform directories
+  **/.terraform/
+  # Ignore node_modules if any
+  **/node_modules/
+  # Ignore Flux system generated files
+  kubernetes/flux-system/

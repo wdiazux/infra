@@ -1,0 +1,75 @@
+# Pre-commit configuration for infrastructure project
+# Install: pre-commit install
+# Run manually: pre-commit run --all-files
+#
+# Note: All tools (tflint, trivy, ansible-lint, yamllint) are available
+# via nix-shell (shell.nix). Run from within the nix environment.
+
+repos:
+  # General file hygiene
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: '\.enc\.yaml$'
+      - id: end-of-file-fixer
+        exclude: '\.enc\.yaml$'
+      - id: check-yaml
+        exclude: '\.enc\.yaml$'
+        args: ['--allow-multiple-documents']
+      - id: check-json
+      - id: check-merge-conflict
+      - id: detect-private-key
+      - id: no-commit-to-branch
+        args: ['--branch', 'main']
+
+  # Terraform
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.86.0
+    hooks:
+      - id: terraform_fmt
+        args:
+          - --args=-recursive
+      - id: terraform_validate
+        args:
+          - --args=-no-color
+          - --hook-config=--retry-once-with-cleanup=true
+      - id: terraform_tflint
+        args:
+          - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl
+      - id: terraform_trivy
+        args:
+          - --args=--severity=HIGH,CRITICAL
+          - --args=--skip-dirs=**/.terraform
+
+  # YAML linting (exclude encrypted files)
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.33.0
+    hooks:
+      - id: yamllint
+        args: ['-c', '.yamllint.yaml']
+        exclude: '\.enc\.yaml$'
+
+  # Ansible
+  - repo: https://github.com/ansible/ansible-lint
+    rev: v6.22.1
+    hooks:
+      - id: ansible-lint
+        files: \.(yaml|yml)$
+        exclude: |
+          (?x)^(
+            kubernetes/.*|
+            terraform/.*|
+            secrets/.*|
+            \.pre-commit-config\.yaml
+          )$
+
+  # SOPS - prevent committing unencrypted secrets
+  - repo: local
+    hooks:
+      - id: sops-check
+        name: Check for unencrypted secrets
+        entry: bash -c 'for f in "$@"; do if [[ "$f" == secrets/*.yaml ]] && ! grep -q "^sops:" "$f" 2>/dev/null; then echo "ERROR: $f appears unencrypted"; exit 1; fi; done' --
+        language: system
+        files: ^secrets/.*\.yaml$
+        exclude: '\.enc\.yaml$'
