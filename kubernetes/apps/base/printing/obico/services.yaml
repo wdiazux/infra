@@ -2,26 +2,6 @@
 #
 # Exposes Obico server and internal services.
 ---
-# PostgreSQL service (internal)
-apiVersion: v1
-kind: Service
-metadata:
-  name: obico-postgres
-  namespace: printing
-  labels:
-    app.kubernetes.io/name: obico-postgres
-    app.kubernetes.io/component: database
-    app.kubernetes.io/part-of: printing
-spec:
-  type: ClusterIP
-  selector:
-    app.kubernetes.io/name: obico-postgres
-  ports:
-    - name: postgres
-      port: 5432
-      targetPort: 5432
-      protocol: TCP
----
 # Redis service (internal)
 apiVersion: v1
 kind: Service

@@ -28,19 +28,7 @@ spec:
         fsGroup: 65534  # nobody group
         fsGroupChangePolicy: "OnRootMismatch"
       initContainers:
-        # Wait for PostgreSQL to be ready
-        - name: wait-postgres
-          image: postgres:16-alpine
-          command:
-            - sh
-            - -c
-            - |
-              until pg_isready -h obico-postgres -p 5432 -U obico; do
-                echo "Waiting for PostgreSQL..."
-                sleep 2
-              done
-              echo "PostgreSQL is ready"
-        # Database migrations
+        # Database migrations (SQLite stored in /app/data)
         - name: migrate
           image: ghcr.io/gabe565/obico/web:latest
           command: ["python", "manage.py", "migrate"]
