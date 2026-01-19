@@ -1,0 +1,101 @@
+# Obico Server
+#
+# Main web application for 3D printer monitoring.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: obico-server
+  namespace: automation
+  labels:
+    app.kubernetes.io/name: obico-server
+    app.kubernetes.io/component: web
+    app.kubernetes.io/part-of: automation
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: obico-server
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: obico-server
+        app.kubernetes.io/component: web
+        app.kubernetes.io/part-of: automation
+    spec:
+      securityContext:
+        fsGroup: 65534  # nobody group
+        fsGroupChangePolicy: "OnRootMismatch"
+      initContainers:
+        # Database migrations
+        - name: migrate
+          image: ghcr.io/gabe565/obico/web:latest
+          command: ["python", "manage.py", "migrate"]
+          envFrom:
+            - secretRef:
+                name: obico-secret
+          env:
+            - name: REDIS_URL
+              value: "redis://obico-redis:6379"
+            - name: ML_API_HOST
+              value: "http://obico-ml-api:3333"
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+        # Collect static files
+        - name: collectstatic
+          image: ghcr.io/gabe565/obico/web:latest
+          command: ["python", "manage.py", "collectstatic", "--noinput"]
+          envFrom:
+            - secretRef:
+                name: obico-secret
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+      containers:
+        - name: server
+          image: ghcr.io/gabe565/obico/web:latest
+          ports:
+            - name: http
+              containerPort: 3334
+              protocol: TCP
+          envFrom:
+            - secretRef:
+                name: obico-secret
+          env:
+            - name: REDIS_URL
+              value: "redis://obico-redis:6379"
+            - name: ML_API_HOST
+              value: "http://obico-ml-api:3333"
+            - name: DEBUG
+              value: "False"
+            - name: SITE_IS_PUBLIC
+              value: "False"
+            # Internal URLs
+            - name: INTERNAL_MEDIA_HOST
+              value: "http://obico-server:3334"
+          resources:
+            requests:
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+          livenessProbe:
+            httpGet:
+              path: /healthcheck/
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /healthcheck/
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: obico-data

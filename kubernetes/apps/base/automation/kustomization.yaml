@@ -1,6 +1,6 @@
 # Automation Namespace Applications
 #
-# Workflow and smart home automation.
+# Workflow, smart home, and 3D printer automation.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
@@ -8,3 +8,4 @@ resources:
   - postgres/
   - n8n/
   - home-assistant/
+  - obico/  # 3D printer monitoring with AI failure detection

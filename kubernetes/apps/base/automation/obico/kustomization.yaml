@@ -1,0 +1,24 @@
+# Obico - 3D Printer Monitoring
+#
+# AI-powered 3D printer monitoring with failure detection.
+# Uses GPU for ML inference (optional but recommended).
+#
+# Features:
+# - Spaghetti/failure detection
+# - Remote monitoring
+# - Telegram notifications
+# - Klipper/OctoPrint integration
+#
+# Docs: https://www.obico.io/docs/server-guides/
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: automation
+
+resources:
+  - pvc.yaml
+  - redis-deployment.yaml
+  - ml-api-deployment.yaml
+  - server-deployment.yaml
+  - services.yaml
+  - secret.yaml

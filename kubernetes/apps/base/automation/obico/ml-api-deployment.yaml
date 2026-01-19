@@ -1,0 +1,66 @@
+# Obico ML API
+#
+# Machine learning service for failure detection.
+# Optional GPU support for faster inference.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: obico-ml-api
+  namespace: automation
+  labels:
+    app.kubernetes.io/name: obico-ml-api
+    app.kubernetes.io/component: ml
+    app.kubernetes.io/part-of: automation
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: obico-ml-api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: obico-ml-api
+        app.kubernetes.io/component: ml
+        app.kubernetes.io/part-of: automation
+    spec:
+      # Enable GPU for ML inference (comment out if not using GPU)
+      runtimeClassName: nvidia
+      containers:
+        - name: ml-api
+          image: ghcr.io/gabe565/obico/ml-api:latest
+          ports:
+            - name: http
+              containerPort: 3333
+              protocol: TCP
+          env:
+            - name: DEBUG
+              value: "False"
+            - name: FLASK_APP
+              value: "server.py"
+            # GPU configuration
+            - name: NVIDIA_VISIBLE_DEVICES
+              value: "all"
+            - name: HAS_GPU
+              value: "True"
+          resources:
+            requests:
+              memory: 512Mi
+              nvidia.com/gpu: "1"
+            limits:
+              memory: 4Gi
+              nvidia.com/gpu: "1"
+          livenessProbe:
+            httpGet:
+              path: /p/
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /p/
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10

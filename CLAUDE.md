@@ -111,6 +111,7 @@ infra/
 | Radarr | 10.10.2.43 | Movies |
 | Sonarr | 10.10.2.44 | TV |
 | Bazarr | 10.10.2.45 | Subtitles |
+| Obico | 10.10.2.27 | 3D printer monitoring |
 
 **Domains**: home-infra.net, home.arpa (ControlD), .local (mDNS), reynoza.org (Pangolin VPS)
 

@@ -1,0 +1,19 @@
+# Obico Storage
+#
+# Persistent storage for Obico data, media, and static files.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: obico-data
+  namespace: automation
+  labels:
+    app.kubernetes.io/name: obico
+    app.kubernetes.io/component: storage
+    app.kubernetes.io/part-of: automation
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 20Gi  # Stores timelapse videos, thumbnails, etc.

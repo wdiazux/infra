@@ -74,6 +74,7 @@ LoadBalancer IPs assigned to Kubernetes services.
 | 10.10.2.43 | Radarr | 80 | arr-stack |
 | 10.10.2.44 | Sonarr | 80 | arr-stack |
 | 10.10.2.45 | Bazarr | 80 | arr-stack |
+| 10.10.2.27 | Obico | 80 | automation |
 
 ---
 

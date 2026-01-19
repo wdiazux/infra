@@ -1,0 +1,65 @@
+# Obico Services
+#
+# Exposes Obico server and internal services.
+---
+# Redis service (internal)
+apiVersion: v1
+kind: Service
+metadata:
+  name: obico-redis
+  namespace: automation
+  labels:
+    app.kubernetes.io/name: obico-redis
+    app.kubernetes.io/component: cache
+    app.kubernetes.io/part-of: automation
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: obico-redis
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: 6379
+      protocol: TCP
+---
+# ML API service (internal)
+apiVersion: v1
+kind: Service
+metadata:
+  name: obico-ml-api
+  namespace: automation
+  labels:
+    app.kubernetes.io/name: obico-ml-api
+    app.kubernetes.io/component: ml
+    app.kubernetes.io/part-of: automation
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: obico-ml-api
+  ports:
+    - name: http
+      port: 3333
+      targetPort: 3333
+      protocol: TCP
+---
+# Web server (LoadBalancer)
+apiVersion: v1
+kind: Service
+metadata:
+  name: obico-server
+  namespace: automation
+  labels:
+    app.kubernetes.io/name: obico-server
+    app.kubernetes.io/component: web
+    app.kubernetes.io/part-of: automation
+  annotations:
+    io.cilium/lb-ipam-ips: "10.10.2.27"
+spec:
+  type: LoadBalancer
+  selector:
+    app.kubernetes.io/name: obico-server
+  ports:
+    - name: http
+      port: 80
+      targetPort: 3334
+      protocol: TCP
