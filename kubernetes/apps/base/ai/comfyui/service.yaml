@@ -16,8 +16,13 @@ spec:
   selector:
     app.kubernetes.io/name: comfyui
   ports:
-    # Service portal on 1111 - main entry point
+    # ComfyUI direct access on port 80
     - name: http
       port: 80
+      targetPort: 8188
+      protocol: TCP
+    # Service portal on port 1111
+    - name: portal
+      port: 1111
       targetPort: 1111
       protocol: TCP

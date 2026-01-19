@@ -34,8 +34,12 @@ spec:
         - name: comfyui
           image: ghcr.io/ai-dock/comfyui:v2-cuda-12.1.1-base-22.04-v0.2.7
           ports:
-            # Service portal (Caddy) - main entry point
+            # ComfyUI direct (via Caddy)
             - name: http
+              containerPort: 8188
+              protocol: TCP
+            # Service portal
+            - name: portal
               containerPort: 1111
               protocol: TCP
           env:
