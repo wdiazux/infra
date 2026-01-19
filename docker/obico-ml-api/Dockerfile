@@ -27,10 +27,16 @@ RUN git clone https://github.com/AlexeyAB/darknet.git . \
     && git checkout 59c86222c5387bffd9108a21885f80e980ece234
 
 # Build GPU version
+# Update CUDA architectures for CUDA 12 (removed deprecated compute_35, etc.)
 RUN sed -i 's/GPU=0/GPU=1/g' Makefile \
     && sed -i 's/CUDNN=0/CUDNN=1/g' Makefile \
     && sed -i 's/CUDNN_HALF=0/CUDNN_HALF=1/g' Makefile \
     && sed -i 's/LIBSO=0/LIBSO=1/g' Makefile \
+    && sed -i 's/-gencode arch=compute_35,code=sm_35//g' Makefile \
+    && sed -i 's/-gencode arch=compute_50,code=\[sm_50,compute_50\]/-gencode arch=compute_50,code=sm_50/g' Makefile \
+    && sed -i 's/-gencode arch=compute_52,code=\[sm_52,compute_52\]/-gencode arch=compute_52,code=sm_52/g' Makefile \
+    && sed -i 's/-gencode arch=compute_61,code=\[sm_61,compute_61\]/-gencode arch=compute_61,code=sm_61/g' Makefile \
+    && sed -i 's/-gencode arch=compute_70,code=\[sm_70,compute_70\]/-gencode arch=compute_70,code=sm_70 -gencode arch=compute_89,code=sm_89/g' Makefile \
     && make -j$(nproc) \
     && cp libdarknet.so libdarknet_gpu.so
 
