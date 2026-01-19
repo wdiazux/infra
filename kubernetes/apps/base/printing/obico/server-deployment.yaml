@@ -68,6 +68,7 @@ spec:
       containers:
         - name: server
           image: ghcr.io/gabe565/obico/web:latest
+          command: ["python", "manage.py", "runserver", "--noreload", "0.0.0.0:3334"]
           ports:
             - name: http
               containerPort: 3334
@@ -99,14 +100,44 @@ spec:
             httpGet:
               path: /healthcheck/
               port: http
+            initialDelaySeconds: 30
             periodSeconds: 30
             timeoutSeconds: 10
           readinessProbe:
             httpGet:
               path: /healthcheck/
               port: http
+            initialDelaySeconds: 10
             periodSeconds: 10
             timeoutSeconds: 5
+        # Celery worker for background tasks
+        - name: tasks
+          image: ghcr.io/gabe565/obico/web:latest
+          command:
+            - celery
+            - --app=config
+            - worker
+            - --beat
+            - --loglevel=info
+            - --concurrency=2
+            - --queues=realtime,celery
+            - --schedule=/tmp/celerybeat-schedule
+          envFrom:
+            - secretRef:
+                name: obico-secret
+          env:
+            - name: REDIS_URL
+              value: "redis://obico-redis:6379"
+            - name: ML_API_HOST
+              value: "http://obico-ml-api:3333"
+          resources:
+            requests:
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
       volumes:
         - name: data
           persistentVolumeClaim:
