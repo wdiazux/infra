@@ -3,8 +3,8 @@
 # Based on TheSpaghettiDetective/obico-server ml_api Dockerfile
 # Modified to use CUDA 12.4 for compatibility with modern drivers
 #
-# Build: docker build -t ghcr.io/wdiazux/obico-ml-api:cuda12.1 .
-# Push: docker push ghcr.io/wdiazux/obico-ml-api:cuda12.1
+# Build: docker build -t ghcr.io/wdiazux/obico-ml-api:cuda12.2 .
+# Push: docker push ghcr.io/wdiazux/obico-ml-api:cuda12.2
 #
 # Models are baked into the image (~100MB combined):
 # - /model_cache/ml_api/darknet/model-weights.darknet
@@ -92,4 +92,4 @@ RUN if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.
 
 EXPOSE 3333
 
-CMD ["gunicorn", "--bind", "0.0.0.0:3333", "--workers", "1", "wsgi:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:3333", "--workers", "1", "wsgi:application"]

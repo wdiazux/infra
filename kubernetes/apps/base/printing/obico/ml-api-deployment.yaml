@@ -31,7 +31,7 @@ spec:
         - name: ml-api
           # Custom image with CUDA 12 support (models included)
           # Build: cd docker/obico-ml-api && ./build.sh --push
-          image: ghcr.io/wdiazux/obico-ml-api:cuda12.1
+          image: ghcr.io/wdiazux/obico-ml-api:cuda12.2
           ports:
             - name: http
               containerPort: 3333
