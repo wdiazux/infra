@@ -15,7 +15,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 IMAGE_NAME="${IMAGE_NAME:-ghcr.io/wdiazux/obico-ml-api}"
-IMAGE_TAG="${IMAGE_TAG:-cuda12.2}"
+IMAGE_TAG="${IMAGE_TAG:-cuda12.3}"
 PUSH=false
 LATEST=false
 

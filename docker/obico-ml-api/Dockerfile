@@ -3,8 +3,8 @@
 # Based on TheSpaghettiDetective/obico-server ml_api Dockerfile
 # Modified to use CUDA 12.4 for compatibility with modern drivers
 #
-# Build: docker build -t ghcr.io/wdiazux/obico-ml-api:cuda12.2 .
-# Push: docker push ghcr.io/wdiazux/obico-ml-api:cuda12.2
+# Build: docker build -t ghcr.io/wdiazux/obico-ml-api:cuda12.3 .
+# Push: docker push ghcr.io/wdiazux/obico-ml-api:cuda12.3
 #
 # Models are baked into the image (~100MB combined):
 # - /model_cache/ml_api/darknet/model-weights.darknet
