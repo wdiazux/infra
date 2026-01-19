@@ -1,7 +1,8 @@
 # Obico ML API
 #
 # Machine learning service for failure detection.
-# Uses GPU for faster inference.
+# Running in CPU mode due to CUDA 11.4 vs 12.x driver incompatibility.
+# TODO: Build custom image with CUDA 12 support for GPU acceleration.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -25,7 +26,6 @@ spec:
         app.kubernetes.io/component: ml
         app.kubernetes.io/part-of: printing
     spec:
-      runtimeClassName: nvidia
       containers:
         - name: ml-api
           image: ghcr.io/gabe565/obico/ml-api:latest
@@ -38,27 +38,25 @@ spec:
               value: "False"
             - name: FLASK_APP
               value: "server.py"
-            - name: NVIDIA_VISIBLE_DEVICES
-              value: "all"
             - name: HAS_GPU
-              value: "True"
+              value: "False"
           resources:
             requests:
               memory: 512Mi
-              nvidia.com/gpu: "1"
+              cpu: 500m
             limits:
               memory: 4Gi
-              nvidia.com/gpu: "1"
+              cpu: 2000m
           livenessProbe:
             httpGet:
               path: /p/
               port: http
-            initialDelaySeconds: 60
+            initialDelaySeconds: 120
             periodSeconds: 30
             timeoutSeconds: 10
           readinessProbe:
             httpGet:
               path: /p/
               port: http
-            initialDelaySeconds: 30
+            initialDelaySeconds: 60
             periodSeconds: 10
