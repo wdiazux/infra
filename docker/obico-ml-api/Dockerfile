@@ -3,8 +3,12 @@
 # Based on TheSpaghettiDetective/obico-server ml_api Dockerfile
 # Modified to use CUDA 12.4 for compatibility with modern drivers
 #
-# Build: docker build -t ghcr.io/wdiazux/obico-ml-api:cuda12 .
-# Push: docker push ghcr.io/wdiazux/obico-ml-api:cuda12
+# Build: docker build -t ghcr.io/wdiazux/obico-ml-api:cuda12.1 .
+# Push: docker push ghcr.io/wdiazux/obico-ml-api:cuda12.1
+#
+# Models are baked into the image (~100MB combined):
+# - /model_cache/ml_api/darknet/model-weights.darknet
+# - /model_cache/ml_api/onnx/model-weights.onnx
 
 # Stage 1: Build Darknet with GPU support
 FROM docker.io/nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04 AS darknet_builder
@@ -43,9 +47,10 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
-# Install minimal dependencies, setup venv, clone code, cleanup - all in one layer
+# Install minimal dependencies, setup venv, clone code, download models, cleanup - all in one layer
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
+    curl \
     python3 \
     python3-pip \
     python3-venv \
@@ -67,7 +72,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && cd /tmp/obico && git sparse-checkout set ml_api \
     && mkdir -p /app && cp -r ml_api/* /app/ \
     && rm -rf /tmp/obico \
-    && apt-get purge -y git \
+    && mkdir -p /model_cache/ml_api/darknet /model_cache/ml_api/onnx \
+    && curl -fSL -o /model_cache/ml_api/darknet/model-weights.darknet \
+        "https://tsd-pub-static.s3.us-east-1.amazonaws.com/ml-models/model-weights-ef79dacfd0051ab526f3002d5f5f9912.darknet" \
+    && curl -fSL -o /model_cache/ml_api/onnx/model-weights.onnx \
+        "https://tsd-pub-static.s3.amazonaws.com/ml-models/model-weights-5a6b1be1fa.onnx" \
+    && apt-get purge -y git curl \
     && apt-get autoremove -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /root/.cache /tmp/*
