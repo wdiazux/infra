@@ -20,7 +20,7 @@
 ---
 - name: Day 1 Configuration Orchestration
   hosts: localhost
-  gather_facts: no
+  gather_facts: false
 
   tasks:
     - name: Display orchestration start
@@ -63,7 +63,7 @@
 
 - name: Display orchestration complete
   hosts: localhost
-  gather_facts: no
+  gather_facts: false
 
   tasks:
     - name: Display completion summary

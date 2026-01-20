@@ -38,8 +38,8 @@
     user: "{{ packer_ssh_user }}"
     key: "{{ ssh_public_key }}"
     state: present
-    manage_dir: yes
-    exclusive: no
+    manage_dir: true
+    exclusive: false
     comment: "Added by Packer build"
   when: has_ssh_key
   tags: [ssh]

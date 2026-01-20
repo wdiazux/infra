@@ -8,12 +8,12 @@
   block:
     - name: Update package database (Arch Linux)
       community.general.pacman:
-        update_cache: yes
+        update_cache: true
       tags: [arch]
 
     - name: Upgrade all packages (Arch Linux)
       community.general.pacman:
-        upgrade: yes
+        upgrade: true
       tags: [arch]
 
     - name: Set Arch-specific package names
@@ -39,8 +39,8 @@
 
     - name: Force refresh package database on failure
       ansible.builtin.command: pacman -Syy
-      become: yes
-      ignore_errors: yes
+      become: true
+      failed_when: false
 
     - name: Retry baseline package installation
       community.general.pacman:
@@ -55,7 +55,7 @@
       - gnupg
     state: present
   tags: [arch, security]
-  ignore_errors: yes
+  failed_when: false
 
 - name: Yay AUR helper installation
   block:
@@ -82,7 +82,7 @@
         repo: https://aur.archlinux.org/yay.git
         dest: /tmp/yay-install/yay
         version: master
-      become: yes
+      become: true
       become_user: "{{ packer_ssh_user }}"
       tags: [arch, yay]
 
@@ -90,7 +90,7 @@
       ansible.builtin.shell: |
         cd /tmp/yay-install/yay
         makepkg -si --noconfirm
-      become: yes
+      become: true
       become_user: "{{ packer_ssh_user }}"
       args:
         creates: /usr/bin/yay

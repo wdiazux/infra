@@ -18,8 +18,8 @@
 
 - name: Remove unnecessary packages (Debian/Ubuntu)
   ansible.builtin.apt:
-    autoremove: yes
-    autoclean: yes
+    autoremove: true
+    autoclean: true
   when: ansible_facts['os_family'] == "Debian"
   tags: [cleanup, debian, ubuntu]
 
@@ -60,7 +60,7 @@
 - name: Enable serial console getty (ttyS0)
   ansible.builtin.systemd:
     name: serial-getty@ttyS0.service
-    enabled: yes
+    enabled: true
   tags: [cleanup, console]
 
 - name: Remove temporary files (excluding ansible)

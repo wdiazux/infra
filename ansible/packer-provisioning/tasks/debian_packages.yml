@@ -8,15 +8,15 @@
   block:
     - name: Update APT cache (Debian/Ubuntu)
       ansible.builtin.apt:
-        update_cache: yes
+        update_cache: true
         cache_valid_time: 3600
       tags: [debian, ubuntu]
 
     - name: Upgrade all packages (Debian/Ubuntu)
       ansible.builtin.apt:
         upgrade: dist
-        autoremove: yes
-        autoclean: yes
+        autoremove: true
+        autoclean: true
       tags: [debian, ubuntu]
 
     - name: Install baseline packages (Debian/Ubuntu)
@@ -37,9 +37,9 @@
 
     - name: Force APT cache update on failure
       ansible.builtin.apt:
-        update_cache: yes
-        force_apt_get: yes
-      ignore_errors: yes
+        update_cache: true
+        force_apt_get: true
+      failed_when: false
 
     - name: Retry baseline package installation
       ansible.builtin.apt:
@@ -55,7 +55,7 @@
       - gpg
     state: present
   tags: [debian, ubuntu]
-  ignore_errors: yes
+  failed_when: false
 
 - name: Install CrowdSec packages (Debian/Ubuntu)
   ansible.builtin.shell: |
@@ -83,7 +83,7 @@
     - crowdsec
     - crowdsec-firewall-bouncer
   when: crowdsec_installed
-  ignore_errors: yes
+  failed_when: false
   tags: [debian, ubuntu, security]
 
 - name: Remove CAPI credentials from golden image
@@ -195,8 +195,8 @@
 - name: Enable CrowdSec first-boot service
   ansible.builtin.systemd:
     name: crowdsec-first-boot.service
-    enabled: yes
-    daemon_reload: yes
+    enabled: true
+    daemon_reload: true
   when: crowdsec_installed
   tags: [debian, ubuntu, security]
 

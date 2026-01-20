@@ -17,8 +17,8 @@
 ---
 - name: Prepare Proxmox Host with GPU Passthrough Support
   hosts: proxmox
-  gather_facts: yes
-  become: yes
+  gather_facts: true
+  become: true
 
   vars:
     # GRUB configuration based on CPU vendor
@@ -121,7 +121,7 @@
         path: /etc/apt/sources.list.d/pve-enterprise.list
         regexp: '^deb https://enterprise.proxmox.com'
         line: '# deb https://enterprise.proxmox.com/debian/pve bookworm pve-enterprise'
-        backup: yes
+        backup: true
       when:
         - proxmox_disable_enterprise_repo | bool
         - proxmox_major_version == "8"
@@ -132,7 +132,7 @@
         path: /etc/apt/sources.list.d/pve-enterprise.sources
         regexp: '^Enabled:'
         line: 'Enabled: no'
-        backup: yes
+        backup: true
       when:
         - proxmox_disable_enterprise_repo | bool
         - proxmox_major_version == "9"
@@ -146,7 +146,7 @@
           # Proxmox VE No-Subscription Repository (free updates)
           deb http://download.proxmox.com/debian/pve bookworm pve-no-subscription
         mode: '0644'
-        backup: yes
+        backup: true
       when:
         - proxmox_enable_no_subscription_repo | bool
         - proxmox_major_version == "8"
@@ -163,7 +163,7 @@
           Components: pve-no-subscription
           Enabled: yes
         mode: '0644'
-        backup: yes
+        backup: true
       when:
         - proxmox_enable_no_subscription_repo | bool
         - proxmox_major_version == "9"
@@ -176,7 +176,7 @@
           # Ceph Reef Repository
           deb http://download.proxmox.com/debian/ceph-reef bookworm no-subscription
         mode: '0644'
-        backup: yes
+        backup: true
       when:
         - proxmox_enable_ceph_repo | bool
         - proxmox_major_version == "8"
@@ -193,7 +193,7 @@
           Components: no-subscription
           Enabled: yes
         mode: '0644'
-        backup: yes
+        backup: true
       when:
         - proxmox_enable_ceph_repo | bool
         - proxmox_major_version == "9"
@@ -206,13 +206,13 @@
           # Proxmox VE Testing Repository (disabled by default)
           # deb http://download.proxmox.com/debian/pve bookworm pvetest
         mode: '0644'
-        backup: yes
+        backup: true
       when: proxmox_enable_pvetest_repo | bool
       tags: [repos, testing]
 
     - name: Update APT cache after repository changes
       ansible.builtin.apt:
-        update_cache: yes
+        update_cache: true
       when: proxmox_disable_enterprise_repo | bool or proxmox_enable_no_subscription_repo | bool
       tags: [repos]
 
@@ -220,7 +220,7 @@
       ansible.builtin.apt:
         name: "{{ essential_packages }}"
         state: present
-        update_cache: yes
+        update_cache: true
       when: proxmox_install_essential_packages | bool
       tags: [packages]
 
@@ -237,7 +237,7 @@
         path: /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js
         regexp: "Ext\\.Msg\\.show\\(\\{[\\s\\S]*?checked_command: function"
         replace: "void({ //Ext.Msg.show({\nchecked_command: function"
-        backup: yes
+        backup: true
       when:
         - proxmox_remove_subscription_nag | bool
         - widget_toolkit_check.rc == 0
@@ -247,7 +247,7 @@
     - name: Disable HA services for single-node setup
       ansible.builtin.systemd:
         name: "{{ item }}"
-        enabled: no
+        enabled: false
         state: stopped
       loop:
         - pve-ha-lrm
@@ -260,7 +260,7 @@
     - name: Enable HA services for clustered setup
       ansible.builtin.systemd:
         name: "{{ item }}"
-        enabled: yes
+        enabled: true
         state: started
       loop:
         - pve-ha-lrm
@@ -273,13 +273,15 @@
     - name: Perform system update (apt upgrade)
       ansible.builtin.apt:
         upgrade: dist
-        update_cache: yes
-        autoremove: yes
-        autoclean: yes
+        update_cache: true
+        autoremove: true
+        autoclean: true
       when: proxmox_update_system | bool
       tags: [updates]
 
     - name: Configure UFW firewall
+      when: proxmox_configure_firewall | bool
+      tags: [firewall]
       block:
         - name: Install UFW if not present
           ansible.builtin.apt:
@@ -313,10 +315,10 @@
         - name: Enable UFW
           community.general.ufw:
             state: enabled
-      when: proxmox_configure_firewall | bool
-      tags: [firewall]
 
     - name: Configure chrony for time synchronization
+      when: proxmox_configure_ntp | bool
+      tags: [ntp]
       block:
         - name: Install chrony
           ansible.builtin.apt:
@@ -326,13 +328,15 @@
         - name: Ensure chrony is running and enabled
           ansible.builtin.systemd:
             name: chronyd
-            enabled: yes
+            enabled: true
             state: started
-      when: proxmox_configure_ntp | bool
-      tags: [ntp]
 
     - name: Check if IOMMU is already enabled
-      ansible.builtin.shell: dmesg | grep -i iommu | grep -i enabled
+      ansible.builtin.shell: |
+        set -o pipefail
+        dmesg | grep -i iommu | grep -i enabled
+      args:
+        executable: /bin/bash
       register: iommu_check
       changed_when: false
       failed_when: false
@@ -351,7 +355,10 @@
 
     - name: Parse GRUB cmdline
       ansible.builtin.set_fact:
-        current_grub_cmdline: "{{ (grub_config['content'] | b64decode | regex_search('GRUB_CMDLINE_LINUX_DEFAULT=\"(.*)\"', '\\1') | first) if grub_config['content'] is defined else '' }}"
+        current_grub_cmdline: >-
+          {{ (grub_config['content'] | b64decode |
+              regex_search('GRUB_CMDLINE_LINUX_DEFAULT="(.*)"', '\1') | first)
+              if grub_config['content'] is defined else '' }}
       tags: [iommu, gpu]
 
     - name: Set target GRUB cmdline based on CPU vendor
@@ -364,7 +371,7 @@
         path: /etc/default/grub
         regexp: '^GRUB_CMDLINE_LINUX_DEFAULT='
         line: 'GRUB_CMDLINE_LINUX_DEFAULT="{{ target_grub_cmdline }}"'
-        backup: yes
+        backup: true
       register: grub_updated
       notify: Update GRUB
       tags: [iommu, gpu]
@@ -375,7 +382,7 @@
       tags: [iommu, gpu]
 
     - name: Load VFIO kernel modules
-      ansible.builtin.modprobe:
+      community.general.modprobe:
         name: "{{ item }}"
         state: present
       loop: "{{ vfio_modules }}"
@@ -386,7 +393,8 @@
       ansible.builtin.lineinfile:
         path: /etc/modules
         line: "{{ item }}"
-        create: yes
+        create: true
+        mode: '0644'
       loop: "{{ vfio_modules }}"
       when: has_gpu | default(false)
       tags: [vfio, gpu]
@@ -416,7 +424,8 @@
       ansible.builtin.lineinfile:
         path: /etc/modprobe.d/zfs.conf
         line: "options zfs zfs_arc_max={{ (zfs_arc_max_gb | default(16)) * 1024 * 1024 * 1024 }}"
-        create: yes
+        create: true
+        mode: '0644'
         regexp: '^options zfs zfs_arc_max='
       when: zfs_check.rc == 0
       notify: Update initramfs
@@ -441,7 +450,11 @@
       tags: [network]
 
     - name: Get GPU information
-      ansible.builtin.shell: lspci | grep -i vga | grep -i nvidia
+      ansible.builtin.shell: |
+        set -o pipefail
+        lspci | grep -i vga | grep -i nvidia
+      args:
+        executable: /bin/bash
       register: gpu_info
       changed_when: false
       failed_when: false
@@ -455,7 +468,11 @@
       tags: [gpu, info]
 
     - name: Get GPU PCI ID
-      ansible.builtin.shell: lspci | grep -i nvidia | awk '{print $1}'
+      ansible.builtin.shell: |
+        set -o pipefail
+        lspci | grep -i nvidia | awk '{print $1}'
+      args:
+        executable: /bin/bash
       register: gpu_pci
       changed_when: false
       failed_when: false
@@ -534,14 +551,23 @@
       tags: [gpu, terraform, mapping]
 
     - name: Get GPU vendor:device ID
-      ansible.builtin.shell: lspci -nn | grep -i nvidia | head -1 | grep -oP '\[\K[0-9a-f]{4}:[0-9a-f]{4}(?=\])'
+      ansible.builtin.shell: |
+        set -o pipefail
+        lspci -nn | grep -i nvidia | head -1 | grep -oP '\[\K[0-9a-f]{4}:[0-9a-f]{4}(?=\])'
+      args:
+        executable: /bin/bash
       register: gpu_vendor_device
       changed_when: false
       when: has_gpu | default(false)
       tags: [gpu, terraform, mapping]
 
     - name: Get GPU subsystem ID
-      ansible.builtin.shell: lspci -vnn -s {{ gpu_pci.stdout.split('\n')[0] }} | grep -oP 'Subsystem:.*\[\K[0-9a-f]{4}:[0-9a-f]{4}(?=\])' | head -1
+      ansible.builtin.shell: |
+        set -o pipefail
+        lspci -vnn -s {{ gpu_pci.stdout.split('\n')[0] }} | \
+          grep -oP 'Subsystem:.*\[\K[0-9a-f]{4}:[0-9a-f]{4}(?=\])' | head -1
+      args:
+        executable: /bin/bash
       register: gpu_subsystem_id
       changed_when: false
       failed_when: false
@@ -549,7 +575,12 @@
       tags: [gpu, terraform, mapping]
 
     - name: Get GPU IOMMU group
-      ansible.builtin.shell: find /sys/kernel/iommu_groups/ -type l | xargs -I {} sh -c 'basename $(dirname {})' 2>/dev/null | head -1
+      ansible.builtin.shell: |
+        set -o pipefail
+        find /sys/kernel/iommu_groups/ -type l | \
+          xargs -I {} sh -c 'basename $(dirname {})' 2>/dev/null | head -1
+      args:
+        executable: /bin/bash
       register: gpu_iommu_temp
       changed_when: false
       when: has_gpu | default(false)
@@ -557,12 +588,15 @@
 
     - name: Find GPU IOMMU group number
       ansible.builtin.shell: |
+        set -o pipefail
         for iommu_group in /sys/kernel/iommu_groups/*/devices/*; do
           if [[ "$iommu_group" == *"{{ gpu_pci.stdout.split('\n')[0] }}"* ]]; then
             echo "$iommu_group" | grep -oP 'iommu_groups/\K[0-9]+'
             break
           fi
         done
+      args:
+        executable: /bin/bash
       register: gpu_iommu_group
       changed_when: false
       when: has_gpu | default(false)
@@ -600,7 +634,11 @@
       tags: [gpu, terraform, mapping]
 
     - name: List IOMMU groups
-      ansible.builtin.shell: find /sys/kernel/iommu_groups/ -type l | sort -V
+      ansible.builtin.shell: |
+        set -o pipefail
+        find /sys/kernel/iommu_groups/ -type l | sort -V
+      args:
+        executable: /bin/bash
       register: iommu_groups
       changed_when: false
       failed_when: false

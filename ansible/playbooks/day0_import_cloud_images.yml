@@ -64,7 +64,11 @@
         mode: '0755'
 
     - name: Check if Debian base VM already exists
-      ansible.builtin.shell: qm list | grep -q "{{ debian_vm_id }}"
+      ansible.builtin.shell: |
+        set -o pipefail
+        qm list | grep -q "{{ debian_vm_id }}"
+      args:
+        executable: /bin/bash
       register: debian_vm_exists
       changed_when: false
       failed_when: false
@@ -124,7 +128,11 @@
             msg: "Debian base VM {{ debian_vm_id }} created"
 
     - name: Check if Ubuntu base VM already exists
-      ansible.builtin.shell: qm list | grep -q "{{ ubuntu_vm_id }}"
+      ansible.builtin.shell: |
+        set -o pipefail
+        qm list | grep -q "{{ ubuntu_vm_id }}"
+      args:
+        executable: /bin/bash
       register: ubuntu_vm_exists
       changed_when: false
       failed_when: false

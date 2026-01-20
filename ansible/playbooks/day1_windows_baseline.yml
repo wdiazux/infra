@@ -19,7 +19,7 @@
 ---
 - name: Configure Windows Server VM Baseline
   hosts: windows_vms
-  gather_facts: yes
+  gather_facts: true
 
   vars:
     # Timezone configuration
@@ -112,7 +112,7 @@
         direction: in
         protocol: tcp
         state: present
-        enabled: yes
+        enabled: true
       loop: "{{ firewall_allowed_ports }}"
 
     - name: Block all other inbound traffic
@@ -121,7 +121,7 @@
         action: block
         direction: in
         state: present
-        enabled: yes
+        enabled: true
 
     - name: Disable SMBv1
       ansible.windows.win_feature:
@@ -184,7 +184,7 @@
     - name: Install Windows Updates
       ansible.windows.win_updates:
         category_names: "{{ windows_update_categories }}"
-        reboot: yes
+        reboot: true
         reboot_timeout: 3600
       when: enable_windows_update
       register: update_result
@@ -197,7 +197,7 @@
       when: enable_windows_update
 
     - name: Install Docker via Chocolatey
-      community.windows.win_chocolatey:
+      chocolatey.chocolatey.win_chocolatey:
         name: docker-desktop
         state: present
       when: install_docker
@@ -216,11 +216,13 @@
       loop:
         - WSearch  # Windows Search (if not needed)
         - SysMain  # Superfetch (may impact VMs)
-      ignore_errors: yes
+      failed_when: false
 
     - name: Set power plan to High Performance
-      ansible.windows.win_power_plan:
-        name: high performance
+      ansible.windows.win_shell: |
+        powercfg /setactive SCHEME_MIN
+      register: power_plan_result
+      changed_when: power_plan_result.rc == 0
 
     - name: Create SMB shares
       ansible.windows.win_share:
@@ -239,7 +241,7 @@
         Start-Service wuauserv
       args:
         executable: powershell.exe
-      ignore_errors: yes
+      failed_when: false
 
     - name: Clean temp files
       ansible.windows.win_file:
@@ -248,7 +250,7 @@
       loop:
         - C:\Windows\Temp
         - C:\Users\*\AppData\Local\Temp
-      ignore_errors: yes
+      failed_when: false
 
     - name: Display configuration summary
       ansible.builtin.debug:

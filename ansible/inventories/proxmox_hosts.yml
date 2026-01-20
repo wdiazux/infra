@@ -14,8 +14,8 @@ all:
   children:
     proxmox:
       hosts:
-                # Proxmox Hosts Configuration
-                #
+        # Proxmox Hosts Configuration
+        #
         # REPLACE THESE VALUES WITH YOUR ACTUAL PROXMOX HOST DETAILS
         #
         # Single Proxmox VE 9.0 Host - MS-A2 (AMD Ryzen AI 9 HX 370, 96GB RAM, RTX 4000)
@@ -39,11 +39,10 @@ all:
         #   ansible_host: 10.10.2.4
         #   ansible_user: root
 
-            # Group Variables (defined in group_vars/proxmox_hosts.yml)
-            vars:
+      # Group Variables (defined in group_vars/proxmox.yml)
+      vars:
         # Ansible connection settings
         ansible_connection: ssh
         ansible_port: 22
-
         # Note: Other variables like has_gpu, zfs_arc_max_gb are in group_vars/proxmox.yml
         # This keeps the inventory clean and configuration centralized

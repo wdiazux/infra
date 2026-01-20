@@ -1,7 +1,7 @@
 # Ansible Lint Configuration
 # https://ansible.readthedocs.io/projects/lint/configuring/
 #
-# Updated: 2026-01-06
+# Updated: 2026-01-20
 
 # Use production profile for stricter checks
 profile: production
@@ -12,29 +12,20 @@ strict: false
 # Offline mode for faster linting (no network lookups)
 offline: false
 
-# Rules configuration
-rules:
-  # Allow both FQCNs and short names for ansible.builtin modules
-  # (we prefer FQCN but won't block on it)
-  fqcn[action-core]:
-    force: false
-
-  # Task naming convention
-  name[casing]:
-    convention: lowercase
-
-  # Variable naming convention
-  var-naming[no-role-prefix]:
-    pattern: ^[a-z_][a-z0-9_]*$
-
 # Skip specific rules for valid use cases
 skip_list:
   # OK for Packer builds (single machine)
   - run-once
   # Commands in cleanup tasks are expected to change
   - no-changed-when
-  # Shell commands for cloud-init cleanup are appropriate
+  # Shell commands for cleanup are appropriate
   - command-instead-of-shell
+  # AUR packages require cloning latest version
+  - latest[git]
+  # Some inline tasks with when: changed are appropriate (API token display, hostname reboot)
+  - no-handler
+  # GPU mapping config file has specific format requirements (tab-indented, single line)
+  - yaml[line-length]
 
 # Exclude paths from linting
 exclude_paths:

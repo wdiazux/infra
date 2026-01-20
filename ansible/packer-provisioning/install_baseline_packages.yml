@@ -9,8 +9,8 @@
 
 - name: Install Baseline Packages (Packer Provisioning)
   hosts: default
-  become: yes
-  gather_facts: yes
+  become: true
+  gather_facts: true
 
   vars:
     # Common packages to install (OS-specific names will be mapped)

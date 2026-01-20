@@ -18,8 +18,8 @@
 ---
 - name: Configure Debian VM Baseline
   hosts: debian_vms
-  gather_facts: yes
-  become: yes
+  gather_facts: true
+  become: true
 
   vars:
     # Timezone configuration
@@ -70,14 +70,14 @@
 
     - name: Update APT cache
       ansible.builtin.apt:
-        update_cache: yes
+        update_cache: true
         cache_valid_time: 3600
 
     - name: Upgrade all packages
       ansible.builtin.apt:
         upgrade: dist
-        autoremove: yes
-        autoclean: yes
+        autoremove: true
+        autoclean: true
       register: upgrade_result
 
     - name: Display upgrade summary
@@ -113,14 +113,14 @@
         path: /etc/hosts
         regexp: '^127\.0\.1\.1'
         line: "127.0.1.1 {{ inventory_hostname }} {{ inventory_hostname.split('.')[0] }}"
-        backup: yes
+        backup: true
 
     - name: Configure SSH daemon
       ansible.builtin.lineinfile:
         path: /etc/ssh/sshd_config
         regexp: "{{ item.regexp }}"
         line: "{{ item.line }}"
-        backup: yes
+        backup: true
       loop:
         - { regexp: '^#?PermitRootLogin', line: 'PermitRootLogin no' }
         - { regexp: '^#?PasswordAuthentication', line: 'PasswordAuthentication no' }
@@ -183,7 +183,7 @@
     - name: Enable and start crowdsec
       ansible.builtin.systemd:
         name: crowdsec
-        enabled: yes
+        enabled: true
         state: started
 
     - name: Configure unattended-upgrades for Debian
@@ -241,7 +241,9 @@
 
     - name: Add Docker repository
       ansible.builtin.apt_repository:
-        repo: "deb [arch={{ ansible_architecture }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable"
+        repo: >-
+          deb [arch={{ ansible_architecture }} signed-by=/etc/apt/keyrings/docker.asc]
+          https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable
         state: present
         filename: docker
       when: install_docker
@@ -254,20 +256,20 @@
           - containerd.io
           - docker-compose-plugin
         state: present
-        update_cache: yes
+        update_cache: true
       when: install_docker
 
     - name: Add user to docker group
       ansible.builtin.user:
         name: "{{ ansible_user }}"
         groups: docker
-        append: yes
+        append: true
       when: install_docker
 
     - name: Enable and start Docker
       ansible.builtin.systemd:
         name: docker
-        enabled: yes
+        enabled: true
         state: started
       when: install_docker
 
@@ -308,7 +310,7 @@
         name: "{{ item.name }}"
         value: "{{ item.value }}"
         state: present
-        reload: yes
+        reload: true
       loop:
         - { name: 'vm.swappiness', value: '10' }
         - { name: 'net.ipv4.tcp_keepalive_time', value: '600' }
@@ -316,8 +318,8 @@
 
     - name: Clean APT cache
       ansible.builtin.apt:
-        autoclean: yes
-        autoremove: yes
+        autoclean: true
+        autoremove: true
 
     - name: Display configuration summary
       ansible.builtin.debug:

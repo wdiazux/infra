@@ -18,8 +18,8 @@
 ---
 - name: Configure Arch Linux VM Baseline
   hosts: arch_vms
-  gather_facts: yes
-  become: yes
+  gather_facts: true
+  become: true
 
   vars:
     # Timezone configuration
@@ -69,11 +69,11 @@
 
     - name: Update package database
       community.general.pacman:
-        update_cache: yes
+        update_cache: true
 
     - name: Upgrade all packages
       community.general.pacman:
-        upgrade: yes
+        upgrade: true
       register: upgrade_result
 
     - name: Display upgrade summary
@@ -112,14 +112,14 @@
         path: /etc/hosts
         regexp: '^127\.0\.1\.1'
         line: "127.0.1.1 {{ inventory_hostname }} {{ inventory_hostname.split('.')[0] }}"
-        backup: yes
+        backup: true
 
     - name: Configure SSH daemon
       ansible.builtin.lineinfile:
         path: /etc/ssh/sshd_config
         regexp: "{{ item.regexp }}"
         line: "{{ item.line }}"
-        backup: yes
+        backup: true
       loop:
         - { regexp: '^#?PermitRootLogin', line: 'PermitRootLogin no' }
         - { regexp: '^#?PasswordAuthentication', line: 'PasswordAuthentication no' }
@@ -182,7 +182,7 @@
     - name: Enable and start crowdsec
       ansible.builtin.systemd:
         name: crowdsec
-        enabled: yes
+        enabled: true
         state: started
 
     - name: Check if yay is installed
@@ -196,15 +196,15 @@
       ansible.builtin.git:
         repo: https://aur.archlinux.org/yay.git
         dest: /tmp/yay
-        update: yes
-      become: no
+        version: HEAD
+      become: false
       when: install_yay and yay_check.rc != 0
 
     - name: Build and install yay
       ansible.builtin.command:
         cmd: makepkg -si --noconfirm
         chdir: /tmp/yay
-      become: no
+      become: false
       when: install_yay and yay_check.rc != 0
 
     - name: Remove yay build directory
@@ -225,13 +225,13 @@
       ansible.builtin.user:
         name: "{{ ansible_user }}"
         groups: docker
-        append: yes
+        append: true
       when: install_docker
 
     - name: Enable and start Docker
       ansible.builtin.systemd:
         name: docker
-        enabled: yes
+        enabled: true
         state: started
       when: install_docker
 
@@ -266,7 +266,7 @@
         name: "{{ item.name }}"
         value: "{{ item.value }}"
         state: present
-        reload: yes
+        reload: true
       loop:
         - { name: 'vm.swappiness', value: '10' }
         - { name: 'net.ipv4.tcp_keepalive_time', value: '600' }
