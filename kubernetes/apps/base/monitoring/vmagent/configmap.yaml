@@ -76,6 +76,10 @@ data:
           - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
             action: keep
             regex: true
+          # When port annotation exists, only keep endpoints matching that port
+          - if: '{__meta_kubernetes_service_annotation_prometheus_io_port=~".+"}'
+            source_labels: [__meta_kubernetes_service_annotation_prometheus_io_port, __meta_kubernetes_endpoint_port_number]
+            action: keep_if_equal
           - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]
             action: replace
             target_label: __scheme__
@@ -97,6 +101,10 @@ data:
           - source_labels: [__meta_kubernetes_service_name]
             action: replace
             target_label: service
+          # Add pod name to distinguish endpoints from multi-replica services
+          - source_labels: [__meta_kubernetes_endpoint_address_target_name]
+            action: replace
+            target_label: pod
 
       # Kubernetes Pods
       - job_name: 'kubernetes-pods'
