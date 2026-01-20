@@ -1,0 +1,116 @@
+# Security Scanning Workflow
+#
+# Runs Trivy security scans on:
+# - Terraform configurations (misconfigurations)
+# - Kubernetes manifests (CVEs, misconfigs)
+# - Dockerfiles (best practices)
+#
+# Docs: https://aquasecurity.github.io/trivy/
+name: Security Scan
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'terraform/**'
+      - 'kubernetes/**'
+      - 'docker/**'
+      - 'packer/**'
+  pull_request:
+    branches: [main]
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  trivy-scan:
+    name: Trivy Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner (Terraform)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'config'
+          scan-ref: 'terraform/'
+          severity: 'HIGH,CRITICAL'
+          exit-code: '1'
+          ignore-unfixed: true
+          format: 'table'
+        continue-on-error: true
+
+      - name: Run Trivy vulnerability scanner (Kubernetes)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'config'
+          scan-ref: 'kubernetes/'
+          severity: 'HIGH,CRITICAL'
+          exit-code: '1'
+          ignore-unfixed: true
+          format: 'table'
+        continue-on-error: true
+
+      - name: Run Trivy vulnerability scanner (Docker)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'config'
+          scan-ref: 'docker/'
+          severity: 'HIGH,CRITICAL'
+          exit-code: '1'
+          ignore-unfixed: true
+          format: 'table'
+        continue-on-error: true
+
+      - name: Run Trivy filesystem scan (secrets detection)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          severity: 'HIGH,CRITICAL'
+          exit-code: '1'
+          ignore-unfixed: true
+          format: 'table'
+          scanners: 'secret'
+          skip-dirs: '.git,secrets'
+        continue-on-error: true
+
+  terraform-lint:
+    name: Terraform Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.14.2'
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive terraform/
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+
+      - name: Init TFLint
+        run: tflint --init
+        working-directory: terraform/talos
+
+      - name: Run TFLint
+        run: tflint --config=../../.tflint.hcl
+        working-directory: terraform/talos
+        continue-on-error: true
+
+  yaml-lint:
+    name: YAML Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install yamllint
+        run: pip install yamllint
+
+      - name: Run yamllint
+        run: yamllint -c .yamllint.yaml kubernetes/ --no-warnings
+        continue-on-error: true
