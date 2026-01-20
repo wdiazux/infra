@@ -55,19 +55,3 @@ collections:
   - name: kubernetes.core
     version: ">=6.2.0"
     source: https://galaxy.ansible.com
-
-# Notes:
-# - community.sops: Required for decrypting SOPS-encrypted secrets
-# - community.general: Essential utilities (timezone, locale, pacman, ufw, etc.)
-# - ansible.posix: Mount points, sysctl, other POSIX utilities
-# - ansible.windows: Core Windows modules (win_feature, win_service, etc.)
-# - community.windows: Additional Windows modules (win_firewall, win_timezone, etc.)
-# - kubernetes.core: For kubectl and Helm operations on Kubernetes clusters
-#
-# NOTE: Talos Linux is NOT managed via Ansible - use talosctl and Terraform.
-# kubernetes.core is for deploying apps to Kubernetes, not managing Talos itself.
-#
-# Installation:
-# 1. Install collections: ansible-galaxy collection install -r requirements.yml
-# 2. For Windows: Install pywinrm on control node: pip install pywinrm
-# 3. For SOPS: Ensure Age is installed and SOPS_AGE_KEY_FILE is set

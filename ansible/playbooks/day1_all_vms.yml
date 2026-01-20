@@ -97,15 +97,3 @@
           5. Deploy applications via Ansible roles
 
           ============================================================
-
-# Notes:
-# - This playbook imports OS-specific playbooks
-# - VMs are configured in parallel by OS type
-# - Each playbook is idempotent - safe to rerun
-# - Skips VM types with no hosts in inventory
-# - For individual OS configuration, run specific playbook:
-#   - ansible-playbook playbooks/day1_ubuntu_baseline.yml
-#   - ansible-playbook playbooks/day1_debian_baseline.yml
-#   - ansible-playbook playbooks/day1_arch_baseline.yml
-#   - ansible-playbook playbooks/day1_windows_baseline.yml
-# - NixOS uses declarative config (/etc/nixos/configuration.nix), not Ansible

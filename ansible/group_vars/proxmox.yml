@@ -7,9 +7,7 @@
 # These variables control the behavior of day0_proxmox_prep.yml playbook
 # Adjust values based on your environment and requirements
 
-# ============================================================================
 # Repository Management
-# ============================================================================
 
 # Disable enterprise repository (requires Proxmox subscription)
 # Set to true for homelab/non-production (default: true)
@@ -31,9 +29,7 @@ proxmox_enable_ceph_repo: false
 # Set to true only for testing environments (default: false)
 proxmox_enable_pvetest_repo: false
 
-# ============================================================================
 # System Configuration
-# ============================================================================
 
 # Perform system update (apt dist-upgrade)
 # Set to true to update all packages (default: true)
@@ -54,18 +50,14 @@ proxmox_configure_firewall: true
 # Set to true for production environments (default: true)
 proxmox_configure_ntp: true
 
-# ============================================================================
 # High Availability (HA) Services
-# ============================================================================
 
 # Disable HA services for single-node setups
 # Services: pve-ha-lrm, pve-ha-crm, corosync
 # Set to true for single-node, false for clusters (default: true)
 proxmox_disable_ha_services: true
 
-# ============================================================================
 # GPU Passthrough Configuration
-# ============================================================================
 
 # Enable GPU passthrough configuration
 # Set to true if passing through NVIDIA GPU to VMs
@@ -87,9 +79,7 @@ has_gpu: true
 # - nouveau
 # - nvidiafb
 
-# ============================================================================
 # ZFS Storage Configuration
-# ============================================================================
 
 # ZFS ARC maximum memory (GB)
 # Recommended: 10% of total system RAM, max 16GB for 96GB system
@@ -97,17 +87,13 @@ has_gpu: true
 # Default: 16GB
 zfs_arc_max_gb: 16
 
-# ============================================================================
 # Network Configuration
-# ============================================================================
 
 # Network bridge name (default Proxmox bridge)
 # Default: vmbr0
 # Note: This is verified but not automatically created by the playbook
 
-# ============================================================================
 # Essential Packages List
-# ============================================================================
 
 # You can override the default package list if needed
 # essential_packages:
@@ -121,18 +107,14 @@ zfs_arc_max_gb: 16
 #   - htop
 #   - Additional packages can be added here
 
-# ============================================================================
 # SSH Configuration (Inventory Level)
-# ============================================================================
 
 # These are typically set in inventory, but can be overridden here
 # ansible_user: root
 # ansible_ssh_private_key_file: ~/.ssh/proxmox_ed25519
 # ansible_port: 22
 
-# ============================================================================
 # Example Configurations by Use Case
-# ============================================================================
 
 # Single-Node Homelab (Default):
 # proxmox_disable_enterprise_repo: true
@@ -165,9 +147,7 @@ zfs_arc_max_gb: 16
 # proxmox_disable_ha_services: false
 # proxmox_configure_ntp: true
 
-# ============================================================================
 # Tags Reference for Selective Execution
-# ============================================================================
 #
 # Run specific sections with --tags:
 #

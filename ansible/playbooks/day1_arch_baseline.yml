@@ -57,10 +57,6 @@
     nfs_mounts: []
 
   tasks:
-    # ========================================================================
-    # System Information
-    # ========================================================================
-
     - name: Display system information
       ansible.builtin.debug:
         msg: |
@@ -70,10 +66,6 @@
           Architecture: {{ ansible_architecture }}
           CPU Cores: {{ ansible_processor_vcpus }}
           Memory: {{ ansible_memtotal_mb }}MB
-
-    # ========================================================================
-    # System Updates
-    # ========================================================================
 
     - name: Update package database
       community.general.pacman:
@@ -88,21 +80,11 @@
       ansible.builtin.debug:
         msg: "System upgrade: {{ 'completed' if upgrade_result.changed else 'no updates available' }}"
 
-    # ========================================================================
-    # Instance-Specific Package Installation
-    # ========================================================================
-    # Note: Baseline packages are pre-installed in Packer golden image.
-    # Only install packages needed for instance-specific configuration.
-
     - name: Install NFS client (if NFS mounts configured)
       community.general.pacman:
         name: nfs-utils
         state: present
       when: nfs_mounts | length > 0
-
-    # ========================================================================
-    # Timezone and Locale
-    # ========================================================================
 
     - name: Set timezone
       community.general.timezone:
@@ -120,10 +102,6 @@
           LANG={{ locale }}
         mode: '0644'
 
-    # ========================================================================
-    # Hostname Configuration
-    # ========================================================================
-
     - name: Set hostname
       ansible.builtin.hostname:
         name: "{{ inventory_hostname }}"
@@ -135,10 +113,6 @@
         regexp: '^127\.0\.1\.1'
         line: "127.0.1.1 {{ inventory_hostname }} {{ inventory_hostname.split('.')[0] }}"
         backup: yes
-
-    # ========================================================================
-    # SSH Hardening
-    # ========================================================================
 
     - name: Configure SSH daemon
       ansible.builtin.lineinfile:
@@ -155,10 +129,6 @@
         - { regexp: '^#?ClientAliveInterval', line: 'ClientAliveInterval 300' }
         - { regexp: '^#?ClientAliveCountMax', line: 'ClientAliveCountMax 2' }
       notify: Restart SSH
-
-    # ========================================================================
-    # Firewall Configuration (UFW)
-    # ========================================================================
 
     - name: Reset UFW to defaults
       community.general.ufw:
@@ -194,10 +164,6 @@
       ansible.builtin.debug:
         var: ufw_status.stdout_lines
 
-    # ========================================================================
-    # CrowdSec Configuration
-    # ========================================================================
-
     - name: Configure crowdsec jail for SSH
       ansible.builtin.copy:
         dest: /etc/crowdsec/jail.d/sshd.local
@@ -218,10 +184,6 @@
         name: crowdsec
         enabled: yes
         state: started
-
-    # ========================================================================
-    # Yay AUR Helper Installation (Optional)
-    # ========================================================================
 
     - name: Check if yay is installed
       ansible.builtin.command: which yay
@@ -251,10 +213,6 @@
         state: absent
       when: install_yay and yay_check.rc != 0
 
-    # ========================================================================
-    # Docker Installation (Optional)
-    # ========================================================================
-
     - name: Install Docker
       community.general.pacman:
         name:
@@ -277,10 +235,6 @@
         state: started
       when: install_docker
 
-    # ========================================================================
-    # Podman Installation (Optional)
-    # ========================================================================
-
     - name: Install Podman
       community.general.pacman:
         name:
@@ -288,10 +242,6 @@
           - podman-compose
         state: present
       when: install_podman
-
-    # ========================================================================
-    # NFS Mounts (Optional)
-    # ========================================================================
 
     - name: Create NFS mount points
       ansible.builtin.file:
@@ -311,10 +261,6 @@
       loop: "{{ nfs_mounts }}"
       when: nfs_mounts | length > 0
 
-    # ========================================================================
-    # System Tuning
-    # ========================================================================
-
     - name: Configure sysctl parameters
       ansible.posix.sysctl:
         name: "{{ item.name }}"
@@ -325,10 +271,6 @@
         - { name: 'vm.swappiness', value: '10' }
         - { name: 'net.ipv4.tcp_keepalive_time', value: '600' }
         - { name: 'net.core.somaxconn', value: '1024' }
-
-    # ========================================================================
-    # Pacman Configuration
-    # ========================================================================
 
     - name: Enable color output in pacman
       ansible.builtin.lineinfile:
@@ -342,17 +284,9 @@
         regexp: '^#?ParallelDownloads'
         line: 'ParallelDownloads = 5'
 
-    # ========================================================================
-    # Cleanup
-    # ========================================================================
-
     - name: Clean pacman cache
       ansible.builtin.command: pacman -Sc --noconfirm
       changed_when: false
-
-    # ========================================================================
-    # Final Status
-    # ========================================================================
 
     - name: Display configuration summary
       ansible.builtin.debug:
@@ -405,11 +339,3 @@
       ansible.builtin.systemd:
         name: crowdsec
         state: restarted
-
-# Notes:
-# - This playbook is IDEMPOTENT - safe to run multiple times
-# - Arch Linux uses pacman package manager
-# - Rolling release - requires regular updates
-# - Yay AUR helper provides access to Arch User Repository (community packages)
-# - Test in development environment first
-# - Be cautious with Arch updates in production

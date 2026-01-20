@@ -4,10 +4,6 @@
 #
 # Updated: 2026-01-06 - Added error handling with block/rescue
 
-# =============================================================================
-# Package Installation Block with Error Handling
-# =============================================================================
-
 - name: Arch Linux package installation
   block:
     - name: Update package database (Arch Linux)
@@ -52,10 +48,6 @@
         state: present
       tags: [arch]
 
-# =============================================================================
-# Security Packages (Optional - Failure Won't Stop Build)
-# =============================================================================
-
 - name: Install security packages (Arch Linux)
   community.general.pacman:
     name:
@@ -64,10 +56,6 @@
     state: present
   tags: [arch, security]
   ignore_errors: yes
-
-# =============================================================================
-# Yay AUR Helper Installation (Optional)
-# =============================================================================
 
 - name: Yay AUR helper installation
   block:

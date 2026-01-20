@@ -69,10 +69,6 @@
     has_gpu: false  # Set to true if this Proxmox host has NVIDIA GPU for passthrough
 
   tasks:
-    # ========================================================================
-    # System Information
-    # ========================================================================
-
     - name: Display system information
       ansible.builtin.debug:
         msg: |
@@ -83,10 +79,6 @@
           Kernel: {{ ansible_kernel }}
           Distribution: {{ ansible_distribution }} {{ ansible_distribution_version }}
       tags: [always]
-
-    # ========================================================================
-    # Prerequisites Check
-    # ========================================================================
 
     - name: Check if Proxmox VE is installed
       ansible.builtin.command: pveversion
@@ -123,10 +115,6 @@
       ansible.builtin.debug:
         msg: "Proxmox VE major version: {{ proxmox_major_version }}"
       tags: [always]
-
-    # ========================================================================
-    # Repository Management (Proxmox 8.x and 9.x)
-    # ========================================================================
 
     - name: Disable pve-enterprise repository (Proxmox 8.x .list format)
       ansible.builtin.lineinfile:
@@ -228,10 +216,6 @@
       when: proxmox_disable_enterprise_repo | bool or proxmox_enable_no_subscription_repo | bool
       tags: [repos]
 
-    # ========================================================================
-    # Essential Packages Installation
-    # ========================================================================
-
     - name: Install essential packages for Ansible automation
       ansible.builtin.apt:
         name: "{{ essential_packages }}"
@@ -239,10 +223,6 @@
         update_cache: yes
       when: proxmox_install_essential_packages | bool
       tags: [packages]
-
-    # ========================================================================
-    # Subscription Nag Removal
-    # ========================================================================
 
     - name: Check if proxmox-widget-toolkit is installed
       ansible.builtin.command: dpkg -l proxmox-widget-toolkit
@@ -263,10 +243,6 @@
         - widget_toolkit_check.rc == 0
       notify: Restart pveproxy
       tags: [nag]
-
-    # ========================================================================
-    # HA Services Configuration
-    # ========================================================================
 
     - name: Disable HA services for single-node setup
       ansible.builtin.systemd:
@@ -294,10 +270,6 @@
       failed_when: false
       tags: [ha]
 
-    # ========================================================================
-    # System Updates
-    # ========================================================================
-
     - name: Perform system update (apt upgrade)
       ansible.builtin.apt:
         upgrade: dist
@@ -306,10 +278,6 @@
         autoclean: yes
       when: proxmox_update_system | bool
       tags: [updates]
-
-    # ========================================================================
-    # Firewall Configuration
-    # ========================================================================
 
     - name: Configure UFW firewall
       block:
@@ -348,10 +316,6 @@
       when: proxmox_configure_firewall | bool
       tags: [firewall]
 
-    # ========================================================================
-    # Time Synchronization
-    # ========================================================================
-
     - name: Configure chrony for time synchronization
       block:
         - name: Install chrony
@@ -366,10 +330,6 @@
             state: started
       when: proxmox_configure_ntp | bool
       tags: [ntp]
-
-    # ========================================================================
-    # IOMMU Configuration
-    # ========================================================================
 
     - name: Check if IOMMU is already enabled
       ansible.builtin.shell: dmesg | grep -i iommu | grep -i enabled
@@ -414,10 +374,6 @@
         msg: "GRUB configuration {{ 'updated' if grub_updated.changed else 'already correct' }}"
       tags: [iommu, gpu]
 
-    # ========================================================================
-    # VFIO Kernel Modules
-    # ========================================================================
-
     - name: Load VFIO kernel modules
       ansible.builtin.modprobe:
         name: "{{ item }}"
@@ -435,10 +391,6 @@
       when: has_gpu | default(false)
       tags: [vfio, gpu]
 
-    # ========================================================================
-    # Blacklist GPU Drivers on Host
-    # ========================================================================
-
     - name: Create blacklist configuration for GPU drivers
       ansible.builtin.copy:
         dest: /etc/modprobe.d/blacklist-gpu.conf
@@ -452,10 +404,6 @@
       when: has_gpu | default(false)
       notify: Update initramfs
       tags: [vfio, gpu]
-
-    # ========================================================================
-    # ZFS Configuration
-    # ========================================================================
 
     - name: Check if ZFS is installed
       ansible.builtin.command: zpool status
@@ -480,10 +428,6 @@
       when: zfs_check.rc == 0
       tags: [zfs, storage]
 
-    # ========================================================================
-    # Network Configuration
-    # ========================================================================
-
     - name: Verify network bridge exists
       ansible.builtin.command: ip link show vmbr0
       register: bridge_check
@@ -495,10 +439,6 @@
       ansible.builtin.debug:
         msg: "Network bridge vmbr0: {{ 'Present' if bridge_check.rc == 0 else 'Not Found - create manually in Proxmox' }}"
       tags: [network]
-
-    # ========================================================================
-    # GPU Information
-    # ========================================================================
 
     - name: Get GPU information
       ansible.builtin.shell: lspci | grep -i vga | grep -i nvidia
@@ -529,10 +469,6 @@
           Use this in terraform/terraform.tfvars: gpu_pci_id = "{{ gpu_pci.stdout.split('.')[0] }}"
       when: has_gpu | default(false)
       tags: [gpu, info]
-
-    # ========================================================================
-    # Terraform User and API Token Setup
-    # ========================================================================
 
     - name: Check if terraform user exists
       ansible.builtin.command: pveum user list --output-format json
@@ -588,10 +524,6 @@
           ============================================================
       when: terraform_token_created.changed | default(false)
       tags: [terraform, api]
-
-    # ========================================================================
-    # GPU Resource Mapping for Terraform
-    # ========================================================================
 
     - name: Check if GPU resource mapping exists
       ansible.builtin.command: pvesh get /cluster/mapping/pci --output-format json
@@ -667,10 +599,6 @@
       when: has_gpu | default(false)
       tags: [gpu, terraform, mapping]
 
-    # ========================================================================
-    # Verify IOMMU Groups
-    # ========================================================================
-
     - name: List IOMMU groups
       ansible.builtin.shell: find /sys/kernel/iommu_groups/ -type l | sort -V
       register: iommu_groups
@@ -682,10 +610,6 @@
       ansible.builtin.debug:
         msg: "IOMMU groups found: {{ iommu_groups.stdout_lines | length if iommu_groups.rc == 0 else '0 (IOMMU not enabled or requires reboot)' }}"
       tags: [iommu, gpu, info]
-
-    # ========================================================================
-    # Post-Configuration Summary
-    # ========================================================================
 
     - name: Display post-configuration summary
       ansible.builtin.debug:
@@ -783,11 +707,3 @@
         name: pveproxy
         state: restarted
       listen: Restart pveproxy
-
-# Notes:
-# - This playbook is IDEMPOTENT - safe to run multiple times
-# - Reboot is required after GRUB changes
-# - GPU passthrough requires IOMMU support in BIOS/UEFI
-# - VFIO modules are loaded but won't work until after reboot with IOMMU enabled
-# - ZFS ARC limit prevents memory starvation on Proxmox host
-# - Blacklisting GPU drivers prevents host from using the GPU (VM passthrough only)

@@ -33,10 +33,6 @@
     # packer_ssh_user: defined externally (debian, ubuntu, root, etc.)
 
   tasks:
-    # ==========================================================================
-    # Display Build Information
-    # ==========================================================================
-
     - name: Display Packer build information
       ansible.builtin.debug:
         msg: |
@@ -51,10 +47,6 @@
           ============================================================
       tags: [always]
 
-    # ==========================================================================
-    # Include OS-Specific Package Installation Tasks
-    # ==========================================================================
-
     - name: Include Debian/Ubuntu package installation tasks
       ansible.builtin.include_tasks: tasks/debian_packages.yml
       when: ansible_facts['os_family'] == "Debian"
@@ -65,28 +57,13 @@
       when: ansible_facts['os_family'] == "Archlinux"
       tags: [arch]
 
-    # Note: Windows uses PowerShell provisioners in Packer, not Ansible
-    # See packer/windows/scripts/ for Windows provisioning
-
-    # ==========================================================================
-    # SSH Key Configuration
-    # ==========================================================================
-
     - name: Include SSH key configuration tasks
       ansible.builtin.include_tasks: tasks/ssh_keys.yml
       tags: [ssh]
 
-    # ==========================================================================
-    # Template Cleanup
-    # ==========================================================================
-
     - name: Include cleanup tasks
       ansible.builtin.include_tasks: tasks/cleanup.yml
       tags: [cleanup]
-
-    # ==========================================================================
-    # Post-Installation Summary
-    # ==========================================================================
 
     - name: Display completion message
       ansible.builtin.debug:

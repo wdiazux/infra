@@ -51,10 +51,6 @@
     temp_dir: "/tmp/cloud-images"
 
   tasks:
-    # ========================================================================
-    # Pre-flight Checks
-    # ========================================================================
-
     - name: Check if qm command exists
       ansible.builtin.command: which qm
       register: qm_check
@@ -66,10 +62,6 @@
         path: "{{ temp_dir }}"
         state: directory
         mode: '0755'
-
-    # ========================================================================
-    # Debian 12 Cloud Image Import
-    # ========================================================================
 
     - name: Check if Debian base VM already exists
       ansible.builtin.shell: qm list | grep -q "{{ debian_vm_id }}"
@@ -127,13 +119,9 @@
             --cipassword debian
           changed_when: true
 
-        - name: Set Debian VM as template (DO NOT - Packer needs to clone a VM, not template)
+        - name: Confirm Debian base VM created
           ansible.builtin.debug:
-            msg: "Debian base VM {{ debian_vm_id }} created (not converted to template - Packer will clone it)"
-
-    # ========================================================================
-    # Ubuntu 24.04 Cloud Image Import
-    # ========================================================================
+            msg: "Debian base VM {{ debian_vm_id }} created"
 
     - name: Check if Ubuntu base VM already exists
       ansible.builtin.shell: qm list | grep -q "{{ ubuntu_vm_id }}"
@@ -191,23 +179,15 @@
             --cipassword ubuntu
           changed_when: true
 
-        - name: Set Ubuntu VM as template (DO NOT - Packer needs to clone a VM, not template)
+        - name: Confirm Ubuntu base VM created
           ansible.builtin.debug:
-            msg: "Ubuntu base VM {{ ubuntu_vm_id }} created (not converted to template - Packer will clone it)"
-
-    # ========================================================================
-    # Cleanup
-    # ========================================================================
+            msg: "Ubuntu base VM {{ ubuntu_vm_id }} created"
 
     - name: Clean up downloaded cloud images
       ansible.builtin.file:
         path: "{{ temp_dir }}"
         state: absent
       when: debian_download is defined or ubuntu_download is defined
-
-    # ========================================================================
-    # Summary
-    # ========================================================================
 
     - name: Display import summary
       ansible.builtin.debug:
@@ -233,11 +213,3 @@
           - "     - QEMU guest agent installed"
           - ""
           - "=============================================="
-
-# Notes:
-# - This is a one-time setup per Proxmox host
-# - Base VMs are NOT templates (Packer proxmox-clone needs VMs, not templates)
-# - Cloud images are downloaded from official sources with checksum verification
-# - Default credentials: debian/debian for Debian, ubuntu/ubuntu for Ubuntu
-# - These credentials will be changed during Packer build via cloud-init
-# - For Arch, NixOS, Windows: Use ISO-based Packer templates (no official cloud images)

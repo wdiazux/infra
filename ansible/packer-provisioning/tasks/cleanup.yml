@@ -16,10 +16,6 @@
       ============================================================
   tags: [cleanup]
 
-# =============================================================================
-# Debian/Ubuntu Cleanup
-# =============================================================================
-
 - name: Remove unnecessary packages (Debian/Ubuntu)
   ansible.builtin.apt:
     autoremove: yes
@@ -34,10 +30,6 @@
   when: ansible_facts['os_family'] == "Debian"
   changed_when: false
   tags: [cleanup, debian, ubuntu]
-
-# =============================================================================
-# CrowdSec Cleanup (Golden Image - Remove Instance-Specific Data)
-# =============================================================================
 
 - name: Clean CrowdSec credentials for golden image
   ansible.builtin.shell: |
@@ -57,10 +49,6 @@
   failed_when: false
   tags: [cleanup, security]
 
-# =============================================================================
-# Arch Linux Cleanup
-# =============================================================================
-
 - name: Clean Pacman cache (Arch)
   ansible.builtin.command: pacman -Scc --noconfirm
   register: pacman_clean
@@ -69,19 +57,11 @@
   failed_when: pacman_clean.rc not in [0, 1]
   tags: [cleanup, arch]
 
-# =============================================================================
-# Serial Console Configuration (for Proxmox xterm.js)
-# =============================================================================
-
 - name: Enable serial console getty (ttyS0)
   ansible.builtin.systemd:
     name: serial-getty@ttyS0.service
     enabled: yes
   tags: [cleanup, console]
-
-# =============================================================================
-# Common Cleanup (All Distributions)
-# =============================================================================
 
 - name: Remove temporary files (excluding ansible)
   ansible.builtin.shell: |
