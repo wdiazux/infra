@@ -37,6 +37,14 @@ data "talos_machine_configuration" "node" {
             }
           }
         }
+        # PodGC controller configuration
+        # Automatically cleans up Failed/Succeeded pods when threshold exceeded
+        # Default 12500 is too high for single-node homelab
+        controllerManager = {
+          extraArgs = {
+            terminated-pod-gc-threshold = "50"
+          }
+        }
       }
       machine = {
         network = {
