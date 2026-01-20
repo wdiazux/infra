@@ -41,6 +41,21 @@ spec:
     # CRDs are managed externally (installed via kubectl apply)
     upgradeCRDs: false
 
+    # Velero plugins for AWS (S3/MinIO) and CSI snapshots
+    initContainers:
+      - name: velero-plugin-for-aws
+        image: velero/velero-plugin-for-aws:v1.11.1
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+          - mountPath: /target
+            name: plugins
+      - name: velero-plugin-for-csi
+        image: velero/velero-plugin-for-csi:v0.8.1
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+          - mountPath: /target
+            name: plugins
+
     # Fix kubectl image version
     kubectl:
       image:
