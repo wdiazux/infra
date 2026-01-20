@@ -328,6 +328,16 @@ NETRC
       else
         echo "WARNING: Repository creation response: $RESPONSE"
       fi
+
+      # Enable Actions for the repository
+      echo "Enabling Actions for repository..."
+      curl -s -X PATCH \
+        -H "Content-Type: application/json" \
+        --netrc-file "$NETRC_FILE" \
+        -d '{"has_actions": true}' \
+        "http://$FORGEJO_HOST/api/v1/repos/$ENCODED_USER/$ENCODED_REPO" > /dev/null
+
+      echo "Actions enabled for repository"
     EOT
 
     environment = {
