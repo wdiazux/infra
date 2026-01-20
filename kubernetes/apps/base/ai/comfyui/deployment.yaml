@@ -16,7 +16,7 @@ metadata:
 spec:
   replicas: 1
   strategy:
-    type: Recreate  # GPU workload - only one instance at a time
+    type: Recreate # GPU workload - only one instance at a time
   selector:
     matchLabels:
       app.kubernetes.io/name: comfyui
@@ -30,25 +30,6 @@ spec:
       securityContext:
         fsGroup: 1000
         fsGroupChangePolicy: "OnRootMismatch"
-      # Init container creates directory structure with correct permissions
-      initContainers:
-        - name: init-permissions
-          image: busybox:latest
-          command:
-            - /bin/sh
-            - -c
-            - |
-              echo "Creating ComfyUI directory structure..."
-              mkdir -p /data/models
-              chmod 777 /data
-              echo "Permissions set successfully"
-              ls -la /data/
-          securityContext:
-            runAsUser: 1000
-            runAsGroup: 1000
-          volumeMounts:
-            - name: comfyui-local
-              mountPath: /data
       containers:
         - name: comfyui
           image: yanwk/comfyui-boot:cu128-slim
@@ -87,7 +68,7 @@ spec:
             httpGet:
               path: /
               port: http
-            failureThreshold: 60  # 10 minutes to start (model loading)
+            failureThreshold: 60 # 10 minutes to start (model loading)
             periodSeconds: 10
           livenessProbe:
             httpGet:
