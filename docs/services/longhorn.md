@@ -2,6 +2,8 @@
 
 Distributed block storage with snapshots, backups, and web UI.
 
+**Related:** [NFS Storage](nfs-storage.md) for shared media files
+
 ---
 
 ## Overview
@@ -90,22 +92,59 @@ Longhorn provides block-level storage that meets these requirements.
 
 ---
 
-## Using Storage
+## Volume Operations
 
-### Create PVC
+### Create Volume
+
+**Option 1: Via PVC (Recommended)**
+
+Create a PersistentVolumeClaim and Longhorn automatically provisions the volume:
 
 ```yaml
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: my-data
+  namespace: my-namespace
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: longhorn-default
+  storageClassName: longhorn          # Or longhorn-retain, longhorn-fast, etc.
   resources:
     requests:
       storage: 10Gi
+```
+
+Apply it:
+```bash
+kubectl apply -f my-pvc.yaml
+
+# Verify
+kubectl get pvc -n my-namespace
+kubectl get volumes.longhorn.io -n longhorn-system
+```
+
+**Option 2: Via Longhorn UI**
+
+1. Go to http://10.10.2.12
+2. Volume → Create Volume
+3. Set name, size, replicas (1 for single-node)
+4. Create PV/PVC from the volume
+
+**Option 3: Via kubectl (Direct Volume)**
+
+```bash
+kubectl -n longhorn-system create -f - <<EOF
+apiVersion: longhorn.io/v1beta2
+kind: Volume
+metadata:
+  name: my-volume
+spec:
+  size: "10737418240"        # Size in bytes (10Gi)
+  numberOfReplicas: 1
+  dataLocality: best-effort
+  accessMode: rwo
+EOF
 ```
 
 ### Mount in Pod
@@ -122,6 +161,187 @@ spec:
       persistentVolumeClaim:
         claimName: my-data
 ```
+
+---
+
+### Resize Volume (Expand)
+
+Longhorn supports **online volume expansion** - no need to stop the pod.
+
+**Prerequisites:**
+- StorageClass must have `allowVolumeExpansion: true` (all Longhorn classes do)
+- Can only **increase** size, not shrink
+
+**Option 1: Edit PVC (Recommended)**
+
+```bash
+# Check current size
+kubectl get pvc my-data -n my-namespace
+
+# Edit and change spec.resources.requests.storage
+kubectl edit pvc my-data -n my-namespace
+```
+
+Or patch directly:
+```bash
+kubectl patch pvc my-data -n my-namespace -p '{"spec":{"resources":{"requests":{"storage":"20Gi"}}}}'
+```
+
+**Option 2: Via Longhorn UI**
+
+1. Go to http://10.10.2.12
+2. Volume → Select volume
+3. Click "Expand Volume"
+4. Enter new size → Expand
+
+**Option 3: Via kubectl**
+
+```bash
+# Get volume name from PVC
+VOLUME=$(kubectl get pvc my-data -n my-namespace -o jsonpath='{.spec.volumeName}')
+
+# Expand the Longhorn volume
+kubectl -n longhorn-system patch volume $VOLUME --type merge -p '{"spec":{"size":"21474836480"}}'  # 20Gi in bytes
+```
+
+**Verify expansion:**
+```bash
+# Check PVC status (should show new size)
+kubectl get pvc my-data -n my-namespace
+
+# Check volume in Longhorn
+kubectl get volumes.longhorn.io -n longhorn-system
+
+# Verify filesystem inside pod
+kubectl exec -n my-namespace deploy/my-app -- df -h /data
+```
+
+**Troubleshooting expansion:**
+```bash
+# If PVC shows "FileSystemResizePending"
+kubectl describe pvc my-data -n my-namespace
+
+# Pod may need restart to pick up filesystem resize
+kubectl rollout restart deployment/my-app -n my-namespace
+```
+
+---
+
+### Delete Volume
+
+**Warning:** Deleting volumes is permanent. Always backup first!
+
+**Option 1: Delete PVC (Recommended)**
+
+```bash
+# Check reclaim policy first
+kubectl get pvc my-data -n my-namespace -o jsonpath='{.spec.storageClassName}'
+kubectl get storageclass longhorn -o jsonpath='{.reclaimPolicy}'
+# "Delete" = volume deleted with PVC
+# "Retain" = volume kept after PVC deletion
+
+# Scale down workloads using the PVC first
+kubectl scale deployment my-app --replicas=0 -n my-namespace
+
+# Delete the PVC
+kubectl delete pvc my-data -n my-namespace
+
+# Verify volume is gone (if reclaimPolicy=Delete)
+kubectl get volumes.longhorn.io -n longhorn-system | grep my-data
+```
+
+**Option 2: Via Longhorn UI**
+
+1. Go to http://10.10.2.12
+2. Volume → Select volume
+3. Detach volume (if attached)
+4. Delete volume
+
+**Option 3: Delete orphaned/retained volumes**
+
+For volumes with `Retain` policy that still exist after PVC deletion:
+
+```bash
+# List all Longhorn volumes
+kubectl get volumes.longhorn.io -n longhorn-system
+
+# Find orphaned volumes (no associated PVC)
+kubectl get volumes.longhorn.io -n longhorn-system -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.kubernetesStatus.pvcName}{"\n"}{end}'
+
+# Delete specific volume
+kubectl delete volume.longhorn.io <volume-name> -n longhorn-system
+```
+
+**Force delete stuck volume:**
+```bash
+# Remove finalizers if volume is stuck
+kubectl patch volume.longhorn.io <volume-name> -n longhorn-system \
+  --type=merge -p '{"metadata":{"finalizers":null}}'
+
+# Then delete
+kubectl delete volume.longhorn.io <volume-name> -n longhorn-system
+```
+
+---
+
+### List and Inspect Volumes
+
+```bash
+# List all PVCs across cluster
+kubectl get pvc -A
+
+# List all Longhorn volumes
+kubectl get volumes.longhorn.io -n longhorn-system
+
+# Detailed volume info
+kubectl describe volume.longhorn.io <volume-name> -n longhorn-system
+
+# Volume status summary
+kubectl get volumes.longhorn.io -n longhorn-system -o custom-columns=\
+NAME:.metadata.name,\
+STATE:.status.state,\
+SIZE:.spec.size,\
+NODE:.status.currentNodeID,\
+ROBUSTNESS:.status.robustness
+
+# Check volume health via Longhorn UI
+# http://10.10.2.12 → Volume → Select volume
+```
+
+---
+
+### Snapshot Operations
+
+**Create snapshot:**
+```bash
+# Via kubectl
+kubectl -n longhorn-system create -f - <<EOF
+apiVersion: longhorn.io/v1beta2
+kind: Snapshot
+metadata:
+  name: my-snap-$(date +%Y%m%d-%H%M)
+spec:
+  volume: <volume-name>
+EOF
+
+# Via Longhorn UI: Volume → Take Snapshot
+```
+
+**List snapshots:**
+```bash
+kubectl get snapshots.longhorn.io -n longhorn-system
+```
+
+**Delete snapshot:**
+```bash
+kubectl delete snapshot.longhorn.io <snapshot-name> -n longhorn-system
+```
+
+**Restore from snapshot:**
+1. Longhorn UI → Volume → Select volume
+2. Find snapshot in timeline
+3. Click "Revert" to restore volume to that point
+   - **Warning:** This overwrites current data!
 
 ---
 
@@ -198,7 +418,9 @@ When expanding to 3 nodes:
 
 ## Troubleshooting
 
-### Pods Stuck in Pending
+For detailed troubleshooting, see [Troubleshooting Guide](../operations/troubleshooting.md#storage-issues).
+
+### Quick Reference
 
 ```bash
 # Check PVC status
@@ -207,47 +429,11 @@ kubectl get pvc
 # Check Longhorn manager logs
 kubectl logs -n longhorn-system -l app=longhorn-manager
 
-# Verify kernel modules
-talosctl -n 10.10.2.10 read /proc/modules | grep -E 'iscsi|nbd'
-```
-
-### Volumes Stuck in Attaching
-
-```bash
 # Check instance manager
 kubectl get pods -n longhorn-system -l app=longhorn-instance-manager
 
-# Restart instance manager
-kubectl delete pod -n longhorn-system -l app=longhorn-instance-manager
-
-# Check kubelet mounts
-talosctl -n 10.10.2.10 get machineconfig -o yaml | grep -A 5 extraMounts
-```
-
-### Backup Target Unavailable
-
-```bash
 # Check backup target status
 kubectl get backuptarget -n longhorn-system -o yaml
-
-# Verify NAS is reachable
-talosctl -n 10.10.2.10 ping 10.10.2.5
-
-# Check backup secret
-kubectl get secret longhorn-backup-secret -n longhorn-system
-```
-
-### No Space Left
-
-```bash
-# Check node disk usage
-kubectl get nodes.longhorn.io -n longhorn-system -o yaml
-
-# Access UI to manage volumes
-kubectl port-forward -n longhorn-system svc/longhorn-frontend 8080:80
-
-# Delete unused volumes/snapshots
-kubectl get volumes.longhorn.io -n longhorn-system
 ```
 
 ---
@@ -270,230 +456,4 @@ kubectl get volumes.longhorn.io -n longhorn-system
 
 ---
 
-# NFS Media Storage
-
-External NAS storage for large media files shared across namespaces.
-
----
-
-## Overview
-
-NFS storage from the external NAS (10.10.2.5) provides shared storage for media files and downloads. Unlike Longhorn (block storage for databases), NFS is ideal for large files that need to be accessed by multiple applications.
-
-**Configuration:** `kubernetes/infrastructure/storage/`
-
----
-
-## NFS Shares
-
-| Share | NAS Path | Size | Purpose |
-|-------|----------|------|---------|
-| Media | `/mnt/tank/media` | 1Ti | Movies, TV series, music, videos |
-| Downloads | `/mnt/downloads` | 500Gi | Usenet/torrent download staging |
-
-### Media Directory Structure
-
-```
-/mnt/tank/media/
-├── movies/       # Radarr target, Emby movies library
-├── tvseries/     # Sonarr target, Emby TV library
-├── music/        # Future Lidarr target, Navidrome library
-└── videos/       # General videos, Emby videos library
-```
-
-### Downloads Directory Structure
-
-```
-/mnt/downloads/
-├── usenet/
-│   ├── complete/{tv,movies,music,prowlarr,anime,software,audio}
-│   └── incomplete/
-└── torrents/
-```
-
----
-
-## Cross-Namespace Access Pattern
-
-**Problem:** Kubernetes PersistentVolumes can only bind to ONE PersistentVolumeClaim. Both `arr-stack` and `media` namespaces need access to the same NFS media share.
-
-**Solution:** Create duplicate PVs pointing to the same NFS path, one for each namespace.
-
-### PV/PVC Architecture
-
-```
-NAS (10.10.2.5:/mnt/tank/media)
-         │
-         ├──► PV: nfs-media ──────► PVC: nfs-media (arr-stack namespace)
-         │                                  │
-         │                                  └──► radarr, sonarr, bazarr
-         │
-         └──► PV: nfs-media-media ──► PVC: nfs-media (media namespace)
-                                            │
-                                            └──► emby, navidrome
-```
-
-### Configuration Files
-
-| File | Purpose |
-|------|---------|
-| `nfs-media-pv.yaml` | PV for arr-stack namespace |
-| `nfs-media-pvc.yaml` | PVC in arr-stack namespace |
-| `nfs-media-pv-media.yaml` | Duplicate PV for media namespace |
-| `nfs-media-pvc-media.yaml` | PVC in media namespace |
-| `nfs-downloads-pv.yaml` | Downloads PV (arr-stack only) |
-| `nfs-downloads-pvc.yaml` | Downloads PVC in arr-stack |
-
----
-
-## How Applications Mount Storage
-
-### arr-stack (Radarr example)
-
-```yaml
-volumes:
-  - name: config
-    persistentVolumeClaim:
-      claimName: radarr-config    # Longhorn - SQLite database
-  - name: media
-    persistentVolumeClaim:
-      claimName: nfs-media        # NFS - final media location
-  - name: downloads
-    persistentVolumeClaim:
-      claimName: nfs-downloads    # NFS - download staging
-
-volumeMounts:
-  - name: config
-    mountPath: /config
-  - name: media
-    mountPath: /movies
-    subPath: movies               # Only mount movies subdirectory
-  - name: downloads
-    mountPath: /data/usenet
-    subPath: usenet
-```
-
-### media (Emby example)
-
-```yaml
-volumes:
-  - name: config
-    persistentVolumeClaim:
-      claimName: emby-config      # Longhorn - metadata database
-  - name: media
-    persistentVolumeClaim:
-      claimName: nfs-media        # NFS - media libraries
-
-volumeMounts:
-  - name: config
-    mountPath: /config
-  - name: media
-    mountPath: /data/movies
-    subPath: movies
-  - name: media
-    mountPath: /data/tvseries
-    subPath: tvseries
-  - name: media
-    mountPath: /data/music
-    subPath: music
-```
-
----
-
-## Storage Summary by Namespace
-
-### arr-stack Namespace
-
-| Volume Type | PVC Name | Storage | Mount Points |
-|-------------|----------|---------|--------------|
-| Longhorn | `*-config` | Block | `/config` (each app) |
-| NFS | `nfs-media` | 1Ti | `/movies`, `/tv`, etc. |
-| NFS | `nfs-downloads` | 500Gi | `/data/usenet`, `/data/torrents` |
-
-### media Namespace
-
-| Volume Type | PVC Name | Storage | Mount Points |
-|-------------|----------|---------|--------------|
-| Longhorn | `*-config` | Block | `/config` (each app) |
-| NFS | `nfs-media` | 1Ti | `/data/movies`, `/data/tvseries`, etc. |
-
----
-
-## NFS Mount Options
-
-All NFS volumes use these mount options:
-
-```yaml
-mountOptions:
-  - nfsvers=4.1    # NFSv4.1 for better performance
-  - hard           # Retry indefinitely on failure
-  - noatime        # Don't update access times (performance)
-```
-
----
-
-## Verification
-
-```bash
-# Check PVs
-kubectl get pv | grep nfs
-
-# Check PVCs in both namespaces
-kubectl get pvc -n arr-stack
-kubectl get pvc -n media
-
-# Verify NFS mounts in a pod
-kubectl exec -n arr-stack deploy/radarr -- df -h /movies
-kubectl exec -n media deploy/emby -- df -h /data/movies
-
-# Check NFS connectivity from Talos
-talosctl -n 10.10.2.10 ping 10.10.2.5
-```
-
----
-
-## Troubleshooting
-
-### PVC Stuck in Pending
-
-```bash
-# Check PV availability
-kubectl get pv
-
-# Verify PV-PVC binding
-kubectl describe pvc nfs-media -n arr-stack
-
-# Check events
-kubectl get events -n arr-stack --field-selector reason=FailedBinding
-```
-
-### NFS Mount Errors
-
-```bash
-# Check pod events
-kubectl describe pod -n arr-stack -l app.kubernetes.io/name=radarr
-
-# Verify NAS is accessible
-talosctl -n 10.10.2.10 ping 10.10.2.5
-
-# Check NFS exports on NAS
-showmount -e 10.10.2.5
-```
-
-### Permission Issues
-
-All apps use:
-- **PUID:** 1000
-- **PGID:** 3001
-- **fsGroup:** 3001
-
-Ensure NAS exports allow this GID:
-```bash
-# On NAS, verify permissions
-ls -la /mnt/tank/media
-# Should show group ownership matching GID 3001
-```
-
----
-
-**Last Updated:** 2026-01-16
+**Last Updated:** 2026-01-20
