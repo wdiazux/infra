@@ -8,9 +8,9 @@ VictoriaMetrics and Grafana observability stack for Kubernetes monitoring.
 
 | Component | Purpose | IP Address |
 |-----------|---------|------------|
-| VictoriaMetrics | Time-series database | http://10.10.2.18 |
+| VictoriaMetrics | Time-series database | http://10.10.2.24 |
 | VMAgent | Metrics collector | Internal only |
-| Grafana | Visualization | http://10.10.2.17 |
+| Grafana | Visualization | http://10.10.2.23 |
 
 **Namespace:** `monitoring`
 
@@ -35,7 +35,7 @@ VictoriaMetrics and Grafana observability stack for Kubernetes monitoring.
 │         │ query                                              │
 │         ▼                                                    │
 │  ┌──────────────┐                                           │
-│  │   Grafana    │◄───── User Access (10.10.2.17)            │
+│  │   Grafana    │◄───── User Access (10.10.2.23)            │
 │  │ (Dashboards) │                                           │
 │  └──────────────┘                                           │
 └─────────────────────────────────────────────────────────────┘
@@ -78,6 +78,24 @@ Lightweight metrics collector that scrapes Prometheus targets and writes to Vict
 | kubernetes-cadvisor | Container metrics |
 | kubernetes-service-endpoints | Services with `prometheus.io/scrape: "true"` |
 | kubernetes-pods | Pods with `prometheus.io/scrape: "true"` |
+| kube-state-metrics | Kubernetes state metrics |
+| node-exporter | Node-level system metrics |
+
+**Duplicate Target Prevention:**
+
+VMAgent uses `keep_if_equal` relabeling to prevent duplicate scrape targets when services have multiple ports or pods have multiple containers:
+
+```yaml
+# For service endpoints - only scrape ports matching annotation
+- if: '{__meta_kubernetes_service_annotation_prometheus_io_port=~".+"}'
+  source_labels: [__meta_kubernetes_service_annotation_prometheus_io_port, __meta_kubernetes_endpoint_port_number]
+  action: keep_if_equal
+
+# For pods - only scrape container ports matching annotation
+- if: '{__meta_kubernetes_pod_annotation_prometheus_io_port=~".+"}'
+  source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_port, __meta_kubernetes_pod_container_port_number]
+  action: keep_if_equal
+```
 
 ### Grafana
 
@@ -99,8 +117,8 @@ Visualization platform with pre-configured dashboards.
 
 | Service | URL | Authentication |
 |---------|-----|----------------|
-| Grafana | http://10.10.2.17 | admin / admin |
-| VictoriaMetrics | http://10.10.2.18 | None |
+| Grafana | http://10.10.2.23 | admin / admin |
+| VictoriaMetrics | http://10.10.2.24 | None |
 
 **Change Grafana password on first login.**
 
@@ -172,7 +190,7 @@ data:
 
 ### Via Grafana UI
 
-1. Access http://10.10.2.17
+1. Access http://10.10.2.23
 2. Create dashboard in UI
 3. Dashboard persists in Longhorn PVC
 
@@ -199,13 +217,13 @@ rate(container_network_receive_bytes_total[5m])
 
 ```bash
 # Query metrics
-curl 'http://10.10.2.18/api/v1/query?query=up'
+curl 'http://10.10.2.24/api/v1/query?query=up'
 
 # Query range
-curl 'http://10.10.2.18/api/v1/query_range?query=up&start=2026-01-17T00:00:00Z&end=2026-01-17T12:00:00Z&step=1h'
+curl 'http://10.10.2.24/api/v1/query_range?query=up&start=2026-01-17T00:00:00Z&end=2026-01-17T12:00:00Z&step=1h'
 
 # List all metrics
-curl 'http://10.10.2.18/api/v1/label/__name__/values'
+curl 'http://10.10.2.24/api/v1/label/__name__/values'
 ```
 
 ---
@@ -263,7 +281,7 @@ kubectl top pods -n monitoring
 
 ```bash
 # Verify target is being scraped
-curl 'http://10.10.2.18/api/v1/targets'
+curl 'http://10.10.2.24/api/v1/targets'
 
 # Check for scrape errors
 kubectl logs -n monitoring -l app=vmagent | grep -i error
@@ -278,7 +296,7 @@ kubectl logs -n monitoring -l app=vmagent | grep -i error
 ```bash
 # Export dashboards via API
 curl -H "Authorization: Bearer <api-key>" \
-  http://10.10.2.17/api/dashboards/uid/<dashboard-uid> \
+  http://10.10.2.23/api/dashboards/uid/<dashboard-uid> \
   > dashboard-backup.json
 ```
 
@@ -332,4 +350,4 @@ kubernetes/apps/base/monitoring/
 
 ---
 
-**Last Updated:** 2026-01-17
+**Last Updated:** 2026-01-20

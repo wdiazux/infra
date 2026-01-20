@@ -1,9 +1,9 @@
 # Monitoring namespace - observability stack
 #
 # Services:
-#   - VictoriaMetrics: Time-series database (10.10.2.18)
+#   - VictoriaMetrics: Time-series database (10.10.2.24)
 #   - VMAgent: Metrics collection
-#   - Grafana: Visualization (10.10.2.17)
+#   - Grafana: Visualization (10.10.2.23)
 #   - kube-state-metrics: Kubernetes object metrics
 #   - node-exporter: Node/host metrics
 #
