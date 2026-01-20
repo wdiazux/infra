@@ -38,7 +38,7 @@ Network configuration and IP allocations for the homelab infrastructure.
 
 ## Kubernetes Services (10.10.2.11-20)
 
-LoadBalancer IPs assigned to Kubernetes services.
+LoadBalancer IPs assigned to core Kubernetes services.
 
 | IP | Service | Port | Namespace |
 |----|---------|------|-----------|
@@ -48,12 +48,9 @@ LoadBalancer IPs assigned to Kubernetes services.
 | 10.10.2.14 | Forgejo SSH | 22 | forgejo |
 | 10.10.2.15 | FluxCD Webhook | 80 | flux-system |
 | 10.10.2.16 | Weave GitOps | 80 | flux-system |
-| 10.10.2.17 | Grafana | 80 | monitoring |
-| 10.10.2.18 | VictoriaMetrics | 80 | monitoring |
-| 10.10.2.19 | Attic | 80 | tools |
+| 10.10.2.17 | MinIO Console | 80 | backup |
+| 10.10.2.19 | Open WebUI | 80 | ai |
 | 10.10.2.20 | Ollama | 11434 | ai |
-| 10.10.2.23 | Home Assistant | 80 | automation |
-| 10.10.2.24 | n8n | 80 | automation |
 
 ---
 
@@ -61,21 +58,27 @@ LoadBalancer IPs assigned to Kubernetes services.
 
 | IP | Service | Port | Namespace |
 |----|---------|------|-----------|
+| 10.10.2.21 | Homepage | 80 | tools |
 | 10.10.2.22 | Immich | 80 | media |
-| 10.10.2.25 | Open WebUI | 80 | ai |
-| 10.10.2.26 | ComfyUI | 80 | ai |
+| 10.10.2.23 | Grafana | 80 | monitoring |
+| 10.10.2.24 | VictoriaMetrics | 80 | monitoring |
+| 10.10.2.25 | Home Assistant | 80 | automation |
+| 10.10.2.26 | n8n | 80 | automation |
+| 10.10.2.27 | Obico | 80 | printing |
+| 10.10.2.28 | ComfyUI | 80 | ai |
+| 10.10.2.29 | Attic | 80 | tools |
 | 10.10.2.30 | Emby | 80 | media |
 | 10.10.2.31 | Navidrome | 80 | media |
 | 10.10.2.32 | IT-Tools | 80 | tools |
-| 10.10.2.35 | ntfy | 80 | tools |
 | 10.10.2.34 | Wallos | 80 | management |
+| 10.10.2.35 | ntfy | 80 | tools |
+| 10.10.2.36 | Paperless-ngx | 80 | management |
 | 10.10.2.40 | SABnzbd | 80 | arr-stack |
 | 10.10.2.41 | qBittorrent | 80 | arr-stack |
 | 10.10.2.42 | Prowlarr | 80 | arr-stack |
 | 10.10.2.43 | Radarr | 80 | arr-stack |
 | 10.10.2.44 | Sonarr | 80 | arr-stack |
 | 10.10.2.45 | Bazarr | 80 | arr-stack |
-| 10.10.2.27 | Obico | 80 | printing |
 
 ---
 
@@ -119,27 +122,30 @@ spec:
 | Forgejo | http://10.10.2.13 | Username/Password |
 | Forgejo SSH | ssh://git@10.10.2.14 | SSH Key |
 | Weave GitOps | http://10.10.2.16 | Username/Password |
-| Grafana | http://10.10.2.17 | Username/Password |
-| VictoriaMetrics | http://10.10.2.18 | None |
-| Attic | http://10.10.2.19 | Token |
+| MinIO Console | http://10.10.2.17 | Username/Password |
+| Open WebUI | http://10.10.2.19 | Username/Password |
 | Ollama | http://10.10.2.20:11434 | None |
+| Homepage | http://10.10.2.21 | None |
 | Immich | http://10.10.2.22 | Username/Password |
-| Home Assistant | http://10.10.2.23 | Username/Password |
-| n8n | http://10.10.2.24 | Username/Password |
-| Open WebUI | http://10.10.2.25 | Username/Password |
-| ComfyUI | http://10.10.2.26 | None (API auth optional) |
+| Grafana | http://10.10.2.23 | Username/Password |
+| VictoriaMetrics | http://10.10.2.24 | None |
+| Home Assistant | http://10.10.2.25 | Username/Password |
+| n8n | http://10.10.2.26 | Username/Password |
+| Obico | http://10.10.2.27 | Username/Password |
+| ComfyUI | http://10.10.2.28 | None (API auth optional) |
+| Attic | http://10.10.2.29 | Token |
 | Emby | http://10.10.2.30 | Username/Password |
 | Navidrome | http://10.10.2.31 | Username/Password |
 | IT-Tools | http://10.10.2.32 | None |
 | Wallos | http://10.10.2.34 | Username/Password |
 | ntfy | http://10.10.2.35 | Username/Password |
+| Paperless-ngx | http://10.10.2.36 | Username/Password |
 | SABnzbd | http://10.10.2.40 | Username/Password |
 | qBittorrent | http://10.10.2.41 | Username/Password |
 | Prowlarr | http://10.10.2.42 | Username/Password |
 | Radarr | http://10.10.2.43 | Username/Password |
 | Sonarr | http://10.10.2.44 | Username/Password |
 | Bazarr | http://10.10.2.45 | Username/Password |
-| Obico | http://10.10.2.27 | Username/Password |
 
 ---
 
@@ -156,27 +162,30 @@ Configure in your DNS server or `/etc/hosts`:
 10.10.2.12   longhorn.home-infra.net
 10.10.2.13   git.home-infra.net
 10.10.2.16   gitops.home-infra.net
-10.10.2.17   grafana.home-infra.net
-10.10.2.18   metrics.home-infra.net
-10.10.2.19   attic.home-infra.net
+10.10.2.17   minio.home-infra.net
+10.10.2.19   chat.home-infra.net
 10.10.2.20   ollama.home-infra.net
+10.10.2.21   home.home-infra.net
 10.10.2.22   photos.home-infra.net photos.reynoza.org
-10.10.2.23   hass.home-infra.net
-10.10.2.24   n8n.home-infra.net
-10.10.2.25   chat.home-infra.net
-10.10.2.26   sd.home-infra.net diffusion.home-infra.net
+10.10.2.23   grafana.home-infra.net
+10.10.2.24   metrics.home-infra.net
+10.10.2.25   hass.home-infra.net
+10.10.2.26   n8n.home-infra.net
+10.10.2.27   obico.home-infra.net
+10.10.2.28   sd.home-infra.net diffusion.home-infra.net
+10.10.2.29   attic.home-infra.net
 10.10.2.30   emby.home-infra.net
 10.10.2.31   music.home-infra.net
 10.10.2.32   tools.home-infra.net
 10.10.2.34   wallos.home-infra.net
 10.10.2.35   ntfy.home-infra.net
+10.10.2.36   paperless.home-infra.net
 10.10.2.40   sabnzbd.home-infra.net
 10.10.2.41   qbittorrent.home-infra.net
 10.10.2.42   prowlarr.home-infra.net
 10.10.2.43   radarr.home-infra.net
 10.10.2.44   sonarr.home-infra.net
 10.10.2.45   bazarr.home-infra.net
-10.10.2.27   obico.home-infra.net
 ```
 
 ---
@@ -195,12 +204,14 @@ curl -s http://10.10.2.11  # Hubble
 curl -s http://10.10.2.12  # Longhorn
 curl -s http://10.10.2.13  # Forgejo
 curl -s http://10.10.2.16  # Weave GitOps
+curl -s http://10.10.2.23  # Grafana
+curl -s http://10.10.2.24  # VictoriaMetrics
 curl -s http://10.10.2.32  # IT-Tools
 curl -s http://10.10.2.34  # Wallos
 
 # AI services
-curl -s http://10.10.2.25  # Open WebUI
-curl -s http://10.10.2.26  # ComfyUI
+curl -s http://10.10.2.19  # Open WebUI
+curl -s http://10.10.2.28  # ComfyUI
 
 # Media services
 curl -s http://10.10.2.30  # Emby
