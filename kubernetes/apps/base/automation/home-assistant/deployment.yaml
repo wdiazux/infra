@@ -49,6 +49,10 @@ spec:
           env:
             - name: TZ
               value: "America/El_Salvador"
+          # SECURITY: Privileged mode required for:
+          # - mDNS/SSDP/UPnP device discovery (smart home integrations)
+          # - NET_ADMIN/NET_RAW for ARP scanning and network device detection
+          # - Access to host network interfaces for device communication
           securityContext:
             privileged: true
             capabilities:

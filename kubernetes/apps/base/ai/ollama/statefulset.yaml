@@ -36,6 +36,8 @@ spec:
               containerPort: 11434
               protocol: TCP
           env:
+            - name: TZ
+              value: "America/El_Salvador"
             - name: OLLAMA_HOST
               value: "0.0.0.0"
             - name: OLLAMA_NUM_PARALLEL

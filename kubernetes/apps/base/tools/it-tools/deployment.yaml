@@ -11,6 +11,7 @@ metadata:
   labels:
     app.kubernetes.io/name: it-tools
     app.kubernetes.io/component: server
+    app.kubernetes.io/part-of: tools
 spec:
   replicas: 1
   selector:
@@ -21,6 +22,7 @@ spec:
       labels:
         app.kubernetes.io/name: it-tools
         app.kubernetes.io/component: server
+        app.kubernetes.io/part-of: tools
     spec:
       containers:
         - name: it-tools

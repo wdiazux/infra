@@ -10,6 +10,7 @@ metadata:
   labels:
     app.kubernetes.io/name: wallos
     app.kubernetes.io/component: server
+    app.kubernetes.io/part-of: management
 spec:
   replicas: 1
   strategy:
@@ -22,6 +23,7 @@ spec:
       labels:
         app.kubernetes.io/name: wallos
         app.kubernetes.io/component: server
+        app.kubernetes.io/part-of: management
     spec:
       securityContext:
         fsGroup: 3001

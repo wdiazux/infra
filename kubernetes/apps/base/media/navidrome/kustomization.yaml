@@ -1,3 +1,7 @@
+# Navidrome Music Server
+#
+# Modern music server and streamer with web UI.
+# https://www.navidrome.org/
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 

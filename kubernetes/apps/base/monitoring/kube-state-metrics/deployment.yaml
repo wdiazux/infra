@@ -9,6 +9,7 @@ metadata:
   labels:
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/component: exporter
+    app.kubernetes.io/part-of: monitoring
 spec:
   replicas: 1
   selector:
@@ -19,6 +20,7 @@ spec:
       labels:
         app.kubernetes.io/name: kube-state-metrics
         app.kubernetes.io/component: exporter
+        app.kubernetes.io/part-of: monitoring
     spec:
       serviceAccountName: kube-state-metrics
       securityContext:

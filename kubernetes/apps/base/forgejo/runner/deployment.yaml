@@ -29,13 +29,20 @@ spec:
         app.kubernetes.io/part-of: forgejo
     spec:
       serviceAccountName: forgejo-runner
+      securityContext:
+        # Note: Individual containers override with runAsUser: 0 for Docker socket access
+        fsGroup: 1000
+        fsGroupChangePolicy: "OnRootMismatch"
 
       # Init container: Register runner with Forgejo
       initContainers:
         - name: register
           image: code.forgejo.org/forgejo/runner:11
+          # SECURITY: Root access required for:
+          # - Writing registration config to /root/.runner
+          # - Runner stores state in /data which needs consistent ownership
           securityContext:
-            runAsUser: 0  # Run as root to access /root/.runner
+            runAsUser: 0
           command:
             - /bin/sh
             - -c
@@ -81,8 +88,11 @@ spec:
         # Main runner container
         - name: runner
           image: code.forgejo.org/forgejo/runner:11
+          # SECURITY: Root access required for:
+          # - Access to Docker socket at /var/run/docker.sock
+          # - Reading .runner config created by init container
           securityContext:
-            runAsUser: 0  # Run as root to access Docker socket
+            runAsUser: 0
           workingDir: /data
           command:
             - /bin/sh
@@ -120,8 +130,12 @@ spec:
         # Docker-in-Docker sidecar for job execution
         - name: docker-dind
           image: docker:28-dind
+          # SECURITY: Privileged mode required for Docker-in-Docker:
+          # - Running nested containers for CI/CD jobs
+          # - Creating container namespaces and cgroups
+          # - Mounting filesystems within containers
           securityContext:
-            privileged: true  # Required for Docker daemon
+            privileged: true
           env:
             - name: DOCKER_TLS_CERTDIR
               value: ""  # Disable TLS for local socket

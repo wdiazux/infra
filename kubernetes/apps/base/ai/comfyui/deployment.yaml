@@ -40,6 +40,8 @@ spec:
               containerPort: 8188
               protocol: TCP
           env:
+            - name: TZ
+              value: "America/El_Salvador"
             # GPU configuration
             - name: NVIDIA_VISIBLE_DEVICES
               value: "all"

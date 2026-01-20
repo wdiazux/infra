@@ -24,6 +24,9 @@ spec:
         app.kubernetes.io/part-of: monitoring
     spec:
       serviceAccountName: vmagent
+      securityContext:
+        fsGroup: 65534
+        fsGroupChangePolicy: "OnRootMismatch"
       containers:
         - name: vmagent
           image: victoriametrics/vmagent:v1.134.0 # {"$imagepolicy": "flux-system:vmagent"}
