@@ -10,6 +10,7 @@ metadata:
   namespace: automation
   labels:
     app.kubernetes.io/name: n8n
+    app.kubernetes.io/component: server
     app.kubernetes.io/part-of: automation
 spec:
   replicas: 1
@@ -22,6 +23,7 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: n8n
+        app.kubernetes.io/component: server
         app.kubernetes.io/part-of: automation
     spec:
       securityContext:
@@ -29,7 +31,7 @@ spec:
         fsGroupChangePolicy: "OnRootMismatch"
       containers:
         - name: n8n
-          image: n8nio/n8n:latest
+          image: n8nio/n8n:2.5.0 # {"$imagepolicy": "flux-system:n8n"}
           ports:
             - name: http
               containerPort: 5678

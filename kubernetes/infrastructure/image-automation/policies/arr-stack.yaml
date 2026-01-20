@@ -1,0 +1,141 @@
+# Arr-stack Image Policies
+#
+# Hotio images use release-X.X.X tags
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: radarr
+  namespace: flux-system
+spec:
+  image: ghcr.io/hotio/radarr
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: radarr
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: radarr
+  filterTags:
+    pattern: '^release-[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$'
+  policy:
+    alphabetical:
+      order: asc
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: sonarr
+  namespace: flux-system
+spec:
+  image: ghcr.io/hotio/sonarr
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: sonarr
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: sonarr
+  filterTags:
+    pattern: '^release-[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$'
+  policy:
+    alphabetical:
+      order: asc
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: bazarr
+  namespace: flux-system
+spec:
+  image: ghcr.io/hotio/bazarr
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: bazarr
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: bazarr
+  filterTags:
+    pattern: '^release-[0-9]+\.[0-9]+\.[0-9]+$'
+  policy:
+    alphabetical:
+      order: asc
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: prowlarr
+  namespace: flux-system
+spec:
+  image: ghcr.io/hotio/prowlarr
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: prowlarr
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: prowlarr
+  filterTags:
+    pattern: '^release-[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$'
+  policy:
+    alphabetical:
+      order: asc
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: qbittorrent
+  namespace: flux-system
+spec:
+  image: ghcr.io/hotio/qbittorrent
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: qbittorrent
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: qbittorrent
+  filterTags:
+    pattern: '^release-[0-9]+\.[0-9]+\.[0-9]+$'
+  policy:
+    alphabetical:
+      order: asc
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: sabnzbd
+  namespace: flux-system
+spec:
+  image: ghcr.io/hotio/sabnzbd
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: sabnzbd
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: sabnzbd
+  filterTags:
+    pattern: '^release-[0-9]+\.[0-9]+\.[0-9]+$'
+  policy:
+    alphabetical:
+      order: asc

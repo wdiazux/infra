@@ -1,0 +1,29 @@
+# Flux Image Update Automation
+#
+# Scans registries for new image versions and creates weekly
+# branches for review before merging to main.
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageUpdateAutomation
+metadata:
+  name: image-updates
+  namespace: flux-system
+spec:
+  interval: 12h
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  git:
+    checkout:
+      ref:
+        branch: main
+    commit:
+      author:
+        name: flux-image-bot
+        email: flux@home-infra.net
+      messageTemplate: |
+        chore(images): update {{ range .Changed.Changes }}{{ .OldValue }} -> {{ .NewValue }} {{ end }}
+    push:
+      branch: image-updates/{{ now "2006-w02" }}
+  update:
+    path: ./kubernetes/apps
+    strategy: Setters

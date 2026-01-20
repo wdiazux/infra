@@ -12,6 +12,7 @@ metadata:
   namespace: backup
   labels:
     app.kubernetes.io/name: minio
+    app.kubernetes.io/component: storage
     app.kubernetes.io/part-of: backup
 spec:
   replicas: 1
@@ -24,6 +25,7 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: minio
+        app.kubernetes.io/component: storage
         app.kubernetes.io/part-of: backup
     spec:
       securityContext:
@@ -31,7 +33,7 @@ spec:
         fsGroupChangePolicy: "OnRootMismatch"
       containers:
         - name: minio
-          image: minio/minio:latest
+          image: minio/minio:RELEASE.2025-09-07T16-13-09Z # {"$imagepolicy": "flux-system:minio"}
           args:
             - server
             - /data

@@ -9,6 +9,7 @@ metadata:
   namespace: ai
   labels:
     app.kubernetes.io/name: ollama
+    app.kubernetes.io/component: inference
     app.kubernetes.io/part-of: ai
 spec:
   serviceName: ollama
@@ -20,6 +21,7 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: ollama
+        app.kubernetes.io/component: inference
         app.kubernetes.io/part-of: ai
     spec:
       runtimeClassName: nvidia
@@ -28,7 +30,7 @@ spec:
         fsGroupChangePolicy: "OnRootMismatch"
       containers:
         - name: ollama
-          image: ollama/ollama:latest
+          image: ollama/ollama:0.14.2 # {"$imagepolicy": "flux-system:ollama"}
           ports:
             - name: http
               containerPort: 11434

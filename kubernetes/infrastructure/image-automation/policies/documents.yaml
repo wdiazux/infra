@@ -1,0 +1,70 @@
+# Document Processing Image Policies
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: paperless-ngx
+  namespace: flux-system
+spec:
+  image: ghcr.io/paperless-ngx/paperless-ngx
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: paperless-ngx
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: paperless-ngx
+  filterTags:
+    pattern: '^v[0-9]+\.[0-9]+\.[0-9]+$'
+  policy:
+    semver:
+      range: ">=2.0.0"
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: tika
+  namespace: flux-system
+spec:
+  image: docker.io/apache/tika
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: tika
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: tika
+  filterTags:
+    pattern: '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$'
+  policy:
+    semver:
+      range: ">=3.0.0"
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: gotenberg
+  namespace: flux-system
+spec:
+  image: docker.io/gotenberg/gotenberg
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: gotenberg
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: gotenberg
+  filterTags:
+    pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'
+  policy:
+    semver:
+      range: ">=8.0.0"

@@ -1,0 +1,94 @@
+# Media Namespace Image Policies
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: emby
+  namespace: flux-system
+spec:
+  image: lscr.io/linuxserver/emby
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: emby
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: emby
+  filterTags:
+    pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'
+    extract: '$0'
+  policy:
+    semver:
+      range: ">=4.0.0"
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: navidrome
+  namespace: flux-system
+spec:
+  image: docker.io/deluan/navidrome
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: navidrome
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: navidrome
+  filterTags:
+    pattern: '^v[0-9]+\.[0-9]+\.[0-9]+$'
+  policy:
+    semver:
+      range: ">=0.50.0"
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: immich-server
+  namespace: flux-system
+spec:
+  image: ghcr.io/immich-app/immich-server
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: immich-server
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: immich-server
+  filterTags:
+    pattern: '^v[0-9]+\.[0-9]+\.[0-9]+$'
+  policy:
+    semver:
+      range: ">=1.0.0"
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: immich-machine-learning
+  namespace: flux-system
+spec:
+  image: ghcr.io/immich-app/immich-machine-learning
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: immich-machine-learning
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: immich-machine-learning
+  filterTags:
+    pattern: '^v[0-9]+\.[0-9]+\.[0-9]+-cuda$'
+  policy:
+    semver:
+      range: ">=1.0.0"

@@ -17,10 +17,11 @@ metadata:
   namespace: backup
 spec:
   interval: 30m
+  timeout: 10m
   chart:
     spec:
       chart: velero
-      version: "8.*"
+      version: "8.7.*"
       sourceRef:
         kind: HelmRepository
         name: vmware-tanzu

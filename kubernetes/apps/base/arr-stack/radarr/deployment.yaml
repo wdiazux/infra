@@ -9,6 +9,7 @@ metadata:
   namespace: arr-stack
   labels:
     app.kubernetes.io/name: radarr
+    app.kubernetes.io/component: server
     app.kubernetes.io/part-of: arr-stack
 spec:
   replicas: 1
@@ -21,6 +22,7 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: radarr
+        app.kubernetes.io/component: server
         app.kubernetes.io/part-of: arr-stack
     spec:
       securityContext:
@@ -28,7 +30,7 @@ spec:
         fsGroupChangePolicy: "OnRootMismatch"
       containers:
         - name: radarr
-          image: ghcr.io/hotio/radarr:latest
+          image: ghcr.io/hotio/radarr:release-6.0.4.10291 # {"$imagepolicy": "flux-system:radarr"}
           ports:
             - name: http
               containerPort: 7878

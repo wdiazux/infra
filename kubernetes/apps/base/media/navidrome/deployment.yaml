@@ -9,6 +9,7 @@ metadata:
   namespace: media
   labels:
     app.kubernetes.io/name: navidrome
+    app.kubernetes.io/component: server
     app.kubernetes.io/part-of: media
 spec:
   replicas: 1
@@ -21,6 +22,7 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: navidrome
+        app.kubernetes.io/component: server
         app.kubernetes.io/part-of: media
     spec:
       securityContext:
@@ -28,7 +30,7 @@ spec:
         fsGroupChangePolicy: "OnRootMismatch"
       containers:
         - name: navidrome
-          image: docker.io/deluan/navidrome:latest
+          image: docker.io/deluan/navidrome:v0.59.0 # {"$imagepolicy": "flux-system:navidrome"}
           ports:
             - name: http
               containerPort: 4533

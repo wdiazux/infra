@@ -32,7 +32,7 @@ spec:
         fsGroupChangePolicy: "OnRootMismatch"
       containers:
         - name: immich-server
-          image: ghcr.io/immich-app/immich-server:v2.4.1
+          image: ghcr.io/immich-app/immich-server:v2.4.1 # {"$imagepolicy": "flux-system:immich-server"}
           ports:
             - name: http
               containerPort: 2283

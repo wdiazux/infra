@@ -31,7 +31,7 @@ spec:
         fsGroupChangePolicy: "OnRootMismatch"
       containers:
         - name: victoriametrics
-          image: victoriametrics/victoria-metrics:v1.134.0
+          image: victoriametrics/victoria-metrics:v1.134.0 # {"$imagepolicy": "flux-system:victoria-metrics"}
           args:
             - --storageDataPath=/victoria-metrics-data
             - --httpListenAddr=:8428

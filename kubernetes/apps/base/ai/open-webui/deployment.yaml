@@ -9,6 +9,7 @@ metadata:
   namespace: ai
   labels:
     app.kubernetes.io/name: open-webui
+    app.kubernetes.io/component: frontend
     app.kubernetes.io/part-of: ai
 spec:
   replicas: 1
@@ -21,11 +22,12 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: open-webui
+        app.kubernetes.io/component: frontend
         app.kubernetes.io/part-of: ai
     spec:
       containers:
         - name: open-webui
-          image: ghcr.io/open-webui/open-webui:latest
+          image: ghcr.io/open-webui/open-webui:v0.7.2 # {"$imagepolicy": "flux-system:open-webui"}
           ports:
             - name: http
               containerPort: 8080

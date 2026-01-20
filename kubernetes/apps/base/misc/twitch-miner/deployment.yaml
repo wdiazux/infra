@@ -9,6 +9,7 @@ metadata:
   namespace: misc
   labels:
     app.kubernetes.io/name: twitch-miner
+    app.kubernetes.io/component: server
 spec:
   replicas: 1
   strategy:
@@ -20,10 +21,11 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: twitch-miner
+        app.kubernetes.io/component: server
     spec:
       containers:
         - name: twitch-miner
-          image: rdavidoff/twitch-channel-points-miner-v2:latest
+          image: rdavidoff/twitch-channel-points-miner-v2:2.0.4 # {"$imagepolicy": "flux-system:twitch-miner"}
           stdin: true
           tty: true
           env:
@@ -41,6 +43,11 @@ spec:
                 secretKeyRef:
                   name: twitch-miner-credentials
                   key: TWITCH_PASSWORD
+          resources:
+            requests:
+              memory: 128Mi
+            limits:
+              memory: 256Mi
           volumeMounts:
             - name: config
               mountPath: /usr/src/app/run.py

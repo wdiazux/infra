@@ -9,6 +9,7 @@ metadata:
   namespace: tools
   labels:
     app.kubernetes.io/name: attic
+    app.kubernetes.io/component: server
     app.kubernetes.io/part-of: attic
 spec:
   replicas: 1
@@ -21,6 +22,7 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: attic
+        app.kubernetes.io/component: server
         app.kubernetes.io/part-of: attic
     spec:
       securityContext:

@@ -9,6 +9,7 @@ metadata:
   namespace: arr-stack
   labels:
     app.kubernetes.io/name: sabnzbd
+    app.kubernetes.io/component: downloader
     app.kubernetes.io/part-of: arr-stack
 spec:
   replicas: 1
@@ -21,6 +22,7 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: sabnzbd
+        app.kubernetes.io/component: downloader
         app.kubernetes.io/part-of: arr-stack
     spec:
       securityContext:
@@ -28,7 +30,7 @@ spec:
         fsGroupChangePolicy: "OnRootMismatch"
       containers:
         - name: sabnzbd
-          image: ghcr.io/hotio/sabnzbd:latest
+          image: ghcr.io/hotio/sabnzbd:release-4.5.5 # {"$imagepolicy": "flux-system:sabnzbd"}
           ports:
             - name: http
               containerPort: 8080

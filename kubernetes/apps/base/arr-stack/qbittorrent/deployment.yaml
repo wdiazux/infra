@@ -9,6 +9,7 @@ metadata:
   namespace: arr-stack
   labels:
     app.kubernetes.io/name: qbittorrent
+    app.kubernetes.io/component: downloader
     app.kubernetes.io/part-of: arr-stack
 spec:
   replicas: 1
@@ -21,6 +22,7 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: qbittorrent
+        app.kubernetes.io/component: downloader
         app.kubernetes.io/part-of: arr-stack
     spec:
       securityContext:
@@ -28,7 +30,7 @@ spec:
         fsGroupChangePolicy: "OnRootMismatch"
       containers:
         - name: qbittorrent
-          image: ghcr.io/hotio/qbittorrent:latest
+          image: ghcr.io/hotio/qbittorrent:release-5.1.4 # {"$imagepolicy": "flux-system:qbittorrent"}
           ports:
             - name: http
               containerPort: 8080

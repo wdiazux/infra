@@ -124,7 +124,7 @@ data "talos_machine_configuration" "node" {
           # - 60s total grace period
           # - 30s for regular pods, 30s for critical pods (Longhorn, Cilium, etc.)
           extraConfig = {
-            shutdownGracePeriod            = "60s"
+            shutdownGracePeriod             = "60s"
             shutdownGracePeriodCriticalPods = "30s"
           }
           # Longhorn requirements: extra mount for volume attachment

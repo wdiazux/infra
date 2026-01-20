@@ -1,0 +1,116 @@
+# Monitoring Namespace Image Policies
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: grafana
+  namespace: flux-system
+spec:
+  image: grafana/grafana
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: grafana
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: grafana
+  filterTags:
+    pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'
+  policy:
+    semver:
+      range: ">=10.0.0"
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: victoria-metrics
+  namespace: flux-system
+spec:
+  image: victoriametrics/victoria-metrics
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: victoria-metrics
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: victoria-metrics
+  filterTags:
+    pattern: '^v[0-9]+\.[0-9]+\.[0-9]+$'
+  policy:
+    semver:
+      range: ">=1.90.0"
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: vmagent
+  namespace: flux-system
+spec:
+  image: victoriametrics/vmagent
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: vmagent
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: vmagent
+  filterTags:
+    pattern: '^v[0-9]+\.[0-9]+\.[0-9]+$'
+  policy:
+    semver:
+      range: ">=1.90.0"
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: node-exporter
+  namespace: flux-system
+spec:
+  image: quay.io/prometheus/node-exporter
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: node-exporter
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: node-exporter
+  filterTags:
+    pattern: '^v[0-9]+\.[0-9]+\.[0-9]+$'
+  policy:
+    semver:
+      range: ">=1.0.0"
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: kube-state-metrics
+  namespace: flux-system
+spec:
+  image: registry.k8s.io/kube-state-metrics/kube-state-metrics
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: kube-state-metrics
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: kube-state-metrics
+  filterTags:
+    pattern: '^v[0-9]+\.[0-9]+\.[0-9]+$'
+  policy:
+    semver:
+      range: ">=2.0.0"

@@ -8,6 +8,7 @@ metadata:
   namespace: automation
   labels:
     app.kubernetes.io/name: n8n-postgres
+    app.kubernetes.io/component: database
     app.kubernetes.io/part-of: automation
 spec:
   serviceName: n8n-postgres
@@ -19,6 +20,7 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: n8n-postgres
+        app.kubernetes.io/component: database
         app.kubernetes.io/part-of: automation
     spec:
       securityContext:
