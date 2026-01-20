@@ -21,7 +21,7 @@ Services for AI/ML workloads with GPU acceleration.
 | Service | Current Image | Latest Version | Status |
 |---------|---------------|----------------|--------|
 | Ollama | `ollama/ollama:latest` | latest | :warning: Using Latest Tag |
-| Open WebUI | `ghcr.io/open-webui/open-webui:main` | v0.7.2 | :arrow_up: Pin to v0.7.2 |
+| Open WebUI | `ghcr.io/open-webui/open-webui:latest` | latest | :warning: Using Latest Tag |
 | ComfyUI | `yanwk/comfyui-boot:cu128-slim` | cu128-slim | :white_check_mark: Current |
 
 **Access:**
@@ -208,7 +208,6 @@ Developer utilities and services.
 |---------|---------|--------|-------|
 | Grafana | 11.4.0 | 12.4.x | Major version with new features |
 | Forgejo Runner | 6.3.1 | v11.0.0 | Major version upgrade |
-| Open WebUI | main | v0.7.2 | Pin to stable release |
 
 ### Low Priority (Minor Updates)
 
