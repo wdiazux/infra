@@ -291,6 +291,7 @@ spec:
 ---
 # Longhorn VolumeSnapshotClass
 # Label required for Velero CSI snapshot integration
+# type: snap creates in-cluster snapshot; Velero data-mover uploads to S3
 apiVersion: snapshot.storage.k8s.io/v1
 kind: VolumeSnapshotClass
 metadata:
@@ -299,3 +300,5 @@ metadata:
     velero.io/csi-volumesnapshot-class: "true"
 driver: driver.longhorn.io
 deletionPolicy: Delete
+parameters:
+  type: snap
