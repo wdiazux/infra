@@ -114,7 +114,7 @@ curl -X POST "http://10.10.2.13/api/v1/user/repos" \
 
 ### Enable Actions
 
-Actions are enabled by default. Create `.forgejo/workflows/` in your repository.
+Actions are enabled automatically for new repositories via Terraform configuration. Create `.forgejo/workflows/` in your repository.
 
 ### Example Workflow
 
@@ -134,12 +134,45 @@ jobs:
         run: echo "Testing..."
 ```
 
+### Security Scanning Workflow
+
+The infrastructure repository includes a security scanning workflow:
+
+```yaml
+# .forgejo/workflows/security-scan.yaml
+name: Security Scan
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Trivy vulnerability scanner
+        run: |
+          trivy fs --security-checks vuln,config .
+      - name: Run tflint
+        run: |
+          tflint --recursive
+```
+
+This workflow runs:
+- **Trivy**: Scans for vulnerabilities and misconfigurations
+- **tflint**: Terraform linting and best practices
+
 ### Runner Status
 
 Check if runner is available:
 ```bash
 # In Forgejo UI
 # Site Administration → Actions → Runners
+
+# Or via kubectl
+kubectl get pods -n forgejo -l app.kubernetes.io/component=runner
 ```
 
 ---
@@ -245,4 +278,4 @@ kubectl exec -it -n forgejo deploy/forgejo-forgejo -- \
 
 ---
 
-**Last Updated:** 2026-01-15
+**Last Updated:** 2026-01-20
