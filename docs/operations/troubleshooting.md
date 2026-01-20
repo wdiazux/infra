@@ -21,6 +21,196 @@ kubectl get events -A --sort-by='.lastTimestamp' | tail -20
 
 ---
 
+## Cluster Health Check Runbook
+
+Systematic procedure for checking cluster health, identifying errors, warnings, and potential issues.
+
+### Step 1: Check Node Status
+
+```bash
+# Verify node is Ready and check resources
+kubectl get nodes -o wide
+
+# Check CPU and memory usage
+kubectl top nodes
+```
+
+**What to look for:**
+- Node status should be `Ready`
+- CPU usage should be < 80%
+- Memory usage should be < 85%
+
+### Step 2: Find Unhealthy Pods
+
+```bash
+# Find pods not in Running/Completed state
+kubectl get pods -A --no-headers | grep -v "Running\|Completed"
+
+# Get pod status summary
+kubectl get pods -A --no-headers | awk '{print $3}' | sort | uniq -c | sort -rn
+
+# Find pods with high restart counts (>3 restarts)
+kubectl get pods -A --no-headers | awk '$4 > 3 {print $1, $2, $4 " restarts"}'
+```
+
+**What to look for:**
+- Pods in `Pending`, `CrashLoopBackOff`, `Error`, `ImagePullBackOff`
+- High restart counts indicate instability
+
+### Step 3: Check Warning Events
+
+```bash
+# Get recent warning events cluster-wide
+kubectl get events -A --sort-by='.lastTimestamp' --field-selector type=Warning | tail -50
+```
+
+**Common warning patterns:**
+| Warning | Meaning |
+|---------|---------|
+| `FailedMount` | Volume couldn't be mounted (CSI driver or PVC issue) |
+| `FailedScheduling` | No node available (taints, resources, affinity) |
+| `BackOff` | Container keeps crashing |
+| `Unhealthy` | Probe failed (startup/readiness/liveness) |
+| `FailedCreate` | Controller couldn't create resource |
+
+### Step 4: Check Logs for Errors
+
+```bash
+# Check logs across all namespaces for errors/warnings
+for ns in $(kubectl get ns -o jsonpath='{.items[*].metadata.name}'); do
+  echo "=== $ns ==="
+  kubectl logs -n $ns --all-containers --since=1h --tail=100 -l app 2>/dev/null | \
+    grep -iE "error|warn|fail|exception|critical" | head -20
+done
+```
+
+**Targeted log checks by component:**
+```bash
+# Cilium (CNI)
+kubectl logs -n kube-system -l app.kubernetes.io/name=cilium-agent --tail=50 | grep -iE "error|warn"
+
+# Longhorn (Storage)
+kubectl logs -n longhorn-system -l app=longhorn-manager --tail=50 | grep -iE "error|warn"
+
+# FluxCD (GitOps)
+kubectl logs -n flux-system -l app=source-controller --tail=50 | grep -iE "error|warn"
+
+# CoreDNS
+kubectl logs -n kube-system -l k8s-app=kube-dns --tail=50 | grep -iE "error|warn"
+```
+
+### Step 5: Check Core Components
+
+**Cilium (Networking)**
+```bash
+kubectl get pods -n kube-system -l app.kubernetes.io/name=cilium
+kubectl get pods -n kube-system -l app.kubernetes.io/name=cilium-operator
+
+# Detailed Cilium status
+kubectl -n kube-system exec ds/cilium -- cilium status --brief
+```
+
+**Longhorn (Storage)**
+```bash
+kubectl get pods -n longhorn-system
+
+# Check volume health
+kubectl get volumes.longhorn.io -n longhorn-system
+
+# Check for unbound PVCs
+kubectl get pvc -A | grep -v Bound
+```
+
+**FluxCD (GitOps)**
+```bash
+# Check all FluxCD resources
+kubectl get gitrepository,helmrelease,kustomization -A
+
+# Quick status check
+flux get all -A
+```
+
+### Step 6: Check Failed Jobs
+
+```bash
+# Find failed jobs
+kubectl get jobs -A --field-selector status.successful=0
+
+# Check specific job logs
+kubectl logs -n <namespace> -l job-name=<job-name>
+
+# Clean up failed jobs (optional)
+kubectl delete job -n <namespace> <job-name>
+```
+
+### Step 7: Resource Pressure Check
+
+```bash
+# Node conditions (disk pressure, memory pressure, PID pressure)
+kubectl describe node | grep -A5 "Conditions:"
+
+# Storage usage in Longhorn
+kubectl get nodes.longhorn.io -n longhorn-system -o jsonpath='{range .items[*]}{.metadata.name}: {.status.diskStatus}{"\n"}{end}'
+```
+
+### Post-Restart Health Check
+
+After a server/cluster restart, expect these transient issues:
+
+| Issue | Expected Duration | Action |
+|-------|-------------------|--------|
+| `operation not permitted` network errors | 1-3 minutes | Wait for Cilium to initialize |
+| `CSI driver not found` | 2-5 minutes | Wait for Longhorn to register |
+| Pod restarts | 5-10 minutes | Normal cascade, wait for stabilization |
+| FluxCD reconciliation failures | 2-5 minutes | Will auto-recover when network ready |
+| Probe failures (Unhealthy) | 3-5 minutes | Apps starting up, wait |
+
+**Post-restart checklist:**
+```bash
+# 1. Verify all pods eventually reach Running
+watch "kubectl get pods -A --no-headers | grep -v 'Running\|Completed' | wc -l"
+
+# 2. Verify FluxCD recovered
+kubectl get gitrepository,kustomization -A | grep -v True
+
+# 3. Verify all PVCs bound
+kubectl get pvc -A | grep -v Bound
+
+# 4. Check for any stuck jobs from restart window
+kubectl get jobs -A --field-selector status.successful=0
+```
+
+### Health Check Summary Template
+
+```
+## Cluster Health Report - $(date)
+
+### Node Status
+- Status: Ready/NotReady
+- CPU: X%
+- Memory: X%
+
+### Pod Status
+- Total: X
+- Running: X
+- Issues: X
+
+### Warning Events (Last Hour)
+- Count: X
+- Critical: [list]
+
+### Component Status
+- Cilium: OK/Issue
+- Longhorn: OK/Issue
+- FluxCD: OK/Issue
+- CoreDNS: OK/Issue
+
+### Action Items
+1. [list any issues needing attention]
+```
+
+---
+
 ## Talos Issues
 
 ### Node Not Accessible
@@ -428,4 +618,4 @@ talosctl gen config homelab https://10.10.2.10:6443
 
 ---
 
-**Last Updated:** 2026-01-15
+**Last Updated:** 2026-01-20

@@ -40,6 +40,21 @@ Velero provides Kubernetes-native backup and restore with CSI snapshot integrati
 └─────────────────────────────────────────────────────────────┘
 ```
 
+### How Velero + Longhorn CSI Integration Works
+
+1. **Velero triggers backup** at scheduled time
+2. **CSI Snapshotter** creates point-in-time Longhorn volume snapshots
+3. **Node Agent** (runs on each node) moves snapshot data to MinIO
+4. **MinIO** stores backup data in S3-compatible format
+5. **MinIO backend** persists to NAS via NFS mount
+
+**Key settings enabling this:**
+- `features: EnableCSI` - Enables CSI snapshot integration
+- `defaultSnapshotMoveData: true` - Copies snapshot data to object storage
+- `volumeSnapshotLocations: [longhorn]` - Uses Longhorn as snapshot provider
+
+**Configuration file:** `kubernetes/infrastructure/controllers/velero.yaml`
+
 ### Components
 
 | Component | Purpose | Access |
@@ -47,13 +62,40 @@ Velero provides Kubernetes-native backup and restore with CSI snapshot integrati
 | Velero | Kubernetes backup/restore | CLI: `velero` command |
 | MinIO | S3-compatible storage backend | Console: http://10.10.2.17 |
 | CSI Snapshotter | Volume snapshot controller | Internal |
+| Node Agent | Moves snapshot data to object storage | Internal (DaemonSet) |
 
 ### Backup Schedules
 
 | Schedule | Time | Retention | Namespaces |
 |----------|------|-----------|------------|
-| `daily-apps` | 3 AM daily | 7 days | ai, arr-stack, automation, forgejo, management, media, printing, tools |
-| `weekly-full` | 2 AM Sunday | 4 weeks | All above + backup, monitoring |
+| `velero-daily-apps` | 3 AM daily | 7 days | ai, arr-stack, automation, forgejo, management, media, printing, tools |
+| `velero-weekly-full` | 2 AM Sunday | 4 weeks | All above + backup, monitoring |
+
+### What Gets Backed Up
+
+**Daily Backup (`velero-daily-apps`):**
+
+| Namespace | Services | Data Included |
+|-----------|----------|---------------|
+| ai | Open WebUI, Ollama, ComfyUI | LLM configs, generated images |
+| arr-stack | Radarr, Sonarr, Prowlarr, Bazarr, SABnzbd, qBittorrent | App configs (SQLite DBs) |
+| automation | Home Assistant, n8n | Automations, workflows, PostgreSQL |
+| forgejo | Forgejo, PostgreSQL | Git repos, user data, database |
+| management | Homepage, Paperless-ngx, Wallos | Documents, configs |
+| media | Emby, Navidrome, Immich | Media metadata, PostgreSQL |
+| printing | Obico | 3D print monitoring data |
+| tools | IT-Tools, ntfy, Attic | Configs, notifications |
+
+**Weekly Full (`velero-weekly-full`):**
+- All daily namespaces PLUS:
+- `backup` - MinIO, Velero configs
+- `monitoring` - Grafana dashboards, VictoriaMetrics data
+
+**Not backed up (intentionally):**
+- `kube-system` - Recreated by Kubernetes/Talos
+- `flux-system` - Recreated from Git
+- `longhorn-system` - Storage infrastructure
+- NFS media files - Backed up separately on NAS
 
 ### Velero Commands
 
@@ -101,6 +143,143 @@ Credentials are in `secrets/minio-creds.enc.yaml`.
 | `kubernetes/infrastructure/controllers/velero.yaml` | Velero HelmRelease |
 | `kubernetes/apps/base/backup/minio/` | MinIO deployment |
 | `kubernetes/infrastructure/storage/nfs-backups-*.yaml` | NFS PV/PVC for MinIO |
+
+---
+
+## Managing Backup Schedules
+
+### View Current Schedules
+
+```bash
+# List all schedules
+kubectl get schedule -n backup
+
+# Detailed schedule info
+kubectl describe schedule velero-daily-apps -n backup
+
+# Check last backup for schedule
+kubectl get backup -n backup --sort-by=.metadata.creationTimestamp | tail -10
+```
+
+### Modify Existing Schedule
+
+Schedules are managed via Helm values in `kubernetes/infrastructure/controllers/velero.yaml`.
+
+**To change schedule timing or retention:**
+
+1. Edit the Velero HelmRelease:
+```yaml
+# In velero.yaml, under spec.values.schedules
+schedules:
+  daily-apps:
+    schedule: "0 4 * * *"  # Change to 4 AM
+    template:
+      ttl: "336h"          # Change to 14 days retention
+      includedNamespaces:
+        - ai
+        - arr-stack
+        # ... add/remove namespaces
+```
+
+2. Commit and push to trigger FluxCD reconciliation:
+```bash
+git add kubernetes/infrastructure/controllers/velero.yaml
+git commit -m "chore(backup): Update daily backup schedule"
+git push
+```
+
+3. Force reconciliation (optional):
+```bash
+flux reconcile helmrelease velero -n backup
+```
+
+### Add New Backup Schedule
+
+**Option 1: Via Helm Values (Recommended - GitOps)**
+
+Add to `velero.yaml` under `spec.values.schedules`:
+
+```yaml
+schedules:
+  # Existing schedules...
+
+  # New schedule example
+  databases-hourly:
+    disabled: false
+    schedule: "0 * * * *"  # Every hour
+    useOwnerReferencesInBackup: false
+    template:
+      ttl: "48h"           # 2 days retention
+      includedNamespaces:
+        - forgejo
+        - automation
+      labelSelector:
+        matchLabels:
+          backup-type: database
+      snapshotMoveData: true
+      storageLocation: default
+      volumeSnapshotLocations:
+        - longhorn
+```
+
+**Option 2: Via kubectl (Immediate, non-GitOps)**
+
+```bash
+kubectl create -n backup -f - <<EOF
+apiVersion: velero.io/v1
+kind: Schedule
+metadata:
+  name: my-custom-schedule
+  namespace: backup
+spec:
+  schedule: "0 6 * * *"  # 6 AM daily
+  template:
+    ttl: 168h
+    includedNamespaces:
+      - my-namespace
+    snapshotMoveData: true
+    storageLocation: default
+    volumeSnapshotLocations:
+      - longhorn
+EOF
+```
+
+### Add Namespace to Existing Backup
+
+1. Edit `velero.yaml` and add namespace to `includedNamespaces` list
+2. Commit and push
+3. Next scheduled backup will include the new namespace
+
+### Disable/Enable Schedule
+
+```bash
+# Disable schedule (pause backups)
+kubectl patch schedule velero-daily-apps -n backup \
+  --type merge -p '{"spec":{"paused":true}}'
+
+# Enable schedule (resume backups)
+kubectl patch schedule velero-daily-apps -n backup \
+  --type merge -p '{"spec":{"paused":false}}'
+```
+
+### Delete Schedule
+
+```bash
+# Delete via kubectl
+kubectl delete schedule my-custom-schedule -n backup
+
+# For Helm-managed schedules, remove from velero.yaml and reconcile
+```
+
+### Backup Schedule Cron Reference
+
+| Expression | Meaning |
+|------------|---------|
+| `0 3 * * *` | Daily at 3 AM |
+| `0 2 * * 0` | Weekly on Sunday at 2 AM |
+| `0 * * * *` | Every hour |
+| `*/15 * * * *` | Every 15 minutes |
+| `0 0 1 * *` | Monthly on 1st at midnight |
 
 ---
 
