@@ -26,9 +26,10 @@ data:
       fetch_timeout: 5s
       fetch_interval: 2s
       # Labels for job matching (format: label:schema://image)
+      # Using catthehacker/ubuntu:act images which have Node.js, Docker, and common tools
       labels:
-        - "ubuntu-latest:docker://node:20-bookworm"
-        - "ubuntu-22.04:docker://ubuntu:22.04"
+        - "ubuntu-latest:docker://catthehacker/ubuntu:act-22.04"
+        - "ubuntu-22.04:docker://catthehacker/ubuntu:act-22.04"
         - "docker:docker://docker:28-cli"
 
     cache:
