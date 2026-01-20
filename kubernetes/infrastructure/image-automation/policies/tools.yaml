@@ -45,26 +45,7 @@ spec:
   policy:
     semver:
       range: ">=2.0.0"
----
-apiVersion: image.toolkit.fluxcd.io/v1
-kind: ImageRepository
-metadata:
-  name: it-tools
-  namespace: flux-system
-spec:
-  image: corentinth/it-tools
-  interval: 12h
----
-apiVersion: image.toolkit.fluxcd.io/v1
-kind: ImagePolicy
-metadata:
-  name: it-tools
-  namespace: flux-system
-spec:
-  imageRepositoryRef:
-    name: it-tools
-  filterTags:
-    pattern: '^20[0-9]{2}\.[0-9]+\.[0-9]+-[a-f0-9]+$'
-  policy:
-    alphabetical:
-      order: desc
+# IT-Tools - ImagePolicy DISABLED
+# Reason: Official repo hasn't released since Oct 2024. Using 'latest' tag.
+# The deployment uses 'latest' tag directly (documented exception).
+# See: kubernetes/apps/base/tools/it-tools/deployment.yaml

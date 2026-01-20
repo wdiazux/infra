@@ -2,6 +2,11 @@
 #
 # Multi-tenant Nix binary cache server.
 # https://github.com/zhaofengli/attic
+#
+# IMAGE POLICY EXCEPTION: Uses 'latest' tag intentionally.
+# Reason: Attic doesn't publish semantic version tags. The 'latest' tag
+# is the only available option from the official ghcr.io/zhaofengli/attic
+# repository. This is acceptable for a homelab Nix cache server.
 apiVersion: apps/v1
 kind: Deployment
 metadata:

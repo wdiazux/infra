@@ -68,26 +68,7 @@ spec:
   policy:
     semver:
       range: ">=1.30"
----
-apiVersion: image.toolkit.fluxcd.io/v1
-kind: ImageRepository
-metadata:
-  name: obico-web
-  namespace: flux-system
-spec:
-  image: ghcr.io/gabe565/obico/web
-  interval: 12h
----
-apiVersion: image.toolkit.fluxcd.io/v1
-kind: ImagePolicy
-metadata:
-  name: obico-web
-  namespace: flux-system
-spec:
-  imageRepositoryRef:
-    name: obico-web
-  filterTags:
-    pattern: '^release$'
-  policy:
-    alphabetical:
-      order: asc
+# Obico Web - ImagePolicy DISABLED
+# Reason: gabe565/docker-obico uses rolling 'release' tag, not semver.
+# The deployment uses 'release' tag directly (documented exception).
+# See: kubernetes/apps/base/printing/obico/server-deployment.yaml

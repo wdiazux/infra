@@ -3,6 +3,11 @@
 # Collection of useful tools for developers: encoders, converters,
 # generators, formatters, and more.
 # https://github.com/CorentinTh/it-tools
+#
+# IMAGE POLICY EXCEPTION: Uses 'latest' tag intentionally.
+# Reason: Official repo (CorentinTh/it-tools) hasn't released since Oct 2024.
+# The 'latest' tag tracks the most recent build and is stable for this
+# stateless utility application. Risk is minimal as it's a read-only tool.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -26,7 +31,7 @@ spec:
     spec:
       containers:
         - name: it-tools
-          image: corentinth/it-tools:2024.10.22-7ca5933 # {"$imagepolicy": "flux-system:it-tools"}
+          image: corentinth/it-tools:latest
           ports:
             - name: http
               containerPort: 80

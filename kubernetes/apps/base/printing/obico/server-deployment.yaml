@@ -1,6 +1,11 @@
 # Obico Server
 #
 # Main web application for 3D printer monitoring.
+#
+# IMAGE POLICY EXCEPTION: Uses 'release' rolling tag intentionally.
+# Reason: gabe565/docker-obico doesn't publish semantic version tags.
+# The 'release' tag is the stable rolling tag recommended by the maintainer,
+# tracking the latest stable build. This is acceptable for homelab use.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
