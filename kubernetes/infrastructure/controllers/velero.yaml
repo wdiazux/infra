@@ -38,6 +38,9 @@ spec:
   values:
     # Velero configuration for homelab with MinIO + Longhorn CSI
 
+    # CRDs are managed externally (installed via kubectl apply)
+    upgradeCRDs: false
+
     # Fix kubectl image version
     kubectl:
       image:
