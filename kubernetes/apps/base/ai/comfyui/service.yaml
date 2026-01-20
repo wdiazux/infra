@@ -1,6 +1,6 @@
 # ComfyUI LoadBalancer Service
 #
-# Exposes ComfyUI on 10.10.2.26
+# Exposes ComfyUI on 10.10.2.28
 # Using yanwk/comfyui-boot image which exposes port 8188 directly
 apiVersion: v1
 kind: Service
@@ -11,7 +11,7 @@ metadata:
     app.kubernetes.io/name: comfyui
     app.kubernetes.io/part-of: ai
   annotations:
-    io.cilium/lb-ipam-ips: "10.10.2.26"
+    io.cilium/lb-ipam-ips: "10.10.2.28"
 spec:
   type: LoadBalancer
   selector:

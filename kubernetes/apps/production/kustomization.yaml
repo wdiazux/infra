@@ -30,3 +30,4 @@ resources:
   - ../base/printing/
   - ../base/monitoring/
   - ../base/forgejo/  # Runner for Forgejo Actions (namespace managed by Terraform)
+  - ../base/backup/   # Velero backup infrastructure (MinIO)

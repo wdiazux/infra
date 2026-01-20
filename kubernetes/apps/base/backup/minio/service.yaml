@@ -1,0 +1,41 @@
+# MinIO Services
+#
+# API Service: S3-compatible endpoint for Velero (ClusterIP - internal only)
+# Console Service: Web UI for management (LoadBalancer - optional external access)
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio
+  namespace: backup
+  labels:
+    app.kubernetes.io/name: minio
+    app.kubernetes.io/part-of: backup
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: minio
+  ports:
+    - name: api
+      port: 9000
+      targetPort: api
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio-console
+  namespace: backup
+  labels:
+    app.kubernetes.io/name: minio
+    app.kubernetes.io/part-of: backup
+spec:
+  type: LoadBalancer
+  loadBalancerIP: "10.10.2.17"
+  selector:
+    app.kubernetes.io/name: minio
+  ports:
+    - name: console
+      port: 9001
+      targetPort: console
+      protocol: TCP

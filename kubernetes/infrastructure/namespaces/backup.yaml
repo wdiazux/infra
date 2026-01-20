@@ -1,0 +1,15 @@
+# Backup Namespace
+#
+# Backup and disaster recovery infrastructure.
+# Services: velero, minio (S3-compatible storage backend)
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: backup
+  labels:
+    app.kubernetes.io/name: backup
+    purpose: disaster-recovery
+    # Velero node-agent requires privileged access for CSI snapshots
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged

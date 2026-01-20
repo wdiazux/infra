@@ -1,0 +1,159 @@
+# Velero - Kubernetes Backup and Disaster Recovery
+#
+# Provides backup and restore capabilities for Kubernetes resources and persistent volumes.
+# Uses MinIO as S3-compatible backend and Longhorn CSI snapshots for volume data.
+#
+# Dependencies:
+#   - MinIO (backup namespace) - S3-compatible storage backend
+#   - Longhorn - CSI driver for volume snapshots
+#   - Volume Snapshot CRDs - Required for CSI integration
+#
+# Docs: https://velero.io/docs/
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: velero
+  namespace: backup
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: velero
+      version: "8.*"
+      sourceRef:
+        kind: HelmRepository
+        name: vmware-tanzu
+        namespace: flux-system
+      interval: 12h
+  install:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  upgrade:
+    crds: CreateReplace
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    # Velero configuration for homelab with MinIO + Longhorn CSI
+
+    # Use existing credentials secret (created separately with SOPS)
+    credentials:
+      useSecret: true
+      existingSecret: velero-credentials
+
+    # Backup storage location - MinIO S3-compatible endpoint
+    configuration:
+      backupStorageLocation:
+        - name: default
+          provider: aws
+          bucket: velero
+          default: true
+          config:
+            region: minio
+            s3ForcePathStyle: "true"
+            s3Url: http://minio.backup.svc.cluster.local:9000
+
+      # Volume snapshot location - Longhorn CSI
+      volumeSnapshotLocation:
+        - name: longhorn
+          provider: csi
+
+      # Enable CSI snapshots
+      features: EnableCSI
+
+      # Move snapshot data to object storage (required for disaster recovery)
+      defaultSnapshotMoveData: true
+
+      # Default backup TTL (7 days)
+      defaultBackupTTL: 168h
+
+    # Deploy node agent for CSI snapshot data movement
+    deployNodeAgent: true
+    nodeAgent:
+      podSecurityContext:
+        runAsUser: 0
+      containerSecurityContext:
+        privileged: true
+
+    # Backup schedules
+    schedules:
+      # Daily backup of application namespaces
+      daily-apps:
+        disabled: false
+        schedule: "0 3 * * *"  # 3 AM daily
+        useOwnerReferencesInBackup: false
+        template:
+          ttl: "168h"  # 7 days retention
+          includedNamespaces:
+            - ai
+            - arr-stack
+            - automation
+            - forgejo
+            - management
+            - media
+            - printing
+            - tools
+          snapshotMoveData: true
+          storageLocation: default
+          volumeSnapshotLocations:
+            - longhorn
+
+      # Weekly full backup (including infrastructure)
+      weekly-full:
+        disabled: false
+        schedule: "0 2 * * 0"  # 2 AM Sunday
+        useOwnerReferencesInBackup: false
+        template:
+          ttl: "672h"  # 4 weeks retention
+          includedNamespaces:
+            - ai
+            - arr-stack
+            - automation
+            - backup
+            - forgejo
+            - management
+            - media
+            - monitoring
+            - printing
+            - tools
+          snapshotMoveData: true
+          storageLocation: default
+          volumeSnapshotLocations:
+            - longhorn
+
+    # Resource limits for homelab
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+    # Init containers to create the velero bucket in MinIO
+    initContainers:
+      - name: create-bucket
+        image: minio/mc:latest
+        command:
+          - /bin/sh
+          - -c
+          - |
+            until mc alias set minio http://minio.backup.svc.cluster.local:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD; do
+              echo "Waiting for MinIO..."
+              sleep 5
+            done
+            mc mb --ignore-existing minio/velero
+            echo "Bucket 'velero' ready"
+        env:
+          - name: MINIO_ROOT_USER
+            valueFrom:
+              secretKeyRef:
+                name: minio-credentials
+                key: root-user
+          - name: MINIO_ROOT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: minio-credentials
+                key: root-password

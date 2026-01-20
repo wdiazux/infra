@@ -10,6 +10,8 @@ resources:
   - talos-node-reader.yaml
   # Longhorn storage classes for different workload types
   - longhorn-storage-classes.yaml
+  # Volume Snapshot CRDs for Longhorn CSI + Velero integration
+  - volume-snapshot-crds.yaml
   # FluxCD webhook receiver LoadBalancer service
   - webhook-receiver-lb.yaml
   # NVIDIA GPU time-slicing configuration (shares GPU across 4 pods)

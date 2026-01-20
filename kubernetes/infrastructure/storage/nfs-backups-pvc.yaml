@@ -1,0 +1,15 @@
+# PersistentVolumeClaim for Velero/MinIO backups in backup namespace
+# Used by: minio
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nfs-velero-backups
+  namespace: backup
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  resources:
+    requests:
+      storage: 500Gi
+  volumeName: nfs-velero-backups

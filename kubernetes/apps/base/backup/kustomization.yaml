@@ -1,0 +1,10 @@
+# Backup namespace - disaster recovery infrastructure
+#
+# Services:
+#   - MinIO: S3-compatible storage backend (10.10.2.28 console)
+#   - Velero: Kubernetes backup/restore (installed via HelmRelease)
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - minio

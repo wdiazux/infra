@@ -19,3 +19,5 @@ resources:
   - nfs-linux-attic-pvc.yaml
   - nfs-documents-paperless-pv.yaml
   - nfs-documents-paperless-pvc.yaml
+  - nfs-backups-pv.yaml
+  - nfs-backups-pvc.yaml

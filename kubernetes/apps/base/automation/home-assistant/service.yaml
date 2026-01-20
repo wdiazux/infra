@@ -1,6 +1,6 @@
 # Home Assistant LoadBalancer Service
 #
-# Exposes Home Assistant on 10.10.2.23:80
+# Exposes Home Assistant on 10.10.2.25:80
 apiVersion: v1
 kind: Service
 metadata:
@@ -10,7 +10,7 @@ metadata:
     app.kubernetes.io/name: home-assistant
     app.kubernetes.io/part-of: automation
   annotations:
-    io.cilium/lb-ipam-ips: "10.10.2.23"
+    io.cilium/lb-ipam-ips: "10.10.2.25"
 spec:
   type: LoadBalancer
   selector:

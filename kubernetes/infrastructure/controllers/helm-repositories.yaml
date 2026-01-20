@@ -29,3 +29,12 @@ metadata:
 spec:
   interval: 1h
   url: https://kubernetes-sigs.github.io/metrics-server/
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: vmware-tanzu
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: https://vmware-tanzu.github.io/helm-charts

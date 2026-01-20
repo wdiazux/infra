@@ -92,14 +92,18 @@ infra/
 | Forgejo SSH | 10.10.2.14 | Git SSH |
 | FluxCD Webhook | 10.10.2.15 | GitOps webhook |
 | Weave GitOps | 10.10.2.16 | FluxCD UI |
-| Attic | 10.10.2.19 | Nix binary cache |
+| MinIO Console | 10.10.2.17 | Velero S3 storage |
+| Open WebUI | 10.10.2.19 | LLM interface |
 | Ollama | 10.10.2.20 | LLM API |
 | Homepage | 10.10.2.21 | Dashboard |
 | Immich | 10.10.2.22 | Photo backup |
-| Home Assistant | 10.10.2.23 | Smart home |
-| n8n | 10.10.2.24 | Workflow automation |
-| Open WebUI | 10.10.2.25 | LLM interface |
-| ComfyUI | 10.10.2.26 | Image generation (node-based) |
+| Grafana | 10.10.2.23 | Monitoring dashboards |
+| VictoriaMetrics | 10.10.2.24 | Metrics storage |
+| Home Assistant | 10.10.2.25 | Smart home |
+| n8n | 10.10.2.26 | Workflow automation |
+| Obico | 10.10.2.27 | 3D printer monitoring |
+| ComfyUI | 10.10.2.28 | Image generation (node-based) |
+| Attic | 10.10.2.29 | Nix binary cache |
 | Emby | 10.10.2.30 | Media server |
 | Navidrome | 10.10.2.31 | Music server |
 | IT-Tools | 10.10.2.32 | Dev toolbox |
@@ -112,7 +116,6 @@ infra/
 | Radarr | 10.10.2.43 | Movies |
 | Sonarr | 10.10.2.44 | TV |
 | Bazarr | 10.10.2.45 | Subtitles |
-| Obico | 10.10.2.27 | 3D printer monitoring |
 
 **Domains**: home-infra.net, home.arpa (ControlD), .local (mDNS), reynoza.org (Pangolin VPS)
 

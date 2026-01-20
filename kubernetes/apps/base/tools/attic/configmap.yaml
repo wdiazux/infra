@@ -17,7 +17,7 @@ data:
     allowed-hosts = []
 
     # The canonical API endpoint of this server
-    api-endpoint = "http://10.10.2.19/"
+    api-endpoint = "http://10.10.2.29/"
 
     # Database connection (URL provided via ATTIC_SERVER_DATABASE_URL env var)
     [database]

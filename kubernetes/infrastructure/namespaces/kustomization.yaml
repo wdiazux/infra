@@ -14,3 +14,4 @@ resources:
   - automation.yaml
   - printing.yaml
   - monitoring.yaml
+  - backup.yaml
