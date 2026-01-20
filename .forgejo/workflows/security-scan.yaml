@@ -6,6 +6,7 @@
 # - Dockerfiles (best practices)
 #
 # Uses docker run to execute tools since runner is minimal
+# Images are pulled once per job for efficiency
 name: Security Scan
 
 on:
@@ -21,6 +22,12 @@ on:
     branches: [main]
   workflow_dispatch:  # Manual trigger
 
+env:
+  # Pin versions for reproducibility and better caching
+  TRIVY_VERSION: "0.58.0"
+  TERRAFORM_VERSION: "1.10"
+  YAMLLINT_VERSION: "1.35"
+
 jobs:
   trivy-scan:
     name: Trivy Security Scan
@@ -29,25 +36,28 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Scan Terraform configs
-        run: |
-          docker run --rm -v $PWD:/work aquasec/trivy:latest config /work/terraform/ --severity HIGH,CRITICAL --exit-code 0
-        continue-on-error: true
+      - name: Pull Trivy image
+        run: docker pull aquasec/trivy:${{ env.TRIVY_VERSION }}
 
-      - name: Scan Kubernetes manifests
+      - name: Run all security scans
         run: |
-          docker run --rm -v $PWD:/work aquasec/trivy:latest config /work/kubernetes/ --severity HIGH,CRITICAL --exit-code 0
-        continue-on-error: true
+          echo "=== Scanning Terraform configs ==="
+          docker run --rm -v $PWD:/work aquasec/trivy:${{ env.TRIVY_VERSION }} config /work/terraform/ --severity HIGH,CRITICAL --exit-code 0 || true
 
-      - name: Scan Dockerfiles
-        run: |
-          docker run --rm -v $PWD:/work aquasec/trivy:latest config /work/docker/ --severity HIGH,CRITICAL --exit-code 0
-        continue-on-error: true
+          echo ""
+          echo "=== Scanning Kubernetes manifests ==="
+          docker run --rm -v $PWD:/work aquasec/trivy:${{ env.TRIVY_VERSION }} config /work/kubernetes/ --severity HIGH,CRITICAL --exit-code 0 || true
 
-      - name: Secret detection
-        run: |
-          docker run --rm -v $PWD:/work aquasec/trivy:latest fs /work --scanners secret --severity HIGH,CRITICAL --exit-code 0 --skip-dirs .git,secrets
-        continue-on-error: true
+          echo ""
+          echo "=== Scanning Dockerfiles ==="
+          docker run --rm -v $PWD:/work aquasec/trivy:${{ env.TRIVY_VERSION }} config /work/docker/ --severity HIGH,CRITICAL --exit-code 0 || true
+
+          echo ""
+          echo "=== Secret detection ==="
+          docker run --rm -v $PWD:/work aquasec/trivy:${{ env.TRIVY_VERSION }} fs /work --scanners secret --severity HIGH,CRITICAL --exit-code 0 --skip-dirs .git,secrets || true
+
+          echo ""
+          echo "=== Security scan complete ==="
 
   terraform-lint:
     name: Terraform Lint
@@ -58,7 +68,7 @@ jobs:
 
       - name: Terraform Format Check
         run: |
-          docker run --rm -v $PWD:/work -w /work hashicorp/terraform:1.10 fmt -check -recursive terraform/
+          docker run --rm -v $PWD:/work -w /work hashicorp/terraform:${{ env.TERRAFORM_VERSION }} fmt -check -recursive terraform/
         continue-on-error: true
 
   yaml-lint:
@@ -70,5 +80,5 @@ jobs:
 
       - name: Run yamllint
         run: |
-          docker run --rm -v $PWD:/work cytopia/yamllint:latest -c /work/.yamllint.yaml /work/kubernetes/
+          docker run --rm -v $PWD:/work cytopia/yamllint:${{ env.YAMLLINT_VERSION }} -c /work/.yamllint.yaml /work/kubernetes/
         continue-on-error: true
