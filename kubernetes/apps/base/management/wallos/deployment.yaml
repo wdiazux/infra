@@ -29,7 +29,7 @@ spec:
         fsGroup: 3001
       containers:
         - name: wallos
-          image: docker.io/bellamy/wallos:v4.6.0 # {"$imagepolicy": "flux-system:wallos"}
+          image: docker.io/bellamy/wallos:4.6.0 # {"$imagepolicy": "flux-system:wallos"}
           ports:
             - name: http
               containerPort: 80

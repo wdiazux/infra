@@ -57,7 +57,7 @@ spec:
               echo "Redis is ready"
       containers:
         - name: paperless
-          image: ghcr.io/paperless-ngx/paperless-ngx:v2.20.5 # {"$imagepolicy": "flux-system:paperless-ngx"}
+          image: ghcr.io/paperless-ngx/paperless-ngx:2.20.5 # {"$imagepolicy": "flux-system:paperless-ngx"}
           ports:
             - name: http
               containerPort: 8000

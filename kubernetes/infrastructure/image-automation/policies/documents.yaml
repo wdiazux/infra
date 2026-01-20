@@ -18,7 +18,7 @@ spec:
   imageRepositoryRef:
     name: paperless-ngx
   filterTags:
-    pattern: '^v[0-9]+\.[0-9]+\.[0-9]+$'
+    pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'
   policy:
     semver:
       range: ">=2.0.0"
