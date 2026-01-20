@@ -1,6 +1,8 @@
 # Backup Namespace Image Policies
 #
-# MinIO uses RELEASE.YYYY-MM-DD date-based tags
+# MinIO - Using alpine/minio (community-maintained)
+# Reason: MinIO stopped publishing official Docker images in Oct 2025.
+# alpine/minio maintains the same RELEASE.YYYY-MM-DD tag format.
 ---
 apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageRepository
@@ -8,7 +10,7 @@ metadata:
   name: minio
   namespace: flux-system
 spec:
-  image: minio/minio
+  image: alpine/minio
   interval: 12h
 ---
 apiVersion: image.toolkit.fluxcd.io/v1
@@ -24,26 +26,5 @@ spec:
   policy:
     alphabetical:
       order: asc
----
-apiVersion: image.toolkit.fluxcd.io/v1
-kind: ImageRepository
-metadata:
-  name: minio-mc
-  namespace: flux-system
-spec:
-  image: minio/mc
-  interval: 12h
----
-apiVersion: image.toolkit.fluxcd.io/v1
-kind: ImagePolicy
-metadata:
-  name: minio-mc
-  namespace: flux-system
-spec:
-  imageRepositoryRef:
-    name: minio-mc
-  filterTags:
-    pattern: '^RELEASE\.[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}-[0-9]{2}-[0-9]{2}Z$'
-  policy:
-    alphabetical:
-      order: asc
+# MinIO Client (mc) - No ImagePolicy needed
+# Used only in one-time init job with 'latest' tag. minio/mc:latest still available.

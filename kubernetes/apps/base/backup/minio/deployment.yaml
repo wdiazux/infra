@@ -5,6 +5,11 @@
 #
 # Provides S3 API endpoint for Velero to store Kubernetes backups.
 # Data is persisted to NAS via NFS mount.
+#
+# IMAGE SOURCE: Using alpine/minio (community-maintained)
+# Reason: MinIO stopped publishing official Docker images in Oct 2025.
+# See: https://github.com/minio/minio/issues/21647
+# alpine/minio maintains RELEASE tags compatible with FluxCD image automation.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -33,7 +38,7 @@ spec:
         fsGroupChangePolicy: "OnRootMismatch"
       containers:
         - name: minio
-          image: minio/minio:RELEASE.2025-10-15T17-29-55Z # {"$imagepolicy": "flux-system:minio"}
+          image: alpine/minio:RELEASE.2025-10-15T17-29-55Z # {"$imagepolicy": "flux-system:minio"}
           args:
             - server
             - /data
