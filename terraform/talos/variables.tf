@@ -148,7 +148,7 @@ variable "node_cpu_type" {
 variable "node_memory" {
   description = "Memory in MB"
   type        = number
-  default     = 56320  # 55 GB
+  default     = 56320 # 55 GB
 
   validation {
     condition     = var.node_memory >= 4096

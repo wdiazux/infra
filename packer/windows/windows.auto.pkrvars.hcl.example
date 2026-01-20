@@ -21,8 +21,9 @@ virtio_iso_url = "https://fedorapeople.org/groups/virt/virtio-win/direct-downloa
 virtio_iso_checksum = "none"  # Can use "none" or actual checksum
 
 # Template Configuration
-template_name        = "windows-11-golden-template"
-template_description = "Windows 11 (24H2) golden image with Cloudbase-Init"
+template_name        = "windows-11-cloud-template"
+template_version     = "1.0.0"  # Results in: windows-11-cloud-template-v1.0.0
+template_description = "Windows 11 (24H2) cloud image with Cloudbase-Init"
 vm_id                = 9005
 
 # VM Hardware (Windows 11 requires more resources)

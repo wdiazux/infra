@@ -72,7 +72,7 @@ packer build .
 
 The template is now available in Proxmox:
 - **Template ID**: 9112
-- **Template Name**: debian-13-cloud-template
+- **Template Name**: debian-13-cloud-template-v1.0.0
 
 Clone VMs from the template and customize with cloud-init.
 
@@ -81,7 +81,7 @@ Clone VMs from the template and customize with cloud-init.
 ### VM IDs
 
 - **9110**: Base VM (debian-13-cloud-base)
-- **9112**: Template (debian-13-cloud-template)
+- **9112**: Template (debian-13-cloud-template-v1.0.0)
 
 ### Default Settings
 
@@ -109,8 +109,9 @@ debian_version = "13"
 cloud_image_vm_id = 9110
 
 # Template configuration
-template_name = "debian-13-cloud-template"
-vm_id         = 9112
+template_name    = "debian-13-cloud-template"
+template_version = "1.0.0"  # Results in: debian-13-cloud-template-v1.0.0
+vm_id            = 9112
 
 # Hardware
 vm_cores        = 2

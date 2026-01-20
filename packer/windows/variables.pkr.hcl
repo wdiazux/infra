@@ -66,7 +66,13 @@ variable "virtio_iso_checksum" {
 variable "template_name" {
   type        = string
   description = "Name for the Proxmox template"
-  default     = "windows-11-golden-template"
+  default     = "windows-11-cloud-template"
+}
+
+variable "template_version" {
+  type        = string
+  description = "Semantic version for template (e.g., 1.0.0)"
+  default     = "1.0.0"
 }
 
 variable "template_description" {

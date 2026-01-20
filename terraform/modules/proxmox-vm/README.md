@@ -22,7 +22,7 @@ module "ubuntu_vm" {
   source = "./modules/proxmox-vm"
 
   proxmox_node  = "pve"
-  template_name = "ubuntu-24.04-golden-template-20251118"
+  template_name = "ubuntu-2404-cloud-template-v1.0.0"
   vm_name       = "ubuntu-dev"
   vm_id         = 100
 
@@ -51,7 +51,7 @@ module "debian_vm" {
   source = "./modules/proxmox-vm"
 
   proxmox_node  = "pve"
-  template_name = "debian-12-golden-template-20251118"
+  template_name = "debian-13-cloud-template-v1.0.0"
   vm_name       = "debian-prod"
   vm_id         = 101
 
@@ -81,7 +81,7 @@ module "storage_vm" {
   source = "./modules/proxmox-vm"
 
   proxmox_node  = "pve"
-  template_name = "ubuntu-24.04-golden-template-20251118"
+  template_name = "ubuntu-2404-cloud-template-v1.0.0"
   vm_name       = "storage-server"
   vm_id         = 102
 
@@ -112,7 +112,7 @@ module "gateway_vm" {
   source = "./modules/proxmox-vm"
 
   proxmox_node  = "pve"
-  template_name = "debian-12-golden-template-20251118"
+  template_name = "debian-13-cloud-template-v1.0.0"
   vm_name       = "gateway"
   vm_id         = 103
 

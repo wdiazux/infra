@@ -158,7 +158,7 @@ Check in Proxmox UI:
 Datacenter → Node → VM Templates
 ```
 
-Should see: `windows-11-golden-template`
+Should see: `windows-11-cloud-template-v1.0.0`
 
 ## Configuration Details
 

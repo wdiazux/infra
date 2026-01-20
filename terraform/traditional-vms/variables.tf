@@ -43,31 +43,31 @@ variable "dns_domain" {
 variable "ubuntu_template_name" {
   description = "Ubuntu Packer template name in Proxmox"
   type        = string
-  default     = "ubuntu-2404-cloud-template"
+  default     = "ubuntu-2404-cloud-template-v1.0.0"
 }
 
 variable "debian_template_name" {
   description = "Debian Packer template name in Proxmox"
   type        = string
-  default     = "debian-13-cloud-template"
+  default     = "debian-13-cloud-template-v1.0.0"
 }
 
 variable "arch_template_name" {
   description = "Arch Linux Packer template name in Proxmox"
   type        = string
-  default     = "arch-cloud-template"
+  default     = "arch-cloud-template-v1.0.0"
 }
 
 variable "nixos_template_name" {
   description = "NixOS Packer template name in Proxmox"
   type        = string
-  default     = "nixos-cloud-template"
+  default     = "nixos-cloud-template-v1.0.0"
 }
 
 variable "windows_template_name" {
   description = "Windows Packer template name in Proxmox"
   type        = string
-  default     = "windows-11-golden-template"
+  default     = "windows-11-cloud-template-v1.0.0"
 }
 
 # =============================================================================
@@ -165,12 +165,12 @@ variable "common_tags" {
 # - Or use .tfvars file (git-ignored): cloud_init_password = "..."
 # - SSH keys are preferred over passwords for Linux VMs
 #
-# Template Naming Convention:
-# - Ubuntu:  ubuntu-2404-cloud-template
-# - Debian:  debian-13-cloud-template
-# - Arch:    arch-cloud-template
-# - NixOS:   nixos-cloud-template
-# - Windows: windows-11-template
+# Template Naming Convention (with semantic versioning):
+# - Ubuntu:  ubuntu-2404-cloud-template-v1.0.0
+# - Debian:  debian-13-cloud-template-v1.0.0
+# - Arch:    arch-cloud-template-v1.0.0
+# - NixOS:   nixos-cloud-template-v1.0.0
+# - Windows: windows-11-cloud-template-v1.0.0
 #
 # After Building Templates:
 # 1. Update template names in terraform.tfvars if different

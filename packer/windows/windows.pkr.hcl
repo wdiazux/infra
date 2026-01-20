@@ -16,9 +16,8 @@ packer {
 
 # Local variables for computed values
 locals {
-  # Use static template name for homelab simplicity (no timestamp)
-  # This ensures Terraform always finds the template without manual updates
-  template_name = var.template_name
+  # Template name with version suffix (e.g., windows-11-cloud-template-v1.0.0)
+  template_name = "${var.template_name}-v${var.template_version}"
 }
 
 # Proxmox ISO Builder
@@ -212,13 +211,14 @@ build {
     output     = "manifest.json"
     strip_path = true
     custom_data = {
-      windows_version = "Windows 11"
-      build_time      = timestamp()
-      template_name   = local.template_name
-      proxmox_node    = var.proxmox_node
-      disk_size       = var.vm_disk_size
-      cloudbase_init  = true
-      qemu_agent      = true
+      windows_version  = "Windows 11"
+      template_version = var.template_version
+      build_time       = timestamp()
+      template_name    = local.template_name
+      proxmox_node     = var.proxmox_node
+      disk_size        = var.vm_disk_size
+      cloudbase_init   = true
+      qemu_agent       = true
     }
   }
 }

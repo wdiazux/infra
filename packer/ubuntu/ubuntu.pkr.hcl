@@ -9,7 +9,7 @@ packer {
   required_plugins {
     proxmox = {
       source  = "github.com/hashicorp/proxmox"
-      version = ">= 1.2.3"  # Latest version as of Dec 2025
+      version = ">= 1.2.3" # Latest version as of Dec 2025
     }
     ansible = {
       source  = "github.com/hashicorp/ansible"
@@ -20,16 +20,16 @@ packer {
 
 # Local variables for computed values
 locals {
-  # Template name (no timestamp - Terraform expects exact name)
-  template_name = var.template_name
+  # Template name with version suffix (e.g., ubuntu-2404-cloud-template-v1.0.0)
+  template_name = "${var.template_name}-v${var.template_version}"
 }
 
 # Download and import cloud image
 source "proxmox-clone" "ubuntu" {
   # Proxmox connection
   proxmox_url              = var.proxmox_url
-  username                 = var.proxmox_username  # Token ID format: user@realm!tokenid
-  token                    = var.proxmox_token     # Just the token secret
+  username                 = var.proxmox_username # Token ID format: user@realm!tokenid
+  token                    = var.proxmox_token    # Just the token secret
   node                     = var.proxmox_node
   insecure_skip_tls_verify = var.proxmox_skip_tls_verify
 
@@ -133,7 +133,7 @@ build {
       "--extra-vars", "ssh_public_key=${var.ssh_public_key}",
       "--ssh-common-args", "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=30",
       "-vv"
-    ] : [
+      ] : [
       "--extra-vars", "ansible_python_interpreter=/usr/bin/python3",
       "--extra-vars", "ansible_password=${var.ssh_password}",
       "--extra-vars", "packer_ssh_user=ubuntu",
@@ -154,6 +154,7 @@ build {
     strip_path = true
     custom_data = {
       ubuntu_version   = var.ubuntu_version
+      template_version = var.template_version
       build_time       = timestamp()
       template_name    = local.template_name
       proxmox_node     = var.proxmox_node

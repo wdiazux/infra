@@ -736,7 +736,7 @@ sops -d secrets/proxmox-creds.enc.yaml
 1. **Prefer cloud images** where available (3-4x faster)
 2. **Use ISO builds** only when cloud images unavailable
 3. **Clean up templates** properly (cloud-init clean, machine-id reset)
-4. **Version templates** with timestamps or semantic versions
+4. **Version templates** with semantic versioning (e.g., `v1.0.0`, `v1.1.0`)
 5. **Rebuild monthly** for security updates (cloud images)
 
 ### Terraform
@@ -782,8 +782,6 @@ sops -d secrets/proxmox-creds.enc.yaml
 
 **Optional (Adds Complexity):**
 - ⚠️ Remote Terraform state (local state is fine for solo homelab)
-- ⚠️ Multiple environments (dev/staging/prod)
-- ⚠️ PR reviews and manual approvals
 
 **Philosophy:** Start simple, add complexity only when needed. It's okay to push directly to main and use local state for homelab.
 
@@ -857,7 +855,7 @@ sops -d secrets/proxmox-creds.enc.yaml
   - Ansible automation would improve repeatability for multi-node deployments
 - ✅ Forgejo Actions enabled (see kubernetes/apps/base/forgejo/runner/)
 - ✅ Security scanning in Forgejo Actions pipeline (Trivy, TFLint, yamllint)
-- 🔄 Semantic versioning for templates
+- ✅ Semantic versioning for templates (e.g., `ubuntu-2404-cloud-template-v1.0.0`)
 - ✅ Pre-commit hooks for automated quality checks
 
 ## 🤝 Contributing

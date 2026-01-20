@@ -72,7 +72,7 @@ packer build .
 
 The template is now available in Proxmox:
 - **Template ID**: 9102
-- **Template Name**: ubuntu-2404-cloud-template
+- **Template Name**: ubuntu-2404-cloud-template-v1.0.0
 
 Clone VMs from the template and customize with cloud-init.
 
@@ -81,7 +81,7 @@ Clone VMs from the template and customize with cloud-init.
 ### VM IDs
 
 - **9100**: Base VM (ubuntu-2404-cloud-base)
-- **9102**: Template (ubuntu-2404-cloud-template)
+- **9102**: Template (ubuntu-2404-cloud-template-v1.0.0)
 
 ### Default Settings
 
@@ -109,8 +109,9 @@ ubuntu_version = "24.04"
 cloud_image_vm_id = 9100
 
 # Template configuration
-template_name = "ubuntu-2404-cloud-template"
-vm_id         = 9102
+template_name    = "ubuntu-2404-cloud-template"
+template_version = "1.0.0"  # Results in: ubuntu-2404-cloud-template-v1.0.0
+vm_id            = 9102
 
 # Hardware
 vm_cores        = 2

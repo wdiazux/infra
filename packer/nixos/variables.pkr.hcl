@@ -64,11 +64,22 @@ variable "nixos_version" {
 variable "template_name" {
   type        = string
   description = "Name for the Proxmox template"
-  default     = "nixos-golden-template"
+  default     = "nixos-cloud-template"
 
   validation {
     condition     = length(var.template_name) > 0 && length(var.template_name) <= 63
     error_message = "Template name must be 1-63 characters."
+  }
+}
+
+variable "template_version" {
+  type        = string
+  description = "Semantic version for template (e.g., 1.0.0)"
+  default     = "1.0.0"
+
+  validation {
+    condition     = can(regex("^[0-9]+\\.[0-9]+\\.[0-9]+$", var.template_version))
+    error_message = "Template version must follow semantic versioning (e.g., 1.0.0)."
   }
 }
 

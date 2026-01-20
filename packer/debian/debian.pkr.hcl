@@ -20,8 +20,8 @@ packer {
 
 # Local variables for computed values
 locals {
-  # Template name (no timestamp - Terraform expects exact name)
-  template_name = var.template_name
+  # Template name with version suffix (e.g., debian-13-cloud-template-v1.0.0)
+  template_name = "${var.template_name}-v${var.template_version}"
 }
 
 # Proxmox clone builder
@@ -133,7 +133,7 @@ build {
       "--extra-vars", "ssh_public_key=${var.ssh_public_key}",
       "--ssh-common-args", "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=30",
       "-vv"
-    ] : [
+      ] : [
       "--extra-vars", "ansible_python_interpreter=/usr/bin/python3",
       "--extra-vars", "ansible_password=${var.ssh_password}",
       "--extra-vars", "packer_ssh_user=debian",
@@ -153,13 +153,14 @@ build {
     output     = "manifest.json"
     strip_path = true
     custom_data = {
-      debian_version = var.debian_version
-      build_time     = timestamp()
-      template_name  = local.template_name
-      proxmox_node   = var.proxmox_node
-      cloud_image    = true
-      cloud_init     = true
-      qemu_agent     = true
+      debian_version   = var.debian_version
+      template_version = var.template_version
+      build_time       = timestamp()
+      template_name    = local.template_name
+      proxmox_node     = var.proxmox_node
+      cloud_image      = true
+      cloud_init       = true
+      qemu_agent       = true
     }
   }
 }

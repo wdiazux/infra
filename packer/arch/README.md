@@ -123,8 +123,9 @@ proxmox_node = "pve"
 cloud_image_vm_id = 9300
 
 # Template configuration
-vm_id = 9302  # Template will be created with this ID
-template_name = "arch-golden-template"
+vm_id            = 9302  # Template will be created with this ID
+template_name    = "arch-cloud-template"
+template_version = "1.0.0"  # Results in: arch-cloud-template-v1.0.0
 
 # Storage
 vm_disk_storage = "tank"

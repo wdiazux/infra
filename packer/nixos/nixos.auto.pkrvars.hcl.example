@@ -17,8 +17,9 @@ cloud_image_vm_id = 9200
 nixos_version = "25.11"
 
 # Template Configuration
-template_name        = "nixos-golden-template"
-template_description = "NixOS 25.11 golden image with cloud-init"
+template_name        = "nixos-cloud-template"
+template_version     = "1.0.0"  # Results in: nixos-cloud-template-v1.0.0
+template_description = "NixOS 25.11 cloud image with cloud-init"
 
 # VM Configuration
 vm_id             = 9202

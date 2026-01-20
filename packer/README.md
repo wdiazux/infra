@@ -415,7 +415,7 @@ resource "proxmox_virtual_environment_vm" "example" {
       proxmox:
         api_host: proxmox.local
         api_token: "{{ proxmox_token }}"
-        clone: ubuntu-2404-cloud-template
+        clone: ubuntu-2404-cloud-template-v1.0.0
         name: web-server-01
 ```
 
@@ -505,6 +505,40 @@ qm destroy 999
 - Keep Packer templates in Git
 - Tag template versions
 - Document changes in commit messages
+
+### 8. Semantic Versioning for Templates
+
+All templates use semantic versioning (SemVer) with the format `{template-name}-v{MAJOR}.{MINOR}.{PATCH}`:
+
+**Examples:**
+- `ubuntu-2404-cloud-template-v1.0.0`
+- `debian-13-cloud-template-v1.2.1`
+- `windows-11-cloud-template-v2.0.0`
+
+**Version Bump Guidelines:**
+| Change Type | Version | When to Use |
+|-------------|---------|-------------|
+| **MAJOR** (X.0.0) | Breaking changes | New OS version, incompatible config changes |
+| **MINOR** (0.X.0) | New features | Added packages, new cloud-init config |
+| **PATCH** (0.0.X) | Bug fixes | Security updates, rebuilds, minor fixes |
+
+**How to bump version:**
+```bash
+# Edit the template's .auto.pkrvars.hcl file
+template_version = "1.1.0"  # Increment as appropriate
+
+# Rebuild the template
+packer build .
+
+# Update Terraform variables if needed
+# terraform/traditional-vms/variables.tf
+```
+
+**Benefits:**
+- Track template changes over time
+- Rollback to previous versions if needed
+- Clear communication about breaking changes
+- Reproducible infrastructure deployments
 
 ### 8. Separation of Concerns
 - **Base VM** (cloud image): Official, rarely changes
@@ -740,8 +774,8 @@ All templates are **production-ready**:
 7. Proper template cleanup and conversion
 
 **Template Naming Convention:**
-- **Talos:** `talos-1.12.1-nvidia-template` (no timestamp - from import script)
-- **Others:** `{os-name}-YYYYMMDD` (e.g., `ubuntu-2404-cloud-template-20251119`)
+- **Talos:** `talos-1.12.1-nvidia-template` (version from Talos release)
+- **Others:** `{os-name}-cloud-template-v{VERSION}` (e.g., `ubuntu-2404-cloud-template-v1.0.0`)
 
 ### Terraform Integration Verified
 
@@ -769,10 +803,10 @@ terraform apply
 
 ### Known Limitations
 
-**⚠️ Manual Template Name Updates:**
-- Template names include timestamps (e.g., `...-20251119`)
-- Must update `terraform.tfvars` after each Packer build
-- **Future enhancement:** Automated template discovery via Terraform data source
+**✅ Semantic Versioning (Resolved):**
+- Templates now use semantic versioning (e.g., `...-v1.0.0`)
+- Update `template_version` in `.auto.pkrvars.hcl` when making changes
+- Update Terraform `variables.tf` defaults after version bumps
 
 **⚠️ Ansible Post-Configuration:**
 - VMs deploy successfully but require manual or Ansible configuration

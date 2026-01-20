@@ -15,8 +15,9 @@ arch_iso_url = "https://mirror.rackspace.com/archlinux/iso/latest/archlinux-x86_
 arch_iso_checksum = "file:https://mirror.rackspace.com/archlinux/iso/latest/sha256sums.txt"
 
 # Template Configuration
-template_name        = "arch-linux-golden-template"
-template_description = "Arch Linux rolling release golden image with cloud-init and qemu-guest-agent"
+template_name        = "arch-cloud-template"
+template_version     = "1.0.0"  # Results in: arch-cloud-template-v1.0.0
+template_description = "Arch Linux rolling release cloud image with cloud-init and qemu-guest-agent"
 vm_id                = 9003
 
 # VM Hardware

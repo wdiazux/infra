@@ -17,8 +17,8 @@ packer {
 
 # Local variables for computed values
 locals {
-  # Template name (no timestamp - Terraform expects exact name)
-  template_name = var.template_name
+  # Template name with version suffix (e.g., nixos-cloud-template-v1.0.0)
+  template_name = "${var.template_name}-v${var.template_version}"
 }
 
 # Proxmox clone builder
@@ -140,14 +140,15 @@ build {
     output     = "manifest.json"
     strip_path = true
     custom_data = {
-      nixos_version = var.nixos_version
-      build_time    = timestamp()
-      template_name = local.template_name
-      proxmox_node  = var.proxmox_node
-      cloud_init    = true
-      qemu_agent    = true
-      custom_config = true
-      note          = "Golden image with custom configuration.nix applied"
+      nixos_version    = var.nixos_version
+      template_version = var.template_version
+      build_time       = timestamp()
+      template_name    = local.template_name
+      proxmox_node     = var.proxmox_node
+      cloud_init       = true
+      qemu_agent       = true
+      custom_config    = true
+      note             = "Golden image with custom configuration.nix applied"
     }
   }
 }

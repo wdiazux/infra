@@ -72,6 +72,17 @@ variable "template_name" {
   }
 }
 
+variable "template_version" {
+  type        = string
+  description = "Semantic version for template (e.g., 1.0.0)"
+  default     = "1.0.0"
+
+  validation {
+    condition     = can(regex("^[0-9]+\\.[0-9]+\\.[0-9]+$", var.template_version))
+    error_message = "Template version must follow semantic versioning (e.g., 1.0.0)."
+  }
+}
+
 variable "template_description" {
   type        = string
   description = "Description for the template"

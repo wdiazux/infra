@@ -145,14 +145,14 @@ packer build .
 
 Check in Proxmox UI: `Datacenter → Node → VM Templates`
 
-Should see: `nixos-golden-template`
+Should see: `nixos-cloud-template-v1.0.0`
 
 ## VM ID Allocation
 
 | ID | Purpose | Name |
 |----|---------|------|
 | 9200 | Base cloud image VM | nixos-cloud-base |
-| 9202 | Golden template | nixos-golden-template |
+| 9202 | Cloud template | nixos-cloud-template-v1.0.0 |
 
 ## Using the Template
 

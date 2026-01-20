@@ -33,7 +33,7 @@
 #     enabled       = true
 #     description   = "Ubuntu CI/CD runner"
 #     os_type       = "ubuntu"
-#     template_name = "ubuntu-2404-cloud-template"
+#     template_name = "ubuntu-2404-cloud-template-v1.0.0"
 #     vm_id         = 101
 #     ...
 #   }

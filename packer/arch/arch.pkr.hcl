@@ -20,22 +20,22 @@ packer {
 
 # Local variables for computed values
 locals {
-  # Template name (no timestamp - Terraform expects exact name)
-  template_name = var.template_name
+  # Template name with version suffix (e.g., arch-cloud-template-v1.0.0)
+  template_name = "${var.template_name}-v${var.template_version}"
 }
 
 # Proxmox clone builder
 source "proxmox-clone" "arch" {
   # Proxmox connection
   proxmox_url              = var.proxmox_url
-  username                 = var.proxmox_username  # Token ID format: user@realm!tokenid
-  token                    = var.proxmox_token     # Just the token secret
+  username                 = var.proxmox_username # Token ID format: user@realm!tokenid
+  token                    = var.proxmox_token    # Just the token secret
   node                     = var.proxmox_node
   insecure_skip_tls_verify = var.proxmox_skip_tls_verify
 
   # Clone from uploaded cloud image VM
   clone_vm_id = var.cloud_image_vm_id
-  full_clone  = true  # Use full clone instead of linked clone
+  full_clone  = true # Use full clone instead of linked clone
 
   # VM configuration
   vm_id                = var.vm_id
@@ -65,7 +65,7 @@ source "proxmox-clone" "arch" {
   # Cloud-init (already in cloud image)
   cloud_init              = true
   cloud_init_storage_pool = var.vm_disk_storage
-  cloud_init_disk_type    = "scsi"  # Better performance than default "ide"
+  cloud_init_disk_type    = "scsi" # Better performance than default "ide"
 
   # Force IP configuration via cloud-init (DHCP)
   ipconfig {
@@ -91,7 +91,7 @@ source "proxmox-clone" "arch" {
   }
 
   # Template settings
-  os = "l26"  # Linux 2.6+ kernel
+  os = "l26" # Linux 2.6+ kernel
 }
 
 # Build configuration
@@ -133,7 +133,7 @@ build {
       "--extra-vars", "ssh_public_key=${var.ssh_public_key}",
       "--ssh-common-args", "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=30",
       "-vv"
-    ] : [
+      ] : [
       "--extra-vars", "ansible_python_interpreter=/usr/bin/python",
       "--extra-vars", "ansible_password=${var.ssh_password}",
       "--extra-vars", "packer_ssh_user=arch",
@@ -154,6 +154,7 @@ build {
     strip_path = true
     custom_data = {
       arch_version     = "rolling"
+      template_version = var.template_version
       build_time       = timestamp()
       template_name    = local.template_name
       proxmox_node     = var.proxmox_node
