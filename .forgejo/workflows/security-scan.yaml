@@ -5,7 +5,7 @@
 # - Kubernetes manifests (CVEs, misconfigs)
 # - Dockerfiles (best practices)
 #
-# Docs: https://aquasecurity.github.io/trivy/
+# Uses Docker containers directly since runner doesn't have sudo
 name: Security Scan
 
 on:
@@ -25,18 +25,11 @@ jobs:
   trivy-scan:
     name: Trivy Security Scan
     runs-on: ubuntu-latest
+    container:
+      image: aquasec/trivy:latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Install Trivy
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wget apt-transport-https gnupg lsb-release
-          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
-          echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee -a /etc/apt/sources.list.d/trivy.list
-          sudo apt-get update
-          sudo apt-get install -y trivy
 
       - name: Scan Terraform configs
         run: trivy config terraform/ --severity HIGH,CRITICAL --exit-code 0
@@ -57,42 +50,25 @@ jobs:
   terraform-lint:
     name: Terraform Lint
     runs-on: ubuntu-latest
+    container:
+      image: hashicorp/terraform:1.10
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Install Terraform
-        run: |
-          wget -qO- https://releases.hashicorp.com/terraform/1.10.3/terraform_1.10.3_linux_amd64.zip -O terraform.zip
-          unzip terraform.zip
-          sudo mv terraform /usr/local/bin/
-          terraform version
 
       - name: Terraform Format Check
         run: terraform fmt -check -recursive terraform/
         continue-on-error: true
 
-      - name: Install TFLint
-        run: |
-          curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
-
-      - name: Run TFLint
-        run: |
-          cd terraform/talos
-          tflint --init
-          tflint --config=../../.tflint.hcl
-        continue-on-error: true
-
   yaml-lint:
     name: YAML Lint
     runs-on: ubuntu-latest
+    container:
+      image: cytopia/yamllint:latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install yamllint
-        run: pip install yamllint
-
       - name: Run yamllint
-        run: yamllint -c .yamllint.yaml kubernetes/ --no-warnings
+        run: yamllint -c .yamllint.yaml kubernetes/
         continue-on-error: true
