@@ -29,24 +29,35 @@ All GPU services share the NVIDIA RTX 4000 SFF (20GB VRAM) via time-slicing:
 
 ## Storage
 
-All services use NFS storage for models:
+### Shared NFS Storage
 
-| PVC | Size | Purpose |
-|-----|------|---------|
-| nfs-ai-models | Shared | All AI models, outputs, configs |
+| PVC | Purpose |
+|-----|---------|
+| nfs-ai-models | AI models shared across services |
+
+### ComfyUI Storage (Hybrid)
+
+ComfyUI uses a hybrid storage approach for optimal performance:
+
+| PVC | Type | Size | Purpose |
+|-----|------|------|---------|
+| comfyui-data | Longhorn | 50Gi | App, outputs, custom nodes, cache |
+| nfs-ai-models | NFS | Shared | Models only (large files) |
+
+**Why hybrid?** Longhorn provides fast local storage for frequently accessed app data, while NFS stores large model files that can be shared with other AI services.
 
 ### ComfyUI Directory Structure
 
 ```
-comfyui/
-├── models/           # Checkpoints, LoRAs, VAE, ControlNet
-│   ├── checkpoints/  # Main model files (SD 1.5, SDXL, Flux)
-│   ├── loras/        # LoRA models
-│   ├── vae/          # VAE models
-│   └── controlnet/   # ControlNet models
-├── output/           # Generated images
-├── input/            # Reference/input images
-└── custom_nodes/     # ComfyUI extensions
+/root/ComfyUI/           # Longhorn (comfyui-data)
+├── output/              # Generated images
+├── input/               # Reference/input images
+├── custom_nodes/        # ComfyUI extensions
+└── models/              # NFS mount point (nfs-ai-models)
+    ├── checkpoints/     # Main model files (SD 1.5, SDXL, Flux)
+    ├── loras/           # LoRA models
+    ├── vae/             # VAE models
+    └── controlnet/      # ControlNet models
 ```
 
 ## Secrets Setup
