@@ -55,3 +55,46 @@ Invoke this skill when:
 
 ```
 User: "Can you validate my Packer templates?"
+Assistant: I'll use the packer-validation skill to check your templates.
+
+[Skill runs checks and reports findings]
+```
+
+## Documentation Lookup
+
+Use Context7 for:
+- `hashicorp/packer` - Core Packer
+- Builder-specific documentation
+
+### Version Detection
+
+Check `required_plugins` block in .pkr.hcl files:
+```hcl
+packer {
+  required_plugins {
+    proxmox = {
+      version = ">= 1.2.2"
+      source  = "github.com/hashicorp/proxmox"
+    }
+  }
+}
+```
+
+### Web Fetch Fallback
+
+| Component | Documentation URL |
+|-----------|-------------------|
+| Packer Core | `https://developer.hashicorp.com/packer/docs` |
+| Proxmox Builder | `https://developer.hashicorp.com/packer/integrations/hashicorp/proxmox` |
+
+## Report Generation
+
+Generate reports to `docs/reviews/YYYY-MM-DD-packer-review.md` following the standard format from code-review skill.
+
+## Usage
+
+```
+/review-packer
+/review-packer packer/ubuntu/
+/review-packer packer/talos/
+```
