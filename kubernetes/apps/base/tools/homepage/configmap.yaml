@@ -27,7 +27,10 @@ data:
         columns: 2
       AI:
         style: row
-        columns: 3
+        columns: 2
+      3D Print:
+        style: row
+        columns: 2
       Arr Stack:
         style: row
         columns: 3
@@ -98,10 +101,16 @@ data:
             icon: open-webui.png
             href: http://10.10.2.25
             description: LLM Chat Interface
-        - Stable Diffusion:
-            icon: stable-diffusion.png
+        - ComfyUI:
+            icon: comfyui.png
             href: http://10.10.2.26
-            description: Image Generation
+            description: Node-based Image Generation
+
+    - 3D Print:
+        - Obico:
+            icon: obico.png
+            href: http://10.10.2.27
+            description: 3D Printer Monitoring
 
     - Arr Stack:
         - SABnzbd:
