@@ -196,6 +196,34 @@ Terraform automatically removes the control-plane taint to allow workload schedu
 kubectl taint nodes --all node-role.kubernetes.io/control-plane-
 ```
 
+### PodGC Configuration
+
+The PodGC controller is configured with a low threshold for single-node homelab:
+
+```yaml
+cluster:
+  controllerManager:
+    extraArgs:
+      terminated-pod-gc-threshold: "50"
+```
+
+This automatically cleans up Failed/Succeeded pods when count exceeds 50 (default 12500 is too high for homelab).
+
+### Kubelet Graceful Shutdown
+
+Graceful node shutdown ensures pods terminate cleanly during reboot/shutdown:
+
+```yaml
+kubelet:
+  extraConfig:
+    shutdownGracePeriod: "60s"
+    shutdownGracePeriodCriticalPods: "30s"
+```
+
+- **60s total** grace period for all pods
+- **30s** reserved for critical pods (Longhorn, Cilium, etc.)
+- Regular pods get first 30s to terminate
+
 ### Longhorn Replicas
 
 With a single node, Longhorn runs in single-replica mode. When adding nodes later, increase the replica count.
@@ -335,4 +363,4 @@ qm list | grep template
 
 ---
 
-**Last Updated:** 2026-01-15
+**Last Updated:** 2026-01-20
