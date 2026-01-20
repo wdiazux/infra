@@ -39,15 +39,15 @@ spec:
             - -c
             - |
               echo "Creating ComfyUI directory structure..."
-              mkdir -p /data/comfyui
-              chmod 777 /data/comfyui
+              mkdir -p /data/models
+              chmod 777 /data
               echo "Permissions set successfully"
               ls -la /data/
           securityContext:
             runAsUser: 1000
             runAsGroup: 1000
           volumeMounts:
-            - name: data
+            - name: comfyui-local
               mountPath: /data
       containers:
         - name: comfyui
@@ -76,11 +76,13 @@ spec:
               memory: 20Gi
               nvidia.com/gpu: "1"
           volumeMounts:
-            # Entire ComfyUI directory for persistence
-            # First boot clones ComfyUI here, then it persists
-            - name: data
+            # Local storage for ComfyUI app (fast, Longhorn)
+            - name: comfyui-local
               mountPath: /root/ComfyUI
-              subPath: comfyui
+            # NFS storage for models only (large files, shared)
+            - name: models-nfs
+              mountPath: /root/ComfyUI/models
+              subPath: comfyui/models
           startupProbe:
             httpGet:
               path: /
@@ -100,6 +102,11 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 5
       volumes:
-        - name: data
+        # Local storage for ComfyUI application (Longhorn - fast)
+        - name: comfyui-local
+          persistentVolumeClaim:
+            claimName: comfyui-data
+        # NFS storage for models only (large files, shared with other AI apps)
+        - name: models-nfs
           persistentVolumeClaim:
             claimName: nfs-ai-models

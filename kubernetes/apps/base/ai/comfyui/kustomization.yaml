@@ -10,5 +10,6 @@ kind: Kustomization
 namespace: ai
 
 resources:
+  - pvc.yaml
   - deployment.yaml
   - service.yaml

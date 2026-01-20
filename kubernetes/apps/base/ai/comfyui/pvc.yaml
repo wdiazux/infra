@@ -1,0 +1,24 @@
+# ComfyUI Local Storage PVC
+#
+# Uses Longhorn for fast local storage for:
+# - ComfyUI application code
+# - Custom nodes
+# - Outputs/generated images
+# - Cache files
+#
+# Models are stored separately on NFS (nfs-ai-models)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: comfyui-data
+  namespace: ai
+  labels:
+    app.kubernetes.io/name: comfyui
+    app.kubernetes.io/part-of: ai
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 50Gi  # App, outputs, custom nodes, cache
