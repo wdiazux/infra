@@ -51,7 +51,7 @@ spec:
               mountPath: /data
       containers:
         - name: comfyui
-          image: yanwk/comfyui-boot:cu124-slim
+          image: yanwk/comfyui-boot:cu128-slim
           ports:
             - name: http
               containerPort: 8188
