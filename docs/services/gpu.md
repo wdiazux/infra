@@ -171,19 +171,19 @@ spec:
 ### Using Ollama
 
 ```bash
-# Deploy
+# Deploy (if not already deployed via FluxCD)
 kubectl create namespace ai
 kubectl apply -f ollama.yaml
 
-# Get LoadBalancer IP
+# Check LoadBalancer IP (should be 10.10.2.20)
 kubectl get svc ollama -n ai
 
 # Pull a model
-curl http://<IP>:11434/api/pull -d '{"name": "llama2"}'
+curl http://10.10.2.20:11434/api/pull -d '{"name": "llama3.2"}'
 
 # Generate text
-curl http://<IP>:11434/api/generate -d '{
-  "model": "llama2",
+curl http://10.10.2.20:11434/api/generate -d '{
+  "model": "llama3.2",
   "prompt": "Why is the sky blue?"
 }'
 ```
@@ -320,15 +320,51 @@ kubectl get pods -A -o json | jq '.items[] | select(.spec.containers[].resources
 
 Current services using GPU acceleration:
 
-| Service | Namespace | GPU Usage | Purpose |
-|---------|-----------|-----------|---------|
-| Ollama | ai | Full GPU | LLM inference (primary) |
-| Immich ML | media | CUDA | Photo/video ML processing |
-| Stable Diffusion | ai | Full GPU | Image generation |
-| Emby | media | NVENC/NVDEC | Hardware transcoding |
+| Service | Namespace | IP | GPU Usage | Purpose |
+|---------|-----------|-----|-----------|---------|
+| Ollama | ai | 10.10.2.20 | Full GPU | LLM inference (primary) |
+| Open WebUI | ai | 10.10.2.19 | None | Chat interface for Ollama |
+| ComfyUI | ai | 10.10.2.28 | Full GPU | Node-based image generation |
+| Immich ML | media | Internal | CUDA | Photo/video ML processing |
+| Obico | printing | 10.10.2.27 | CUDA | 3D printer failure detection |
+| Emby | media | 10.10.2.30 | NVENC/NVDEC | Hardware transcoding |
 
 **Note:** GPU time-slicing is configured via `nvidia.com/gpu` resource requests. Ollama keeps models in VRAM (5m keep-alive), allowing other workloads to share GPU when idle.
 
+### Ollama LoadBalancer
+
+Ollama is exposed via LoadBalancer at **10.10.2.20:11434** for direct API access:
+
+```bash
+# Pull a model
+curl http://10.10.2.20:11434/api/pull -d '{"name": "llama3.2"}'
+
+# Generate text
+curl http://10.10.2.20:11434/api/generate -d '{
+  "model": "llama3.2",
+  "prompt": "Why is the sky blue?"
+}'
+
+# Chat completion (OpenAI compatible)
+curl http://10.10.2.20:11434/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{"model": "llama3.2", "messages": [{"role": "user", "content": "Hello"}]}'
+```
+
+### ComfyUI
+
+Node-based image generation interface at **http://10.10.2.28**:
+- Uses CUDA 12.8 with Python 3.12
+- Model storage on NFS for persistence
+- Syncthing integration for workflow sharing
+
+### Obico
+
+3D printer monitoring with AI failure detection at **http://10.10.2.27**:
+- CUDA 12.3 for ML inference
+- Monitors print jobs via webcam
+- Sends alerts on detected failures
+
 ---
 
-**Last Updated:** 2026-01-17
+**Last Updated:** 2026-01-20
