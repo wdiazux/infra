@@ -4,16 +4,28 @@ All notable changes to this project are documented here.
 
 ## 2026
 
+### 2026-01-20
+- Velero disaster recovery with MinIO backend (daily/weekly backup schedules)
+- Automated snapshot-controller and MinIO bucket initialization
+- PodGC configuration for terminated pod cleanup (threshold: 50)
+- Kubelet graceful shutdown configuration (60s grace period)
+- VMAgent relabeling fixes for duplicate scrape targets
+- Packer semantic versioning for templates
+- Forgejo Actions security scanning workflow (Trivy, tflint)
+- ComfyUI updates (CUDA 12.8, Python 3.12)
+- Obico 3D printer monitoring with CUDA 12.3
+- Ollama LoadBalancer exposure at 10.10.2.20
+
 ### 2026-01-19
 - Claude Code optimization: Added custom commands, hooks, and sub-agents in `.claude/`
 
 ### 2026-01-17
 - Paperless-ngx document management at 10.10.2.36 with PostgreSQL, Redis, Tika, Gotenberg
-- Attic Nix binary cache at 10.10.2.19 with PostgreSQL 16 and NFS storage
-- Monitoring stack (VictoriaMetrics + VMAgent + Grafana) at 10.10.2.17/18
+- Attic Nix binary cache at 10.10.2.29 with PostgreSQL 16 and NFS storage
+- Monitoring stack (VictoriaMetrics at 10.10.2.24, Grafana at 10.10.2.23)
 - Immich photo backup at 10.10.2.22 with GPU ML
-- Home Assistant smart home platform at 10.10.2.23 in automation namespace
-- n8n workflow automation with PostgreSQL in automation namespace (10.10.2.24)
+- Home Assistant smart home platform at 10.10.2.25 in automation namespace
+- n8n workflow automation with PostgreSQL in automation namespace (10.10.2.26)
 - Homelab resource strategy optimization
 
 ### 2026-01-16
