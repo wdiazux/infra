@@ -8,11 +8,99 @@ Backup strategies and procedures for the homelab infrastructure.
 
 | Component | Backup Target | Method | Schedule |
 |-----------|---------------|--------|----------|
-| Longhorn Volumes | NAS (NFS) | Longhorn Backup | Daily 2 AM |
+| Kubernetes Resources | MinIO → NAS | Velero | Daily 3 AM / Weekly 2 AM |
+| Longhorn Volumes | MinIO → NAS | Velero CSI Snapshots | Daily 3 AM / Weekly 2 AM |
+| Longhorn Volumes | NAS (NFS) | Longhorn Backup | Manual / On-demand |
 | Terraform State | Git/Local | Manual | Before changes |
 | Talos Config | Local files | Terraform output | Auto |
 | Git Repositories | Forgejo | Longhorn volume | Daily |
 | Secrets | Git (encrypted) | SOPS | On change |
+
+---
+
+## Velero Disaster Recovery
+
+Velero provides Kubernetes-native backup and restore with CSI snapshot integration for persistent volumes.
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Backup Flow                               │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  Velero ──▶ CSI Snapshotter ──▶ Longhorn (snapshot)         │
+│     │                              │                         │
+│     ▼                              ▼                         │
+│  MinIO (S3 API) ◀────── Snapshot Data Movement              │
+│     │                                                        │
+│     ▼                                                        │
+│  NAS (10.10.2.5:/mnt/tank/backups/velero)                   │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Components
+
+| Component | Purpose | Access |
+|-----------|---------|--------|
+| Velero | Kubernetes backup/restore | CLI: `velero` command |
+| MinIO | S3-compatible storage backend | Console: http://10.10.2.17 |
+| CSI Snapshotter | Volume snapshot controller | Internal |
+
+### Backup Schedules
+
+| Schedule | Time | Retention | Namespaces |
+|----------|------|-----------|------------|
+| `daily-apps` | 3 AM daily | 7 days | ai, arr-stack, automation, forgejo, management, media, printing, tools |
+| `weekly-full` | 2 AM Sunday | 4 weeks | All above + backup, monitoring |
+
+### Velero Commands
+
+```bash
+# Check Velero status
+velero status
+
+# List backups
+velero backup get
+
+# Create manual backup
+velero backup create manual-backup --include-namespaces=forgejo
+
+# Create backup of specific namespace with volumes
+velero backup create my-backup \
+  --include-namespaces=media \
+  --snapshot-move-data
+
+# Restore from backup
+velero restore create --from-backup daily-apps-20260120030000
+
+# Check restore status
+velero restore get
+
+# Describe backup details
+velero backup describe daily-apps-20260120030000 --details
+
+# View backup logs
+velero backup logs daily-apps-20260120030000
+```
+
+### MinIO Console
+
+Access the MinIO web console at **http://10.10.2.17** to:
+- Browse backup data in the `velero` bucket
+- Monitor storage usage
+- Manage bucket policies
+
+Credentials are in `secrets/minio-creds.enc.yaml`.
+
+### Configuration Files
+
+| File | Purpose |
+|------|---------|
+| `kubernetes/infrastructure/controllers/velero.yaml` | Velero HelmRelease |
+| `kubernetes/apps/base/backup/minio/` | MinIO deployment |
+| `kubernetes/infrastructure/storage/nfs-backups-*.yaml` | NFS PV/PVC for MinIO |
 
 ---
 
@@ -246,7 +334,7 @@ Periodically test restores:
 
 ## Disaster Recovery
 
-### Full Cluster Recovery
+### Full Cluster Recovery (Velero)
 
 1. **Ensure NAS is accessible** with backup data
 2. **Deploy new cluster:**
@@ -254,16 +342,41 @@ Periodically test restores:
    terraform destroy  # If needed
    terraform apply
    ```
-3. **Restore critical volumes** from Longhorn backups
-4. **Restore Git repositories** if Forgejo data lost
-5. **Verify FluxCD syncs** applications
+3. **Install Velero** (via FluxCD or manually)
+4. **Configure MinIO** backup storage location
+5. **Restore from Velero backup:**
+   ```bash
+   # List available backups
+   velero backup get
 
-### Single Volume Recovery
+   # Restore entire backup
+   velero restore create full-restore --from-backup weekly-full-20260119020000
+
+   # Or restore specific namespace
+   velero restore create forgejo-restore \
+     --from-backup weekly-full-20260119020000 \
+     --include-namespaces forgejo
+   ```
+6. **Verify FluxCD syncs** remaining applications
+
+### Single Volume Recovery (Longhorn)
 
 1. Go to Longhorn UI → Backup
 2. Find the backup for your volume
 3. Click "Create PV/PVC"
 4. Update your deployment to use restored PVC
+
+### Single Namespace Recovery (Velero)
+
+```bash
+# Restore specific namespace from latest backup
+velero restore create media-restore \
+  --from-backup daily-apps-20260120030000 \
+  --include-namespaces media
+
+# Check restore progress
+velero restore describe media-restore
+```
 
 ---
 
@@ -272,9 +385,10 @@ Periodically test restores:
 1. **Test restores regularly** (monthly)
 2. **Keep multiple backup generations** (7 daily, 4 weekly)
 3. **Store Age key securely** outside the cluster
-4. **Monitor backup status** in Longhorn UI
-5. **Offsite backup** copy critical data externally
+4. **Monitor backup status** via `velero backup get`
+5. **Offsite backup** - MinIO data stored on NAS provides offsite from cluster
+6. **Verify Velero status** after cluster changes: `velero status`
 
 ---
 
-**Last Updated:** 2026-01-15
+**Last Updated:** 2026-01-20
