@@ -1,5 +1,5 @@
 # NFS PersistentVolume for Velero/MinIO backups
-# Mount: /mnt/tank/backups from NAS (10.10.2.5)
+# Mount: /mnt/tank/backups/minio from NAS (10.10.2.5)
 # MinIO creates 'velero' bucket directory inside this mount.
 #
 # Used by: backup namespace (minio -> velero)
@@ -19,7 +19,7 @@ spec:
   storageClassName: ""
   nfs:
     server: 10.10.2.5
-    path: /mnt/tank/backups
+    path: /mnt/tank/backups/minio
   mountOptions:
     - nfsvers=4.1
     - hard
