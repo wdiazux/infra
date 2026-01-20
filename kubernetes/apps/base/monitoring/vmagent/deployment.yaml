@@ -26,7 +26,7 @@ spec:
       serviceAccountName: vmagent
       containers:
         - name: vmagent
-          image: victoriametrics/vmagent:v1.111.0
+          image: victoriametrics/vmagent:v1.134.0
           args:
             - --promscrape.config=/config/scrape.yml
             - --remoteWrite.url=http://victoriametrics:8428/api/v1/write

@@ -37,11 +37,11 @@ Observability stack for metrics collection and visualization.
 
 | Service | Current Image | Latest Version | Status |
 |---------|---------------|----------------|--------|
-| VictoriaMetrics | `victoriametrics/victoria-metrics:v1.111.0` | v1.134.0 | :arrow_up: Update Available |
-| VMAgent | `victoriametrics/vmagent:v1.111.0` | v1.134.0 | :arrow_up: Update Available |
-| Grafana | `grafana/grafana:11.4.0` | 12.4.x | :arrow_up: Update Available |
-| kube-state-metrics | `registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.13.0` | v2.18.0 | :arrow_up: Update Available |
-| Node Exporter | `quay.io/prometheus/node-exporter:v1.8.2` | v1.10.2 | :arrow_up: Update Available |
+| VictoriaMetrics | `victoriametrics/victoria-metrics:v1.134.0` | v1.134.0 | :white_check_mark: Current |
+| VMAgent | `victoriametrics/vmagent:v1.134.0` | v1.134.0 | :white_check_mark: Current |
+| Grafana | `grafana/grafana:12.4.0` | 12.4.x | :white_check_mark: Current |
+| kube-state-metrics | `registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.18.0` | v2.18.0 | :white_check_mark: Current |
+| Node Exporter | `quay.io/prometheus/node-exporter:v1.10.2` | v1.10.2 | :white_check_mark: Current |
 
 **Access:**
 - Grafana: http://10.10.2.23
@@ -55,8 +55,8 @@ Photo backup and media streaming services.
 
 | Service | Current Image | Latest Version | Status |
 |---------|---------------|----------------|--------|
-| Immich Server | `ghcr.io/immich-app/immich-server:v2.4.0` | v2.4.1 | :arrow_up: Minor Update |
-| Immich ML | `ghcr.io/immich-app/immich-machine-learning:v2.4.0-cuda` | v2.4.1-cuda | :arrow_up: Minor Update |
+| Immich Server | `ghcr.io/immich-app/immich-server:v2.4.1` | v2.4.1 | :white_check_mark: Current |
+| Immich ML | `ghcr.io/immich-app/immich-machine-learning:v2.4.1-cuda` | v2.4.1-cuda | :white_check_mark: Current |
 | Immich Postgres | `ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0` | Custom | :white_check_mark: Current |
 | Valkey (Redis) | `valkey/valkey:9` | 9.x | :white_check_mark: Current |
 | Emby | `lscr.io/linuxserver/emby:latest` | latest | :warning: Using Latest Tag |
@@ -128,7 +128,7 @@ Git server and CI/CD.
 
 | Service | Current Image | Latest Version | Status |
 |---------|---------------|----------------|--------|
-| Forgejo Runner | `code.forgejo.org/forgejo/runner:6.3.1` | v11.0.0 | :arrow_up: Update Available |
+| Forgejo Runner | `code.forgejo.org/forgejo/runner:11` | v11.0.0 | :white_check_mark: Current |
 | Docker DinD | `docker:28-dind` | 28-dind | :white_check_mark: Current |
 
 **Access:**
@@ -180,7 +180,7 @@ Developer utilities and services.
 | Attic | `ghcr.io/zhaofengli/attic:latest` | latest | :warning: Using Latest Tag |
 | Homepage | `ghcr.io/gethomepage/homepage:latest` | latest | :warning: Using Latest Tag |
 | IT-Tools | `corentinth/it-tools:latest` | latest | :warning: Using Latest Tag |
-| ntfy | `binwiederhier/ntfy:v2.11.0` | v2.11.0 | :white_check_mark: Current |
+| ntfy | `binwiederhier/ntfy:latest` | latest | :warning: Using Latest Tag |
 | PostgreSQL | `postgres:16-alpine` | 16-alpine | :white_check_mark: Current |
 
 **Access:**
@@ -193,28 +193,21 @@ Developer utilities and services.
 
 ## Update Priority
 
-### High Priority (Security/Stability)
+All pinned services are now up to date. :white_check_mark:
 
-| Service | Current | Latest | Notes |
-|---------|---------|--------|-------|
+### Recently Updated (2026-01-20)
+
+| Service | Previous | Current | Notes |
+|---------|----------|---------|-------|
 | VictoriaMetrics | v1.111.0 | v1.134.0 | Security updates, Go upgrades |
 | VMAgent | v1.111.0 | v1.134.0 | Security updates, Go upgrades |
+| Grafana | 11.4.0 | 12.4.0 | Major version with new features |
 | kube-state-metrics | v2.13.0 | v2.18.0 | Kubernetes metrics improvements |
 | Node Exporter | v1.8.2 | v1.10.2 | Bug fixes |
-
-### Medium Priority (Features)
-
-| Service | Current | Latest | Notes |
-|---------|---------|--------|-------|
-| Grafana | 11.4.0 | 12.4.x | Major version with new features |
-| Forgejo Runner | 6.3.1 | v11.0.0 | Major version upgrade |
-
-### Low Priority (Minor Updates)
-
-| Service | Current | Latest | Notes |
-|---------|---------|--------|-------|
 | Immich Server | v2.4.0 | v2.4.1 | Patch release |
 | Immich ML | v2.4.0-cuda | v2.4.1-cuda | Patch release |
+| Forgejo Runner | 6.3.1 | 11 | Major version upgrade |
+| ntfy | v2.11.0 | latest | Changed to latest tag |
 
 ---
 

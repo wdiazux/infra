@@ -23,7 +23,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: ntfy
-          image: binwiederhier/ntfy:v2.11.0
+          image: binwiederhier/ntfy:latest
           args:
             - serve
           ports:
