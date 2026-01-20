@@ -73,3 +73,58 @@ User: "Can you review my Terraform configurations?"
 Assistant: I'll use the terraform-review skill to check your configurations.
 
 [Skill runs checks and reports findings]
+```
+
+## Documentation Lookup
+
+### Version Detection
+
+Parse `.terraform.lock.hcl` to extract provider versions:
+```hcl
+provider "registry.terraform.io/bpg/proxmox" {
+  version = "0.92.0"
+  ...
+}
+```
+
+### Context7 Lookup
+
+Use Context7 for:
+- `hashicorp/terraform` - Core Terraform
+- `bpg/proxmox` - Proxmox provider
+- `siderolabs/talos` - Talos provider
+
+### Web Fetch Fallback
+
+| Provider | Documentation URL |
+|----------|-------------------|
+| bpg/proxmox | `https://registry.terraform.io/providers/bpg/proxmox/{VERSION}/docs` |
+| siderolabs/talos | `https://registry.terraform.io/providers/siderolabs/talos/{VERSION}/docs` |
+
+### Deprecation Checking
+
+For each resource/attribute:
+1. Look up in provider docs for current version
+2. Check if marked deprecated
+3. Find replacement if deprecated
+4. Flag with appropriate severity
+
+## Report Generation
+
+Generate reports to `docs/reviews/YYYY-MM-DD-terraform-review.md` following the standard format from code-review skill.
+
+## Enhanced Checks
+
+### Deprecated Attributes (Critical)
+
+Check provider changelogs and docs for:
+- Removed attributes in current version
+- Deprecated attributes with replacement
+- Changed attribute types
+
+### Version Drift (Warning)
+
+Flag when:
+- Provider version is >2 minor versions behind latest
+- Terraform version constraint allows old versions
+- Required providers missing version constraints
