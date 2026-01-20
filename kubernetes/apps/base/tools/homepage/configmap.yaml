@@ -27,7 +27,7 @@ data:
         columns: 2
       AI:
         style: row
-        columns: 2
+        columns: 3
       3D Print:
         style: row
         columns: 2
@@ -97,6 +97,10 @@ data:
             description: Workflow Automation
 
     - AI:
+        - Ollama:
+            icon: ollama.png
+            href: http://10.10.2.20:11434
+            description: LLM Inference API
         - Open WebUI:
             icon: open-webui.png
             href: http://10.10.2.25

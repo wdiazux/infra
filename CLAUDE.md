@@ -93,6 +93,7 @@ infra/
 | FluxCD Webhook | 10.10.2.15 | GitOps webhook |
 | Weave GitOps | 10.10.2.16 | FluxCD UI |
 | Attic | 10.10.2.19 | Nix binary cache |
+| Ollama | 10.10.2.20 | LLM API |
 | Homepage | 10.10.2.21 | Dashboard |
 | Immich | 10.10.2.22 | Photo backup |
 | Home Assistant | 10.10.2.23 | Smart home |

@@ -51,6 +51,7 @@ LoadBalancer IPs assigned to Kubernetes services.
 | 10.10.2.17 | Grafana | 80 | monitoring |
 | 10.10.2.18 | VictoriaMetrics | 80 | monitoring |
 | 10.10.2.19 | Attic | 80 | tools |
+| 10.10.2.20 | Ollama | 11434 | ai |
 | 10.10.2.23 | Home Assistant | 80 | automation |
 | 10.10.2.24 | n8n | 80 | automation |
 
@@ -121,6 +122,7 @@ spec:
 | Grafana | http://10.10.2.17 | Username/Password |
 | VictoriaMetrics | http://10.10.2.18 | None |
 | Attic | http://10.10.2.19 | Token |
+| Ollama | http://10.10.2.20:11434 | None |
 | Immich | http://10.10.2.22 | Username/Password |
 | Home Assistant | http://10.10.2.23 | Username/Password |
 | n8n | http://10.10.2.24 | Username/Password |
@@ -157,6 +159,7 @@ Configure in your DNS server or `/etc/hosts`:
 10.10.2.17   grafana.home-infra.net
 10.10.2.18   metrics.home-infra.net
 10.10.2.19   attic.home-infra.net
+10.10.2.20   ollama.home-infra.net
 10.10.2.22   photos.home-infra.net photos.reynoza.org
 10.10.2.23   hass.home-infra.net
 10.10.2.24   n8n.home-infra.net
