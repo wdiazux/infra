@@ -38,11 +38,11 @@ spec:
   values:
     # Velero configuration for homelab with MinIO + Longhorn CSI
 
-    # Fix kubectl image version (1.35 doesn't exist in bitnami yet)
+    # Fix kubectl image version
     kubectl:
       image:
         repository: bitnami/kubectl
-        tag: "1.31"
+        tag: "latest"
 
     # Use existing credentials secret (created separately with SOPS)
     credentials:
