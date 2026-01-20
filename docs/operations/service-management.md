@@ -371,3 +371,6 @@ kubectl rollout restart ds/cilium -n kube-system
 | Recreate | Delete + Apply kustomization |
 | Watch pods | `kubectl get pods -n NS -l app.kubernetes.io/part-of=SVC -w` |
 | Check logs | `kubectl logs -n NS -l app.kubernetes.io/name=NAME --tail=50` |
+---
+
+**Last Updated:** 2026-01-20

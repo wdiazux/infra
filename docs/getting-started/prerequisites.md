@@ -219,3 +219,6 @@ Before running `terraform apply`:
 ---
 
 **Next:** [Quickstart Guide](quickstart.md)
+---
+
+**Last Updated:** 2026-01-20

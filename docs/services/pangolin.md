@@ -249,3 +249,6 @@ kubectl run test --rm -it --image=busybox -- wget -O- http://<service-ip>
 - [Talos Extensions](https://www.talos.dev/latest/talos-guides/configuration/extensions/)
 - [WireGuard](https://www.wireguard.com/)
 - [Newt Extension](https://github.com/siderolabs/extensions/tree/main/container-runtime/newt)
+---
+
+**Last Updated:** 2026-01-20

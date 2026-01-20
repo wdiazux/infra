@@ -146,3 +146,6 @@ kubectl logs -n flux-system deployment/source-controller
 - [Talos Deployment Guide](../deployment/talos.md)
 - [Services Documentation](../services/)
 - [Operations Guide](../operations/)
+---
+
+**Last Updated:** 2026-01-20

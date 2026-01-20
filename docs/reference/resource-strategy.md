@@ -187,3 +187,6 @@ image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0
 - **2026-01-17**: Image versioning policy added - latest for most, pin Immich
 - **2026-01-17**: Emby GPU enabled, OLLAMA_KEEP_ALIVE=5m
 - **2026-01-17**: Initial strategy - removed requests from user apps, optimized AI limits
+---
+
+**Last Updated:** 2026-01-20
