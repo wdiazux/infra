@@ -76,6 +76,114 @@ This directory contains custom skills and agents for the infrastructure project 
 - Guides integration with Packer/Terraform
 - Verifies Age key setup
 
+### 4. Code Review (`code-review`)
+
+**Purpose:** Base skill for comprehensive IaC code reviews across all technologies
+
+**When to use:**
+- Running multi-technology reviews
+- Auto-detecting what to review in a directory
+- Orchestrating technology-specific reviews
+
+**Example:**
+```
+/code-review
+/code-review terraform/
+```
+
+**What it does:**
+- Auto-detects technologies in target path
+- Orchestrates technology-specific review skills
+- Generates reports to `docs/reviews/`
+- Offers interactive fix mode
+
+### 5. Review Kubernetes (`review-kubernetes`)
+
+**Purpose:** Reviews Kubernetes manifests for API deprecations and best practices
+
+**When to use:**
+- Creating new K8s services
+- Before committing manifest changes
+- After upgrading Kubernetes version
+
+**Example:**
+```
+/review-kubernetes
+/review-kubernetes kubernetes/apps/base/monitoring/
+```
+
+**What it checks:**
+- Deprecated API versions
+- Required labels (app.kubernetes.io/*)
+- Resource requests and limits
+- Health probes (liveness, readiness)
+- Security contexts
+- Image tag practices
+
+### 6. Review Helm (`review-helm`)
+
+**Purpose:** Reviews Helm charts for API versions and best practices
+
+**When to use:**
+- Creating new Helm charts
+- Before packaging/releasing charts
+- After upgrading Helm version
+
+**Example:**
+```
+/review-helm
+/review-helm path/to/chart/
+```
+
+**What it checks:**
+- Chart API version (v1 vs v2)
+- Required Chart.yaml fields
+- Values.yaml structure
+- Template best practices
+
+### 7. Review Ansible (`review-ansible`)
+
+**Purpose:** Reviews Ansible playbooks for deprecated modules and FQCN usage
+
+**When to use:**
+- Creating new playbooks or roles
+- Before running playbooks
+- After upgrading Ansible version
+
+**Example:**
+```
+/review-ansible
+/review-ansible ansible/playbooks/
+```
+
+**What it checks:**
+- Deprecated modules
+- FQCN usage (ansible.builtin.*)
+- Privilege escalation patterns
+- Security issues (plaintext passwords, missing no_log)
+
+### 8. Review FluxCD (`review-fluxcd`)
+
+**Purpose:** Reviews FluxCD GitOps resources for API versions and health checks
+
+**When to use:**
+- Creating Flux Kustomizations or HelmReleases
+- After upgrading FluxCD version
+- Troubleshooting reconciliation issues
+
+**Example:**
+```
+/review-fluxcd
+/review-fluxcd kubernetes/clusters/
+```
+
+**What it checks:**
+- CRD API version alignment
+- Source references
+- Health check configuration
+- Timeout and retry settings
+- Dependency management
+
 ## How to Use Skills
 
 Skills are automatically discovered by Claude Code. Simply ask Claude to perform tasks related to the skill:
@@ -191,7 +299,25 @@ graph LR
 ```
 .claude/
 ├── README.md                           # This file
+├── commands/
+│   ├── code-review.md                  # Comprehensive IaC review
+│   ├── review-kubernetes.md            # K8s manifest review
+│   ├── review-terraform.md             # Terraform review
+│   ├── review-helm.md                  # Helm chart review
+│   ├── review-ansible.md               # Ansible playbook review
+│   ├── review-packer.md                # Packer template review
+│   └── review-fluxcd.md                # FluxCD resource review
 ├── skills/
+│   ├── code-review/
+│   │   └── SKILL.md                    # Base code review skill
+│   ├── review-kubernetes/
+│   │   └── SKILL.md                    # Kubernetes review skill
+│   ├── review-helm/
+│   │   └── SKILL.md                    # Helm review skill
+│   ├── review-ansible/
+│   │   └── SKILL.md                    # Ansible review skill
+│   ├── review-fluxcd/
+│   │   └── SKILL.md                    # FluxCD review skill
 │   ├── packer-validation/
 │   │   └── SKILL.md                    # Packer validation skill
 │   ├── terraform-review/
@@ -241,10 +367,10 @@ claude --debug
 ## Future Enhancements
 
 Planned additions:
-- **ansible-lint skill** - Ansible playbook validation
 - **vm-deployment agent** - Multi-step VM deployment automation
 - **packer-builder agent** - Complete image build workflow
 - **infrastructure-audit agent** - Comprehensive security audit
+- **review-cilium skill** - Cilium network policy validation
 
 ## Resources
 
@@ -264,6 +390,6 @@ When adding new skills:
 
 ---
 
-**Last Updated:** 2026-01-05
+**Last Updated:** 2026-01-20
 **Project:** Infrastructure as Code (Proxmox + Talos)
 **Maintainer:** wdiaz
