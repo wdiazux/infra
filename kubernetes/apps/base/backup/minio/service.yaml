@@ -29,13 +29,14 @@ metadata:
   labels:
     app.kubernetes.io/name: minio
     app.kubernetes.io/part-of: backup
+  annotations:
+    io.cilium/lb-ipam-ips: "10.10.2.17"
 spec:
   type: LoadBalancer
-  loadBalancerIP: "10.10.2.17"
   selector:
     app.kubernetes.io/name: minio
   ports:
     - name: console
-      port: 9001
+      port: 80
       targetPort: console
       protocol: TCP
