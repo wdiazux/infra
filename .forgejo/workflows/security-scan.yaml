@@ -5,7 +5,7 @@
 # - Kubernetes manifests (CVEs, misconfigs)
 # - Dockerfiles (best practices)
 #
-# Uses Docker containers directly since runner doesn't have sudo
+# Uses docker run to execute tools since runner is minimal
 name: Security Scan
 
 on:
@@ -25,50 +25,50 @@ jobs:
   trivy-scan:
     name: Trivy Security Scan
     runs-on: ubuntu-latest
-    container:
-      image: aquasec/trivy:latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Scan Terraform configs
-        run: trivy config terraform/ --severity HIGH,CRITICAL --exit-code 0
+        run: |
+          docker run --rm -v $PWD:/work aquasec/trivy:latest config /work/terraform/ --severity HIGH,CRITICAL --exit-code 0
         continue-on-error: true
 
       - name: Scan Kubernetes manifests
-        run: trivy config kubernetes/ --severity HIGH,CRITICAL --exit-code 0
+        run: |
+          docker run --rm -v $PWD:/work aquasec/trivy:latest config /work/kubernetes/ --severity HIGH,CRITICAL --exit-code 0
         continue-on-error: true
 
       - name: Scan Dockerfiles
-        run: trivy config docker/ --severity HIGH,CRITICAL --exit-code 0
+        run: |
+          docker run --rm -v $PWD:/work aquasec/trivy:latest config /work/docker/ --severity HIGH,CRITICAL --exit-code 0
         continue-on-error: true
 
       - name: Secret detection
-        run: trivy fs . --scanners secret --severity HIGH,CRITICAL --exit-code 0 --skip-dirs .git,secrets
+        run: |
+          docker run --rm -v $PWD:/work aquasec/trivy:latest fs /work --scanners secret --severity HIGH,CRITICAL --exit-code 0 --skip-dirs .git,secrets
         continue-on-error: true
 
   terraform-lint:
     name: Terraform Lint
     runs-on: ubuntu-latest
-    container:
-      image: hashicorp/terraform:1.10
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Terraform Format Check
-        run: terraform fmt -check -recursive terraform/
+        run: |
+          docker run --rm -v $PWD:/work -w /work hashicorp/terraform:1.10 fmt -check -recursive terraform/
         continue-on-error: true
 
   yaml-lint:
     name: YAML Lint
     runs-on: ubuntu-latest
-    container:
-      image: cytopia/yamllint:latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Run yamllint
-        run: yamllint -c .yamllint.yaml kubernetes/
+        run: |
+          docker run --rm -v $PWD:/work cytopia/yamllint:latest -c /work/.yamllint.yaml /work/kubernetes/
         continue-on-error: true
