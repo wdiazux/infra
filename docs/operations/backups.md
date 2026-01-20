@@ -127,6 +127,327 @@ velero backup describe daily-apps-20260120030000 --details
 velero backup logs daily-apps-20260120030000
 ```
 
+---
+
+## Manual Backup Operations (kubectl)
+
+If the `velero` CLI is not installed, use `kubectl` to create and manage backups directly.
+
+### Quick Reference
+
+| Namespace | Services | Has Volumes | Recommended TTL |
+|-----------|----------|-------------|-----------------|
+| ai | Ollama, Open WebUI, ComfyUI | Yes | 7d |
+| arr-stack | Radarr, Sonarr, Prowlarr, Bazarr, qBittorrent, SABnzbd | Yes | 7d |
+| automation | Home Assistant, n8n, PostgreSQL | Yes | 7d |
+| forgejo | Forgejo, PostgreSQL | Yes | 14d |
+| management | Paperless-ngx, Wallos | Yes | 7d |
+| media | Emby, Navidrome, Immich | Yes | 7d |
+| monitoring | Grafana, VictoriaMetrics, vmagent | Yes | 3d |
+| printing | Obico | Yes | 7d |
+| tools | Homepage, ntfy, IT-Tools, Attic | Yes | 7d |
+
+### Check Backup Infrastructure Status
+
+```bash
+# Verify backup storage location is available
+kubectl get backupstoragelocations -n backup
+# Should show: PHASE=Available
+
+# Check volume snapshot location
+kubectl get volumesnapshotlocations -n backup
+
+# Verify node-agent is running (required for volume backups)
+kubectl get pods -n backup -l name=node-agent
+```
+
+### Create Manual Backup - Single Namespace
+
+```bash
+# Basic backup of a single namespace
+kubectl apply -f - <<EOF
+apiVersion: velero.io/v1
+kind: Backup
+metadata:
+  name: manual-forgejo-$(date +%Y%m%d-%H%M%S)
+  namespace: backup
+spec:
+  includedNamespaces:
+    - forgejo
+  storageLocation: default
+  volumeSnapshotLocations:
+    - longhorn
+  snapshotMoveData: true
+  ttl: 168h  # 7 days
+EOF
+```
+
+### Create Manual Backup - Multiple Namespaces
+
+```bash
+# Backup multiple namespaces at once
+kubectl apply -f - <<EOF
+apiVersion: velero.io/v1
+kind: Backup
+metadata:
+  name: manual-apps-$(date +%Y%m%d-%H%M%S)
+  namespace: backup
+spec:
+  includedNamespaces:
+    - ai
+    - arr-stack
+    - automation
+    - forgejo
+    - management
+    - media
+    - printing
+    - tools
+  excludedResources:
+    - events
+    - pods
+  storageLocation: default
+  volumeSnapshotLocations:
+    - longhorn
+  snapshotMoveData: true
+  ttl: 168h  # 7 days
+EOF
+```
+
+### Create Manual Backup - All Application Namespaces
+
+```bash
+# Full backup of all application namespaces (mirrors weekly-full schedule)
+kubectl apply -f - <<EOF
+apiVersion: velero.io/v1
+kind: Backup
+metadata:
+  name: manual-full-$(date +%Y%m%d-%H%M%S)
+  namespace: backup
+spec:
+  includedNamespaces:
+    - ai
+    - arr-stack
+    - automation
+    - backup
+    - forgejo
+    - management
+    - media
+    - monitoring
+    - printing
+    - tools
+  excludedResources:
+    - events
+    - pods
+  storageLocation: default
+  volumeSnapshotLocations:
+    - longhorn
+  snapshotMoveData: true
+  ttl: 672h  # 28 days
+EOF
+```
+
+### Namespace-Specific Backup Examples
+
+**AI Namespace** (Ollama models, Open WebUI configs):
+```bash
+kubectl apply -f - <<EOF
+apiVersion: velero.io/v1
+kind: Backup
+metadata:
+  name: backup-ai-$(date +%Y%m%d-%H%M%S)
+  namespace: backup
+spec:
+  includedNamespaces:
+    - ai
+  storageLocation: default
+  volumeSnapshotLocations:
+    - longhorn
+  snapshotMoveData: true
+  ttl: 168h
+EOF
+```
+
+**Media Namespace** (Immich photos, Emby/Navidrome metadata):
+```bash
+kubectl apply -f - <<EOF
+apiVersion: velero.io/v1
+kind: Backup
+metadata:
+  name: backup-media-$(date +%Y%m%d-%H%M%S)
+  namespace: backup
+spec:
+  includedNamespaces:
+    - media
+  storageLocation: default
+  volumeSnapshotLocations:
+    - longhorn
+  snapshotMoveData: true
+  ttl: 168h
+EOF
+```
+
+**Automation Namespace** (Home Assistant, n8n workflows):
+```bash
+kubectl apply -f - <<EOF
+apiVersion: velero.io/v1
+kind: Backup
+metadata:
+  name: backup-automation-$(date +%Y%m%d-%H%M%S)
+  namespace: backup
+spec:
+  includedNamespaces:
+    - automation
+  storageLocation: default
+  volumeSnapshotLocations:
+    - longhorn
+  snapshotMoveData: true
+  ttl: 168h
+EOF
+```
+
+### Monitor Backup Progress
+
+```bash
+# List all Velero backups (use full API group to avoid Longhorn conflict)
+kubectl get backup.velero.io -n backup
+
+# Watch backup status in real-time
+kubectl get backup.velero.io -n backup -w
+
+# Get detailed backup status
+kubectl get backup.velero.io -n backup <backup-name> -o yaml | grep -A20 "status:"
+
+# Check backup phase (New, InProgress, Completed, PartiallyFailed, Failed)
+kubectl get backup.velero.io -n backup <backup-name> -o jsonpath='{.status.phase}'
+
+# View items backed up
+kubectl get backup.velero.io -n backup <backup-name> \
+  -o jsonpath='{.status.progress.itemsBackedUp}/{.status.progress.totalItems}'
+```
+
+### Check Backup Errors and Warnings
+
+```bash
+# Describe backup for errors/warnings
+kubectl describe backup.velero.io -n backup <backup-name>
+
+# Check Velero controller logs
+kubectl logs -n backup deploy/velero --tail=100 | grep -i "error\|warning"
+
+# Check specific backup in logs
+kubectl logs -n backup deploy/velero --tail=200 | grep "<backup-name>"
+```
+
+### Verify Backup Data in MinIO
+
+```bash
+# List backups stored in MinIO
+kubectl exec -n backup deploy/minio -- ls -la /data/velero/backups/
+
+# Check specific backup contents
+kubectl exec -n backup deploy/minio -- ls -la /data/velero/backups/<backup-name>/
+
+# Check backup size
+kubectl exec -n backup deploy/minio -- du -sh /data/velero/backups/<backup-name>/
+```
+
+### Delete Old Backups
+
+```bash
+# Delete a specific backup
+kubectl delete backup.velero.io -n backup <backup-name>
+
+# Delete all backups older than 7 days (be careful!)
+kubectl get backup.velero.io -n backup -o name | while read backup; do
+  age=$(kubectl get $backup -n backup -o jsonpath='{.metadata.creationTimestamp}')
+  echo "Backup: $backup, Created: $age"
+done
+```
+
+### Restore from Manual Backup
+
+```bash
+# Create restore from backup
+kubectl apply -f - <<EOF
+apiVersion: velero.io/v1
+kind: Restore
+metadata:
+  name: restore-$(date +%Y%m%d-%H%M%S)
+  namespace: backup
+spec:
+  backupName: <backup-name>
+  includedNamespaces:
+    - forgejo  # Or '*' for all namespaces in backup
+  restorePVs: true
+EOF
+
+# Monitor restore progress
+kubectl get restore.velero.io -n backup -w
+
+# Check restore status
+kubectl describe restore.velero.io -n backup <restore-name>
+```
+
+### Pre-Upgrade Backup Script
+
+Before major upgrades, create a full backup:
+
+```bash
+#!/bin/bash
+# pre-upgrade-backup.sh
+TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+BACKUP_NAME="pre-upgrade-${TIMESTAMP}"
+
+echo "Creating pre-upgrade backup: ${BACKUP_NAME}"
+
+kubectl apply -f - <<EOF
+apiVersion: velero.io/v1
+kind: Backup
+metadata:
+  name: ${BACKUP_NAME}
+  namespace: backup
+  labels:
+    backup-type: pre-upgrade
+spec:
+  includedNamespaces:
+    - ai
+    - arr-stack
+    - automation
+    - backup
+    - forgejo
+    - management
+    - media
+    - monitoring
+    - printing
+    - tools
+  excludedResources:
+    - events
+    - pods
+  storageLocation: default
+  volumeSnapshotLocations:
+    - longhorn
+  snapshotMoveData: true
+  ttl: 720h  # 30 days
+EOF
+
+echo "Waiting for backup to complete..."
+while true; do
+  PHASE=$(kubectl get backup.velero.io -n backup ${BACKUP_NAME} -o jsonpath='{.status.phase}' 2>/dev/null)
+  echo "Current phase: ${PHASE}"
+  if [[ "$PHASE" == "Completed" ]] || [[ "$PHASE" == "PartiallyFailed" ]]; then
+    break
+  fi
+  if [[ "$PHASE" == "Failed" ]]; then
+    echo "Backup failed!"
+    exit 1
+  fi
+  sleep 10
+done
+
+echo "Backup completed: ${BACKUP_NAME}"
+kubectl get backup.velero.io -n backup ${BACKUP_NAME}
+```
+
 ### MinIO Console
 
 Access the MinIO web console at **http://10.10.2.17** to:
@@ -570,4 +891,4 @@ velero restore describe media-restore
 
 ---
 
-**Last Updated:** 2026-01-20
+**Last Updated:** 2026-01-20 | Added manual backup operations with kubectl
