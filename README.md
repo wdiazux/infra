@@ -774,16 +774,13 @@ sops -d secrets/proxmox-creds.enc.yaml
 
 ### Homelab vs Enterprise
 
-**This is a HOMELAB setup** - some enterprise practices are optional:
+**This is a HOMELAB setup** - keeping it simple:
 
-**Essential (Keep):**
 - ✅ Version control, documentation, secrets encryption
 - ✅ Linting and security scanning
+- ✅ Local Terraform state (no remote backend needed for solo use)
 
-**Optional (Adds Complexity):**
-- ⚠️ Remote Terraform state (local state is fine for solo homelab)
-
-**Philosophy:** Start simple, add complexity only when needed. It's okay to push directly to main and use local state for homelab.
+**Philosophy:** Start simple, add complexity only when needed.
 
 ## 🔗 Related Resources
 
