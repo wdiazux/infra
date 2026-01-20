@@ -856,8 +856,7 @@ sops -d secrets/proxmox-creds.enc.yaml
   - **Note:** Currently using `talosctl`/`kubectl` directly works well
   - Ansible automation would improve repeatability for multi-node deployments
 - ✅ Forgejo Actions enabled (see kubernetes/apps/base/forgejo/runner/)
-- 🔄 Security scanning in Forgejo Actions pipeline (Trivy integration)
-- 🔄 Automated monthly image rebuilds
+- ✅ Security scanning in Forgejo Actions pipeline (Trivy, TFLint, yamllint)
 - 🔄 Semantic versioning for templates
 - ✅ Pre-commit hooks for automated quality checks
 

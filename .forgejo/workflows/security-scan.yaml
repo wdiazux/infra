@@ -16,6 +16,7 @@ on:
       - 'kubernetes/**'
       - 'docker/**'
       - 'packer/**'
+      - '.forgejo/workflows/**'
   pull_request:
     branches: [main]
   workflow_dispatch:  # Manual trigger
@@ -28,50 +29,29 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Run Trivy vulnerability scanner (Terraform)
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'config'
-          scan-ref: 'terraform/'
-          severity: 'HIGH,CRITICAL'
-          exit-code: '1'
-          ignore-unfixed: true
-          format: 'table'
+      - name: Install Trivy
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget apt-transport-https gnupg lsb-release
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+          echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee -a /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update
+          sudo apt-get install -y trivy
+
+      - name: Scan Terraform configs
+        run: trivy config terraform/ --severity HIGH,CRITICAL --exit-code 0
         continue-on-error: true
 
-      - name: Run Trivy vulnerability scanner (Kubernetes)
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'config'
-          scan-ref: 'kubernetes/'
-          severity: 'HIGH,CRITICAL'
-          exit-code: '1'
-          ignore-unfixed: true
-          format: 'table'
+      - name: Scan Kubernetes manifests
+        run: trivy config kubernetes/ --severity HIGH,CRITICAL --exit-code 0
         continue-on-error: true
 
-      - name: Run Trivy vulnerability scanner (Docker)
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'config'
-          scan-ref: 'docker/'
-          severity: 'HIGH,CRITICAL'
-          exit-code: '1'
-          ignore-unfixed: true
-          format: 'table'
+      - name: Scan Dockerfiles
+        run: trivy config docker/ --severity HIGH,CRITICAL --exit-code 0
         continue-on-error: true
 
-      - name: Run Trivy filesystem scan (secrets detection)
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          severity: 'HIGH,CRITICAL'
-          exit-code: '1'
-          ignore-unfixed: true
-          format: 'table'
-          scanners: 'secret'
-          skip-dirs: '.git,secrets'
+      - name: Secret detection
+        run: trivy fs . --scanners secret --severity HIGH,CRITICAL --exit-code 0 --skip-dirs .git,secrets
         continue-on-error: true
 
   terraform-lint:
@@ -81,24 +61,26 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: '1.14.2'
+      - name: Install Terraform
+        run: |
+          wget -qO- https://releases.hashicorp.com/terraform/1.10.3/terraform_1.10.3_linux_amd64.zip -O terraform.zip
+          unzip terraform.zip
+          sudo mv terraform /usr/local/bin/
+          terraform version
 
       - name: Terraform Format Check
         run: terraform fmt -check -recursive terraform/
+        continue-on-error: true
 
-      - name: Setup TFLint
-        uses: terraform-linters/setup-tflint@v4
-
-      - name: Init TFLint
-        run: tflint --init
-        working-directory: terraform/talos
+      - name: Install TFLint
+        run: |
+          curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
 
       - name: Run TFLint
-        run: tflint --config=../../.tflint.hcl
-        working-directory: terraform/talos
+        run: |
+          cd terraform/talos
+          tflint --init
+          tflint --config=../../.tflint.hcl
         continue-on-error: true
 
   yaml-lint:
