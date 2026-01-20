@@ -24,5 +24,7 @@ resources:
   - nvidia-gpu.yaml
   # Metrics API (enables kubectl top, k9s metrics)
   - metrics-server.yaml
+  # CSI Snapshot Controller (required for volume snapshots)
+  - snapshot-controller.yaml
   # Backup and Disaster Recovery (requires Longhorn for CSI snapshots)
   - velero.yaml

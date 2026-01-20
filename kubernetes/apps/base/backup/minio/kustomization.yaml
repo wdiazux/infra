@@ -6,3 +6,4 @@ resources:
   - deployment.yaml
   - service.yaml
   - secret.enc.yaml
+  - init-bucket-job.yaml
