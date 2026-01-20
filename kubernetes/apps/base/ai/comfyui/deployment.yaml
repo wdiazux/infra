@@ -28,8 +28,27 @@ spec:
     spec:
       runtimeClassName: nvidia
       securityContext:
-        fsGroup: 0
+        fsGroup: 1000
         fsGroupChangePolicy: "OnRootMismatch"
+      # Init container creates directory structure with correct permissions
+      initContainers:
+        - name: init-permissions
+          image: busybox:latest
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Creating ComfyUI directory structure..."
+              mkdir -p /data/comfyui
+              chmod 777 /data/comfyui
+              echo "Permissions set successfully"
+              ls -la /data/
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+          volumeMounts:
+            - name: data
+              mountPath: /data
       containers:
         - name: comfyui
           image: yanwk/comfyui-boot:cu124-slim
