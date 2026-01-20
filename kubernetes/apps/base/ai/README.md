@@ -12,13 +12,13 @@ AI/ML services with GPU time-slicing support.
 
 ## GPU Configuration
 
-All GPU services share the NVIDIA RTX 4000 SFF (24GB VRAM) via time-slicing:
+All GPU services share the NVIDIA RTX 4000 SFF (20GB VRAM) via time-slicing:
 
 - **Time-slicing replicas**: 4 (configured in `infrastructure/configs/nvidia-time-slicing.yaml`)
 - **No memory isolation**: Concurrent heavy usage may cause OOM
 - **Model idle timeouts**: Services unload models when idle to free VRAM
 
-### VRAM Budget (24GB Total)
+### VRAM Budget (20GB Total)
 
 | Service | Model | Idle | Active |
 |---------|-------|------|--------|
@@ -81,6 +81,8 @@ kubectl exec -it -n ai ollama-0 -- ollama list
 
 ### Download ComfyUI Models
 
+ComfyUI uses the `yanwk/comfyui-boot` image which auto-downloads ComfyUI and ComfyUI-Manager on first boot.
+
 Models must be manually downloaded to the NFS storage:
 
 ```bash
@@ -88,7 +90,7 @@ Models must be manually downloaded to the NFS storage:
 kubectl exec -it -n ai deploy/comfyui -- bash
 
 # Download a model (example: SDXL base)
-cd /opt/ComfyUI/models/checkpoints
+cd /root/ComfyUI/models/checkpoints
 wget https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors
 
 # For Flux models, you may need HuggingFace authentication
@@ -101,14 +103,15 @@ wget https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/mai
 
 ### Install Custom Nodes
 
-ComfyUI supports extensions via custom nodes:
+ComfyUI supports extensions via custom nodes. ComfyUI-Manager is pre-installed with the `yanwk/comfyui-boot` image.
 
 ```bash
 kubectl exec -it -n ai deploy/comfyui -- bash
-cd /opt/ComfyUI/custom_nodes
+cd /root/ComfyUI/custom_nodes
 
-# Example: ComfyUI Manager (recommended)
-git clone https://github.com/ltdrdata/ComfyUI-Manager.git
+# Install additional custom nodes via ComfyUI-Manager UI
+# Or manually clone:
+git clone https://github.com/example/custom-node.git
 
 # Restart pod to load new nodes
 kubectl rollout restart -n ai deploy/comfyui
