@@ -138,28 +138,5 @@ spec:
         cpu: 500m
         memory: 512Mi
 
-    # Init containers to create the velero bucket in MinIO
-    initContainers:
-      - name: create-bucket
-        image: minio/mc:latest
-        command:
-          - /bin/sh
-          - -c
-          - |
-            until mc alias set minio http://minio.backup.svc.cluster.local:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD; do
-              echo "Waiting for MinIO..."
-              sleep 5
-            done
-            mc mb --ignore-existing minio/velero
-            echo "Bucket 'velero' ready"
-        env:
-          - name: MINIO_ROOT_USER
-            valueFrom:
-              secretKeyRef:
-                name: minio-credentials
-                key: root-user
-          - name: MINIO_ROOT_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: minio-credentials
-                key: root-password
+    # Note: Bucket creation handled by MinIO post-start or manually
+    # Velero will retry connecting to backup storage location automatically
