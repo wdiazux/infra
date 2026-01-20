@@ -850,9 +850,6 @@ sops -d secrets/proxmox-creds.enc.yaml
 
 ### Enhancement Opportunities (Optional)
 
-- 🔄 Talos Day 1/2 Ansible playbooks (Cilium, NFS CSI, GPU Operator)
-  - **Note:** Currently using `talosctl`/`kubectl` directly works well
-  - Ansible automation would improve repeatability for multi-node deployments
 - ✅ Forgejo Actions enabled (see kubernetes/apps/base/forgejo/runner/)
 - ✅ Security scanning in Forgejo Actions pipeline (Trivy, TFLint, yamllint)
 - ✅ Semantic versioning for templates (e.g., `ubuntu-2404-cloud-template-v1.0.0`)
