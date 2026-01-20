@@ -39,7 +39,7 @@ Observability stack for metrics collection and visualization.
 |---------|---------------|----------------|--------|
 | VictoriaMetrics | `victoriametrics/victoria-metrics:v1.134.0` | v1.134.0 | :white_check_mark: Current |
 | VMAgent | `victoriametrics/vmagent:v1.134.0` | v1.134.0 | :white_check_mark: Current |
-| Grafana | `grafana/grafana:12.4.0` | 12.4.x | :white_check_mark: Current |
+| Grafana | `grafana/grafana:latest` | latest | :warning: Using Latest Tag |
 | kube-state-metrics | `registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.18.0` | v2.18.0 | :white_check_mark: Current |
 | Node Exporter | `quay.io/prometheus/node-exporter:v1.10.2` | v1.10.2 | :white_check_mark: Current |
 
@@ -201,7 +201,7 @@ All pinned services are now up to date. :white_check_mark:
 |---------|----------|---------|-------|
 | VictoriaMetrics | v1.111.0 | v1.134.0 | Security updates, Go upgrades |
 | VMAgent | v1.111.0 | v1.134.0 | Security updates, Go upgrades |
-| Grafana | 11.4.0 | 12.4.0 | Major version with new features |
+| Grafana | 11.4.0 | latest | Changed to latest tag |
 | kube-state-metrics | v2.13.0 | v2.18.0 | Kubernetes metrics improvements |
 | Node Exporter | v1.8.2 | v1.10.2 | Bug fixes |
 | Immich Server | v2.4.0 | v2.4.1 | Patch release |
