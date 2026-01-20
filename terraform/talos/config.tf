@@ -111,6 +111,14 @@ data "talos_machine_configuration" "node" {
           nodeIP = {
             validSubnets = ["${var.node_ip}/${var.node_netmask}"]
           }
+          # Graceful node shutdown configuration
+          # Ensures pods terminate cleanly during reboot/shutdown
+          # - 60s total grace period
+          # - 30s for regular pods, 30s for critical pods (Longhorn, Cilium, etc.)
+          extraConfig = {
+            shutdownGracePeriod            = "60s"
+            shutdownGracePeriodCriticalPods = "30s"
+          }
           # Longhorn requirements: extra mount for volume attachment
           extraMounts = [
             {
