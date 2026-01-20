@@ -2,7 +2,7 @@
 
 Comprehensive documentation for Talos Kubernetes homelab on Proxmox VE.
 
-**Last Updated:** 2026-01-17
+**Last Updated:** 2026-01-20
 
 ---
 
@@ -50,7 +50,8 @@ See component READMEs in `packer/` for Ubuntu, Debian, Arch, NixOS, and Windows 
 | Service | Description |
 |---------|-------------|
 | [Cilium](services/cilium.md) | CNI with eBPF, L2 LoadBalancer announcements |
-| [Longhorn](services/longhorn.md) | Distributed storage with NFS backups |
+| [Longhorn](services/longhorn.md) | Distributed block storage with snapshots |
+| [NFS Storage](services/nfs-storage.md) | NFS media storage and NAS permissions |
 | [Forgejo](services/forgejo.md) | In-cluster Git server for GitOps |
 | [FluxCD](services/fluxcd.md) | GitOps continuous delivery |
 | [GPU](services/gpu.md) | NVIDIA GPU passthrough and container toolkit |
@@ -88,7 +89,7 @@ Historical research with 90+ official sources:
 |--------|-------|
 | [Talos Research](research/talos-research-report.md) | Talos Linux deployment patterns |
 | [Packer + Proxmox](research/packer-proxmox-research-report.md) | Golden image best practices |
-| [Ansible](research/ANSIBLE_RESEARCH_REPORT.md) | Configuration management patterns |
+| [Ansible](research/ansible-research-report.md) | Configuration management patterns |
 
 ---
 
@@ -113,12 +114,14 @@ Historical research with 90+ official sources:
 | Forgejo | http://10.10.2.13 |
 | FluxCD Webhook | http://10.10.2.15 |
 | Weave GitOps | http://10.10.2.16 |
-| Grafana | http://10.10.2.17 |
-| VictoriaMetrics | http://10.10.2.18 |
+| MinIO Console | http://10.10.2.17 |
+| Open WebUI | http://10.10.2.19 |
+| Homepage | http://10.10.2.21 |
 | Immich | http://10.10.2.22 |
-| Home Assistant | http://10.10.2.23 |
-| n8n | http://10.10.2.24 |
-| Open WebUI | http://10.10.2.25 |
+| Grafana | http://10.10.2.23 |
+| VictoriaMetrics | http://10.10.2.24 |
+| Home Assistant | http://10.10.2.25 |
+| n8n | http://10.10.2.26 |
 
 ---
 
