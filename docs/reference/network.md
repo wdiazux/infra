@@ -234,6 +234,22 @@ Internal service DNS names for cluster-internal access and Pangolin resource con
 
 Format: `<service>.<namespace>.svc.cluster.local`
 
+> **Note: Service-to-Service Communication**
+>
+> When configuring communication between Kubernetes services:
+>
+> | Scenario | Use | Example |
+> |----------|-----|---------|
+> | Same namespace | Service name only | `http://redis:6379` |
+> | Different namespace | Full internal DNS | `http://ollama.ai.svc.cluster.local:11434` |
+> | External access (users) | Domain name | `http://grafana.home-infra.net` |
+>
+> **Best practices:**
+> - Services in the **same namespace** should use short names (e.g., `postgres`, `redis`)
+> - Services in **different namespaces** must use full DNS names
+> - **Never use external domains** for internal service communication (adds latency, breaks if DNS fails)
+> - **Never use LoadBalancer IPs** for internal communication (unnecessary network hops)
+
 ### Core Services
 
 | Service | Internal DNS | Port | Target Port |
