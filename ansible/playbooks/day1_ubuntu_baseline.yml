@@ -51,11 +51,6 @@
     firewall_allowed_ports:
       - 22   # SSH
 
-    # CrowdSec configuration
-    crowdsec_maxretry: 5
-    crowdsec_findtime: 600
-    crowdsec_bantime: 3600
-
     # Automatic security updates
     enable_auto_security_updates: true
 
@@ -176,26 +171,31 @@
       ansible.builtin.debug:
         var: ufw_status.stdout_lines
 
-    - name: Configure crowdsec jail for SSH
-      ansible.builtin.copy:
-        dest: /etc/crowdsec/jail.d/sshd.local
-        content: |
-          [sshd]
-          enabled = true
-          port = ssh
-          filter = sshd
-          logpath = /var/log/auth.log
-          maxretry = {{ crowdsec_maxretry }}
-          findtime = {{ crowdsec_findtime }}
-          bantime = {{ crowdsec_bantime }}
-        mode: '0644'
-      notify: Restart crowdsec
+    - name: Check if CrowdSec is installed
+      ansible.builtin.command: which cscli
+      register: crowdsec_installed
+      changed_when: false
+      failed_when: false
 
-    - name: Enable and start crowdsec
+    - name: Ensure CrowdSec collections are installed
+      ansible.builtin.shell: |
+        cscli hub update
+        cscli collections install crowdsecurity/linux --force
+        cscli collections install crowdsecurity/sshd --force
+      when: crowdsec_installed.rc == 0
+      changed_when: false
+      failed_when: false
+
+    - name: Enable and start CrowdSec services
       ansible.builtin.systemd:
-        name: crowdsec
+        name: "{{ item }}"
         enabled: true
         state: started
+      loop:
+        - crowdsec
+        - crowdsec-firewall-bouncer
+      when: crowdsec_installed.rc == 0
+      failed_when: false
 
     - name: Configure unattended-upgrades
       ansible.builtin.copy:
@@ -377,9 +377,4 @@
     - name: Restart SSH
       ansible.builtin.systemd:
         name: sshd
-        state: restarted
-
-    - name: Restart crowdsec
-      ansible.builtin.systemd:
-        name: crowdsec
         state: restarted

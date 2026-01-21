@@ -26,11 +26,11 @@
     grub_cmdline_intel: "quiet intel_iommu=on iommu=pt"
 
     # Kernel modules for VFIO (GPU passthrough)
+    # Note: vfio_virqfd was merged into vfio in kernel 6.2+
     vfio_modules:
       - vfio
       - vfio_iommu_type1
       - vfio_pci
-      - vfio_virqfd
 
     # Modules to blacklist (prevent host from using GPU)
     blacklist_modules:
@@ -576,13 +576,13 @@
 
     - name: Get GPU IOMMU group
       ansible.builtin.shell: |
-        set -o pipefail
-        find /sys/kernel/iommu_groups/ -type l | \
-          xargs -I {} sh -c 'basename $(dirname {})' 2>/dev/null | head -1
+        GPU_ADDR=$(lspci | grep -i nvidia | grep -i vga | awk '{print $1}' | cut -d: -f1-2)
+        readlink -f /sys/bus/pci/devices/0000:${GPU_ADDR}.0/iommu_group 2>/dev/null | xargs basename || echo "unknown"
       args:
         executable: /bin/bash
       register: gpu_iommu_temp
       changed_when: false
+      failed_when: false
       when: has_gpu | default(false)
       tags: [gpu, terraform, mapping]
 

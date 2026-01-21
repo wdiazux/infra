@@ -76,11 +76,26 @@
     - name: Import Debian cloud image
       when: debian_vm_exists.rc != 0
       block:
+        - name: Download Debian SHA512SUMS file
+          ansible.builtin.get_url:
+            url: "{{ debian_cloud_image_checksum_url }}"
+            dest: "{{ temp_dir }}/debian-SHA512SUMS"
+            mode: '0644'
+
+        - name: Extract Debian image checksum
+          ansible.builtin.shell: |
+            set -o pipefail
+            grep 'debian-12-generic-amd64.qcow2' {{ temp_dir }}/debian-SHA512SUMS | awk '{print $1}'
+          args:
+            executable: /bin/bash
+          register: debian_checksum
+          changed_when: false
+
         - name: Download Debian cloud image
           ansible.builtin.get_url:
             url: "{{ debian_cloud_image_url }}"
             dest: "{{ temp_dir }}/debian-12-generic-amd64.qcow2"
-            checksum: "sha512:{{ debian_cloud_image_checksum_url }}"
+            checksum: "sha512:{{ debian_checksum.stdout }}"
             mode: '0644'
           register: debian_download
 
@@ -140,11 +155,26 @@
     - name: Import Ubuntu cloud image
       when: ubuntu_vm_exists.rc != 0
       block:
+        - name: Download Ubuntu SHA256SUMS file
+          ansible.builtin.get_url:
+            url: "{{ ubuntu_cloud_image_checksum_url }}"
+            dest: "{{ temp_dir }}/ubuntu-SHA256SUMS"
+            mode: '0644'
+
+        - name: Extract Ubuntu image checksum
+          ansible.builtin.shell: |
+            set -o pipefail
+            grep 'ubuntu-24.04-server-cloudimg-amd64.img' {{ temp_dir }}/ubuntu-SHA256SUMS | awk '{print $1}'
+          args:
+            executable: /bin/bash
+          register: ubuntu_checksum
+          changed_when: false
+
         - name: Download Ubuntu cloud image
           ansible.builtin.get_url:
             url: "{{ ubuntu_cloud_image_url }}"
             dest: "{{ temp_dir }}/ubuntu-24.04-server-cloudimg-amd64.img"
-            checksum: "sha256:{{ ubuntu_cloud_image_checksum_url }}"
+            checksum: "sha256:{{ ubuntu_checksum.stdout }}"
             mode: '0644'
           register: ubuntu_download
 
