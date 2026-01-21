@@ -15,6 +15,8 @@ All notable changes to this project are documented here.
 - ComfyUI updates (CUDA 12.8, Python 3.12)
 - Obico 3D printer monitoring with CUDA 12.3
 - Ollama LoadBalancer exposure at 10.10.2.20
+- Codebase audit and cleanup (removed Faster-Whisper and librespeed references from planning docs)
+- Pre-commit hooks updated to latest versions
 
 ### 2026-01-19
 - Claude Code optimization: Added custom commands, hooks, and sub-agents in `.claude/`

@@ -8,7 +8,7 @@
 repos:
   # General file hygiene
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
         exclude: '\.enc\.yaml$'
@@ -25,7 +25,7 @@ repos:
 
   # Terraform
   - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.86.0
+    rev: v1.105.0
     hooks:
       - id: terraform_fmt
         args:
@@ -44,7 +44,7 @@ repos:
 
   # YAML linting (exclude encrypted files)
   - repo: https://github.com/adrienverge/yamllint
-    rev: v1.33.0
+    rev: v1.38.0
     hooks:
       - id: yamllint
         args: ['-c', '.yamllint.yaml']
@@ -52,7 +52,7 @@ repos:
 
   # Ansible
   - repo: https://github.com/ansible/ansible-lint
-    rev: v6.22.1
+    rev: v26.1.1
     hooks:
       - id: ansible-lint
         files: \.(yaml|yml)$
@@ -69,7 +69,10 @@ repos:
     hooks:
       - id: sops-check
         name: Check for unencrypted secrets
-        entry: bash -c 'for f in "$@"; do if [[ "$f" == secrets/*.yaml ]] && ! grep -q "^sops:" "$f" 2>/dev/null; then echo "ERROR: $f appears unencrypted"; exit 1; fi; done' --
+        entry: >-
+          bash -c 'for f in "$@"; do
+          if [[ "$f" == secrets/*.yaml ]] && ! grep -q "^sops:" "$f" 2>/dev/null;
+          then echo "ERROR: $f appears unencrypted"; exit 1; fi; done' --
         language: system
         files: ^secrets/.*\.yaml$
         exclude: '\.enc\.yaml$'

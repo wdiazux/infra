@@ -1,11 +1,13 @@
 # Cilium Helm Values - REFERENCE DOCUMENTATION
 #
-# STATUS: This file is for REFERENCE ONLY.
+# STATUS: This file is for REFERENCE ONLY - NOT used by automation.
 # ACTIVE CONFIG: terraform/talos/cilium-inline.tf (embedded in Talos bootstrap)
 #
-# Cilium is now installed via Talos inlineManifest during cluster bootstrap,
-# not via manual Helm installation. This file documents the configuration
-# values but is NOT used by automation.
+# Cilium is installed via Talos inlineManifest during cluster bootstrap.
+# This file documents Cilium configuration options and Talos-specific requirements.
+# Always use terraform/talos/cilium-inline.tf as the source of truth.
+#
+# Moved from kubernetes/infrastructure/values/ to docs/reference/ on 2026-01-20
 #
 # Version: Cilium 1.18.6
 # Talos Compatibility: v1.10+
