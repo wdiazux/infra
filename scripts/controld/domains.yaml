@@ -1,0 +1,118 @@
+# ControlD DNS Domain Definitions
+# Each entry creates DNS rules for all suffixes defined in config.yaml
+#
+# Format:
+#   - name: hostname (without suffix)
+#     ip: IP address
+#     aliases: [optional, list, of, aliases]
+
+domains:
+  # ==========================================================================
+  # Core Infrastructure (10.10.2.1-10)
+  # ==========================================================================
+  - name: gateway
+    ip: 10.10.2.1
+
+  - name: proxmox
+    ip: 10.10.2.2
+    aliases: [pve]
+
+  - name: nas
+    ip: 10.10.2.5
+
+  - name: talos
+    ip: 10.10.2.10
+
+  # ==========================================================================
+  # Kubernetes Services (10.10.2.11-20)
+  # ==========================================================================
+  - name: hubble
+    ip: 10.10.2.11
+
+  - name: longhorn
+    ip: 10.10.2.12
+
+  - name: git
+    ip: 10.10.2.13
+
+  - name: gitops
+    ip: 10.10.2.16
+
+  - name: minio
+    ip: 10.10.2.17
+
+  - name: chat
+    ip: 10.10.2.19
+
+  - name: ollama
+    ip: 10.10.2.20
+
+  # ==========================================================================
+  # Applications (10.10.2.21-50)
+  # ==========================================================================
+  - name: home
+    ip: 10.10.2.21
+
+  - name: photos
+    ip: 10.10.2.22
+
+  - name: grafana
+    ip: 10.10.2.23
+
+  - name: metrics
+    ip: 10.10.2.24
+
+  - name: hass
+    ip: 10.10.2.25
+
+  - name: n8n
+    ip: 10.10.2.26
+
+  - name: obico
+    ip: 10.10.2.27
+
+  - name: sd
+    ip: 10.10.2.28
+    aliases: [diffusion]
+
+  - name: attic
+    ip: 10.10.2.29
+
+  - name: emby
+    ip: 10.10.2.30
+
+  - name: music
+    ip: 10.10.2.31
+
+  - name: tools
+    ip: 10.10.2.32
+
+  - name: wallos
+    ip: 10.10.2.34
+
+  - name: ntfy
+    ip: 10.10.2.35
+
+  - name: paperless
+    ip: 10.10.2.36
+
+  # ==========================================================================
+  # Arr-Stack (10.10.2.40-45)
+  # ==========================================================================
+  - name: sabnzbd
+    ip: 10.10.2.40
+
+  - name: qbittorrent
+    ip: 10.10.2.41
+
+  - name: prowlarr
+    ip: 10.10.2.42
+
+  - name: radarr
+    ip: 10.10.2.43
+
+  - name: sonarr
+    ip: 10.10.2.44
+
+  - name: bazarr
+    ip: 10.10.2.45

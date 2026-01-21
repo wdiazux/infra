@@ -1,0 +1,16 @@
+# ControlD DNS Management Configuration
+# Settings for the controld-dns.py script
+
+api_base_url: https://api.controld.com
+
+# ControlD profile name (find in dashboard)
+profile_name: Default
+
+# Folder name within the profile for homelab rules
+folder_name: home-infra
+
+# Domain suffixes to create for each service
+# Each service will get a DNS rule for each suffix
+suffixes:
+  - home-infra.net
+  - home.arpa
