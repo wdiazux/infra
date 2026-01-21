@@ -201,19 +201,35 @@ def load_domains(domains_path: Path) -> list[dict]:
         return data.get("domains", [])
 
 
-def build_desired_state(domains: list[dict], suffixes: list[str]) -> dict[str, str]:
-    """Build desired state from domain definitions."""
+def build_desired_state(domains: list[dict], default_suffixes: list[str]) -> dict[str, str]:
+    """Build desired state from domain definitions.
+
+    Each domain can optionally specify:
+    - suffixes: list of suffixes to use (overrides default_suffixes)
+    - fqdn: fully qualified domain name (ignores suffixes entirely)
+    """
     desired = {}
     for domain in domains:
         name = domain["name"]
         ip = domain["ip"]
         aliases = domain.get("aliases", [])
 
-        # Add main name and aliases for each suffix
-        for suffix in suffixes:
-            desired[f"{name}.{suffix}"] = ip
-            for alias in aliases:
-                desired[f"{alias}.{suffix}"] = ip
+        # Determine which suffixes to use for this domain
+        # Priority: fqdn > suffixes > default_suffixes
+        if "fqdn" in domain:
+            # Use exact FQDN (no suffix processing)
+            fqdns = domain["fqdn"] if isinstance(domain["fqdn"], list) else [domain["fqdn"]]
+            for fqdn in fqdns:
+                desired[fqdn] = ip
+        else:
+            # Use per-domain suffixes or fall back to defaults
+            suffixes = domain.get("suffixes", default_suffixes)
+
+            # Add main name and aliases for each suffix
+            for suffix in suffixes:
+                desired[f"{name}.{suffix}"] = ip
+                for alias in aliases:
+                    desired[f"{alias}.{suffix}"] = ip
 
     return desired
 
