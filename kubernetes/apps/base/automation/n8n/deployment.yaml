@@ -55,15 +55,15 @@ spec:
                   key: POSTGRES_PASSWORD
             # n8n Config
             - name: N8N_HOST
-              value: "10.10.2.24"
+              value: "0.0.0.0"
             - name: N8N_PORT
               value: "5678"
             - name: N8N_PROTOCOL
               value: "http"
             - name: N8N_EDITOR_BASE_URL
-              value: "http://10.10.2.24/"
+              value: "http://n8n.home-infra.net/"
             - name: WEBHOOK_URL
-              value: "http://10.10.2.24/"
+              value: "http://n8n.home-infra.net/"
             - name: N8N_SECURE_COOKIE
               value: "false"
             - name: GENERIC_TIMEZONE

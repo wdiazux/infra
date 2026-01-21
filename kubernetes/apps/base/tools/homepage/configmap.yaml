@@ -45,129 +45,129 @@ data:
     - Infrastructure:
         - Proxmox:
             icon: proxmox.png
-            href: https://10.10.2.2:8006
+            href: https://proxmox.home-infra.net:8006
             description: Hypervisor
         - Longhorn:
             icon: longhorn.png
-            href: http://10.10.2.12
+            href: http://longhorn.home-infra.net
             description: Storage Manager
         - Forgejo:
             icon: forgejo.png
-            href: http://10.10.2.13
+            href: http://git.home-infra.net
             description: Git Server
         - Weave GitOps:
             icon: flux-cd.png
-            href: http://10.10.2.16
+            href: http://gitops.home-infra.net
             description: FluxCD Dashboard
         - Hubble:
             icon: cilium.png
-            href: http://10.10.2.11
+            href: http://hubble.home-infra.net
             description: Network Observability
         - Grafana:
             icon: grafana.png
-            href: http://10.10.2.23
+            href: http://grafana.home-infra.net
             description: Monitoring Dashboards
         - VictoriaMetrics:
             icon: victoriametrics.png
-            href: http://10.10.2.24
+            href: http://metrics.home-infra.net
             description: Metrics Database
         - MinIO:
             icon: minio.png
-            href: http://10.10.2.17
+            href: http://minio.home-infra.net
             description: Backup Storage
 
     - Media:
         - Immich:
             icon: immich.png
-            href: http://10.10.2.22
+            href: http://photos.reynoza.org
             description: Photo & Video Backup
         - Emby:
             icon: emby.png
-            href: http://10.10.2.30
+            href: http://emby.home-infra.net
             description: Media Server
         - Navidrome:
             icon: navidrome.png
-            href: http://10.10.2.31
+            href: http://music.home-infra.net
             description: Music Server
 
     - Automation:
         - Home Assistant:
             icon: home-assistant.png
-            href: http://10.10.2.25
+            href: http://hass.home-infra.net
             description: Smart Home
         - n8n:
             icon: n8n.png
-            href: http://10.10.2.26
+            href: http://n8n.home-infra.net
             description: Workflow Automation
 
     - AI:
         - Ollama:
             icon: ollama.png
-            href: http://10.10.2.20:11434
+            href: http://ollama.home-infra.net:11434
             description: LLM Inference API
         - Open WebUI:
             icon: open-webui.png
-            href: http://10.10.2.19
+            href: http://chat.home-infra.net
             description: LLM Chat Interface
         - ComfyUI:
             icon: comfyui.png
-            href: http://10.10.2.28
+            href: http://sd.home-infra.net
             description: Node-based Image Generation
 
     - 3D Print:
         - Obico:
             icon: obico.png
-            href: http://10.10.2.27
+            href: http://obico.home-infra.net
             description: 3D Printer Monitoring
 
     - Arr Stack:
         - SABnzbd:
             icon: sabnzbd.png
-            href: http://10.10.2.40
+            href: http://sabnzbd.home-infra.net
             description: Usenet Downloader
         - qBittorrent:
             icon: qbittorrent.png
-            href: http://10.10.2.41
+            href: http://qbittorrent.home-infra.net
             description: Torrent Client
         - Prowlarr:
             icon: prowlarr.png
-            href: http://10.10.2.42
+            href: http://prowlarr.home-infra.net
             description: Indexer Manager
         - Radarr:
             icon: radarr.png
-            href: http://10.10.2.43
+            href: http://radarr.home-infra.net
             description: Movie Manager
         - Sonarr:
             icon: sonarr.png
-            href: http://10.10.2.44
+            href: http://sonarr.home-infra.net
             description: TV Series Manager
         - Bazarr:
             icon: bazarr.png
-            href: http://10.10.2.45
+            href: http://bazarr.home-infra.net
             description: Subtitle Manager
 
     - Tools:
         - IT-Tools:
             icon: it-tools.png
-            href: http://10.10.2.32
+            href: http://tools.home-infra.net
             description: Developer Toolbox
         - ntfy:
             icon: ntfy.png
-            href: http://10.10.2.35
+            href: http://ntfy.home-infra.net
             description: Push Notifications
         - Attic:
             icon: nix.png
-            href: http://10.10.2.29
+            href: http://attic.home-infra.net
             description: Nix Binary Cache
 
     - Management:
         - Wallos:
             icon: wallos.png
-            href: http://10.10.2.34
+            href: http://wallos.home-infra.net
             description: Subscription Tracker
         - Paperless-ngx:
             icon: paperless-ngx.png
-            href: http://10.10.2.36
+            href: http://paperless.home-infra.net
             description: Document Management
 
   bookmarks.yaml: |
