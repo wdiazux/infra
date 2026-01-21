@@ -252,6 +252,6 @@ terraform import ...
 
 ---
 
-**Last Updated:** 2026-01-15
+**Last Updated:** 2026-01-21
 
 See [TERRAFORM.md](../../terraform/talos/TERRAFORM.md) for auto-generated provider documentation.

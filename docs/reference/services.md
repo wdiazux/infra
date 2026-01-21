@@ -20,8 +20,8 @@ Services for AI/ML workloads with GPU acceleration.
 
 | Service | Current Image | Latest Version | Status |
 |---------|---------------|----------------|--------|
-| Ollama | `ollama/ollama:latest` | latest | :warning: Using Latest Tag |
-| Open WebUI | `ghcr.io/open-webui/open-webui:latest` | latest | :warning: Using Latest Tag |
+| Ollama | `ollama/ollama:0.14.2` | 0.14.x | :white_check_mark: Current |
+| Open WebUI | `ghcr.io/open-webui/open-webui:v0.7.2` | v0.7.x | :white_check_mark: Current |
 | ComfyUI | `yanwk/comfyui-boot:cu128-slim` | cu128-slim | :white_check_mark: Current |
 
 **Access:**
@@ -39,7 +39,7 @@ Observability stack for metrics collection and visualization.
 |---------|---------------|----------------|--------|
 | VictoriaMetrics | `victoriametrics/victoria-metrics:v1.134.0` | v1.134.0 | :white_check_mark: Current |
 | VMAgent | `victoriametrics/vmagent:v1.134.0` | v1.134.0 | :white_check_mark: Current |
-| Grafana | `grafana/grafana:latest` | latest | :warning: Using Latest Tag |
+| Grafana | `grafana/grafana:12.3.1` | v12.3.1 | :white_check_mark: Current |
 | kube-state-metrics | `registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.18.0` | v2.18.0 | :white_check_mark: Current |
 | Node Exporter | `quay.io/prometheus/node-exporter:v1.10.2` | v1.10.2 | :white_check_mark: Current |
 
@@ -59,8 +59,8 @@ Photo backup and media streaming services.
 | Immich ML | `ghcr.io/immich-app/immich-machine-learning:v2.4.1-cuda` | v2.4.1-cuda | :white_check_mark: Current |
 | Immich Postgres | `ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0` | Custom | :white_check_mark: Current |
 | Valkey (Redis) | `valkey/valkey:9` | 9.x | :white_check_mark: Current |
-| Emby | `lscr.io/linuxserver/emby:latest` | latest | :warning: Using Latest Tag |
-| Navidrome | `docker.io/deluan/navidrome:latest` | latest | :warning: Using Latest Tag |
+| Emby | `lscr.io/linuxserver/emby:4.9.3` | 4.9.x | :white_check_mark: Current |
+| Navidrome | `docker.io/deluan/navidrome:0.59.0` | 0.59.x | :white_check_mark: Current |
 
 **Access:**
 - Immich: http://10.10.2.22
@@ -75,12 +75,12 @@ Media automation and download management.
 
 | Service | Current Image | Latest Version | Status |
 |---------|---------------|----------------|--------|
-| SABnzbd | `ghcr.io/hotio/sabnzbd:latest` | latest | :warning: Using Latest Tag |
-| qBittorrent | `ghcr.io/hotio/qbittorrent:latest` | latest | :warning: Using Latest Tag |
-| Prowlarr | `ghcr.io/hotio/prowlarr:latest` | latest | :warning: Using Latest Tag |
-| Radarr | `ghcr.io/hotio/radarr:latest` | latest | :warning: Using Latest Tag |
-| Sonarr | `ghcr.io/hotio/sonarr:latest` | latest | :warning: Using Latest Tag |
-| Bazarr | `ghcr.io/hotio/bazarr:latest` | latest | :warning: Using Latest Tag |
+| SABnzbd | `ghcr.io/hotio/sabnzbd:release-4.5.5` | release-4.5.x | :white_check_mark: Current |
+| qBittorrent | `ghcr.io/hotio/qbittorrent:release-5.1.4` | release-5.1.x | :white_check_mark: Current |
+| Prowlarr | `ghcr.io/hotio/prowlarr:release-2.3.0.5236` | release-2.3.x | :white_check_mark: Current |
+| Radarr | `ghcr.io/hotio/radarr:release-6.0.4.10291` | release-6.0.x | :white_check_mark: Current |
+| Sonarr | `ghcr.io/hotio/sonarr:release-4.0.16.2944` | release-4.0.x | :white_check_mark: Current |
+| Bazarr | `ghcr.io/hotio/bazarr:release-1.5.4` | release-1.5.x | :white_check_mark: Current |
 
 **Access:**
 - SABnzbd: http://10.10.2.40
@@ -195,19 +195,19 @@ Developer utilities and services.
 
 All pinned services are now up to date. :white_check_mark:
 
-### Recently Updated (2026-01-20)
+### Recently Updated (2026-01-21)
 
 | Service | Previous | Current | Notes |
 |---------|----------|---------|-------|
+| Grafana | 11.4.0 | 12.3.1 | Major version upgrade |
 | VictoriaMetrics | v1.111.0 | v1.134.0 | Security updates, Go upgrades |
 | VMAgent | v1.111.0 | v1.134.0 | Security updates, Go upgrades |
-| Grafana | 11.4.0 | latest | Changed to latest tag |
 | kube-state-metrics | v2.13.0 | v2.18.0 | Kubernetes metrics improvements |
 | Node Exporter | v1.8.2 | v1.10.2 | Bug fixes |
 | Immich Server | v2.4.0 | v2.4.1 | Patch release |
 | Immich ML | v2.4.0-cuda | v2.4.1-cuda | Patch release |
 | Forgejo Runner | 6.3.1 | 11 | Major version upgrade |
-| ntfy | v2.11.0 | latest | Changed to latest tag |
+| Arr-Stack | various | pinned | All services now version-pinned via Flux image automation |
 
 ---
 
@@ -215,15 +215,14 @@ All pinned services are now up to date. :white_check_mark:
 
 ### Services Using `:latest` Tag
 
-Consider pinning these services to specific versions for reproducibility:
+Most services are now pinned to specific versions via Flux image automation. The following services still use `:latest`:
 
-```yaml
-# Instead of :latest, use specific versions:
-ghcr.io/hotio/radarr:release-5.17.2.9580
-ghcr.io/hotio/sonarr:release-4.0.13.2932
-n8nio/n8n:1.74.2
-minio/minio:RELEASE.2026-01-15T00-00-00Z
-```
+- MinIO (backup namespace)
+- Paperless-ngx, Apache Tika, Wallos (management namespace)
+- Homepage, Attic, IT-Tools, ntfy (tools namespace)
+- Obico Web (printing namespace)
+
+Consider pinning these if stability is a concern.
 
 ### Benefits of Version Pinning
 
@@ -265,4 +264,4 @@ skopeo inspect docker://grafana/grafana:latest | jq '.Labels["org.opencontainers
 
 ---
 
-**Last Updated:** 2026-01-20
+**Last Updated:** 2026-01-21

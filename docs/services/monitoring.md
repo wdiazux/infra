@@ -50,7 +50,7 @@ VictoriaMetrics and Grafana observability stack for Kubernetes monitoring.
 Prometheus-compatible time-series database with better performance and lower resource usage.
 
 **Configuration:**
-- **Image:** `victoriametrics/victoria-metrics:v1.111.0`
+- **Image:** `victoriametrics/victoria-metrics:v1.134.0`
 - **Retention:** 90 days
 - **Storage:** 10Gi Longhorn PVC
 - **Port:** 8428
@@ -66,7 +66,7 @@ Prometheus-compatible time-series database with better performance and lower res
 Lightweight metrics collector that scrapes Prometheus targets and writes to VictoriaMetrics.
 
 **Configuration:**
-- **Image:** `victoriametrics/vmagent:v1.111.0`
+- **Image:** `victoriametrics/vmagent:v1.134.0`
 - **Scrape Interval:** 30s
 - **RBAC:** ClusterRole for Kubernetes service discovery
 
@@ -102,7 +102,7 @@ VMAgent uses `keep_if_equal` relabeling to prevent duplicate scrape targets when
 Visualization platform with pre-configured dashboards.
 
 **Configuration:**
-- **Image:** `grafana/grafana:11.4.0`
+- **Image:** `grafana/grafana:12.3.1`
 - **Storage:** 2Gi Longhorn PVC
 - **Default Credentials:** admin / admin
 
@@ -350,4 +350,4 @@ kubernetes/apps/base/monitoring/
 
 ---
 
-**Last Updated:** 2026-01-20
+**Last Updated:** 2026-01-21

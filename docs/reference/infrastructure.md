@@ -206,67 +206,23 @@ gpu_mapping = "nvidia-gpu"
 
 ## Deployed Applications
 
-Applications deployed via FluxCD GitOps.
+Applications deployed via FluxCD GitOps. For current container versions, see [Services Reference](services.md). For IP addresses, see [Network Reference](network.md).
 
-### Monitoring (`monitoring` namespace)
+### Quick Reference by Namespace
 
-| Service | Image | IP | Purpose |
-|---------|-------|-----|---------|
-| VictoriaMetrics | victoriametrics/victoria-metrics:v1.111.0 | 10.10.2.18 | Time-series database |
-| VMAgent | victoriametrics/vmagent:v1.111.0 | Internal | Metrics collection |
-| Grafana | grafana/grafana:11.4.0 | 10.10.2.17 | Visualization |
-
-### Automation (`automation` namespace)
-
-| Service | Image | IP | Purpose |
-|---------|-------|-----|---------|
-| n8n | n8nio/n8n:1.74.2 | 10.10.2.24 | Workflow automation |
-| n8n-postgres | postgres:16-alpine | Internal | n8n database |
-| Home Assistant | ghcr.io/home-assistant/home-assistant:2025.1.2 | 10.10.2.23 | Smart home platform |
-
-### AI (`ai` namespace)
-
-| Service | Image | IP | Purpose |
-|---------|-------|-----|---------|
-| Ollama | ollama/ollama:0.5.7 | Internal | LLM inference |
-| Open WebUI | ghcr.io/open-webui/open-webui:0.5.7 | 10.10.2.25 | Chat interface |
-| Stable Diffusion | sygil/sygil-webui:latest | 10.10.2.26 | Image generation |
-
-### Media (`media` namespace)
-
-| Service | Image | IP | Purpose |
-|---------|-------|-----|---------|
-| Immich Server | ghcr.io/immich-app/immich-server:v1.124.2 | 10.10.2.22 | Photo/video backup |
-| Immich ML | ghcr.io/immich-app/immich-machine-learning:v1.124.2 | Internal | ML processing |
-| Immich Postgres | ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0 | Internal | Immich database |
-| Immich Valkey | valkey/valkey:9.0-alpine | Internal | Immich cache |
-| Emby | emby/embyserver:4.9.0.42 | 10.10.2.30 | Media streaming |
-| Navidrome | deluan/navidrome:0.54.5 | 10.10.2.31 | Music streaming |
-
-### Arr-Stack (`arr-stack` namespace)
-
-| Service | Image | IP | Purpose |
-|---------|-------|-----|---------|
-| SABnzbd | lscr.io/linuxserver/sabnzbd:4.4.1 | 10.10.2.40 | Usenet downloader |
-| qBittorrent | lscr.io/linuxserver/qbittorrent:5.0.4 | 10.10.2.41 | Torrent client |
-| Prowlarr | lscr.io/linuxserver/prowlarr:1.31.2 | 10.10.2.42 | Indexer manager |
-| Radarr | lscr.io/linuxserver/radarr:5.17.2 | 10.10.2.43 | Movie manager |
-| Sonarr | lscr.io/linuxserver/sonarr:4.0.13 | 10.10.2.44 | TV series manager |
-| Bazarr | lscr.io/linuxserver/bazarr:1.5.1 | 10.10.2.45 | Subtitle manager |
-
-### Tools (`tools` namespace)
-
-| Service | Image | IP | Purpose |
-|---------|-------|-----|---------|
-| IT-Tools | corentinth/it-tools:latest | 10.10.2.32 | Developer utilities |
-| ntfy | binwiederhier/ntfy:v2.11.0 | 10.10.2.35 | Push notifications |
-
-### Management (`management` namespace)
-
-| Service | Image | IP | Purpose |
-|---------|-------|-----|---------|
-| Wallos | bellamy/wallos:2.43.1 | 10.10.2.34 | Subscription tracker |
+| Namespace | Services | Purpose |
+|-----------|----------|---------|
+| `monitoring` | VictoriaMetrics, VMAgent, Grafana, kube-state-metrics, node-exporter | Observability |
+| `automation` | Home Assistant, n8n | Smart home, workflows |
+| `ai` | Ollama, Open WebUI, ComfyUI | LLM inference, image generation |
+| `media` | Immich, Emby, Navidrome | Photos, video, music |
+| `arr-stack` | SABnzbd, qBittorrent, Prowlarr, Radarr, Sonarr, Bazarr | Media automation |
+| `tools` | Homepage, IT-Tools, Attic, ntfy | Developer utilities |
+| `management` | Paperless-ngx, Wallos | Documents, subscriptions |
+| `printing` | Obico | 3D printer monitoring |
+| `backup` | MinIO, Velero | Disaster recovery |
+| `forgejo` | Forgejo, Forgejo Runner | Git server, CI/CD |
 
 ---
 
-**Last Updated:** 2026-01-17
+**Last Updated:** 2026-01-21

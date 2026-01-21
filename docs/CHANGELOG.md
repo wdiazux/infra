@@ -4,6 +4,14 @@ All notable changes to this project are documented here.
 
 ## 2026
 
+### 2026-01-21
+- Documentation audit and cleanup
+  - Fixed wrong IPs in infrastructure.md (VictoriaMetrics, Grafana, n8n, Home Assistant, Open WebUI)
+  - Updated VictoriaMetrics/VMAgent versions (v1.111.0 → v1.134.0) and Grafana (11.4.0 → 12.3.1) in monitoring.md
+  - Replaced "Stable Diffusion" references with "ComfyUI" in resource-strategy.md
+  - Simplified infrastructure.md by removing duplicate version info, linking to services.md instead
+  - Updated Last Updated dates across reference documentation
+
 ### 2026-01-20
 - Velero disaster recovery with MinIO backend (daily/weekly backup schedules)
 - Automated snapshot-controller and MinIO bucket initialization

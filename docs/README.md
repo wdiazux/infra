@@ -2,7 +2,7 @@
 
 Comprehensive documentation for Talos Kubernetes homelab on Proxmox VE.
 
-**Last Updated:** 2026-01-20
+**Last Updated:** 2026-01-21
 
 ---
 

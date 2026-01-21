@@ -69,7 +69,7 @@ It's a user app → No requests, no limits
 | Service | Request | Limit | Notes |
 |---------|---------|-------|-------|
 | Ollama | 100Mi + GPU | 32Gi | Supports 24GB+ models, KEEP_ALIVE=5m |
-| Stable Diffusion | 100Mi + GPU | 16Gi | SDXL headroom |
+| ComfyUI | 100Mi + GPU | 16Gi | SDXL headroom |
 | Open WebUI | None | None | BestEffort - lightweight UI |
 
 ### Databases (Small Requests + Limits)
@@ -128,7 +128,7 @@ The RTX 4000 SFF has **20GB VRAM** shared across all GPU services via time-slici
 | Service | Purpose |
 |---------|---------|
 | Ollama | LLM inference |
-| Stable Diffusion | Image generation |
+| ComfyUI | Image generation |
 | Emby | Video transcoding |
 
 **VRAM management**:

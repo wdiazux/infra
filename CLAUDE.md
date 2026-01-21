@@ -214,12 +214,13 @@ docs/
 
 ## Recent Changes
 
+- **2026-01-21**: Documentation audit and cleanup
+- **2026-01-20**: Velero backup, PodGC, ComfyUI, Obico, version updates
 - **2026-01-19**: Claude Code optimization (hooks, commands, sub-agents)
 - **2026-01-17**: Paperless-ngx, Attic, monitoring stack, Home Assistant, n8n
 - **2026-01-16**: AI namespace with GPU, media namespace, arr-stack
-- **2026-01-15**: Documentation consolidation
 
 See `docs/CHANGELOG.md` for full history.
 
 ---
-**Last Updated**: 2026-01-19 | **Status**: Production-Ready
+**Last Updated**: 2026-01-21 | **Status**: Production-Ready
