@@ -30,5 +30,46 @@
         ]
       }
     ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(grep:*)",
+      "Bash(wc:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(kubectl get:*)",
+      "Bash(export KUBECONFIG=./kubeconfig:*)",
+      "Skill(context7-plugin:docs)",
+      "Skill(superpowers:brainstorming)",
+      "mcp__plugin_context7-plugin_context7__query-docs",
+      "WebSearch",
+      "WebFetch(domain:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:www.talos.dev)",
+      "WebFetch(domain:docs.siderolabs.com)",
+      "WebFetch(domain:documentation.suse.com)",
+      "WebFetch(domain:factory.talos.dev)",
+      "WebFetch(domain:artifacthub.io)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:merox.dev)",
+      "WebFetch(domain:docs.openwebui.com)",
+      "WebFetch(domain:medium.com)",
+      "WebFetch(domain:docs.ollama.com)",
+      "WebFetch(domain:collabnix.com)",
+      "WebFetch(domain:dasroot.net)",
+      "WebFetch(domain:www.1qubit.de)",
+      "WebFetch(domain:localllm.in)",
+      "WebFetch(domain:aws.amazon.com)",
+      "WebFetch(domain:hub.docker.com)",
+      "WebFetch(domain:docs.n8n.io)",
+      "WebFetch(domain:immich.app)",
+      "WebFetch(domain:docs.immich.app)",
+      "WebFetch(domain:docs.victoriametrics.com)",
+      "WebFetch(domain:docs.attic.rs)",
+      "WebFetch(domain:forgejo.org)",
+      "WebFetch(domain:code.forgejo.org)",
+      "WebFetch(domain:longhorn.io)",
+      "WebFetch(domain:velero.io)"
+    ]
   }
 }
