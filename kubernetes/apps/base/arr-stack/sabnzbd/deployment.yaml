@@ -44,6 +44,8 @@ spec:
               value: America/El_Salvador
             - name: UMASK
               value: "002"
+            - name: HOST_WHITELIST
+              value: "sabnzbd.home-infra.net,sabnzbd.home.arpa,10.10.2.40"
           volumeMounts:
             - name: config
               mountPath: /config
