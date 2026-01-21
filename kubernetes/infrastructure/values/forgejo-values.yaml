@@ -33,12 +33,12 @@ gitea:
     APP_NAME: "Homelab Git"
 
     server:
-      DOMAIN: git.home-infra.net
+      DOMAIN: git.${DOMAIN_PRIMARY}
       ROOT_URL: http://10.10.2.13/  # Overridden by Terraform var.forgejo_ip
       # LOCAL_ROOT_URL is used by git hooks to connect back to the server
       # Must be accessible from within the container
       LOCAL_ROOT_URL: http://localhost:80/
-      SSH_DOMAIN: git.home-infra.net
+      SSH_DOMAIN: git.${DOMAIN_PRIMARY}
       SSH_PORT: 22
       LFS_START_SERVER: true
 
@@ -112,13 +112,13 @@ service:
   http:
     type: LoadBalancer
     port: 80  # External port (routes to container port 3000)
-    loadBalancerIP: "10.10.2.13"  # Overridden by Terraform var.forgejo_ip
+    loadBalancerIP: "${IP_FORGEJO_HTTP}"
     annotations: {}
 
   ssh:
     type: LoadBalancer
     port: 22
-    loadBalancerIP: "10.10.2.14"  # Overridden by Terraform var.forgejo_ssh_ip
+    loadBalancerIP: "${IP_FORGEJO_SSH}"
     annotations: {}
 
 # ============================================================================

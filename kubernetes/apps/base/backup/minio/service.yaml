@@ -30,7 +30,7 @@ metadata:
     app.kubernetes.io/name: minio
     app.kubernetes.io/part-of: backup
   annotations:
-    io.cilium/lb-ipam-ips: "10.10.2.17"
+    io.cilium/lb-ipam-ips: "${IP_MINIO}"
 spec:
   type: LoadBalancer
   selector:

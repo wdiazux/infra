@@ -10,10 +10,10 @@ metadata:
     app.kubernetes.io/name: prowlarr
     app.kubernetes.io/part-of: arr-stack
   annotations:
-    io.cilium/lb-ipam-ips: "10.10.2.42"
+    io.cilium/lb-ipam-ips: "${IP_PROWLARR}"
 spec:
   type: LoadBalancer
-  loadBalancerIP: "10.10.2.42"
+  loadBalancerIP: "${IP_PROWLARR}"
   ports:
     - name: http
       port: 80

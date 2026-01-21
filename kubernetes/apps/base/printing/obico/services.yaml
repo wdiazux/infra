@@ -53,7 +53,7 @@ metadata:
     app.kubernetes.io/component: web
     app.kubernetes.io/part-of: printing
   annotations:
-    io.cilium/lb-ipam-ips: "10.10.2.27"
+    io.cilium/lb-ipam-ips: "${IP_OBICO}"
 spec:
   type: LoadBalancer
   selector:

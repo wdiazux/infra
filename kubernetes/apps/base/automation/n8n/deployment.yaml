@@ -61,9 +61,9 @@ spec:
             - name: N8N_PROTOCOL
               value: "http"
             - name: N8N_EDITOR_BASE_URL
-              value: "http://n8n.home-infra.net/"
+              value: "http://n8n.${DOMAIN_PRIMARY}/"
             - name: WEBHOOK_URL
-              value: "http://n8n.home-infra.net/"
+              value: "http://n8n.${DOMAIN_PRIMARY}/"
             - name: N8N_SECURE_COOKIE
               value: "false"
             - name: GENERIC_TIMEZONE

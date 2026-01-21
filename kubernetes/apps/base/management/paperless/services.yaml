@@ -91,7 +91,7 @@ metadata:
     app.kubernetes.io/component: server
     app.kubernetes.io/part-of: paperless
   annotations:
-    io.cilium/lb-ipam-ips: "10.10.2.36"
+    io.cilium/lb-ipam-ips: "${IP_PAPERLESS}"
 spec:
   type: LoadBalancer
   selector:

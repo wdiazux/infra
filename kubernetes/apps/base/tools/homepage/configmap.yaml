@@ -45,129 +45,129 @@ data:
     - Infrastructure:
         - Proxmox:
             icon: proxmox.png
-            href: https://proxmox.home-infra.net:8006
+            href: https://proxmox.${DOMAIN_PRIMARY}:8006
             description: Hypervisor
         - Longhorn:
             icon: longhorn.png
-            href: http://longhorn.home-infra.net
+            href: http://longhorn.${DOMAIN_PRIMARY}
             description: Storage Manager
         - Forgejo:
             icon: forgejo.png
-            href: http://git.home-infra.net
+            href: http://git.${DOMAIN_PRIMARY}
             description: Git Server
         - Weave GitOps:
             icon: flux-cd.png
-            href: http://gitops.home-infra.net
+            href: http://gitops.${DOMAIN_PRIMARY}
             description: FluxCD Dashboard
         - Hubble:
             icon: cilium.png
-            href: http://hubble.home-infra.net
+            href: http://hubble.${DOMAIN_PRIMARY}
             description: Network Observability
         - Grafana:
             icon: grafana.png
-            href: http://grafana.home-infra.net
+            href: http://grafana.${DOMAIN_PRIMARY}
             description: Monitoring Dashboards
         - VictoriaMetrics:
             icon: victoriametrics.png
-            href: http://metrics.home-infra.net
+            href: http://metrics.${DOMAIN_PRIMARY}
             description: Metrics Database
         - MinIO:
             icon: minio.png
-            href: http://minio.home-infra.net
+            href: http://minio.${DOMAIN_PRIMARY}
             description: Backup Storage
 
     - Media:
         - Immich:
             icon: immich.png
-            href: http://photos.reynoza.org
+            href: http://photos.${DOMAIN_EXTERNAL}
             description: Photo & Video Backup
         - Emby:
             icon: emby.png
-            href: http://emby.home-infra.net
+            href: http://emby.${DOMAIN_PRIMARY}
             description: Media Server
         - Navidrome:
             icon: navidrome.png
-            href: http://music.home-infra.net
+            href: http://music.${DOMAIN_PRIMARY}
             description: Music Server
 
     - Automation:
         - Home Assistant:
             icon: home-assistant.png
-            href: http://hass.home-infra.net
+            href: http://hass.${DOMAIN_PRIMARY}
             description: Smart Home
         - n8n:
             icon: n8n.png
-            href: http://n8n.home-infra.net
+            href: http://n8n.${DOMAIN_PRIMARY}
             description: Workflow Automation
 
     - AI:
         - Ollama:
             icon: ollama.png
-            href: http://ollama.home-infra.net:11434
+            href: http://ollama.${DOMAIN_PRIMARY}:11434
             description: LLM Inference API
         - Open WebUI:
             icon: open-webui.png
-            href: http://chat.home-infra.net
+            href: http://chat.${DOMAIN_PRIMARY}
             description: LLM Chat Interface
         - ComfyUI:
             icon: comfyui.png
-            href: http://sd.home-infra.net
+            href: http://sd.${DOMAIN_PRIMARY}
             description: Node-based Image Generation
 
     - 3D Print:
         - Obico:
             icon: obico.png
-            href: http://obico.home-infra.net
+            href: http://obico.${DOMAIN_PRIMARY}
             description: 3D Printer Monitoring
 
     - Arr Stack:
         - SABnzbd:
             icon: sabnzbd.png
-            href: http://sabnzbd.home-infra.net
+            href: http://sabnzbd.${DOMAIN_PRIMARY}
             description: Usenet Downloader
         - qBittorrent:
             icon: qbittorrent.png
-            href: http://qbittorrent.home-infra.net
+            href: http://qbittorrent.${DOMAIN_PRIMARY}
             description: Torrent Client
         - Prowlarr:
             icon: prowlarr.png
-            href: http://prowlarr.home-infra.net
+            href: http://prowlarr.${DOMAIN_PRIMARY}
             description: Indexer Manager
         - Radarr:
             icon: radarr.png
-            href: http://radarr.home-infra.net
+            href: http://radarr.${DOMAIN_PRIMARY}
             description: Movie Manager
         - Sonarr:
             icon: sonarr.png
-            href: http://sonarr.home-infra.net
+            href: http://sonarr.${DOMAIN_PRIMARY}
             description: TV Series Manager
         - Bazarr:
             icon: bazarr.png
-            href: http://bazarr.home-infra.net
+            href: http://bazarr.${DOMAIN_PRIMARY}
             description: Subtitle Manager
 
     - Tools:
         - IT-Tools:
             icon: it-tools.png
-            href: http://tools.home-infra.net
+            href: http://tools.${DOMAIN_PRIMARY}
             description: Developer Toolbox
         - ntfy:
             icon: ntfy.png
-            href: http://ntfy.home-infra.net
+            href: http://ntfy.${DOMAIN_PRIMARY}
             description: Push Notifications
         - Attic:
             icon: nix.png
-            href: http://attic.home-infra.net
+            href: http://attic.${DOMAIN_PRIMARY}
             description: Nix Binary Cache
 
     - Management:
         - Wallos:
             icon: wallos.png
-            href: http://wallos.home-infra.net
+            href: http://wallos.${DOMAIN_PRIMARY}
             description: Subscription Tracker
         - Paperless-ngx:
             icon: paperless-ngx.png
-            href: http://paperless.home-infra.net
+            href: http://paperless.${DOMAIN_PRIMARY}
             description: Document Management
 
   bookmarks.yaml: |

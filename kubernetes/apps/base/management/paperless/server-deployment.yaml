@@ -113,7 +113,7 @@ spec:
                   name: paperless-secrets
                   key: PAPERLESS_SECRET_KEY
             - name: PAPERLESS_URL
-              value: "http://paperless.home-infra.net"
+              value: "http://paperless.${DOMAIN_PRIMARY}"
             # OCR settings
             - name: PAPERLESS_OCR_LANGUAGE
               value: "spa+eng"

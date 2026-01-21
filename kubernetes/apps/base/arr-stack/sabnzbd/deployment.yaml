@@ -45,7 +45,7 @@ spec:
             - name: UMASK
               value: "002"
             - name: HOST_WHITELIST
-              value: "sabnzbd.home-infra.net,sabnzbd.home.arpa,10.10.2.40"
+              value: "sabnzbd.${DOMAIN_PRIMARY},sabnzbd.${DOMAIN_INTERNAL},${IP_SABNZBD}"
           volumeMounts:
             - name: config
               mountPath: /config

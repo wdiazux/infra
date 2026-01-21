@@ -10,10 +10,10 @@ metadata:
     app.kubernetes.io/name: radarr
     app.kubernetes.io/part-of: arr-stack
   annotations:
-    io.cilium/lb-ipam-ips: "10.10.2.43"
+    io.cilium/lb-ipam-ips: "${IP_RADARR}"
 spec:
   type: LoadBalancer
-  loadBalancerIP: "10.10.2.43"
+  loadBalancerIP: "${IP_RADARR}"
   ports:
     - name: http
       port: 80

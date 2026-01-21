@@ -10,7 +10,7 @@ metadata:
     app.kubernetes.io/name: emby
     app.kubernetes.io/part-of: media
   annotations:
-    io.cilium/lb-ipam-ips: "10.10.2.30"
+    io.cilium/lb-ipam-ips: "${IP_EMBY}"
 spec:
   type: LoadBalancer
   selector:

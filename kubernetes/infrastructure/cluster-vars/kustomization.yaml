@@ -1,0 +1,10 @@
+# Cluster Variables Kustomization
+#
+# Deploys the cluster-vars ConfigMap early in the infrastructure pipeline.
+# All other Kustomizations can then use postBuild.substituteFrom.
+#
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - cluster-vars.yaml

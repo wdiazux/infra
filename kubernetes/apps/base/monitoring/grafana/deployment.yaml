@@ -45,7 +45,7 @@ spec:
             - name: GF_USERS_ALLOW_SIGN_UP
               value: "false"
             - name: GF_SERVER_ROOT_URL
-              value: "http://grafana.home-infra.net"
+              value: "http://grafana.${DOMAIN_PRIMARY}"
           resources:
             requests:
               cpu: 50m

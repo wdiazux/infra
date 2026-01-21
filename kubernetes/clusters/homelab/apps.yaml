@@ -27,3 +27,7 @@ spec:
   dependsOn:
     - name: infrastructure-controllers
     - name: infrastructure-configs
+  postBuild:
+    substituteFrom:
+      - kind: ConfigMap
+        name: cluster-vars

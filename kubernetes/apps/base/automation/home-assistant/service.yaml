@@ -10,7 +10,7 @@ metadata:
     app.kubernetes.io/name: home-assistant
     app.kubernetes.io/part-of: automation
   annotations:
-    io.cilium/lb-ipam-ips: "10.10.2.25"
+    io.cilium/lb-ipam-ips: "${IP_HOMEASSISTANT}"
 spec:
   type: LoadBalancer
   selector:

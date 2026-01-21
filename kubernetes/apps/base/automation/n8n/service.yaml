@@ -10,7 +10,7 @@ metadata:
     app.kubernetes.io/name: n8n
     app.kubernetes.io/part-of: automation
   annotations:
-    io.cilium/lb-ipam-ips: "10.10.2.26"
+    io.cilium/lb-ipam-ips: "${IP_N8N}"
 spec:
   type: LoadBalancer
   selector:

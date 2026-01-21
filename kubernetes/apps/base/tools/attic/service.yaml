@@ -11,7 +11,7 @@ metadata:
     app.kubernetes.io/part-of: attic
 spec:
   type: LoadBalancer
-  loadBalancerIP: 10.10.2.29
+  loadBalancerIP: "${IP_ATTIC}"
   selector:
     app.kubernetes.io/name: attic
   ports:

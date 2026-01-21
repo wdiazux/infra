@@ -10,7 +10,7 @@ metadata:
     app.kubernetes.io/name: open-webui
     app.kubernetes.io/part-of: ai
   annotations:
-    io.cilium/lb-ipam-ips: "10.10.2.19"
+    io.cilium/lb-ipam-ips: "${IP_OPENWEBUI}"
 spec:
   type: LoadBalancer
   selector:

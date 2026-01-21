@@ -10,10 +10,10 @@ metadata:
     app.kubernetes.io/name: qbittorrent
     app.kubernetes.io/part-of: arr-stack
   annotations:
-    io.cilium/lb-ipam-ips: "10.10.2.41"
+    io.cilium/lb-ipam-ips: "${IP_QBITTORRENT}"
 spec:
   type: LoadBalancer
-  loadBalancerIP: "10.10.2.41"
+  loadBalancerIP: "${IP_QBITTORRENT}"
   ports:
     - name: http
       port: 80

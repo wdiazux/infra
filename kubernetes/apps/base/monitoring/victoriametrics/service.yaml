@@ -31,7 +31,7 @@ metadata:
     app.kubernetes.io/name: victoriametrics
     app.kubernetes.io/part-of: monitoring
   annotations:
-    io.cilium/lb-ipam-ips: "10.10.2.24"
+    io.cilium/lb-ipam-ips: "${IP_VICTORIAMETRICS}"
 spec:
   type: LoadBalancer
   selector:

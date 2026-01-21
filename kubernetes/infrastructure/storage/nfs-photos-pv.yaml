@@ -18,7 +18,7 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   storageClassName: ""
   nfs:
-    server: 10.10.2.5
+    server: "${NAS_IP}"
     path: /mnt/tank/photos/immich
   mountOptions:
     - nfsvers=4.1

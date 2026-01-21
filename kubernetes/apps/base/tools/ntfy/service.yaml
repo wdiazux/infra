@@ -9,10 +9,10 @@ metadata:
   labels:
     app.kubernetes.io/name: ntfy
   annotations:
-    io.cilium/lb-ipam-ips: "10.10.2.35"
+    io.cilium/lb-ipam-ips: "${IP_NTFY}"
 spec:
   type: LoadBalancer
-  loadBalancerIP: "10.10.2.35"
+  loadBalancerIP: "${IP_NTFY}"
   ports:
     - name: http
       port: 80

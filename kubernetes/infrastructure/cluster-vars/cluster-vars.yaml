@@ -1,0 +1,64 @@
+# Cluster-wide Variables ConfigMap
+#
+# Single source of truth for IPs and domains used across all manifests.
+# Referenced by FluxCD Kustomizations via postBuild.substituteFrom.
+#
+# Usage in manifests:
+#   loadBalancerIP: "${IP_HOMEPAGE}"
+#   server: "${NAS_IP}"
+#   href: "http://grafana.${DOMAIN_PRIMARY}"
+#
+# Last Updated: 2026-01-21
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cluster-vars
+  namespace: flux-system
+data:
+  # Infrastructure
+  NAS_IP: "10.10.2.5"
+  GATEWAY_IP: "10.10.2.1"
+
+  # Domains
+  DOMAIN_PRIMARY: "home-infra.net"
+  DOMAIN_INTERNAL: "home.arpa"
+  DOMAIN_EXTERNAL: "reynoza.org"
+
+  # Service IPs - Infrastructure
+  IP_HUBBLE: "10.10.2.11"
+  IP_LONGHORN: "10.10.2.12"
+  IP_FORGEJO_HTTP: "10.10.2.13"
+  IP_FORGEJO_SSH: "10.10.2.14"
+  IP_WEBHOOK: "10.10.2.15"
+  IP_GITOPS: "10.10.2.16"
+  IP_MINIO: "10.10.2.17"
+
+  # Service IPs - AI
+  IP_OPENWEBUI: "10.10.2.19"
+  IP_OLLAMA: "10.10.2.20"
+  IP_COMFYUI: "10.10.2.28"
+
+  # Service IPs - Applications
+  IP_HOMEPAGE: "10.10.2.21"
+  IP_IMMICH: "10.10.2.22"
+  IP_GRAFANA: "10.10.2.23"
+  IP_VICTORIAMETRICS: "10.10.2.24"
+  IP_HOMEASSISTANT: "10.10.2.25"
+  IP_N8N: "10.10.2.26"
+  IP_OBICO: "10.10.2.27"
+  IP_ATTIC: "10.10.2.29"
+  IP_EMBY: "10.10.2.30"
+  IP_NAVIDROME: "10.10.2.31"
+  IP_ITTOOLS: "10.10.2.32"
+  IP_WALLOS: "10.10.2.34"
+  IP_NTFY: "10.10.2.35"
+  IP_PAPERLESS: "10.10.2.36"
+
+  # Service IPs - Arr Stack
+  IP_SABNZBD: "10.10.2.40"
+  IP_QBITTORRENT: "10.10.2.41"
+  IP_PROWLARR: "10.10.2.42"
+  IP_RADARR: "10.10.2.43"
+  IP_SONARR: "10.10.2.44"
+  IP_BAZARR: "10.10.2.45"

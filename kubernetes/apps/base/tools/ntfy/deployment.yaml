@@ -38,7 +38,7 @@ spec:
             - name: TZ
               value: America/El_Salvador
             - name: NTFY_BASE_URL
-              value: "http://ntfy.home-infra.net"
+              value: "http://ntfy.${DOMAIN_PRIMARY}"
             - name: NTFY_CACHE_FILE
               value: "/var/lib/ntfy/cache.db"
             - name: NTFY_AUTH_FILE

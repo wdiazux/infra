@@ -19,7 +19,7 @@ spec:
     commit:
       author:
         name: flux-image-bot
-        email: flux@home-infra.net
+        email: flux@${DOMAIN_PRIMARY}
       messageTemplate: |
         chore(images): update {{ range .Changed.Changes }}{{ .OldValue }} -> {{ .NewValue }} {{ end }}
     push:

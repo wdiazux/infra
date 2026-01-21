@@ -71,7 +71,7 @@ metadata:
     app.kubernetes.io/component: server
     app.kubernetes.io/part-of: immich
   annotations:
-    io.cilium/lb-ipam-ips: "10.10.2.22"
+    io.cilium/lb-ipam-ips: "${IP_IMMICH}"
 spec:
   type: LoadBalancer
   selector:

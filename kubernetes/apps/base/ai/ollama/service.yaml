@@ -33,7 +33,7 @@ metadata:
     app.kubernetes.io/name: ollama
     app.kubernetes.io/part-of: ai
   annotations:
-    io.cilium/lb-ipam-ips: "10.10.2.20"
+    io.cilium/lb-ipam-ips: "${IP_OLLAMA}"
 spec:
   type: LoadBalancer
   selector:

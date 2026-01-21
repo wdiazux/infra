@@ -10,10 +10,10 @@ metadata:
     app.kubernetes.io/name: bazarr
     app.kubernetes.io/part-of: arr-stack
   annotations:
-    io.cilium/lb-ipam-ips: "10.10.2.45"
+    io.cilium/lb-ipam-ips: "${IP_BAZARR}"
 spec:
   type: LoadBalancer
-  loadBalancerIP: "10.10.2.45"
+  loadBalancerIP: "${IP_BAZARR}"
   ports:
     - name: http
       port: 80
