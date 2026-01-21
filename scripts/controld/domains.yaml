@@ -1,10 +1,27 @@
 # ControlD DNS Domain Definitions
-# Each entry creates DNS rules for all suffixes defined in config.yaml
+# Each entry creates DNS rules for suffixes defined in config.yaml
 #
 # Format:
 #   - name: hostname (without suffix)
 #     ip: IP address
 #     aliases: [optional, list, of, aliases]
+#     suffixes: [optional, override default suffixes from config.yaml]
+#     fqdn: [optional, exact FQDN(s) - ignores name/suffixes]
+#
+# Examples:
+#   # Uses all default suffixes (home-infra.net, home.arpa)
+#   - name: grafana
+#     ip: 10.10.2.23
+#
+#   # Uses only specific suffix
+#   - name: photos
+#     ip: 10.10.2.22
+#     suffixes: [reynoza.org]
+#
+#   # Uses exact FQDN (no suffix processing)
+#   - name: external-service
+#     ip: 10.10.2.50
+#     fqdn: myservice.example.com
 
 domains:
   # ==========================================================================
@@ -55,6 +72,7 @@ domains:
 
   - name: photos
     ip: 10.10.2.22
+    suffixes: [home.arpa, reynoza.org]
 
   - name: grafana
     ip: 10.10.2.23

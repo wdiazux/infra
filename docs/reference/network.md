@@ -228,19 +228,123 @@ curl -s http://10.10.2.45  # Bazarr
 
 ---
 
+## Kubernetes Internal DNS
+
+Internal service DNS names for cluster-internal access and Pangolin resource configuration.
+
+Format: `<service>.<namespace>.svc.cluster.local`
+
+### Core Services
+
+| Service | Internal DNS | Port | Target Port |
+|---------|--------------|------|-------------|
+| Hubble UI | `hubble-ui.kube-system.svc.cluster.local` | 80 | 8081 |
+| Longhorn UI | `longhorn-frontend.longhorn-system.svc.cluster.local` | 80 | 80 |
+| Forgejo HTTP | `forgejo-http.forgejo.svc.cluster.local` | 80 | 3000 |
+| Forgejo SSH | `forgejo-ssh.forgejo.svc.cluster.local` | 22 | 22 |
+| FluxCD Webhook | `webhook-receiver-lb.flux-system.svc.cluster.local` | 80 | 9292 |
+| Weave GitOps | `weave-gitops-lb.flux-system.svc.cluster.local` | 80 | 9001 |
+| MinIO Console | `minio-console.backup.svc.cluster.local` | 80 | 9001 |
+
+### AI Services
+
+| Service | Internal DNS | Port | Target Port |
+|---------|--------------|------|-------------|
+| Open WebUI | `open-webui.ai.svc.cluster.local` | 80 | 8080 |
+| Ollama | `ollama-lb.ai.svc.cluster.local` | 11434 | 11434 |
+| ComfyUI | `comfyui.ai.svc.cluster.local` | 80 | 8188 |
+
+### Media Services
+
+| Service | Internal DNS | Port | Target Port |
+|---------|--------------|------|-------------|
+| Immich | `immich.media.svc.cluster.local` | 80 | 2283 |
+| Emby | `emby.media.svc.cluster.local` | 80 | 8096 |
+| Navidrome | `navidrome.media.svc.cluster.local` | 80 | 4533 |
+
+### Automation Services
+
+| Service | Internal DNS | Port | Target Port |
+|---------|--------------|------|-------------|
+| Home Assistant | `home-assistant.automation.svc.cluster.local` | 80 | 8123 |
+| n8n | `n8n.automation.svc.cluster.local` | 80 | 5678 |
+
+### Monitoring Services
+
+| Service | Internal DNS | Port | Target Port |
+|---------|--------------|------|-------------|
+| Grafana | `grafana.monitoring.svc.cluster.local` | 80 | 3000 |
+| VictoriaMetrics | `victoriametrics-lb.monitoring.svc.cluster.local` | 80 | 8428 |
+
+### Tools & Management
+
+| Service | Internal DNS | Port | Target Port |
+|---------|--------------|------|-------------|
+| Homepage | `homepage.tools.svc.cluster.local` | 80 | 3000 |
+| IT-Tools | `it-tools.tools.svc.cluster.local` | 80 | 80 |
+| Attic | `attic.tools.svc.cluster.local` | 80 | 8080 |
+| ntfy | `ntfy.tools.svc.cluster.local` | 80 | 80 |
+| Wallos | `wallos.management.svc.cluster.local` | 80 | 80 |
+| Paperless-ngx | `paperless.management.svc.cluster.local` | 80 | 8000 |
+
+### Arr-Stack Services
+
+| Service | Internal DNS | Port | Target Port |
+|---------|--------------|------|-------------|
+| SABnzbd | `sabnzbd.arr-stack.svc.cluster.local` | 80 | 8080 |
+| qBittorrent | `qbittorrent.arr-stack.svc.cluster.local` | 80 | 8080 |
+| Prowlarr | `prowlarr.arr-stack.svc.cluster.local` | 80 | 9696 |
+| Radarr | `radarr.arr-stack.svc.cluster.local` | 80 | 7878 |
+| Sonarr | `sonarr.arr-stack.svc.cluster.local` | 80 | 8989 |
+| Bazarr | `bazarr.arr-stack.svc.cluster.local` | 80 | 6767 |
+
+### Other Services
+
+| Service | Internal DNS | Port | Target Port |
+|---------|--------------|------|-------------|
+| Obico | `obico-server.printing.svc.cluster.local` | 80 | 3334 |
+
+---
+
 ## External Access via Pangolin
 
 Services can be exposed externally via Pangolin tunneling (no port forwarding required).
 
-| External Domain | Internal Service | IP | Type |
-|----------------|------------------|-----|------|
-| photos.reynoza.org | Immich | 10.10.2.22 | Private |
-| photos.home-infra.net | Immich | 10.10.2.22 | Internal |
+### Domain Strategy
+
+| Domain | Purpose | Resolution |
+|--------|---------|------------|
+| `.home.arpa` | Internal only | ControlD (home) / Pangolin VPN (remote) |
+| `home-infra.net` | Exposed services | ControlD (home) / Pangolin (remote) |
+| `reynoza.org` | Public domains | Pangolin only |
+
+### Exposed Services
+
+| External Domain | Internal DNS | LoadBalancer IP | Access |
+|-----------------|--------------|-----------------|--------|
+| home.home-infra.net | `homepage.tools.svc.cluster.local` | 10.10.2.21 | Private |
+| photos.reynoza.org | `immich.media.svc.cluster.local` | 10.10.2.22 | Private |
+
+### Pangolin Resource Configuration
+
+When adding resources in Pangolin, use either:
+
+1. **LoadBalancer IP** (recommended for Talos Newt extension):
+   ```
+   Target: http://10.10.2.21
+   Port: 80
+   ```
+
+2. **Internal DNS** (if Newt runs inside cluster as pod):
+   ```
+   Target: http://homepage.tools.svc.cluster.local
+   Port: 80
+   ```
 
 **Architecture:**
 - Pangolin VPS at 207.246.115.3 (NixOS)
 - WireGuard tunnel via Newt extension in Talos
-- Handles domains: reynoza.org, unix.red
+- Handles domains: reynoza.org, unix.red, home-infra.net (external)
 
 **Configuration:** See [Pangolin documentation](../services/pangolin.md)
 

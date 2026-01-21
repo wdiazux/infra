@@ -9,8 +9,9 @@ profile_name: Default
 # Folder name within the profile for homelab rules
 folder_name: home-infra
 
-# Domain suffixes to create for each service
-# Each service will get a DNS rule for each suffix
+# Default domain suffixes for internal services
+# Each service will get a DNS rule for each suffix unless overridden
+# Use per-domain 'suffixes' in domains.yaml for external domains (reynoza.org, unix.red)
 suffixes:
   - home-infra.net
   - home.arpa

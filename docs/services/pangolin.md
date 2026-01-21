@@ -107,6 +107,7 @@ talosctl -n 10.10.2.10 logs ext-newt
 
 | Service | Internal IP | External Domain | Access |
 |---------|-------------|-----------------|--------|
+| Homepage | 10.10.2.21 | home.home-infra.net | Private |
 | Immich | 10.10.2.22 | photos.reynoza.org | Private |
 | Emby | 10.10.2.30 | TBD | Public (planned) |
 
