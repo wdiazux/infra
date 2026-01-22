@@ -2,10 +2,10 @@
 # Mount: /mnt/tank/ai from NAS (10.10.2.5)
 #
 # Directory structure:
-#   ollama/           - Ollama LLM models
-#   stable-diffusion/ - SD models, outputs, extensions
+#   ollama/  - Ollama LLM models
+#   comfyui/ - ComfyUI models, outputs, custom nodes
 #
-# Used by: ai namespace (ollama, stable-diffusion)
+# Used by: ai namespace (ollama, comfyui)
 apiVersion: v1
 kind: PersistentVolume
 metadata:
