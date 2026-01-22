@@ -425,45 +425,60 @@ def cmd_list(client: ControlDClient, config: dict, profile_filter: list[str]) ->
     return 0 if all(success for _, success in results) else 1
 
 
-def cmd_sync(
+def sync_single_profile(
     client: ControlDClient,
-    config: dict,
+    profile_name: str,
+    folder_name: str,
+    suffixes: list[str],
     domains: list[dict],
-    dry_run: bool = False,
-    force: bool = False,
+    dry_run: bool,
+    force: bool,
+    multi_profile_mode: bool = False
 ) -> int:
-    """Sync local config with ControlD."""
-    profile_name = config["profile_name"]
-    folder_name = config["folder_name"]
-    suffixes = config["suffixes"]
+    """Sync domains to a single profile.
 
-    print(f"Looking up profile '{profile_name}'...")
+    Args:
+        client: ControlD API client
+        profile_name: Profile name to sync
+        folder_name: Folder name within profile
+        suffixes: Default domain suffixes
+        domains: Domain definitions
+        dry_run: If True, preview without applying
+        force: If True, recreate all rules
+        multi_profile_mode: If True, prefix output with [ProfileName]
+
+    Returns:
+        0 on success, 1 on error
+    """
+    prefix = f"[{profile_name}] " if multi_profile_mode else ""
+
+    print(f"{prefix}Looking up profile '{profile_name}'...")
     profile = client.get_profile_by_name(profile_name)
     if not profile:
-        print(f"Error: Profile '{profile_name}' not found")
+        print(f"{prefix}Error: Profile '{profile_name}' not found")
         return 1
 
     profile_id = profile["PK"]
-    print(f"Profile: {profile_name} (PK: {profile_id})")
+    print(f"{prefix}Profile: {profile_name} (PK: {profile_id})")
 
-    print(f"Looking up folder '{folder_name}'...")
+    print(f"{prefix}Looking up folder '{folder_name}'...")
     folder = client.get_folder_by_name(profile_id, folder_name)
     if not folder:
-        print(f"Error: Folder '{folder_name}' not found")
+        print(f"{prefix}Error: Folder '{folder_name}' not found")
         return 1
 
     folder_id = folder["PK"]
-    print(f"Folder: {folder_name} (PK: {folder_id})")
+    print(f"{prefix}Folder: {folder_name} (PK: {folder_id})")
 
     # Build desired state
     desired = build_desired_state(domains, suffixes)
-    print(f"\nDesired state: {len(desired)} rules")
+    print(f"\n{prefix}Desired state: {len(desired)} rules")
 
     # Get current state
-    print("Fetching current rules...")
+    print(f"{prefix}Fetching current rules...")
     rules = client.get_rules(profile_id, folder_id)
     current = parse_current_state(rules)
-    print(f"Current state: {len(current)} rules")
+    print(f"{prefix}Current state: {len(current)} rules")
 
     # Calculate changes
     if force:
@@ -478,36 +493,36 @@ def cmd_sync(
         }
 
     # Report changes
-    print(f"\n{'Sync preview (dry-run)' if dry_run else 'Sync changes'}:")
-    print("-" * 60)
+    print(f"\n{prefix}{'Sync preview (dry-run)' if dry_run else 'Sync changes'}:")
+    print(f"{prefix}" + "-" * 60)
 
     if not to_add and not to_update and not to_delete:
-        print("No changes needed - already in sync!")
+        print(f"{prefix}No changes needed - already in sync!")
         return 0
 
     for hostname in sorted(to_add):
-        print(f"  [ADD]    {hostname:<40} -> {desired[hostname]}")
+        print(f"{prefix}  [ADD]    {hostname:<40} -> {desired[hostname]}")
 
     for hostname in sorted(to_update):
-        print(f"  [UPDATE] {hostname:<40} -> {desired[hostname]} (was {current[hostname]})")
+        print(f"{prefix}  [UPDATE] {hostname:<40} -> {desired[hostname]} (was {current[hostname]})")
 
     for hostname in sorted(to_delete):
-        print(f"  [DELETE] {hostname}")
+        print(f"{prefix}  [DELETE] {hostname}")
 
-    print(f"\nWould add: {len(to_add)}, update: {len(to_update)}, delete: {len(to_delete)}")
+    print(f"\n{prefix}Would add: {len(to_add)}, update: {len(to_update)}, delete: {len(to_delete)}")
 
     if dry_run:
-        print("\nDry-run mode - no changes applied.")
+        print(f"\n{prefix}Dry-run mode - no changes applied.")
         return 0
 
     # Apply changes
-    print("\nApplying changes...")
+    print(f"\n{prefix}Applying changes...")
     errors = 0
 
     # Delete first
     for hostname in sorted(to_delete):
         try:
-            print(f"  Deleting {hostname}...", end=" ")
+            print(f"{prefix}  Deleting {hostname}...", end=" ")
             client.delete_rule(profile_id, hostname)
             print("OK")
         except Exception as e:
@@ -517,7 +532,7 @@ def cmd_sync(
     # Then add
     for hostname in sorted(to_add):
         try:
-            print(f"  Adding {hostname} -> {desired[hostname]}...", end=" ")
+            print(f"{prefix}  Adding {hostname} -> {desired[hostname]}...", end=" ")
             client.create_rule(profile_id, hostname, desired[hostname], folder_id)
             print("OK")
         except Exception as e:
@@ -527,7 +542,7 @@ def cmd_sync(
     # Then update
     for hostname in sorted(to_update):
         try:
-            print(f"  Updating {hostname} -> {desired[hostname]}...", end=" ")
+            print(f"{prefix}  Updating {hostname} -> {desired[hostname]}...", end=" ")
             client.update_rule(profile_id, hostname, desired[hostname], folder_id)
             print("OK")
         except Exception as e:
@@ -535,75 +550,177 @@ def cmd_sync(
             errors += 1
 
     if errors:
-        print(f"\nCompleted with {errors} errors")
+        print(f"\n{prefix}Completed with {errors} errors")
         return 1
 
-    print("\nSync completed successfully!")
+    print(f"\n{prefix}Sync completed successfully!")
     return 0
+
+
+def cmd_sync(
+    client: ControlDClient,
+    config: dict,
+    domains: list[dict],
+    dry_run: bool = False,
+    force: bool = False,
+    profile_filter: list[str] = None,
+) -> int:
+    """Sync local config with ControlD for one or more profiles.
+
+    Args:
+        client: ControlD API client
+        config: Normalized config with 'profiles' list
+        domains: Domain definitions
+        dry_run: If True, preview without applying
+        force: If True, recreate all rules
+        profile_filter: List of profile names to sync (empty = all)
+
+    Returns:
+        0 if all profiles succeeded, 1 if any failed
+    """
+    profiles = filter_profiles(config["profiles"], profile_filter or [])
+    suffixes = config["suffixes"]
+    multi_profile_mode = len(config["profiles"]) > 1
+
+    # Announce profiles being synced
+    if multi_profile_mode:
+        profile_names = [p["name"] for p in profiles]
+        print(f"Syncing to {len(profiles)} profile(s): {', '.join(profile_names)}\n")
+
+    results = []
+    for profile_config in profiles:
+        if multi_profile_mode and len(results) > 0:
+            print()  # Blank line between profiles
+
+        result = sync_single_profile(
+            client,
+            profile_config["name"],
+            profile_config["folder_name"],
+            suffixes,
+            domains,
+            dry_run,
+            force,
+            multi_profile_mode
+        )
+        results.append((profile_config["name"], result == 0))
+
+    # Print summary if multi-profile and multiple profiles processed
+    if multi_profile_mode and len(profiles) > 1:
+        print("\n" + "=" * 60)
+        successes = sum(1 for _, success in results if success)
+        failures = len(results) - successes
+        print(f"Summary: {successes}/{len(results)} profiles succeeded")
+        if failures > 0:
+            failed_names = [name for name, success in results if not success]
+            print(f"Failed profiles: {', '.join(failed_names)}")
+
+    return 0 if all(success for _, success in results) else 1
 
 
 def cmd_purge(
     client: ControlDClient,
     config: dict,
     dry_run: bool = False,
+    profile_filter: list[str] = None,
 ) -> int:
-    """Delete all rules in the folder."""
-    profile_name = config["profile_name"]
-    folder_name = config["folder_name"]
+    """Delete all rules in the folder for one or more profiles."""
+    # Get profiles from config (handles both old and new format)
+    if "profiles" in config:
+        profiles = config["profiles"]
+    else:
+        # Backward compatibility: single-profile mode
+        profiles = [{
+            "name": config["profile_name"],
+            "folder_name": config["folder_name"]
+        }]
 
-    print(f"Looking up profile '{profile_name}'...")
-    profile = client.get_profile_by_name(profile_name)
-    if not profile:
-        print(f"Error: Profile '{profile_name}' not found")
-        return 1
+    # Filter profiles
+    profiles = filter_profiles(profiles, profile_filter or [])
+    multi_profile_mode = "profiles" in config and len(config["profiles"]) > 1
 
-    profile_id = profile["PK"]
-    print(f"Profile: {profile_name} (PK: {profile_id})")
+    # Announce profiles being purged
+    if multi_profile_mode:
+        profile_names = [p["name"] for p in profiles]
+        print(f"Purging {len(profiles)} profile(s): {', '.join(profile_names)}\n")
 
-    print(f"Looking up folder '{folder_name}'...")
-    folder = client.get_folder_by_name(profile_id, folder_name)
-    if not folder:
-        print(f"Error: Folder '{folder_name}' not found")
-        return 1
+    results = []
+    for profile_config in profiles:
+        profile_name = profile_config["name"]
+        folder_name = profile_config["folder_name"]
+        prefix = f"[{profile_name}] " if multi_profile_mode else ""
 
-    folder_id = folder["PK"]
-    print(f"Folder: {folder_name} (PK: {folder_id})")
+        if multi_profile_mode and len(results) > 0:
+            print()  # Blank line between profiles
 
-    print("\nFetching rules...")
-    rules = client.get_rules(profile_id, folder_id)
+        print(f"{prefix}Looking up profile '{profile_name}'...")
+        profile = client.get_profile_by_name(profile_name)
+        if not profile:
+            print(f"{prefix}Error: Profile '{profile_name}' not found")
+            results.append((profile_name, False))
+            continue
 
-    if not rules:
-        print("No rules found - nothing to delete.")
-        return 0
+        profile_id = profile["PK"]
+        print(f"{prefix}Profile: {profile_name} (PK: {profile_id})")
 
-    hostnames = [rule.get("PK", "") for rule in rules if rule.get("PK")]
-    print(f"\nFound {len(hostnames)} rules to delete:")
-    print("-" * 60)
-    for hostname in sorted(hostnames):
-        print(f"  [DELETE] {hostname}")
+        print(f"{prefix}Looking up folder '{folder_name}'...")
+        folder = client.get_folder_by_name(profile_id, folder_name)
+        if not folder:
+            print(f"{prefix}Error: Folder '{folder_name}' not found")
+            results.append((profile_name, False))
+            continue
 
-    if dry_run:
-        print(f"\nDry-run mode - would delete {len(hostnames)} rules.")
-        return 0
+        folder_id = folder["PK"]
+        print(f"{prefix}Folder: {folder_name} (PK: {folder_id})")
 
-    print(f"\nDeleting {len(hostnames)} rules...")
-    errors = 0
+        print(f"\n{prefix}Fetching rules...")
+        rules = client.get_rules(profile_id, folder_id)
 
-    for hostname in sorted(hostnames):
-        try:
-            print(f"  Deleting {hostname}...", end=" ")
-            client.delete_rule(profile_id, hostname)
-            print("OK")
-        except Exception as e:
-            print(f"FAILED: {e}")
-            errors += 1
+        if not rules:
+            print(f"{prefix}No rules found - nothing to delete.")
+            results.append((profile_name, True))
+            continue
 
-    if errors:
-        print(f"\nCompleted with {errors} errors")
-        return 1
+        hostnames = [rule.get("PK", "") for rule in rules if rule.get("PK")]
+        print(f"\n{prefix}Found {len(hostnames)} rules to delete:")
+        print(f"{prefix}" + "-" * 60)
+        for hostname in sorted(hostnames):
+            print(f"{prefix}  [DELETE] {hostname}")
 
-    print("\nPurge completed successfully!")
-    return 0
+        if dry_run:
+            print(f"\n{prefix}Dry-run mode - would delete {len(hostnames)} rules.")
+            results.append((profile_name, True))
+            continue
+
+        print(f"\n{prefix}Deleting {len(hostnames)} rules...")
+        errors = 0
+
+        for hostname in sorted(hostnames):
+            try:
+                print(f"{prefix}  Deleting {hostname}...", end=" ")
+                client.delete_rule(profile_id, hostname)
+                print("OK")
+            except Exception as e:
+                print(f"FAILED: {e}")
+                errors += 1
+
+        if errors:
+            print(f"\n{prefix}Completed with {errors} errors")
+            results.append((profile_name, False))
+        else:
+            print(f"\n{prefix}Purge completed successfully!")
+            results.append((profile_name, True))
+
+    # Print summary if multi-profile and multiple profiles processed
+    if multi_profile_mode and len(profiles) > 1:
+        print("\n" + "=" * 60)
+        successes = sum(1 for _, success in results if success)
+        failures = len(results) - successes
+        print(f"Summary: {successes}/{len(results)} profiles succeeded")
+        if failures > 0:
+            failed_names = [name for name, success in results if not success]
+            print(f"Failed profiles: {', '.join(failed_names)}")
+
+    return 0 if all(success for _, success in results) else 1
 
 
 def find_repo_root() -> Path:
@@ -645,7 +762,12 @@ def main():
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     # list command
-    subparsers.add_parser("list", help="List current rules in ControlD")
+    list_parser = subparsers.add_parser("list", help="List current rules in ControlD")
+    list_parser.add_argument(
+        "--profile",
+        type=str,
+        help="Target specific profile(s) (comma-separated, e.g., Default,Infra)",
+    )
 
     # sync command
     sync_parser = subparsers.add_parser("sync", help="Sync local config with ControlD")
@@ -659,6 +781,11 @@ def main():
         action="store_true",
         help="Force recreate all rules",
     )
+    sync_parser.add_argument(
+        "--profile",
+        type=str,
+        help="Target specific profile(s) (comma-separated, e.g., Default,Infra)",
+    )
 
     # purge command
     purge_parser = subparsers.add_parser("purge", help="Delete all rules in the folder")
@@ -671,6 +798,11 @@ def main():
         "--confirm",
         action="store_true",
         help="Required flag to confirm deletion",
+    )
+    purge_parser.add_argument(
+        "--profile",
+        type=str,
+        help="Target specific profile(s) (comma-separated, e.g., Default,Infra)",
     )
 
     args = parser.parse_args()
@@ -700,19 +832,22 @@ def main():
 
     # Execute command
     if args.command == "list":
-        sys.exit(cmd_list(client, config))
+        profile_filter = parse_profile_filter(getattr(args, "profile", None))
+        sys.exit(cmd_list(client, config, profile_filter))
     elif args.command == "sync":
         if not args.domains.exists():
             print(f"Error: Domains file not found: {args.domains}")
             sys.exit(1)
         domains = load_domains(args.domains)
-        sys.exit(cmd_sync(client, config, domains, args.dry_run, args.force))
+        profile_filter = parse_profile_filter(getattr(args, "profile", None))
+        sys.exit(cmd_sync(client, config, domains, args.dry_run, args.force, profile_filter))
     elif args.command == "purge":
         if not args.dry_run and not args.confirm:
             print("Error: Purge requires --confirm flag (or use --dry-run to preview)")
             print("Usage: ./controld-dns.py purge --confirm")
             sys.exit(1)
-        sys.exit(cmd_purge(client, config, args.dry_run))
+        profile_filter = parse_profile_filter(getattr(args, "profile", None))
+        sys.exit(cmd_purge(client, config, args.dry_run, profile_filter))
 
 
 if __name__ == "__main__":
