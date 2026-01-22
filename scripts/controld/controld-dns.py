@@ -617,26 +617,101 @@ def cmd_sync(
     return 0 if all(success for _, success in results) else 1
 
 
+def purge_single_profile(
+    client: ControlDClient,
+    profile_name: str,
+    folder_name: str,
+    dry_run: bool,
+    multi_profile_mode: bool = False
+) -> int:
+    """Purge all rules from a single profile folder.
+
+    Args:
+        client: ControlD API client
+        profile_name: Profile name to purge
+        folder_name: Folder name within profile
+        dry_run: If True, preview without deleting
+        multi_profile_mode: If True, prefix output with [ProfileName]
+
+    Returns:
+        0 on success, 1 on error
+    """
+    prefix = f"[{profile_name}] " if multi_profile_mode else ""
+
+    print(f"{prefix}Looking up profile '{profile_name}'...")
+    profile = client.get_profile_by_name(profile_name)
+    if not profile:
+        print(f"{prefix}Error: Profile '{profile_name}' not found")
+        return 1
+
+    profile_id = profile["PK"]
+    print(f"{prefix}Profile: {profile_name} (PK: {profile_id})")
+
+    print(f"{prefix}Looking up folder '{folder_name}'...")
+    folder = client.get_folder_by_name(profile_id, folder_name)
+    if not folder:
+        print(f"{prefix}Error: Folder '{folder_name}' not found")
+        return 1
+
+    folder_id = folder["PK"]
+    print(f"{prefix}Folder: {folder_name} (PK: {folder_id})")
+
+    print(f"\n{prefix}Fetching rules...")
+    rules = client.get_rules(profile_id, folder_id)
+
+    if not rules:
+        print(f"{prefix}No rules found - nothing to delete.")
+        return 0
+
+    hostnames = [rule.get("PK", "") for rule in rules if rule.get("PK")]
+    print(f"\n{prefix}Found {len(hostnames)} rules to delete:")
+    print(f"{prefix}" + "-" * 60)
+    for hostname in sorted(hostnames):
+        print(f"{prefix}  [DELETE] {hostname}")
+
+    if dry_run:
+        print(f"\n{prefix}Dry-run mode - would delete {len(hostnames)} rules.")
+        return 0
+
+    print(f"\n{prefix}Deleting {len(hostnames)} rules...")
+    errors = 0
+
+    for hostname in sorted(hostnames):
+        try:
+            print(f"{prefix}  Deleting {hostname}...", end=" ")
+            client.delete_rule(profile_id, hostname)
+            print("OK")
+        except Exception as e:
+            print(f"FAILED: {e}")
+            errors += 1
+
+    if errors:
+        print(f"\n{prefix}Completed with {errors} errors")
+        return 1
+
+    print(f"\n{prefix}Purge completed successfully!")
+    return 0
+
+
 def cmd_purge(
     client: ControlDClient,
     config: dict,
     dry_run: bool = False,
     profile_filter: list[str] = None,
 ) -> int:
-    """Delete all rules in the folder for one or more profiles."""
-    # Get profiles from config (handles both old and new format)
-    if "profiles" in config:
-        profiles = config["profiles"]
-    else:
-        # Backward compatibility: single-profile mode
-        profiles = [{
-            "name": config["profile_name"],
-            "folder_name": config["folder_name"]
-        }]
+    """Delete all rules in folder(s) for one or more profiles.
 
-    # Filter profiles
-    profiles = filter_profiles(profiles, profile_filter or [])
-    multi_profile_mode = "profiles" in config and len(config["profiles"]) > 1
+    Args:
+        client: ControlD API client
+        config: Normalized config with 'profiles' list
+        dry_run: If True, preview without deleting
+        profile_filter: List of profile names to purge (empty = all)
+
+    Returns:
+        0 if all profiles succeeded, 1 if any failed
+    """
+    profiles = filter_profiles(config["profiles"], profile_filter or [])
+    multi_profile_mode = len(config["profiles"]) > 1
 
     # Announce profiles being purged
     if multi_profile_mode:
@@ -645,70 +720,17 @@ def cmd_purge(
 
     results = []
     for profile_config in profiles:
-        profile_name = profile_config["name"]
-        folder_name = profile_config["folder_name"]
-        prefix = f"[{profile_name}] " if multi_profile_mode else ""
-
         if multi_profile_mode and len(results) > 0:
             print()  # Blank line between profiles
 
-        print(f"{prefix}Looking up profile '{profile_name}'...")
-        profile = client.get_profile_by_name(profile_name)
-        if not profile:
-            print(f"{prefix}Error: Profile '{profile_name}' not found")
-            results.append((profile_name, False))
-            continue
-
-        profile_id = profile["PK"]
-        print(f"{prefix}Profile: {profile_name} (PK: {profile_id})")
-
-        print(f"{prefix}Looking up folder '{folder_name}'...")
-        folder = client.get_folder_by_name(profile_id, folder_name)
-        if not folder:
-            print(f"{prefix}Error: Folder '{folder_name}' not found")
-            results.append((profile_name, False))
-            continue
-
-        folder_id = folder["PK"]
-        print(f"{prefix}Folder: {folder_name} (PK: {folder_id})")
-
-        print(f"\n{prefix}Fetching rules...")
-        rules = client.get_rules(profile_id, folder_id)
-
-        if not rules:
-            print(f"{prefix}No rules found - nothing to delete.")
-            results.append((profile_name, True))
-            continue
-
-        hostnames = [rule.get("PK", "") for rule in rules if rule.get("PK")]
-        print(f"\n{prefix}Found {len(hostnames)} rules to delete:")
-        print(f"{prefix}" + "-" * 60)
-        for hostname in sorted(hostnames):
-            print(f"{prefix}  [DELETE] {hostname}")
-
-        if dry_run:
-            print(f"\n{prefix}Dry-run mode - would delete {len(hostnames)} rules.")
-            results.append((profile_name, True))
-            continue
-
-        print(f"\n{prefix}Deleting {len(hostnames)} rules...")
-        errors = 0
-
-        for hostname in sorted(hostnames):
-            try:
-                print(f"{prefix}  Deleting {hostname}...", end=" ")
-                client.delete_rule(profile_id, hostname)
-                print("OK")
-            except Exception as e:
-                print(f"FAILED: {e}")
-                errors += 1
-
-        if errors:
-            print(f"\n{prefix}Completed with {errors} errors")
-            results.append((profile_name, False))
-        else:
-            print(f"\n{prefix}Purge completed successfully!")
-            results.append((profile_name, True))
+        result = purge_single_profile(
+            client,
+            profile_config["name"],
+            profile_config["folder_name"],
+            dry_run,
+            multi_profile_mode
+        )
+        results.append((profile_config["name"], result == 0))
 
     # Print summary if multi-profile and multiple profiles processed
     if multi_profile_mode and len(profiles) > 1:
