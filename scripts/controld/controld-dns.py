@@ -201,6 +201,35 @@ def load_domains(domains_path: Path) -> list[dict]:
         return data.get("domains", [])
 
 
+def parse_profile_filter(profile_arg: str | None) -> list[str]:
+    """Parse --profile Default,Infra into list of profile names.
+
+    Args:
+        profile_arg: Comma-separated profile names or None
+
+    Returns:
+        List of profile names, empty list if None
+    """
+    if not profile_arg:
+        return []
+    return [p.strip() for p in profile_arg.split(",")]
+
+
+def filter_profiles(all_profiles: list[dict], filter_names: list[str]) -> list[dict]:
+    """Filter profiles by names.
+
+    Args:
+        all_profiles: List of profile config dicts with 'name' key
+        filter_names: List of profile names to keep (empty = keep all)
+
+    Returns:
+        Filtered list of profile configs
+    """
+    if not filter_names:
+        return all_profiles
+    return [p for p in all_profiles if p["name"] in filter_names]
+
+
 def build_desired_state(domains: list[dict], default_suffixes: list[str]) -> dict[str, str]:
     """Build desired state from domain definitions.
 
