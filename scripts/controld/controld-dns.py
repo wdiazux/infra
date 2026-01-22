@@ -189,9 +189,53 @@ def load_token_from_sops(token_file: Path) -> str | None:
 
 
 def load_config(config_path: Path) -> dict:
-    """Load configuration from YAML file."""
+    """Load configuration from YAML file.
+
+    Normalizes both single-profile and multi-profile configs into
+    a standard format with a 'profiles' list.
+
+    Single-profile format (backward compatible):
+        profile_name: Default
+        folder_name: home-infra
+        suffixes: [home.arpa]
+
+    Multi-profile format:
+        profiles:
+          - name: Default
+            folder_name: home-infra
+          - name: Infra
+            folder_name: home-infra
+        suffixes: [home.arpa]
+
+    Returns:
+        Dict with keys: api_base_url, profiles (list), suffixes (list)
+    """
     with open(config_path) as f:
-        return yaml.safe_load(f)
+        raw_config = yaml.safe_load(f)
+
+    # Detect mode and normalize to profiles list
+    if "profiles" in raw_config:
+        # Multi-profile mode
+        profiles = raw_config["profiles"]
+        if not isinstance(profiles, list) or len(profiles) == 0:
+            raise ValueError("Config 'profiles' must be a non-empty list")
+    elif "profile_name" in raw_config and "folder_name" in raw_config:
+        # Single-profile mode (backward compatible)
+        profiles = [{
+            "name": raw_config["profile_name"],
+            "folder_name": raw_config["folder_name"]
+        }]
+    else:
+        raise ValueError(
+            "Config must have either 'profiles' list or both "
+            "'profile_name' and 'folder_name'"
+        )
+
+    return {
+        "api_base_url": raw_config.get("api_base_url", "https://api.controld.com"),
+        "profiles": profiles,
+        "suffixes": raw_config.get("suffixes", []),
+    }
 
 
 def load_domains(domains_path: Path) -> list[dict]:
