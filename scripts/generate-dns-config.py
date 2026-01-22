@@ -40,6 +40,7 @@ NAME_MAPPINGS = {
     "HOMEPAGE": "home",
     "IMMICH": "photos",
     "COMFYUI": "comfy",
+    "COPYPARTY": "files",
 }
 
 # Services that need multiple domain suffixes
