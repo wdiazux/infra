@@ -57,6 +57,12 @@ MULTI_SUFFIX_SERVICES = {
     "photos": ["home.arpa", "reynoza.org"],
 }
 
+# Services with explicit FQDN (no suffix processing)
+# Use when the service name would create a bad FQDN (e.g., home.home.arpa)
+FQDN_OVERRIDES = {
+    "home": ["home.arpa"],  # Homepage accessible at home.arpa (not home.home.arpa)
+}
+
 # Services to skip (not user-facing or internal only)
 SKIP_SERVICES = {
     "FORGEJO_SSH",  # SSH access, not HTTP
@@ -241,7 +247,8 @@ def build_service_registry(repo_root: Path, ip_services: dict[str, str], verbose
         # Build K8s internal DNS name
         k8s_dns = f"{k8s_info['k8s_service']}.{k8s_info['namespace']}.svc.cluster.local"
 
-        # Get domain suffixes
+        # Get domain suffixes or FQDN override
+        fqdn_override = FQDN_OVERRIDES.get(short_name)
         suffixes = MULTI_SUFFIX_SERVICES.get(short_name, ["home.arpa"])
 
         service = {
@@ -252,6 +259,7 @@ def build_service_registry(repo_root: Path, ip_services: dict[str, str], verbose
             "namespace": k8s_info["namespace"],
             "k8s_dns": k8s_dns,
             "suffixes": suffixes,
+            "fqdn": fqdn_override,  # None if no override
             "category": get_category(ip),
         }
 
@@ -317,7 +325,14 @@ def generate_controld_config(services: list[dict]) -> str:
         for svc in sorted(by_category[category], key=lambda x: x["ip"]):
             lines.append(f"  - name: {svc['name']}")
             lines.append(f"    ip: {svc['ip']}")
-            if svc["suffixes"] != ["home.arpa"]:
+            # Use FQDN override if present, otherwise use suffixes
+            if svc.get("fqdn"):
+                if len(svc["fqdn"]) == 1:
+                    lines.append(f"    fqdn: {svc['fqdn'][0]}")
+                else:
+                    fqdn_str = ", ".join(svc["fqdn"])
+                    lines.append(f"    fqdn: [{fqdn_str}]")
+            elif svc["suffixes"] != ["home.arpa"]:
                 suffixes_str = ", ".join(svc["suffixes"])
                 lines.append(f"    suffixes: [{suffixes_str}]")
             lines.append("")

@@ -42,7 +42,7 @@ data "talos_machine_configuration" "node" {
         # Default 12500 is too high for single-node homelab
         controllerManager = {
           extraArgs = {
-            terminated-pod-gc-threshold = "50"
+            terminated-pod-gc-threshold = "10"
           }
         }
       }

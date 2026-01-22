@@ -45,35 +45,35 @@ data:
     - Infrastructure:
         - Proxmox:
             icon: proxmox.png
-            href: https://proxmox.${DOMAIN_PRIMARY}:8006
+            href: https://proxmox.${DOMAIN_INTERNAL}:8006
             description: Hypervisor
         - Longhorn:
             icon: longhorn.png
-            href: http://longhorn.${DOMAIN_PRIMARY}
+            href: http://longhorn.${DOMAIN_INTERNAL}
             description: Storage Manager
         - Forgejo:
             icon: forgejo.png
-            href: http://git.${DOMAIN_PRIMARY}
+            href: http://git.${DOMAIN_INTERNAL}
             description: Git Server
         - Weave GitOps:
             icon: flux-cd.png
-            href: http://gitops.${DOMAIN_PRIMARY}
+            href: http://gitops.${DOMAIN_INTERNAL}
             description: FluxCD Dashboard
         - Hubble:
             icon: cilium.png
-            href: http://hubble.${DOMAIN_PRIMARY}
+            href: http://hubble.${DOMAIN_INTERNAL}
             description: Network Observability
         - Grafana:
             icon: grafana.png
-            href: http://grafana.${DOMAIN_PRIMARY}
+            href: http://grafana.${DOMAIN_INTERNAL}
             description: Monitoring Dashboards
         - VictoriaMetrics:
             icon: victoriametrics.png
-            href: http://metrics.${DOMAIN_PRIMARY}
+            href: http://metrics.${DOMAIN_INTERNAL}
             description: Metrics Database
         - MinIO:
             icon: minio.png
-            href: http://minio.${DOMAIN_PRIMARY}
+            href: http://minio.${DOMAIN_INTERNAL}
             description: Backup Storage
 
     - Media:
@@ -83,91 +83,91 @@ data:
             description: Photo & Video Backup
         - Emby:
             icon: emby.png
-            href: http://emby.${DOMAIN_PRIMARY}
+            href: http://emby.${DOMAIN_INTERNAL}
             description: Media Server
         - Navidrome:
             icon: navidrome.png
-            href: http://music.${DOMAIN_PRIMARY}
+            href: http://music.${DOMAIN_INTERNAL}
             description: Music Server
 
     - Automation:
         - Home Assistant:
             icon: home-assistant.png
-            href: http://hass.${DOMAIN_PRIMARY}
+            href: http://hass.${DOMAIN_INTERNAL}
             description: Smart Home
         - n8n:
             icon: n8n.png
-            href: http://n8n.${DOMAIN_PRIMARY}
+            href: http://n8n.${DOMAIN_INTERNAL}
             description: Workflow Automation
 
     - AI:
         - Ollama:
             icon: ollama.png
-            href: http://ollama.${DOMAIN_PRIMARY}:11434
+            href: http://ollama.${DOMAIN_INTERNAL}:11434
             description: LLM Inference API
         - Open WebUI:
             icon: open-webui.png
-            href: http://chat.${DOMAIN_PRIMARY}
+            href: http://chat.${DOMAIN_INTERNAL}
             description: LLM Chat Interface
         - ComfyUI:
             icon: comfyui.png
-            href: http://comfy.${DOMAIN_PRIMARY}
+            href: http://comfy.${DOMAIN_INTERNAL}
             description: Node-based Image Generation
 
     - 3D Print:
         - Obico:
             icon: obico.png
-            href: http://obico.${DOMAIN_PRIMARY}
+            href: http://obico.${DOMAIN_INTERNAL}
             description: 3D Printer Monitoring
 
     - Arr Stack:
         - SABnzbd:
             icon: sabnzbd.png
-            href: http://sabnzbd.${DOMAIN_PRIMARY}
+            href: http://sabnzbd.${DOMAIN_INTERNAL}
             description: Usenet Downloader
         - qBittorrent:
             icon: qbittorrent.png
-            href: http://qbittorrent.${DOMAIN_PRIMARY}
+            href: http://qbittorrent.${DOMAIN_INTERNAL}
             description: Torrent Client
         - Prowlarr:
             icon: prowlarr.png
-            href: http://prowlarr.${DOMAIN_PRIMARY}
+            href: http://prowlarr.${DOMAIN_INTERNAL}
             description: Indexer Manager
         - Radarr:
             icon: radarr.png
-            href: http://radarr.${DOMAIN_PRIMARY}
+            href: http://radarr.${DOMAIN_INTERNAL}
             description: Movie Manager
         - Sonarr:
             icon: sonarr.png
-            href: http://sonarr.${DOMAIN_PRIMARY}
+            href: http://sonarr.${DOMAIN_INTERNAL}
             description: TV Series Manager
         - Bazarr:
             icon: bazarr.png
-            href: http://bazarr.${DOMAIN_PRIMARY}
+            href: http://bazarr.${DOMAIN_INTERNAL}
             description: Subtitle Manager
 
     - Tools:
         - IT-Tools:
             icon: it-tools.png
-            href: http://tools.${DOMAIN_PRIMARY}
+            href: http://tools.${DOMAIN_INTERNAL}
             description: Developer Toolbox
         - ntfy:
             icon: ntfy.png
-            href: http://ntfy.${DOMAIN_PRIMARY}
+            href: http://ntfy.${DOMAIN_INTERNAL}
             description: Push Notifications
         - Attic:
             icon: nix.png
-            href: http://attic.${DOMAIN_PRIMARY}
+            href: http://attic.${DOMAIN_INTERNAL}
             description: Nix Binary Cache
 
     - Management:
         - Wallos:
             icon: wallos.png
-            href: http://wallos.${DOMAIN_PRIMARY}
+            href: http://wallos.${DOMAIN_INTERNAL}
             description: Subscription Tracker
         - Paperless-ngx:
             icon: paperless-ngx.png
-            href: http://paperless.${DOMAIN_PRIMARY}
+            href: http://paperless.${DOMAIN_INTERNAL}
             description: Document Management
 
   bookmarks.yaml: |
