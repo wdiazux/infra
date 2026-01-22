@@ -72,12 +72,14 @@ spec:
               value: "0.0.0.0"
             - name: AFFINE_SERVER_PORT
               value: "3010"
-            # Database
-            - name: DATABASE_URL
+            # Database - construct URL with password from secret
+            - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: affine-secrets
                   key: POSTGRES_PASSWORD
+            - name: DATABASE_URL
+              value: "postgresql://affine:$(POSTGRES_PASSWORD)@affine-postgres:5432/affine"
             # Redis
             - name: REDIS_SERVER_HOST
               value: "affine-redis"
