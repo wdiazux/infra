@@ -32,14 +32,20 @@ spec:
         - name: copyparty
           image: copyparty/ac:latest
           args:
-            # Volume definitions: -v localpath:urlpath:permissions
+            # Volume definitions: -v /localpath:/urlpath:permissions
             # Permissions: r=read, w=write, m=move, d=delete
-            - "-v/data/media:media:rwmd"
-            - "-v/data/downloads:downloads:rwmd"
-            - "-v/data/ai:ai:rwmd"
-            - "-v/data/photos:photos:rwmd"
-            - "-v/data/documents:documents:rwmd"
-            - "-v/data/backups:backups:rwmd"
+            - "-v"
+            - "/data/media:/media:rwmd"
+            - "-v"
+            - "/data/downloads:/downloads:rwmd"
+            - "-v"
+            - "/data/ai:/ai:rwmd"
+            - "-v"
+            - "/data/photos:/photos:rwmd"
+            - "-v"
+            - "/data/documents:/documents:rwmd"
+            - "-v"
+            - "/data/backups:/backups:rwmd"
           ports:
             - name: http
               containerPort: 3923
