@@ -5,10 +5,24 @@ ControlD DNS Management Script
 Manages DNS domains in ControlD for homelab services.
 Creates rules that redirect *.home-infra.net and *.home.arpa to local IPs.
 
+Supports syncing to multiple profiles (e.g., Default, Infra, IoT).
+
 Usage:
+    # List all profiles
     ./scripts/controld/controld-dns.py list
+
+    # List specific profile
+    ./scripts/controld/controld-dns.py list --profile Default
+
+    # Sync to all profiles (defined in config.yaml)
     ./scripts/controld/controld-dns.py sync --dry-run
     ./scripts/controld/controld-dns.py sync
+
+    # Sync to specific profiles only
+    ./scripts/controld/controld-dns.py sync --profile Default,Infra
+
+    # Purge all profiles
+    ./scripts/controld/controld-dns.py purge --confirm --dry-run
 
 Token is automatically loaded from secrets/controld-token.enc.yaml via SOPS.
 Override with CONTROLD_API_TOKEN env var or --token-file argument.
