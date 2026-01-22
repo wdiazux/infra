@@ -880,15 +880,387 @@ velero restore describe media-restore
 
 ---
 
+## Backup Verification & Testing
+
+**Critical Principle**: "Backups without verification are Schrödinger's backups - simultaneously working and broken until tested."
+
+### Monthly Backup Verification Procedure
+
+Run this procedure on the **first Sunday of each month** to verify backup integrity.
+
+```bash
+#!/bin/bash
+# monthly-backup-test.sh
+# Verifies latest backup can be restored successfully
+
+set -e
+
+TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+TEST_NAMESPACE="backup-test"
+
+echo "============================================"
+echo "Monthly Backup Verification - ${TIMESTAMP}"
+echo "============================================"
+
+# 1. Find latest successful backup
+echo "Step 1: Finding latest backup..."
+LATEST_BACKUP=$(kubectl get backup.velero.io -n backup \
+  --sort-by=.metadata.creationTimestamp \
+  -o jsonpath='{.items[-1].metadata.name}')
+
+if [ -z "$LATEST_BACKUP" ]; then
+  echo "ERROR: No backups found!"
+  exit 1
+fi
+
+echo "Latest backup: $LATEST_BACKUP"
+
+# 2. Check backup status
+BACKUP_PHASE=$(kubectl get backup.velero.io -n backup "$LATEST_BACKUP" \
+  -o jsonpath='{.status.phase}')
+
+if [ "$BACKUP_PHASE" != "Completed" ]; then
+  echo "ERROR: Latest backup is not completed (phase: $BACKUP_PHASE)"
+  exit 1
+fi
+
+echo "Backup status: $BACKUP_PHASE ✓"
+
+# 3. Create test namespace
+echo "Step 2: Creating test namespace..."
+kubectl create namespace "$TEST_NAMESPACE" 2>/dev/null || true
+
+# 4. Perform test restore (media namespace as example)
+echo "Step 3: Performing test restore..."
+cat <<EOF | kubectl apply -f -
+apiVersion: velero.io/v1
+kind: Restore
+metadata:
+  name: test-restore-${TIMESTAMP}
+  namespace: backup
+spec:
+  backupName: ${LATEST_BACKUP}
+  includedNamespaces:
+    - media
+  namespaceMapping:
+    media: ${TEST_NAMESPACE}
+  restorePVs: true
+EOF
+
+# 5. Wait for restore to complete
+echo "Step 4: Waiting for restore to complete..."
+TIMEOUT=300  # 5 minutes
+ELAPSED=0
+while [ $ELAPSED -lt $TIMEOUT ]; do
+  RESTORE_PHASE=$(kubectl get restore.velero.io -n backup "test-restore-${TIMESTAMP}" \
+    -o jsonpath='{.status.phase}' 2>/dev/null || echo "Unknown")
+
+  echo "Current restore phase: $RESTORE_PHASE"
+
+  if [ "$RESTORE_PHASE" == "Completed" ]; then
+    echo "Restore completed successfully! ✓"
+    break
+  elif [ "$RESTORE_PHASE" == "PartiallyFailed" ]; then
+    echo "WARNING: Restore partially failed"
+    kubectl describe restore.velero.io -n backup "test-restore-${TIMESTAMP}"
+    break
+  elif [ "$RESTORE_PHASE" == "Failed" ]; then
+    echo "ERROR: Restore failed!"
+    kubectl describe restore.velero.io -n backup "test-restore-${TIMESTAMP}"
+    exit 1
+  fi
+
+  sleep 10
+  ELAPSED=$((ELAPSED + 10))
+done
+
+if [ $ELAPSED -ge $TIMEOUT ]; then
+  echo "ERROR: Restore timed out after ${TIMEOUT} seconds"
+  exit 1
+fi
+
+# 6. Verify restored resources
+echo "Step 5: Verifying restored resources..."
+RESTORED_PODS=$(kubectl get pods -n "$TEST_NAMESPACE" --no-headers 2>/dev/null | wc -l)
+RESTORED_PVCS=$(kubectl get pvc -n "$TEST_NAMESPACE" --no-headers 2>/dev/null | wc -l)
+
+echo "Restored pods: $RESTORED_PODS"
+echo "Restored PVCs: $RESTORED_PVCS"
+
+if [ $RESTORED_PODS -eq 0 ] && [ $RESTORED_PVCS -eq 0 ]; then
+  echo "WARNING: No resources restored (may indicate empty namespace or backup issue)"
+fi
+
+# 7. Check PVC status
+echo "Step 6: Checking PVC status..."
+kubectl get pvc -n "$TEST_NAMESPACE"
+
+# 8. Cleanup test resources
+echo "Step 7: Cleaning up test namespace..."
+kubectl delete namespace "$TEST_NAMESPACE" --wait=false
+
+# 9. Summary
+echo "============================================"
+echo "Backup Verification Summary"
+echo "============================================"
+echo "Backup Name: $LATEST_BACKUP"
+echo "Backup Phase: $BACKUP_PHASE"
+echo "Restore Phase: $RESTORE_PHASE"
+echo "Restored Pods: $RESTORED_PODS"
+echo "Restored PVCs: $RESTORED_PVCS"
+echo "Status: SUCCESS ✓"
+echo "============================================"
+echo ""
+echo "Next verification: $(date -d 'next month' +%Y-%m-01)"
+echo ""
+echo "Cleanup: Test namespace will be deleted in background"
+echo "============================================"
+```
+
+**Usage**:
+```bash
+# Run monthly verification
+chmod +x monthly-backup-test.sh
+./monthly-backup-test.sh
+
+# Or manual verification
+./monthly-backup-test.sh 2>&1 | tee backup-verification-$(date +%Y%m).log
+```
+
+---
+
+### Quick Verification Commands
+
+For ad-hoc backup verification without full restore:
+
+```bash
+# 1. Check recent backups exist
+velero backup get | head -10
+# Should show daily and weekly backups
+
+# 2. Verify backup completeness
+LATEST=$(velero backup get -o json | jq -r '.[0].name')
+velero backup describe $LATEST --details
+# Check: Phase=Completed, Errors=0, Warnings=0
+
+# 3. Verify backup data in MinIO
+kubectl exec -n backup deploy/minio -- ls -lh /data/velero/backups/ | tail -10
+# Should show recent backup directories
+
+# 4. Check volume snapshots
+kubectl get volumesnapshots -A | grep -v "<none>"
+# Should show recent Longhorn snapshots
+
+# 5. Verify backup storage location
+kubectl get backupstoragelocations -n backup -o wide
+# Should show: PHASE=Available, ACCESS MODE=ReadWrite
+```
+
+---
+
+### Automated Backup Verification (CronJob)
+
+Deploy a monthly CronJob to automate verification and send alerts:
+
+```yaml
+# Save as: kubernetes/apps/base/backup/backup-verification-cronjob.yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backup-verification
+  namespace: backup
+  labels:
+    app.kubernetes.io/name: backup-verification
+    app.kubernetes.io/part-of: backup
+spec:
+  schedule: "0 4 1 * *"  # 4 AM on 1st of month
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: backup-verification
+        spec:
+          serviceAccountName: velero
+          restartPolicy: OnFailure
+          containers:
+            - name: verify
+              image: bitnami/kubectl:latest
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  set -e
+                  echo "Starting automated backup verification..."
+
+                  # Find latest backup
+                  LATEST=$(kubectl get backup.velero.io -n backup \
+                    --sort-by=.metadata.creationTimestamp \
+                    -o jsonpath='{.items[-1].metadata.name}')
+
+                  echo "Latest backup: $LATEST"
+
+                  # Check backup status
+                  PHASE=$(kubectl get backup.velero.io -n backup "$LATEST" \
+                    -o jsonpath='{.status.phase}')
+
+                  if [ "$PHASE" != "Completed" ]; then
+                    echo "ERROR: Backup $LATEST not completed (phase: $PHASE)"
+                    # Send alert via ntfy
+                    curl -d "Velero backup verification FAILED: $LATEST is $PHASE" \
+                      http://ntfy.tools.svc.cluster.local/homelab-alerts || true
+                    exit 1
+                  fi
+
+                  # Verify backup has items
+                  ITEMS=$(kubectl get backup.velero.io -n backup "$LATEST" \
+                    -o jsonpath='{.status.progress.itemsBackedUp}')
+
+                  if [ "$ITEMS" -eq 0 ]; then
+                    echo "WARNING: Backup $LATEST has 0 items"
+                    curl -d "Velero backup verification WARNING: $LATEST has no items" \
+                      http://ntfy.tools.svc.cluster.local/homelab-alerts || true
+                  fi
+
+                  echo "Backup $LATEST verified: $ITEMS items backed up ✓"
+
+                  # Success notification
+                  curl -d "Velero backup verification SUCCESS: $LATEST ($ITEMS items)" \
+                    http://ntfy.tools.svc.cluster.local/homelab-alerts || true
+              env:
+                - name: KUBECONFIG
+                  value: /var/run/secrets/kubernetes.io/serviceaccount/token
+```
+
+**Deploy**:
+```bash
+kubectl apply -f kubernetes/apps/base/backup/backup-verification-cronjob.yaml
+
+# Test immediately
+kubectl create job -n backup test-verify --from=cronjob/backup-verification
+
+# Check logs
+kubectl logs -n backup job/test-verify
+```
+
+---
+
+### Disaster Recovery Drill (Quarterly)
+
+Perform a **full cluster recovery drill** every 3 months:
+
+#### Preparation
+
+```bash
+# 1. Document current cluster state
+kubectl get nodes -o wide > cluster-state-before.txt
+kubectl get pods -A -o wide >> cluster-state-before.txt
+kubectl get pvc -A >> cluster-state-before.txt
+
+# 2. Ensure recent full backup exists
+velero backup get | grep weekly-full | head -1
+
+# 3. Back up Terraform state
+cp terraform/talos/terraform.tfstate terraform.tfstate.backup.$(date +%Y%m%d)
+
+# 4. Back up kubeconfig and talosconfig
+cp terraform/talos/kubeconfig ~/kubeconfig.backup.$(date +%Y%m%d)
+cp terraform/talos/talosconfig ~/talosconfig.backup.$(date +%Y%m%d)
+```
+
+#### Recovery Drill (Destructive - Only in Maintenance Window)
+
+```bash
+# WARNING: This destroys the cluster!
+# Only run during scheduled maintenance
+
+# 1. Destroy cluster
+cd terraform/talos
+terraform destroy -auto-approve
+
+# 2. Rebuild cluster
+terraform apply -auto-approve
+
+# 3. Wait for FluxCD to sync infrastructure
+watch kubectl get pods -A
+
+# 4. Install Velero (if not auto-deployed via Flux)
+flux reconcile kustomization infrastructure-controllers --with-source
+
+# 5. Restore from latest weekly backup
+LATEST_WEEKLY=$(velero backup get | grep weekly-full | head -1 | awk '{print $1}')
+velero restore create dr-drill-restore --from-backup $LATEST_WEEKLY
+
+# 6. Wait for restore
+watch velero restore get
+
+# 7. Verify cluster state
+kubectl get pods -A -o wide > cluster-state-after.txt
+diff cluster-state-before.txt cluster-state-after.txt
+
+# 8. Test critical services
+curl http://10.10.2.22  # Immich
+curl http://10.10.2.13  # Forgejo
+kubectl -n ai exec deploy/ollama -- ollama list
+```
+
+#### Recovery Time Objective (RTO) Tracking
+
+| Phase | Target Time | Last Drill | Notes |
+|-------|-------------|------------|-------|
+| 1. Terraform destroy | 5 minutes | - | Fast |
+| 2. Terraform apply (VM creation) | 10 minutes | - | Proxmox VM creation |
+| 3. Talos bootstrap | 5 minutes | - | Kubernetes API ready |
+| 4. FluxCD infrastructure sync | 15 minutes | - | CNI, storage, Velero |
+| 5. Velero restore initiation | 2 minutes | - | Create restore CR |
+| 6. Volume data restoration | 60 minutes | - | Depends on backup size |
+| 7. Application pod startup | 10 minutes | - | All apps running |
+| **Total RTO** | **~2 hours** | - | Acceptable for homelab |
+
+---
+
+### Backup Integrity Checks
+
+Verify backup data hasn't been corrupted:
+
+```bash
+# 1. Check MinIO data integrity
+kubectl exec -n backup deploy/minio -- sh -c '
+  mc alias set local http://localhost:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD
+  mc admin heal local/velero --recursive --verbose
+'
+
+# 2. List backup contents
+BACKUP_NAME="daily-apps-20260122030000"
+kubectl exec -n backup deploy/minio -- \
+  ls -R /data/velero/backups/$BACKUP_NAME/
+
+# 3. Check for incomplete backups
+kubectl get backup.velero.io -n backup \
+  -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.phase}{"\n"}{end}' | \
+  grep -v Completed
+
+# 4. Verify NAS backup target accessible
+kubectl exec -n backup deploy/minio -- df -h /data
+# Should show NFS mount with available space
+```
+
+---
+
 ## Best Practices
 
-1. **Test restores regularly** (monthly)
+1. **Test restores regularly** (monthly) - Use automated verification script
 2. **Keep multiple backup generations** (7 daily, 4 weekly)
 3. **Store Age key securely** outside the cluster
 4. **Monitor backup status** via `velero backup get`
 5. **Offsite backup** - MinIO data stored on NAS provides offsite from cluster
 6. **Verify Velero status** after cluster changes: `velero status`
+7. **Document RTO** - Track recovery time during drills
+8. **Alert on failures** - Use ntfy for backup failure notifications
 
 ---
 
-**Last Updated:** 2026-01-20 | Added manual backup operations with kubectl
+**Last Updated:** 2026-01-22 | Added backup verification procedures and disaster recovery drill

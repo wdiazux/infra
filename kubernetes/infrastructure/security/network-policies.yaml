@@ -1,0 +1,644 @@
+# Network Policies for Homelab Security
+#
+# This file implements basic network isolation for sensitive namespaces.
+# These policies balance security with homelab practicality.
+#
+# Philosophy:
+# - Default-deny egress (allow DNS only)
+# - Explicit allow for required communication paths
+# - Suitable for single-node, single-user homelab
+#
+# See: docs/reference/security-strategy.md
+
+---
+# =============================================================================
+# AI Namespace - GPU Workloads (Ollama, ComfyUI, Open WebUI)
+# =============================================================================
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ai-default-deny-egress
+  namespace: ai
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    # Allow DNS queries
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ai-ollama-allow
+  namespace: ai
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: ollama
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from Open WebUI
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: open-webui
+      ports:
+        - protocol: TCP
+          port: 11434
+    # Allow from Cilium ingress (external access)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: kube-system
+      ports:
+        - protocol: TCP
+          port: 11434
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow model downloads (Ollama library)
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 443
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ai-open-webui-allow
+  namespace: ai
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: open-webui
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from LoadBalancer
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: kube-system
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow connection to Ollama
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ollama
+      ports:
+        - protocol: TCP
+          port: 11434
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ai-comfyui-allow
+  namespace: ai
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: comfyui
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from LoadBalancer
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: kube-system
+      ports:
+        - protocol: TCP
+          port: 8188
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow model downloads
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 443
+
+---
+# =============================================================================
+# Media Namespace - Photos, Music, Video (Immich, Emby, Navidrome)
+# =============================================================================
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: media-default-deny-egress
+  namespace: media
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    # Allow DNS queries
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: media-immich-server-allow
+  namespace: media
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: immich
+      app.kubernetes.io/component: server
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from LoadBalancer
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: kube-system
+      ports:
+        - protocol: TCP
+          port: 3001
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow PostgreSQL connection
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: immich-postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    # Allow Redis connection
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: immich-redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    # Allow ML API connection
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: immich
+              app.kubernetes.io/component: machine-learning
+      ports:
+        - protocol: TCP
+          port: 3003
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: media-immich-ml-allow
+  namespace: media
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: immich
+      app.kubernetes.io/component: machine-learning
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from Immich server
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: immich
+              app.kubernetes.io/component: server
+      ports:
+        - protocol: TCP
+          port: 3003
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow model downloads
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 443
+
+---
+# =============================================================================
+# Management Namespace - Documents, Bills (Paperless, Wallos)
+# =============================================================================
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: management-default-deny-egress
+  namespace: management
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    # Allow DNS queries
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: management-paperless-allow
+  namespace: management
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: paperless-ngx
+      app.kubernetes.io/component: server
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from LoadBalancer
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: kube-system
+      ports:
+        - protocol: TCP
+          port: 8000
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow PostgreSQL
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: paperless-postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    # Allow Redis
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: paperless-redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    # Allow Gotenberg (PDF conversion)
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: paperless-gotenberg
+      ports:
+        - protocol: TCP
+          port: 3000
+    # Allow Tika (text extraction)
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: paperless-tika
+      ports:
+        - protocol: TCP
+          port: 9998
+
+---
+# =============================================================================
+# Backup Namespace - Velero, MinIO
+# =============================================================================
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: backup-default-deny-egress
+  namespace: backup
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    # Allow DNS queries
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: backup-minio-allow
+  namespace: backup
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: minio
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from Velero
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: velero
+      ports:
+        - protocol: TCP
+          port: 9000
+    # Allow MinIO console access
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: kube-system
+      ports:
+        - protocol: TCP
+          port: 9001
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: backup-velero-allow
+  namespace: backup
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: velero
+  policyTypes:
+    - Egress
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow MinIO S3 API
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: minio
+      ports:
+        - protocol: TCP
+          port: 9000
+    # Allow Kubernetes API (backup/restore operations)
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 6443
+
+---
+# =============================================================================
+# Forgejo Namespace - Git Server
+# =============================================================================
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: forgejo-default-deny-egress
+  namespace: forgejo
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    # Allow DNS queries
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: forgejo-server-allow
+  namespace: forgejo
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: forgejo
+      app.kubernetes.io/component: server
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow HTTP/HTTPS from LoadBalancer
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: kube-system
+      ports:
+        - protocol: TCP
+          port: 3000
+    # Allow SSH from LoadBalancer
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: kube-system
+      ports:
+        - protocol: TCP
+          port: 22
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow PostgreSQL
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: forgejo-postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    # Allow outbound HTTPS for external integrations
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 443
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: forgejo-runner-allow
+  namespace: forgejo
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: forgejo-runner
+  policyTypes:
+    - Egress
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow Forgejo server API
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: forgejo
+              app.kubernetes.io/component: server
+      ports:
+        - protocol: TCP
+          port: 3000
+    # Allow Docker registry and internet (CI builds)
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+
+---
+# =============================================================================
+# Automation Namespace - Home Assistant, n8n
+# =============================================================================
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: automation-home-assistant-allow
+  namespace: automation
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: home-assistant
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from LoadBalancer
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: kube-system
+      ports:
+        - protocol: TCP
+          port: 8123
+  egress:
+    # Allow all egress (needs device discovery, external APIs)
+    - {}
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: automation-n8n-allow
+  namespace: automation
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: n8n
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from LoadBalancer
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: kube-system
+      ports:
+        - protocol: TCP
+          port: 5678
+  egress:
+    # Allow all egress (workflow automation needs external API access)
+    - {}

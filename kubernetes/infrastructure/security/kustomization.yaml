@@ -1,0 +1,10 @@
+# Security Resources - Network Policies
+#
+# Network policies for basic namespace isolation.
+# See: docs/reference/security-strategy.md
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - network-policies.yaml

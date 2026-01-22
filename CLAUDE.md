@@ -160,6 +160,37 @@ sops -e file.yaml > file.enc.yaml
 sops -d file.enc.yaml
 ```
 
+## Security
+
+**Approach**: Practical homelab security with defense-in-depth layers
+
+| Layer | Implementation | Status |
+|-------|----------------|--------|
+| **Secrets** | SOPS + Age encryption | ✅ Active |
+| **Network** | Cilium NetworkPolicies | ✅ Active (2026-01-22) |
+| **Container** | SecurityContexts, justified privileged | ✅ Active |
+| **Backup** | Velero + verification procedures | ✅ Active |
+
+**Key Decisions**:
+- ✅ NetworkPolicies for sensitive namespaces (media, management, backup, forgejo, ai)
+- ✅ Privileged containers only when technically required (Forgejo runner, Home Assistant, Velero)
+- ⚠️ Terraform state contains decoded secrets (local only, acceptable for homelab)
+- ⚠️ Backup data not encrypted (NAS physically secured, simplifies recovery)
+
+**See**: `docs/reference/security-strategy.md` for complete security posture and threat model
+
+**Verification**:
+```bash
+# Check NetworkPolicies
+kubectl get networkpolicies -A
+
+# Test backup verification
+docs/operations/backups.md  # See "Monthly Backup Verification Procedure"
+
+# Security monitoring
+kubectl -n kube-system exec ds/cilium -- cilium policy get  # NetworkPolicy enforcement
+```
+
 ## Quick Reference
 
 ```bash
@@ -216,6 +247,7 @@ docs/
 
 ## Recent Changes
 
+- **2026-01-22**: NetworkPolicies, security-strategy.md, backup verification procedures
 - **2026-01-21**: Documentation audit and cleanup
 - **2026-01-20**: Velero backup, PodGC, ComfyUI, Obico, version updates
 - **2026-01-19**: Claude Code optimization (hooks, commands, sub-agents)
@@ -225,4 +257,4 @@ docs/
 See `docs/CHANGELOG.md` for full history.
 
 ---
-**Last Updated**: 2026-01-21 | **Status**: Production-Ready
+**Last Updated**: 2026-01-22 | **Status**: Production-Ready
