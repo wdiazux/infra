@@ -1,0 +1,151 @@
+# NFS PersistentVolumes for Copyparty file browser
+# Mount: Multiple NFS paths from NAS (10.10.2.5)
+#
+# Dedicated PVs for Copyparty - same NFS paths as other services
+# but separate PVs since each PV can only bind to one PVC.
+#
+# Used by: tools namespace (copyparty)
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nfs-media-copyparty
+  labels:
+    type: nfs
+    purpose: copyparty
+spec:
+  capacity:
+    storage: 1Ti
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  nfs:
+    server: "${NAS_IP}"
+    path: /mnt/tank/media
+  mountOptions:
+    - nfsvers=4.1
+    - hard
+    - noatime
+    - rsize=1048576
+    - wsize=1048576
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nfs-downloads-copyparty
+  labels:
+    type: nfs
+    purpose: copyparty
+spec:
+  capacity:
+    storage: 500Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  nfs:
+    server: "${NAS_IP}"
+    path: /mnt/downloads
+  mountOptions:
+    - nfsvers=4.1
+    - hard
+    - noatime
+    - rsize=1048576
+    - wsize=1048576
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nfs-ai-copyparty
+  labels:
+    type: nfs
+    purpose: copyparty
+spec:
+  capacity:
+    storage: 500Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  nfs:
+    server: "${NAS_IP}"
+    path: /mnt/tank/ai
+  mountOptions:
+    - nfsvers=4.1
+    - hard
+    - noatime
+    - rsize=1048576
+    - wsize=1048576
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nfs-photos-copyparty
+  labels:
+    type: nfs
+    purpose: copyparty
+spec:
+  capacity:
+    storage: 1Ti
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  nfs:
+    server: "${NAS_IP}"
+    path: /mnt/tank/photos
+  mountOptions:
+    - nfsvers=4.1
+    - hard
+    - noatime
+    - rsize=1048576
+    - wsize=1048576
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nfs-documents-copyparty
+  labels:
+    type: nfs
+    purpose: copyparty
+spec:
+  capacity:
+    storage: 500Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  nfs:
+    server: "${NAS_IP}"
+    path: /mnt/tank/documents
+  mountOptions:
+    - nfsvers=4.1
+    - hard
+    - noatime
+    - rsize=1048576
+    - wsize=1048576
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nfs-backups-copyparty
+  labels:
+    type: nfs
+    purpose: copyparty
+spec:
+  capacity:
+    storage: 500Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  nfs:
+    server: "${NAS_IP}"
+    path: /mnt/tank/backups
+  mountOptions:
+    - nfsvers=4.1
+    - hard
+    - noatime
+    - rsize=1048576
+    - wsize=1048576

@@ -23,3 +23,5 @@ resources:
   - nfs-backups-pvc.yaml
   - nfs-documents-affine-pv.yaml
   - nfs-documents-affine-pvc.yaml
+  - nfs-copyparty-pv.yaml
+  - nfs-copyparty-pvc.yaml

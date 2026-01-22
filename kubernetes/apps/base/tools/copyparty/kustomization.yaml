@@ -1,0 +1,10 @@
+# Copyparty - Web-based file browser
+#
+# Access: http://10.10.2.37
+# Provides read-write access to NFS storage paths.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - deployment.yaml
+  - service.yaml

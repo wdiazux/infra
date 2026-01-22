@@ -6,11 +6,13 @@
 #   - IT-Tools: Developer toolbox (10.10.2.32)
 #   - ntfy: Push notification service (10.10.2.35)
 #   - Attic: Nix binary cache (10.10.2.29)
+#   - Copyparty: File browser (10.10.2.37)
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
   - affine
+  - copyparty
   - homepage
   - it-tools
   - ntfy

@@ -1,0 +1,106 @@
+# NFS PersistentVolumeClaims for Copyparty file browser
+#
+# Claims for Copyparty to access all NFS storage paths.
+# All PVCs in tools namespace, binding to dedicated Copyparty PVs.
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: copyparty-media
+  namespace: tools
+  labels:
+    app.kubernetes.io/name: copyparty
+    app.kubernetes.io/part-of: tools
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  volumeName: nfs-media-copyparty
+  resources:
+    requests:
+      storage: 1Ti
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: copyparty-downloads
+  namespace: tools
+  labels:
+    app.kubernetes.io/name: copyparty
+    app.kubernetes.io/part-of: tools
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  volumeName: nfs-downloads-copyparty
+  resources:
+    requests:
+      storage: 500Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: copyparty-ai
+  namespace: tools
+  labels:
+    app.kubernetes.io/name: copyparty
+    app.kubernetes.io/part-of: tools
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  volumeName: nfs-ai-copyparty
+  resources:
+    requests:
+      storage: 500Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: copyparty-photos
+  namespace: tools
+  labels:
+    app.kubernetes.io/name: copyparty
+    app.kubernetes.io/part-of: tools
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  volumeName: nfs-photos-copyparty
+  resources:
+    requests:
+      storage: 1Ti
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: copyparty-documents
+  namespace: tools
+  labels:
+    app.kubernetes.io/name: copyparty
+    app.kubernetes.io/part-of: tools
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  volumeName: nfs-documents-copyparty
+  resources:
+    requests:
+      storage: 500Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: copyparty-backups
+  namespace: tools
+  labels:
+    app.kubernetes.io/name: copyparty
+    app.kubernetes.io/part-of: tools
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  volumeName: nfs-backups-copyparty
+  resources:
+    requests:
+      storage: 500Gi
