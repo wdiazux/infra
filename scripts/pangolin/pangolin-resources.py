@@ -305,7 +305,7 @@ def parse_current_state(resources: list[dict]) -> dict[str, dict]:
 
 
 def resources_match(desired: dict, current: dict) -> bool:
-    """Check if desired and current resource configs match."""
+    """Check if desired and current resource configs match (excluding clients)."""
     return (
         desired["destination"] == current["destination"]
         and desired["alias"] == current["alias"]
@@ -456,14 +456,20 @@ def cmd_sync(
     to_delete = set(current.keys()) - set(desired.keys())
     existing = set(desired.keys()) & set(current.keys())
 
-    if force_client_update:
-        # Force update all existing resources to set clients
+    # Note: Pangolin API doesn't return clientIds in resource listings,
+    # so we can't compare current vs desired clients.
+    # When clients are configured, we always update to ensure they're applied.
+    if force_client_update or client_ids:
+        # Update all existing resources to ensure clients are set
         to_update = existing
         to_update_clients_only = {
             name for name in existing
             if resources_match(desired[name], current[name])
         }
+        if client_ids and not force_client_update:
+            print(f"  Note: Ensuring clients [{', '.join(client_names)}] on all resources")
     else:
+        # No clients configured: only update if config doesn't match
         to_update = {
             name for name in existing
             if not resources_match(desired[name], current[name])
