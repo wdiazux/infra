@@ -44,6 +44,7 @@ NAME_MAPPINGS = {
 
 # Services that need multiple domain suffixes
 MULTI_SUFFIX_SERVICES = {
+    "affine": ["home.arpa", "home-infra.net"],
     "git": ["home.arpa", "home-infra.net"],
     "gitops": ["home.arpa", "home-infra.net"],
     "chat": ["home.arpa", "home-infra.net"],
