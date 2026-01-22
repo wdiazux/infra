@@ -7,8 +7,13 @@ Creates site resources that are accessible through the Pangolin client.
 
 Usage:
     ./scripts/pangolin/pangolin-resources.py list
+    ./scripts/pangolin/pangolin-resources.py list-clients
     ./scripts/pangolin/pangolin-resources.py sync --dry-run
     ./scripts/pangolin/pangolin-resources.py sync
+    ./scripts/pangolin/pangolin-resources.py sync --clients Messi
+    ./scripts/pangolin/pangolin-resources.py sync --clients Messi,Ronaldo
+    ./scripts/pangolin/pangolin-resources.py sync --clients Messi --force-client-update
+    ./scripts/pangolin/pangolin-resources.py sync --force-client-update  # clears all clients
 
 API key is automatically loaded from secrets/pangolin-creds.enc.yaml via SOPS.
 Override with PANGOLIN_API_KEY env var or --token-file argument.
@@ -126,6 +131,7 @@ class PangolinClient:
         udp_ports: str = "*",
         disable_icmp: bool = False,
         enabled: bool = True,
+        client_ids: list[int] | None = None,
     ) -> dict:
         """Create a private resource.
 
@@ -139,7 +145,7 @@ class PangolinClient:
             "enabled": enabled,
             "userIds": [],
             "roleIds": [],
-            "clientIds": [],
+            "clientIds": client_ids or [],
             "tcpPortRangeString": tcp_ports,
             "udpPortRangeString": udp_ports,
             "disableIcmp": disable_icmp,
@@ -160,6 +166,7 @@ class PangolinClient:
         udp_ports: str | None = None,
         disable_icmp: bool | None = None,
         enabled: bool | None = None,
+        client_ids: list[int] | None = None,
     ) -> dict:
         """Update an existing private resource."""
         # Required fields for update
@@ -167,7 +174,7 @@ class PangolinClient:
             "siteId": site_id,
             "userIds": [],
             "roleIds": [],
-            "clientIds": [],
+            "clientIds": client_ids or [],
         }
         if name is not None:
             data["name"] = name
@@ -189,6 +196,19 @@ class PangolinClient:
     def delete_site_resource(self, resource_id: int) -> dict:
         """Delete a private resource."""
         return self._request("DELETE", f"/site-resource/{resource_id}")
+
+    def get_clients(self, org_id: str) -> list[dict]:
+        """Get all clients for an organization."""
+        resp = self._request("GET", f"/org/{org_id}/clients")
+        return resp.get("data", {}).get("clients", [])
+
+    def get_client_by_name(self, org_id: str, name: str) -> dict | None:
+        """Find a client by name (case-insensitive)."""
+        clients = self.get_clients(org_id)
+        for client in clients:
+            if client.get("name", "").lower() == name.lower():
+                return client
+        return None
 
 
 def load_token_from_sops(token_file: Path) -> str | None:
@@ -294,6 +314,30 @@ def resources_match(desired: dict, current: dict) -> bool:
     )
 
 
+def cmd_list_clients(client: PangolinClient, config: dict) -> int:
+    """List all clients in Pangolin."""
+    org_id = config["org_id"]
+    print(f"Organization: {org_id}")
+
+    print("\nFetching clients...")
+    clients = client.get_clients(org_id)
+
+    if not clients:
+        print("No clients found.")
+        return 0
+
+    print(f"\nClients ({len(clients)} total):")
+    print("-" * 60)
+
+    for c in sorted(clients, key=lambda x: x.get("name", "")):
+        name = c.get("name", "unknown")
+        client_id = c.get("clientId", "?")
+        online = "online" if c.get("online") else "offline"
+        print(f"  {name:<30} ID: {client_id:<10} ({online})")
+
+    return 0
+
+
 def cmd_list(client: PangolinClient, config: dict) -> int:
     """List current private resources in Pangolin."""
     site_name = config["site_name"]
@@ -343,11 +387,36 @@ def cmd_sync(
     config: dict,
     resources: list[dict],
     dry_run: bool = False,
+    clients_str: str | None = None,
+    force_client_update: bool = False,
 ) -> int:
     """Sync local config with Pangolin."""
     site_name = config["site_name"]
     org_id = config["org_id"]
     print(f"Organization: {org_id}")
+
+    # Parse and look up clients if specified
+    client_ids: list[int] = []
+    client_names: list[str] = []
+    if clients_str:
+        client_names = [name.strip() for name in clients_str.split(",") if name.strip()]
+        print(f"Looking up {len(client_names)} client(s)...")
+        for client_name in client_names:
+            pangolin_client = client.get_client_by_name(org_id, client_name)
+            if not pangolin_client:
+                print(f"Error: Client '{client_name}' not found")
+                print("Available clients:")
+                for c in client.get_clients(org_id):
+                    print(f"  - {c.get('name', 'unknown')} (ID: {c.get('clientId')})")
+                return 1
+            client_ids.append(pangolin_client["clientId"])
+            print(f"  Client: {client_name} (ID: {pangolin_client['clientId']})")
+
+    if force_client_update:
+        if client_names:
+            print(f"Force client update: will set clients to [{', '.join(client_names)}] on all resources")
+        else:
+            print("Force client update: will clear clients from all resources")
 
     print(f"Looking up site '{site_name}'...")
     site = client.get_site_by_name(org_id, site_name)
@@ -371,10 +440,21 @@ def cmd_sync(
     # Calculate changes
     to_add = set(desired.keys()) - set(current.keys())
     to_delete = set(current.keys()) - set(desired.keys())
-    to_update = {
-        name for name in set(desired.keys()) & set(current.keys())
-        if not resources_match(desired[name], current[name])
-    }
+    existing = set(desired.keys()) & set(current.keys())
+
+    if force_client_update:
+        # Force update all existing resources to set clients
+        to_update = existing
+        to_update_clients_only = {
+            name for name in existing
+            if resources_match(desired[name], current[name])
+        }
+    else:
+        to_update = {
+            name for name in existing
+            if not resources_match(desired[name], current[name])
+        }
+        to_update_clients_only = set()
 
     # Report changes
     print(f"\n{'Sync preview (dry-run)' if dry_run else 'Sync changes'}:")
@@ -398,7 +478,9 @@ def cmd_sync(
             changes.append(f"alias:{c['alias']}->{d['alias']}")
         if d["tcp_ports"] != c["tcp_ports"]:
             changes.append(f"tcp:{c['tcp_ports']}->{d['tcp_ports']}")
-        print(f"  [UPDATE] {name:<25} ({', '.join(changes)})")
+        if name in to_update_clients_only:
+            changes.append("clients")
+        print(f"  [UPDATE] {name:<25} ({', '.join(changes) if changes else 'clients only'})")
 
     for name in sorted(to_delete):
         print(f"  [DELETE] {name}")
@@ -440,6 +522,7 @@ def cmd_sync(
                 udp_ports=d["udp_ports"],
                 disable_icmp=d["disable_icmp"],
                 enabled=d["enabled"],
+                client_ids=client_ids,
             )
             print("OK")
         except Exception as e:
@@ -462,6 +545,7 @@ def cmd_sync(
                 udp_ports=d["udp_ports"],
                 disable_icmp=d["disable_icmp"],
                 enabled=d["enabled"],
+                client_ids=client_ids,
             )
             print("OK")
         except Exception as e:
@@ -574,12 +658,25 @@ def main():
     # list command
     subparsers.add_parser("list", help="List current private resources in Pangolin")
 
+    # list-clients command
+    subparsers.add_parser("list-clients", help="List all clients in Pangolin")
+
     # sync command
     sync_parser = subparsers.add_parser("sync", help="Sync local config with Pangolin")
     sync_parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Preview changes without applying",
+    )
+    sync_parser.add_argument(
+        "--clients",
+        type=str,
+        help="Associate resources with clients (comma-separated names, e.g., --clients Messi,Ronaldo)",
+    )
+    sync_parser.add_argument(
+        "--force-client-update",
+        action="store_true",
+        help="Force update all resources with the specified clients (or clear if no --clients)",
     )
 
     # purge command
@@ -623,12 +720,14 @@ def main():
     # Execute command
     if args.command == "list":
         sys.exit(cmd_list(client, config))
+    elif args.command == "list-clients":
+        sys.exit(cmd_list_clients(client, config))
     elif args.command == "sync":
         if not args.resources.exists():
             print(f"Error: Resources file not found: {args.resources}")
             sys.exit(1)
         resources = load_resources(args.resources)
-        sys.exit(cmd_sync(client, config, resources, args.dry_run))
+        sys.exit(cmd_sync(client, config, resources, args.dry_run, args.clients, args.force_client_update))
     elif args.command == "purge":
         if not args.dry_run and not args.confirm:
             print("Error: Purge requires --confirm flag (or use --dry-run to preview)")
