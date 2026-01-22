@@ -370,6 +370,100 @@ spec:
           port: 9998
 
 ---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: management-paperless-postgres-allow
+  namespace: management
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: paperless-postgres
+  policyTypes:
+    - Egress
+  egress:
+    # Allow DNS (needed for resolving hostnames)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: management-paperless-redis-allow
+  namespace: management
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: paperless-redis
+  policyTypes:
+    - Egress
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: management-paperless-gotenberg-allow
+  namespace: management
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: paperless-gotenberg
+  policyTypes:
+    - Egress
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: management-paperless-tika-allow
+  namespace: management
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: paperless-tika
+  policyTypes:
+    - Egress
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow HTTPS for model downloads
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 443
+
+---
 # =============================================================================
 # Backup Namespace - Velero, MinIO
 # =============================================================================

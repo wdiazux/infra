@@ -14,7 +14,7 @@
 resource "helm_release" "postgresql" {
   count = var.enable_forgejo ? 1 : 0
 
-  name             = "postgresql"
+  name             = "forgejo-postgres"
   repository       = "oci://registry-1.docker.io/bitnamicharts"
   chart            = "postgresql"
   version          = var.postgresql_version
@@ -127,7 +127,7 @@ resource "null_resource" "wait_for_postgresql" {
 # ============================================================================
 #
 # Connection string for Forgejo:
-#   host: postgresql.forgejo.svc.cluster.local
+#   host: forgejo-postgres.forgejo.svc.cluster.local
 #   port: 5432
 #   database: forgejo
 #   user: (from SOPS secret)
@@ -137,7 +137,7 @@ resource "null_resource" "wait_for_postgresql" {
 #   kubectl run pg-test --rm -it --restart=Never \
 #     --image=postgres:17 \
 #     --env="PGPASSWORD=<password>" \
-#     -- psql -h postgresql.forgejo.svc.cluster.local -U <user> -d forgejo
+#     -- psql -h forgejo-postgres.forgejo.svc.cluster.local -U <user> -d forgejo
 #
 # Backup:
 #   PostgreSQL data is stored on Longhorn and backed up via NFS

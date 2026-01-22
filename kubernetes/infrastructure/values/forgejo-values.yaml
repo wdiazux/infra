@@ -56,7 +56,7 @@ gitea:
 
     database:
       DB_TYPE: postgres
-      HOST: postgresql.forgejo.svc.cluster.local:5432
+      HOST: forgejo-postgres.forgejo.svc.cluster.local:5432
       NAME: forgejo
       # USER and PASSWD are set via Terraform from SOPS secrets
 
@@ -185,7 +185,7 @@ initContainers:
 # Storage:
 # - Uses Longhorn for persistent storage
 # - 15Gi for Forgejo data (repos, LFS, Actions artifacts/logs)
-# - PostgreSQL 2Gi deployed separately (see postgresql.tf)
+# - PostgreSQL 2Gi deployed separately as forgejo-postgres (see postgresql.tf)
 #
 # Networking:
 # - HTTP on port 80 via LoadBalancer (10.10.2.13)
