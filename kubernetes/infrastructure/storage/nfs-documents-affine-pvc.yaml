@@ -1,0 +1,22 @@
+# NFS PersistentVolumeClaim for Affine uploads
+#
+# Binds to nfs-documents-affine PV.
+# Used by: Affine server (storage directory)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: affine-storage
+  namespace: tools
+  labels:
+    type: nfs
+    purpose: documents
+    app.kubernetes.io/name: affine
+    app.kubernetes.io/part-of: affine
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  volumeName: nfs-documents-affine
+  resources:
+    requests:
+      storage: 250Gi
