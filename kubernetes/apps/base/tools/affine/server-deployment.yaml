@@ -54,6 +54,26 @@ spec:
                 sleep 2
               done
               echo "Redis is ready"
+        # Run database migrations
+        - name: migration
+          image: ghcr.io/toeverything/affine:2026.1.21-canary.908
+          command:
+            - node
+            - ./scripts/self-host-predeploy.js
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: affine-secrets
+                  key: POSTGRES_PASSWORD
+            - name: DATABASE_URL
+              value: "postgresql://affine:$(POSTGRES_PASSWORD)@affine-postgres:5432/affine"
+            - name: REDIS_SERVER_HOST
+              value: "affine-redis"
+            - name: REDIS_SERVER_PORT
+              value: "6379"
       containers:
         - name: affine
           image: ghcr.io/toeverything/affine:2026.1.21-canary.908 # {"$imagepolicy": "flux-system:affine"}
