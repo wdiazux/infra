@@ -99,6 +99,8 @@ STATIC_RESOURCES = {
     "proxmox": {
         "ip": "10.10.2.2",
         "category": "infrastructure",
+        "aliases": ["pve"],
+        "suffixes": ["home.arpa", "home-infra.net"],
     },
     "nas": {
         "ip": "10.10.2.5",
@@ -279,6 +281,8 @@ def build_service_registry(repo_root: Path, ip_services: dict[str, str], verbose
             "namespace": None,
             "k8s_dns": None,
             "suffixes": info.get("suffixes", ["home.arpa"]),
+            "aliases": info.get("aliases", []),
+            "fqdn": None,
             "category": info["category"],
         }
         if verbose:
@@ -325,6 +329,10 @@ def generate_controld_config(services: list[dict]) -> str:
         for svc in sorted(by_category[category], key=lambda x: x["ip"]):
             lines.append(f"  - name: {svc['name']}")
             lines.append(f"    ip: {svc['ip']}")
+            # Add aliases if present
+            if svc.get("aliases"):
+                aliases_str = ", ".join(svc["aliases"])
+                lines.append(f"    aliases: [{aliases_str}]")
             # Use FQDN override if present, otherwise use suffixes
             if svc.get("fqdn"):
                 if len(svc["fqdn"]) == 1:
