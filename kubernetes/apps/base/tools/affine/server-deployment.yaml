@@ -27,7 +27,7 @@ spec:
     spec:
       enableServiceLinks: false
       securityContext:
-        fsGroup: 1000
+        fsGroup: 3001
         fsGroupChangePolicy: "OnRootMismatch"
       initContainers:
         # Wait for PostgreSQL to be ready
