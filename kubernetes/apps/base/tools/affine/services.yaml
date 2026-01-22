@@ -1,0 +1,63 @@
+# Affine Services
+---
+# PostgreSQL Service (ClusterIP)
+apiVersion: v1
+kind: Service
+metadata:
+  name: affine-postgres
+  namespace: tools
+  labels:
+    app.kubernetes.io/name: affine-postgres
+    app.kubernetes.io/component: database
+    app.kubernetes.io/part-of: affine
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: affine-postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+      protocol: TCP
+---
+# Redis Service (ClusterIP)
+apiVersion: v1
+kind: Service
+metadata:
+  name: affine-redis
+  namespace: tools
+  labels:
+    app.kubernetes.io/name: affine-redis
+    app.kubernetes.io/component: cache
+    app.kubernetes.io/part-of: affine
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: affine-redis
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: 6379
+      protocol: TCP
+---
+# Affine Server Service (LoadBalancer)
+apiVersion: v1
+kind: Service
+metadata:
+  name: affine
+  namespace: tools
+  labels:
+    app.kubernetes.io/name: affine-server
+    app.kubernetes.io/component: server
+    app.kubernetes.io/part-of: affine
+  annotations:
+    io.cilium/lb-ipam-ips: "${IP_AFFINE}"
+spec:
+  type: LoadBalancer
+  selector:
+    app.kubernetes.io/name: affine-server
+  ports:
+    - name: http
+      port: 80
+      targetPort: 3010
+      protocol: TCP
