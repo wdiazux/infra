@@ -34,12 +34,12 @@ spec:
           args:
             # Volume definitions: -v localpath:urlpath:permissions
             # Permissions: r=read, w=write, m=move, d=delete
-            - "-v/data/media::rwmd"
-            - "-v/data/downloads::rwmd"
-            - "-v/data/ai::rwmd"
-            - "-v/data/photos::rwmd"
-            - "-v/data/documents::rwmd"
-            - "-v/data/backups::rwmd"
+            - "-v/data/media:media:rwmd"
+            - "-v/data/downloads:downloads:rwmd"
+            - "-v/data/ai:ai:rwmd"
+            - "-v/data/photos:photos:rwmd"
+            - "-v/data/documents:documents:rwmd"
+            - "-v/data/backups:backups:rwmd"
           ports:
             - name: http
               containerPort: 3923
