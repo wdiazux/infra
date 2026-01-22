@@ -37,10 +37,6 @@ spec:
           env:
             - name: TZ
               value: America/El_Salvador
-            - name: PUID
-              value: "1000"
-            - name: PGID
-              value: "3001"
           volumeMounts:
             - name: db
               mountPath: /var/www/html/db
