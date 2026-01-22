@@ -30,7 +30,6 @@ domains:
   - name: proxmox
     ip: 10.10.2.2
     aliases: [pve]
-    suffixes: [home.arpa, home-infra.net]
 
   - name: nas
     ip: 10.10.2.5

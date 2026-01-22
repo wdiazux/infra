@@ -68,7 +68,7 @@ FQDN_OVERRIDES = {
 # Services to skip (not user-facing or internal only)
 SKIP_SERVICES = {
     "FORGEJO_SSH",  # SSH access, not HTTP
-    "WEBHOOK",      # FluxCD internal webhook
+    "WEBHOOK",  # FluxCD internal webhook
 }
 
 # Infrastructure services that need manual K8s service definitions
@@ -98,12 +98,7 @@ INFRASTRUCTURE_SERVICES = {
 
 # Static resources not managed by Kubernetes (external infrastructure)
 STATIC_RESOURCES = {
-    "proxmox": {
-        "ip": "10.10.2.2",
-        "category": "infrastructure",
-        "aliases": ["pve"],
-        "suffixes": ["home.arpa", "home-infra.net"],
-    },
+    "proxmox": {"ip": "10.10.2.2", "category": "infrastructure", "aliases": ["pve"]},
     "nas": {
         "ip": "10.10.2.5",
         "category": "infrastructure",
@@ -117,6 +112,7 @@ CATEGORY_ORDER = [
     "applications",
     "arr-stack",
 ]
+
 
 # IP range to category mapping
 def get_category(ip: str) -> str:
@@ -145,7 +141,9 @@ def find_repo_root() -> Path:
 
 def load_cluster_vars(repo_root: Path) -> dict[str, str]:
     """Load IP variables from cluster-vars.yaml."""
-    cluster_vars_path = repo_root / "kubernetes/infrastructure/cluster-vars/cluster-vars.yaml"
+    cluster_vars_path = (
+        repo_root / "kubernetes/infrastructure/cluster-vars/cluster-vars.yaml"
+    )
 
     if not cluster_vars_path.exists():
         print(f"Error: cluster-vars.yaml not found at {cluster_vars_path}")
@@ -225,7 +223,9 @@ def scan_kubernetes_manifests(repo_root: Path, ip_var_name: str) -> dict | None:
     return None
 
 
-def build_service_registry(repo_root: Path, ip_services: dict[str, str], verbose: bool = False) -> list[dict]:
+def build_service_registry(
+    repo_root: Path, ip_services: dict[str, str], verbose: bool = False
+) -> list[dict]:
     """Build a complete registry of services with their metadata."""
     services = []
 
@@ -439,7 +439,8 @@ def main():
         help="Only generate Pangolin resources.yaml",
     )
     parser.add_argument(
-        "--verbose", "-v",
+        "--verbose",
+        "-v",
         action="store_true",
         help="Show detailed service discovery output",
     )
@@ -474,7 +475,9 @@ def main():
 
         if args.diff and controld_path.exists():
             current = controld_path.read_text()
-            if not show_diff(current, controld_content, "scripts/controld/domains.yaml"):
+            if not show_diff(
+                current, controld_content, "scripts/controld/domains.yaml"
+            ):
                 print("No changes")
         elif args.dry_run:
             print(controld_content)
@@ -491,7 +494,9 @@ def main():
 
         if args.diff and pangolin_path.exists():
             current = pangolin_path.read_text()
-            if not show_diff(current, pangolin_content, "scripts/pangolin/resources.yaml"):
+            if not show_diff(
+                current, pangolin_content, "scripts/pangolin/resources.yaml"
+            ):
                 print("No changes")
         elif args.dry_run:
             print(pangolin_content)
