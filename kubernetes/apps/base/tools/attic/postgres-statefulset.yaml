@@ -62,6 +62,11 @@ spec:
                 - attic
             initialDelaySeconds: 5
             periodSeconds: 10
+          resources:
+            requests:
+              memory: 64Mi
+            limits:
+              memory: 256Mi
   volumeClaimTemplates:
     - metadata:
         name: data

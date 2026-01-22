@@ -84,6 +84,12 @@ spec:
                 - immich
             initialDelaySeconds: 5
             periodSeconds: 10
+          # Memory sized for shared_buffers=512MB (need ~4x for container)
+          resources:
+            requests:
+              memory: 512Mi
+            limits:
+              memory: 2Gi
   volumeClaimTemplates:
     - metadata:
         name: data

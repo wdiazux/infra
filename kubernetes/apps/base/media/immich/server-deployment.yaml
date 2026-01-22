@@ -85,9 +85,9 @@ spec:
             periodSeconds: 10
           resources:
             requests:
-              memory: 256Mi
+              memory: 512Mi
             limits:
-              memory: 2Gi
+              memory: 4Gi
       volumes:
         - name: upload
           persistentVolumeClaim:
