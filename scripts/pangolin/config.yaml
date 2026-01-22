@@ -1,0 +1,16 @@
+# Pangolin Private Resources Configuration
+# Settings for the pangolin-resources.py script
+
+# Pangolin Integration API URL
+pangolin_url: https://api.home-infra.net
+
+# Organization ID (find in Pangolin URL: /admin/sites/{org_id}/...)
+# Required if your API key can't list all organizations
+org_id: home-infra
+
+# Site name in Pangolin (the Newt connector name)
+site_name: Talos
+
+# Default domain suffix for private resources
+# Each resource gets an alias like: <name>.<suffix>
+default_suffix: home.arpa

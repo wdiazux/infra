@@ -172,7 +172,7 @@ Configure in your DNS server or `/etc/hosts`:
 10.10.2.25   hass.home-infra.net
 10.10.2.26   n8n.home-infra.net
 10.10.2.27   obico.home-infra.net
-10.10.2.28   sd.home-infra.net diffusion.home-infra.net
+10.10.2.28   comfy.home-infra.net comfy.home.arpa
 10.10.2.29   attic.home-infra.net
 10.10.2.30   emby.home-infra.net
 10.10.2.31   music.home-infra.net
