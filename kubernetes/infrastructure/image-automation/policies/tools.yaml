@@ -64,10 +64,12 @@ spec:
   imageRepositoryRef:
     name: affine
   filterTags:
-    pattern: '^v[0-9]+\.[0-9]+\.[0-9]+$'
+    # Match date-based canary tags like 2026.1.21-canary.908
+    pattern: '^(?P<ts>\d{4}\.\d{1,2}\.\d{1,2}-canary\.\d+)$'
+    extract: '$ts'
   policy:
-    semver:
-      range: ">=0.20.0"
+    alphabetical:
+      order: asc
 # IT-Tools - ImagePolicy DISABLED
 # Reason: Official repo hasn't released since Oct 2024. Using 'latest' tag.
 # The deployment uses 'latest' tag directly (documented exception).
