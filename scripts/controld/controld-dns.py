@@ -318,41 +318,55 @@ def parse_current_state(rules: list[dict]) -> dict[str, str]:
     return current
 
 
-def cmd_list(client: ControlDClient, config: dict) -> int:
-    """List current rules in ControlD."""
-    profile_name = config["profile_name"]
-    folder_name = config["folder_name"]
+def list_single_profile(
+    client: ControlDClient,
+    profile_name: str,
+    folder_name: str,
+    multi_profile_mode: bool = False
+) -> int:
+    """List rules for a single profile.
 
-    print(f"Looking up profile '{profile_name}'...")
+    Args:
+        client: ControlD API client
+        profile_name: Profile name to list
+        folder_name: Folder name within profile
+        multi_profile_mode: If True, prefix output with [ProfileName]
+
+    Returns:
+        0 on success, 1 on error
+    """
+    prefix = f"[{profile_name}] " if multi_profile_mode else ""
+
+    print(f"{prefix}Looking up profile '{profile_name}'...")
     profile = client.get_profile_by_name(profile_name)
     if not profile:
-        print(f"Error: Profile '{profile_name}' not found")
+        print(f"{prefix}Error: Profile '{profile_name}' not found")
         return 1
 
     profile_id = profile["PK"]
-    print(f"Profile: {profile_name} (PK: {profile_id})")
+    print(f"{prefix}Profile: {profile_name} (PK: {profile_id})")
 
-    print(f"Looking up folder '{folder_name}'...")
+    print(f"{prefix}Looking up folder '{folder_name}'...")
     folder = client.get_folder_by_name(profile_id, folder_name)
     if not folder:
-        print(f"Error: Folder '{folder_name}' not found")
-        print("Available folders:")
+        print(f"{prefix}Error: Folder '{folder_name}' not found")
+        print(f"{prefix}Available folders:")
         for f in client.get_folders(profile_id):
-            print(f"  - {f.get('group', 'unknown')}")
+            print(f"{prefix}  - {f.get('group', 'unknown')}")
         return 1
 
     folder_id = folder["PK"]
-    print(f"Folder: {folder_name} (PK: {folder_id})")
+    print(f"{prefix}Folder: {folder_name} (PK: {folder_id})")
 
-    print("\nFetching rules...")
+    print(f"\n{prefix}Fetching rules...")
     rules = client.get_rules(profile_id, folder_id)
 
     if not rules:
-        print("No rules found in this folder.")
+        print(f"{prefix}No rules found in this folder.")
         return 0
 
-    print(f"\nCurrent rules ({len(rules)} total):")
-    print("-" * 60)
+    print(f"\n{prefix}Current rules ({len(rules)} total):")
+    print(f"{prefix}" + "-" * 60)
 
     # Sort by hostname
     sorted_rules = sorted(rules, key=lambda r: r.get("PK", ""))
@@ -364,11 +378,51 @@ def cmd_list(client: ControlDClient, config: dict) -> int:
         status = "enabled" if action.get("status") == 1 else "disabled"
 
         if action_type == "spoof":
-            print(f"  {hostname:<40} -> {via:<15} ({action_type})")
+            print(f"{prefix}  {hostname:<40} -> {via:<15} ({action_type})")
         else:
-            print(f"  {hostname:<40} ({action_type}, {status})")
+            print(f"{prefix}  {hostname:<40} ({action_type}, {status})")
 
     return 0
+
+
+def cmd_list(client: ControlDClient, config: dict, profile_filter: list[str]) -> int:
+    """List current rules in ControlD for one or more profiles.
+
+    Args:
+        client: ControlD API client
+        config: Normalized config with 'profiles' list
+        profile_filter: List of profile names to list (empty = all)
+
+    Returns:
+        0 if all profiles succeeded, 1 if any failed
+    """
+    profiles = filter_profiles(config["profiles"], profile_filter)
+    multi_profile_mode = len(config["profiles"]) > 1
+
+    results = []
+    for profile_config in profiles:
+        if multi_profile_mode and len(results) > 0:
+            print()  # Blank line between profiles
+
+        result = list_single_profile(
+            client,
+            profile_config["name"],
+            profile_config["folder_name"],
+            multi_profile_mode
+        )
+        results.append((profile_config["name"], result == 0))
+
+    # Print summary if multi-profile and multiple profiles processed
+    if multi_profile_mode and len(profiles) > 1:
+        print("\n" + "=" * 60)
+        successes = sum(1 for _, success in results if success)
+        failures = len(results) - successes
+        print(f"Summary: {successes}/{len(results)} profiles succeeded")
+        if failures > 0:
+            failed_names = [name for name, success in results if not success]
+            print(f"Failed profiles: {', '.join(failed_names)}")
+
+    return 0 if all(success for _, success in results) else 1
 
 
 def cmd_sync(
