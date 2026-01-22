@@ -193,11 +193,23 @@ Manages private resources in Pangolin for VPN access.
 # List current resources in Pangolin
 ./scripts/pangolin/pangolin-resources.py list
 
+# List all clients (devices) in Pangolin
+./scripts/pangolin/pangolin-resources.py list-clients
+
 # Preview sync changes
 ./scripts/pangolin/pangolin-resources.py sync --dry-run
 
-# Apply changes
+# Apply changes (uses default_clients from config.yaml)
 ./scripts/pangolin/pangolin-resources.py sync
+
+# Sync with additional clients (adds to default_clients)
+./scripts/pangolin/pangolin-resources.py sync --clients Ronaldo,Neymar
+
+# Sync without default clients
+./scripts/pangolin/pangolin-resources.py sync --no-default-clients --clients Ronaldo
+
+# Force update clients on all existing resources
+./scripts/pangolin/pangolin-resources.py sync --force-client-update
 
 # Delete all resources (requires --confirm)
 ./scripts/pangolin/pangolin-resources.py purge --dry-run
@@ -211,6 +223,11 @@ pangolin_url: https://api.home-infra.net
 org_id: home-infra
 site_name: Talos
 default_suffix: home.arpa
+
+# Default clients to associate with all resources
+# These are applied automatically unless --no-default-clients is used
+default_clients:
+  - Messi
 ```
 
 **resources.yaml format:**
@@ -218,10 +235,19 @@ default_suffix: home.arpa
 ```yaml
 resources:
   - name: grafana
-    destination: grafana.monitoring.svc.cluster.local
+    destination: 10.10.2.23
 
   - name: photos
-    destination: immich.media.svc.cluster.local
+    destination: 10.10.2.22
+
+  # Optional fields:
+  - name: custom-service
+    destination: 10.10.2.50
+    alias: custom.home.arpa      # Override default alias
+    tcp_ports: "80,443"          # Restrict ports (default: "*")
+    udp_ports: "*"
+    disable_icmp: false
+    enabled: true
 ```
 
 ---
@@ -484,6 +510,7 @@ The `pangolin-resources.py` script uses the Pangolin Integration API to manage p
 |--------|----------|-------------|
 | GET | `/v1/orgs` | List organizations |
 | GET | `/v1/org/{id}/sites` | List sites in organization |
+| GET | `/v1/org/{id}/clients` | List clients in organization |
 | GET | `/v1/org/{id}/site/{site_id}/resources` | List private resources for site |
 | PUT | `/v1/org/{id}/private-resource` | Create private resource |
 | POST | `/site-resource/{id}` | Update private resource |
@@ -524,6 +551,35 @@ curl -X PUT "https://api.home-infra.net/v1/org/home-infra/private-resource" \
 | `udpPortRangeString` | No | UDP ports |
 | `disableIcmp` | No | Disable ICMP/ping |
 | `enabled` | No | Enable/disable resource |
+| `clientIds` | No | Array of client IDs to restrict access |
+
+### Client Management
+
+Clients are devices (phones, laptops) registered in Pangolin. Resources can be restricted to specific clients.
+
+```bash
+# List all clients to find their IDs
+./scripts/pangolin/pangolin-resources.py list-clients
+
+# Output:
+# Clients (3 total):
+# ----------------------------------------------------------
+#   Messi                          ID: 1          (online)
+#   Ronaldo                        ID: 2          (offline)
+#   Neymar                         ID: 3          (online)
+```
+
+**Client assignment behavior:**
+
+| Scenario | Behavior |
+|----------|----------|
+| `default_clients` in config | Applied to all new resources automatically |
+| `--clients Name1,Name2` | Adds to default_clients (unless `--no-default-clients`) |
+| `--no-default-clients` | Skip default clients, only use `--clients` |
+| `--force-client-update` | Update clients on ALL existing resources |
+| No clients configured | Resources accessible to all clients |
+
+**Note:** The Pangolin API doesn't return `clientIds` in resource listings, so the script always reapplies clients during sync when they're configured.
 
 ### Blueprint YAML Format
 
@@ -611,4 +667,4 @@ curl -X POST "https://api.controld.com/profiles/{profile_id}/rules" \
 
 ---
 
-**Last Updated:** 2026-01-21
+**Last Updated:** 2026-01-22

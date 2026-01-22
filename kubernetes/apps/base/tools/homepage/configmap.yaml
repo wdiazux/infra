@@ -111,7 +111,7 @@ data:
             description: LLM Chat Interface
         - ComfyUI:
             icon: comfyui.png
-            href: http://sd.${DOMAIN_PRIMARY}
+            href: http://comfy.${DOMAIN_PRIMARY}
             description: Node-based Image Generation
 
     - 3D Print:

@@ -129,7 +129,24 @@ Pangolin uses "resources" to define what's exposed:
 | **Public** | No authentication required | Media streaming (Emby) |
 | **Private** | Authentication required | Personal apps (Immich) |
 
-### Configure a Resource
+### Automated Management (Recommended)
+
+Use the `pangolin-resources.py` script to manage private resources:
+
+```bash
+# List current resources
+./scripts/pangolin/pangolin-resources.py list
+
+# Preview changes
+./scripts/pangolin/pangolin-resources.py sync --dry-run
+
+# Apply changes
+./scripts/pangolin/pangolin-resources.py sync
+```
+
+See [DNS Management](../operations/dns-management.md) for full documentation.
+
+### Manual Configuration (Dashboard)
 
 1. Access Pangolin dashboard
 2. Navigate to **Resources** > **Add Resource**
@@ -252,4 +269,4 @@ kubectl run test --rm -it --image=busybox -- wget -O- http://<service-ip>
 - [Newt Extension](https://github.com/siderolabs/extensions/tree/main/container-runtime/newt)
 ---
 
-**Last Updated:** 2026-01-20
+**Last Updated:** 2026-01-22
