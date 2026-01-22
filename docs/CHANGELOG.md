@@ -4,6 +4,18 @@ All notable changes to this project are documented here.
 
 ## 2026
 
+### 2026-01-22
+- Kubernetes resource review and memory limits implementation
+  - Added researched memory limits to 21 deployments (no CPU to allow burst on single-node)
+  - Heavy apps (4Gi): home-assistant, n8n, paperless-server
+  - Medium apps (1-2Gi): radarr, sonarr, sabnzbd, qbittorrent, open-webui, affine, immich, tika
+  - Light apps (128Mi-1Gi): navidrome, bazarr, prowlarr, attic, gotenberg, it-tools, homepage
+  - Redis instances (256Mi): affine, immich, paperless, obico
+  - Added securityContext (fsGroup) to immich-redis, immich-ml, obico-redis
+  - Added app.kubernetes.io/part-of label to node-exporter daemonset
+  - Generated kubernetes review report: `docs/reviews/2026-01-21-kubernetes-review.md`
+  - Updated resource-strategy.md with new memory-only limits policy
+
 ### 2026-01-21
 - Documentation audit and cleanup
   - Fixed wrong IPs in infrastructure.md (VictoriaMetrics, Grafana, n8n, Home Assistant, Open WebUI)
