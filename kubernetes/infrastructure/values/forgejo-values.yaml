@@ -56,7 +56,7 @@ gitea:
 
     database:
       DB_TYPE: postgres
-      HOST: forgejo-postgres.forgejo.svc.cluster.local:5432
+      HOST: forgejo-postgres-postgresql.forgejo.svc.cluster.local:5432
       NAME: forgejo
       # USER and PASSWD are set via Terraform from SOPS secrets
 

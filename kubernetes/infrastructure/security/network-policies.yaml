@@ -313,8 +313,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: paperless-ngx
-      app.kubernetes.io/component: server
+      app.kubernetes.io/name: paperless-server
   policyTypes:
     - Ingress
     - Egress
@@ -380,7 +379,17 @@ spec:
     matchLabels:
       app.kubernetes.io/name: paperless-postgres
   policyTypes:
+    - Ingress
     - Egress
+  ingress:
+    # Allow connections from paperless-server
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: paperless-server
+      ports:
+        - protocol: TCP
+          port: 5432
   egress:
     # Allow DNS (needed for resolving hostnames)
     - to:
@@ -402,7 +411,17 @@ spec:
     matchLabels:
       app.kubernetes.io/name: paperless-redis
   policyTypes:
+    - Ingress
     - Egress
+  ingress:
+    # Allow connections from paperless-server
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: paperless-server
+      ports:
+        - protocol: TCP
+          port: 6379
   egress:
     # Allow DNS
     - to:
@@ -567,27 +586,11 @@ spec:
 # =============================================================================
 # Forgejo Namespace - Git Server
 # =============================================================================
+# NOTE: No default-deny-egress for Forgejo namespace due to conflicts with
+# Helm-generated NetworkPolicies from the PostgreSQL chart. The forgejo-server-allow
+# and forgejo-runner-allow policies provide sufficient egress control.
 
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: forgejo-default-deny-egress
-  namespace: forgejo
-spec:
-  podSelector: {}
-  policyTypes:
-    - Egress
-  egress:
-    # Allow DNS queries
-    - to:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: kube-system
-      ports:
-        - protocol: UDP
-          port: 53
 
----
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -597,7 +600,6 @@ spec:
   podSelector:
     matchLabels:
       app.kubernetes.io/name: forgejo
-      app.kubernetes.io/component: server
   policyTypes:
     - Ingress
     - Egress
@@ -631,7 +633,8 @@ spec:
     - to:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: forgejo-postgres
+              app.kubernetes.io/name: postgresql
+              app.kubernetes.io/instance: forgejo-postgres
       ports:
         - protocol: TCP
           port: 5432
