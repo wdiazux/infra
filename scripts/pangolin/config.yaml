@@ -14,3 +14,9 @@ site_name: Talos
 # Default domain suffix for private resources
 # Each resource gets an alias like: <name>.<suffix>
 default_suffix: home.arpa
+
+# Default clients to associate with all resources
+# These clients will be automatically added if they exist in Pangolin
+# Can be overridden with --clients flag or --no-default-clients
+default_clients:
+  - Messi

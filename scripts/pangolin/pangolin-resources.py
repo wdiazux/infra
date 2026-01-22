@@ -10,10 +10,12 @@ Usage:
     ./scripts/pangolin/pangolin-resources.py list-clients
     ./scripts/pangolin/pangolin-resources.py sync --dry-run
     ./scripts/pangolin/pangolin-resources.py sync
-    ./scripts/pangolin/pangolin-resources.py sync --clients Messi
-    ./scripts/pangolin/pangolin-resources.py sync --clients Messi,Ronaldo
-    ./scripts/pangolin/pangolin-resources.py sync --clients Messi --force-client-update
-    ./scripts/pangolin/pangolin-resources.py sync --force-client-update  # clears all clients
+    ./scripts/pangolin/pangolin-resources.py sync --clients Ronaldo      # adds to default clients
+    ./scripts/pangolin/pangolin-resources.py sync --no-default-clients   # skip default clients
+    ./scripts/pangolin/pangolin-resources.py sync --force-client-update  # update clients on all resources
+
+Default clients are configured in config.yaml (default_clients list).
+If a default client doesn't exist in Pangolin, it's skipped with a warning.
 
 API key is automatically loaded from secrets/pangolin-creds.enc.yaml via SOPS.
 Override with PANGOLIN_API_KEY env var or --token-file argument.
@@ -388,6 +390,7 @@ def cmd_sync(
     resources: list[dict],
     dry_run: bool = False,
     clients_str: str | None = None,
+    no_default_clients: bool = False,
     force_client_update: bool = False,
 ) -> int:
     """Sync local config with Pangolin."""
@@ -395,22 +398,33 @@ def cmd_sync(
     org_id = config["org_id"]
     print(f"Organization: {org_id}")
 
-    # Parse and look up clients if specified
+    # Build client list from defaults and command line
     client_ids: list[int] = []
     client_names: list[str] = []
+
+    # Add default clients from config (unless disabled)
+    default_clients = config.get("default_clients", []) or []
+    if not no_default_clients and default_clients:
+        client_names.extend(default_clients)
+
+    # Add clients from command line
     if clients_str:
-        client_names = [name.strip() for name in clients_str.split(",") if name.strip()]
+        cli_clients = [name.strip() for name in clients_str.split(",") if name.strip()]
+        for name in cli_clients:
+            if name not in client_names:
+                client_names.append(name)
+
+    # Look up all clients
+    if client_names:
         print(f"Looking up {len(client_names)} client(s)...")
         for client_name in client_names:
             pangolin_client = client.get_client_by_name(org_id, client_name)
             if not pangolin_client:
-                print(f"Error: Client '{client_name}' not found")
-                print("Available clients:")
-                for c in client.get_clients(org_id):
-                    print(f"  - {c.get('name', 'unknown')} (ID: {c.get('clientId')})")
-                return 1
+                print(f"  Warning: Client '{client_name}' not found in Pangolin, skipping")
+                continue
             client_ids.append(pangolin_client["clientId"])
-            print(f"  Client: {client_name} (ID: {pangolin_client['clientId']})")
+            source = "(default)" if client_name in default_clients else "(cli)"
+            print(f"  Client: {client_name} (ID: {pangolin_client['clientId']}) {source}")
 
     if force_client_update:
         if client_names:
@@ -674,6 +688,11 @@ def main():
         help="Associate resources with clients (comma-separated names, e.g., --clients Messi,Ronaldo)",
     )
     sync_parser.add_argument(
+        "--no-default-clients",
+        action="store_true",
+        help="Skip default clients from config.yaml",
+    )
+    sync_parser.add_argument(
         "--force-client-update",
         action="store_true",
         help="Force update all resources with the specified clients (or clear if no --clients)",
@@ -727,7 +746,7 @@ def main():
             print(f"Error: Resources file not found: {args.resources}")
             sys.exit(1)
         resources = load_resources(args.resources)
-        sys.exit(cmd_sync(client, config, resources, args.dry_run, args.clients, args.force_client_update))
+        sys.exit(cmd_sync(client, config, resources, args.dry_run, args.clients, args.no_default_clients, args.force_client_update))
     elif args.command == "purge":
         if not args.dry_run and not args.confirm:
             print("Error: Purge requires --confirm flag (or use --dry-run to preview)")

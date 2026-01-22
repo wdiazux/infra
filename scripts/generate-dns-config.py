@@ -88,6 +88,18 @@ INFRASTRUCTURE_SERVICES = {
     },
 }
 
+# Static resources not managed by Kubernetes (external infrastructure)
+STATIC_RESOURCES = {
+    "proxmox": {
+        "ip": "10.10.2.2",
+        "category": "infrastructure",
+    },
+    "nas": {
+        "ip": "10.10.2.5",
+        "category": "infrastructure",
+    },
+}
+
 # Category ordering for output
 CATEGORY_ORDER = [
     "infrastructure",
@@ -249,6 +261,22 @@ def build_service_registry(repo_root: Path, ip_services: dict[str, str], verbose
 
         services.append(service)
 
+    # Add static resources (external infrastructure not managed by Kubernetes)
+    for name, info in STATIC_RESOURCES.items():
+        service = {
+            "name": name,
+            "ip": info["ip"],
+            "var_name": f"STATIC_{name.upper()}",
+            "k8s_service": None,
+            "namespace": None,
+            "k8s_dns": None,
+            "suffixes": info.get("suffixes", ["home.arpa"]),
+            "category": info["category"],
+        }
+        if verbose:
+            print(f"  {name:<15} {info['ip']:<15} -> (static)")
+        services.append(service)
+
     return services
 
 
@@ -333,7 +361,7 @@ def generate_pangolin_config(services: list[dict]) -> str:
 
         for svc in sorted(by_category[category], key=lambda x: x["ip"]):
             lines.append(f"  - name: {svc['name']}")
-            lines.append(f"    destination: {svc['k8s_dns']}")
+            lines.append(f"    destination: {svc['ip']}")
             lines.append("")
 
     return "\n".join(lines)
