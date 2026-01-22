@@ -45,6 +45,30 @@ spec:
   policy:
     semver:
       range: ">=2.0.0"
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: affine
+  namespace: flux-system
+spec:
+  image: ghcr.io/toeverything/affine-graphql
+  interval: 1h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: affine
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: affine
+  filterTags:
+    pattern: '^stable-(?P<ts>[0-9]+)$'
+    extract: '$ts'
+  policy:
+    numerical:
+      order: asc
 # IT-Tools - ImagePolicy DISABLED
 # Reason: Official repo hasn't released since Oct 2024. Using 'latest' tag.
 # The deployment uses 'latest' tag directly (documented exception).
