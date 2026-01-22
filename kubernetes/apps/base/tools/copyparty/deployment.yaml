@@ -31,6 +31,9 @@ spec:
       containers:
         - name: copyparty
           image: copyparty/ac:latest
+          args:
+            - "-c"
+            - "/cfg/copyparty.conf"
           ports:
             - name: http
               containerPort: 3923
@@ -42,12 +45,17 @@ spec:
               value: "3001"
             - name: TZ
               value: America/El_Salvador
+            - name: PYTHONUNBUFFERED
+              value: "1"
           resources:
             requests:
               memory: 64Mi
             limits:
               memory: 256Mi
           volumeMounts:
+            - name: config
+              mountPath: /cfg
+              readOnly: true
             - name: media
               mountPath: /data/media
             - name: downloads
@@ -61,18 +69,19 @@ spec:
             - name: backups
               mountPath: /data/backups
           livenessProbe:
-            httpGet:
-              path: /
+            tcpSocket:
               port: http
             initialDelaySeconds: 10
             periodSeconds: 30
           readinessProbe:
-            httpGet:
-              path: /
+            tcpSocket:
               port: http
             initialDelaySeconds: 5
             periodSeconds: 10
       volumes:
+        - name: config
+          configMap:
+            name: copyparty-config
         - name: media
           persistentVolumeClaim:
             claimName: copyparty-media
