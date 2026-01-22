@@ -3,14 +3,17 @@
 
 api_base_url: https://api.controld.com
 
-# ControlD profile name (find in dashboard)
-profile_name: Default
-
-# Folder name within the profile for homelab rules
-folder_name: home-infra
+# Profiles to sync (same domains to all profiles)
+profiles:
+  - name: Default
+    folder_name: home-infra
+  - name: Infra
+    folder_name: home-infra
+  - name: IoT
+    folder_name: home-infra
 
 # Default domain suffixes for internal services
 # Each service will get a DNS rule for each suffix unless overridden
-# Use per-domain 'suffixes' in domains.yaml for external domains (reynoza.org, unix.red)
+# Use per-domain 'suffixes' in domains.yaml for external domains
 suffixes:
   - home.arpa
