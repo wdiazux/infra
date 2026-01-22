@@ -108,4 +108,7 @@ result-*
 .claude/.cache/
 .claude/sessions/
 
+# Git worktrees
+.worktrees/
+
 TODO.md
