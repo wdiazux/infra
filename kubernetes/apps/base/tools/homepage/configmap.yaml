@@ -147,6 +147,10 @@ data:
             description: Subtitle Manager
 
     - Tools:
+        - Affine:
+            icon: affine.png
+            href: http://affine.${DOMAIN_INTERNAL}
+            description: Knowledge Base & Notes
         - IT-Tools:
             icon: it-tools.png
             href: http://tools.${DOMAIN_INTERNAL}
