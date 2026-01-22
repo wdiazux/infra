@@ -1,0 +1,19 @@
+# Affine Redis PVC
+#
+# Longhorn storage for Redis persistence.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: affine-redis
+  namespace: tools
+  labels:
+    app.kubernetes.io/name: affine-redis
+    app.kubernetes.io/component: cache
+    app.kubernetes.io/part-of: affine
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 1Gi
