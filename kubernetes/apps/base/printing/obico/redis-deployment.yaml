@@ -24,6 +24,9 @@ spec:
         app.kubernetes.io/component: cache
         app.kubernetes.io/part-of: printing
     spec:
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: "OnRootMismatch"
       containers:
         - name: redis
           image: redis:7-alpine

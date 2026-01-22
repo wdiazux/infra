@@ -28,6 +28,9 @@ spec:
       # Disable service links to prevent IMMICH_PORT conflict with Kubernetes auto-injection
       enableServiceLinks: false
       runtimeClassName: nvidia
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: "OnRootMismatch"
       containers:
         - name: immich-machine-learning
           image: ghcr.io/immich-app/immich-machine-learning:v2.4.1-cuda # {"$imagepolicy": "flux-system:immich-machine-learning"}

@@ -83,6 +83,11 @@ spec:
               path: /api/server/ping
               port: http
             periodSeconds: 10
+          resources:
+            requests:
+              memory: 256Mi
+            limits:
+              memory: 2Gi
       volumes:
         - name: upload
           persistentVolumeClaim:

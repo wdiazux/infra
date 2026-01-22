@@ -24,6 +24,9 @@ spec:
         app.kubernetes.io/component: cache
         app.kubernetes.io/part-of: immich
     spec:
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: "OnRootMismatch"
       containers:
         - name: redis
           image: valkey/valkey:9
@@ -48,3 +51,8 @@ spec:
                 - ping
             initialDelaySeconds: 5
             periodSeconds: 10
+          resources:
+            requests:
+              memory: 64Mi
+            limits:
+              memory: 256Mi

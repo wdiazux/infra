@@ -121,6 +121,11 @@ spec:
               path: /healthz
               port: http
             periodSeconds: 10
+          resources:
+            requests:
+              memory: 256Mi
+            limits:
+              memory: 4Gi
       volumes:
         - name: data
           persistentVolumeClaim:

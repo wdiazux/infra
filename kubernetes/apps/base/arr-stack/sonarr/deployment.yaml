@@ -68,6 +68,11 @@ spec:
               port: http
             initialDelaySeconds: 10
             periodSeconds: 10
+          resources:
+            requests:
+              memory: 128Mi
+            limits:
+              memory: 1Gi
       volumes:
         - name: config
           persistentVolumeClaim:

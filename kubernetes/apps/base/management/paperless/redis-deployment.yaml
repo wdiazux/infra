@@ -63,6 +63,11 @@ spec:
                 - ping
             initialDelaySeconds: 5
             periodSeconds: 10
+          resources:
+            requests:
+              memory: 64Mi
+            limits:
+              memory: 256Mi
       volumes:
         - name: data
           persistentVolumeClaim:

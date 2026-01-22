@@ -88,6 +88,11 @@ spec:
               port: http
             initialDelaySeconds: 5
             periodSeconds: 10
+          resources:
+            requests:
+              memory: 128Mi
+            limits:
+              memory: 1Gi
       volumes:
         - name: config
           configMap:

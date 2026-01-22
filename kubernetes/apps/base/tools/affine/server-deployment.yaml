@@ -126,6 +126,11 @@ spec:
               port: http
             initialDelaySeconds: 10
             periodSeconds: 10
+          resources:
+            requests:
+              memory: 256Mi
+            limits:
+              memory: 2Gi
       volumes:
         - name: storage
           persistentVolumeClaim:
