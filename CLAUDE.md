@@ -107,9 +107,11 @@ infra/
 | Emby | 10.10.2.30 | Media server |
 | Navidrome | 10.10.2.31 | Music server |
 | IT-Tools | 10.10.2.32 | Dev toolbox |
+| Affine | 10.10.2.33 | Knowledge base |
 | Wallos | 10.10.2.34 | Subscriptions |
 | ntfy | 10.10.2.35 | Push notifications |
 | Paperless-ngx | 10.10.2.36 | Documents |
+| Copyparty | 10.10.2.37 | File browser |
 | SABnzbd | 10.10.2.40 | Usenet |
 | qBittorrent | 10.10.2.41 | Torrent |
 | Prowlarr | 10.10.2.42 | Indexer |

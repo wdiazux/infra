@@ -55,6 +55,7 @@ data:
   IP_WALLOS: "10.10.2.34"
   IP_NTFY: "10.10.2.35"
   IP_PAPERLESS: "10.10.2.36"
+  IP_COPYPARTY: "10.10.2.37"
 
   # Service IPs - Arr Stack
   IP_SABNZBD: "10.10.2.40"
