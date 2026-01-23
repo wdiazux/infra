@@ -1,0 +1,11 @@
+# Auth Namespace
+#
+# Authentication and SSO services.
+# Services: casdoor
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: auth
+  labels:
+    app.kubernetes.io/name: auth
+    purpose: authentication
