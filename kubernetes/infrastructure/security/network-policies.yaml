@@ -1341,3 +1341,102 @@ spec:
         - protocol: UDP
           port: 53
 
+---
+# =============================================================================
+# Auth Namespace - SSO/IAM (Logto)
+# =============================================================================
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: auth-default-deny-egress
+  namespace: auth
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    # Allow DNS queries
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: auth-logto-allow
+  namespace: auth
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: logto-server
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from LoadBalancer (Cilium L2 - host network traffic)
+    - ports:
+        - protocol: TCP
+          port: 3001
+        - protocol: TCP
+          port: 3002
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow PostgreSQL
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: logto-postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    # Allow HTTPS for social login providers (GitHub, Google, etc.)
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 443
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: auth-logto-postgres-allow
+  namespace: auth
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: logto-postgres
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow connections from logto-server
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: logto-server
+      ports:
+        - protocol: TCP
+          port: 5432
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
