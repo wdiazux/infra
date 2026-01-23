@@ -1,7 +1,7 @@
 # Casdoor Init Data ConfigMap
 #
 # Bootstrap configuration for Casdoor.
-# Placeholders are substituted by init container.
+# Default admin user is admin/123 - change password after first login.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -29,21 +29,6 @@ data:
           "initScore": 2000,
           "enableSoftDeletion": false,
           "isProfilePublic": false
-        }
-      ],
-      "users": [
-        {
-          "owner": "built-in",
-          "name": "ADMIN_USER_PLACEHOLDER",
-          "type": "normal-user",
-          "password": "ADMIN_PASSWORD_PLACEHOLDER",
-          "displayName": "Admin",
-          "email": "ADMIN_EMAIL_PLACEHOLDER",
-          "isAdmin": true,
-          "isForbidden": false,
-          "isDeleted": false,
-          "signupApplication": "app-built-in",
-          "createdTime": "2026-01-22T00:00:00Z"
         }
       ],
       "applications": [

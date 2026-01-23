@@ -51,39 +51,6 @@ spec:
                 sleep 2
               done
               echo "Redis is ready"
-        # Substitute secrets into init_data.json
-        - name: prepare-init-data
-          image: busybox:1.36
-          command:
-            - sh
-            - -c
-            - |
-              cp /config/init_data.json /init/init_data.json
-              sed -i "s/ADMIN_USER_PLACEHOLDER/$ADMIN_USER/g" /init/init_data.json
-              sed -i "s/ADMIN_PASSWORD_PLACEHOLDER/$ADMIN_PASSWORD/g" /init/init_data.json
-              sed -i "s/ADMIN_EMAIL_PLACEHOLDER/$ADMIN_EMAIL/g" /init/init_data.json
-              echo "Init data prepared"
-          env:
-            - name: ADMIN_USER
-              valueFrom:
-                secretKeyRef:
-                  name: casdoor-secrets
-                  key: ADMIN_USER
-            - name: ADMIN_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: casdoor-secrets
-                  key: ADMIN_PASSWORD
-            - name: ADMIN_EMAIL
-              valueFrom:
-                secretKeyRef:
-                  name: casdoor-secrets
-                  key: ADMIN_EMAIL
-          volumeMounts:
-            - name: init-config
-              mountPath: /config
-            - name: init-data
-              mountPath: /init
       containers:
         - name: casdoor
           image: casbin/casdoor:2.257.0 # {"$imagepolicy": "flux-system:casdoor"}
@@ -120,10 +87,10 @@ spec:
               value: "http://auth.${DOMAIN_PRIMARY}"
             # Init data
             - name: initDataFile
-              value: "/init/init_data.json"
+              value: "/config/init_data.json"
           volumeMounts:
-            - name: init-data
-              mountPath: /init
+            - name: init-config
+              mountPath: /config
           startupProbe:
             httpGet:
               path: /
@@ -151,5 +118,3 @@ spec:
         - name: init-config
           configMap:
             name: casdoor-init-data
-        - name: init-data
-          emptyDir: {}
