@@ -12,10 +12,10 @@ metadata:
 spec:
   tls:
     - hosts:
-        - logto.home-infra.net
+        - auth.home-infra.net
       secretName: wildcard-home-infra-net-tls
   rules:
-    - host: logto.home-infra.net
+    - host: auth.home-infra.net
       http:
         paths:
           - path: /

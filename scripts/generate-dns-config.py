@@ -50,7 +50,7 @@ NAME_MAPPINGS = {
     "IMMICH": "photos",
     "COMFYUI": "comfy",
     "COPYPARTY": "files",
-    "CASDOOR": "auth",
+    "LOGTO": "auth",
 }
 
 # Services that need multiple domain suffixes
