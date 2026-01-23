@@ -94,8 +94,7 @@ infra/
 | Weave GitOps | 10.10.2.16 | FluxCD UI |
 | MinIO Console | 10.10.2.17 | Velero S3 storage |
 | Logto | 10.10.2.18 | SSO/IAM |
-| Open WebUI | 10.10.2.19 | LLM interface |
-| Ollama | 10.10.2.20 | LLM API |
+| Ingress | 10.10.2.20 | HTTPS termination |
 | Homepage | 10.10.2.21 | Dashboard |
 | Immich | 10.10.2.22 | Photo backup |
 | Grafana | 10.10.2.23 | Monitoring dashboards |
@@ -103,7 +102,6 @@ infra/
 | Home Assistant | 10.10.2.25 | Smart home |
 | n8n | 10.10.2.26 | Workflow automation |
 | Obico | 10.10.2.27 | 3D printer monitoring |
-| ComfyUI | 10.10.2.28 | Image generation (node-based) |
 | Attic | 10.10.2.29 | Nix binary cache |
 | Emby | 10.10.2.30 | Media server |
 | Navidrome | 10.10.2.31 | Music server |
@@ -119,8 +117,11 @@ infra/
 | Radarr | 10.10.2.43 | Movies |
 | Sonarr | 10.10.2.44 | TV |
 | Bazarr | 10.10.2.45 | Subtitles |
+| Ollama | 10.10.2.50 | LLM API |
+| Open WebUI | 10.10.2.51 | LLM interface |
+| ComfyUI | 10.10.2.52 | Image generation (node-based) |
 
-**Domains**: home-infra.net, home.arpa (ControlD), .local (mDNS), reynoza.org (Pangolin VPS)
+**Domains**: home-infra.net, reynoza.org, wdiaz.org, unix.red (all Cloudflare → VPS), home.arpa (ControlD), .local (mDNS)
 
 ## Talos Implementation
 

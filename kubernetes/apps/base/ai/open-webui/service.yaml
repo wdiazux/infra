@@ -1,6 +1,6 @@
 # Open WebUI LoadBalancer Service
 #
-# Exposes Open WebUI on 10.10.2.19:80
+# Exposes Open WebUI on 10.10.2.51:80
 apiVersion: v1
 kind: Service
 metadata:

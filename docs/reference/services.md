@@ -25,9 +25,9 @@ Services for AI/ML workloads with GPU acceleration.
 | ComfyUI | `yanwk/comfyui-boot:cu128-slim` | cu128-slim | :white_check_mark: Current |
 
 **Access:**
-- Ollama: http://10.10.2.20:11434
-- Open WebUI: http://10.10.2.19
-- ComfyUI: http://10.10.2.28
+- Ollama: http://10.10.2.50:11434
+- Open WebUI: http://10.10.2.51
+- ComfyUI: http://10.10.2.52
 
 ---
 

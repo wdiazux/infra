@@ -16,3 +16,9 @@ resources:
   - webhook-receiver-lb.yaml
   # NVIDIA GPU time-slicing configuration (shares GPU across 4 pods)
   - nvidia-time-slicing.yaml
+  # cert-manager ClusterIssuers (Let's Encrypt staging and production)
+  - cluster-issuers.yaml
+  # Wildcard TLS certificates for all domains
+  - wildcard-certificates.yaml
+  # Weave GitOps Ingress (FluxCD UI)
+  - weave-gitops-ingress.yaml

@@ -106,3 +106,14 @@ variable "fluxcd_webhook_ip" {
     error_message = "fluxcd_webhook_ip must be a valid IPv4 address."
   }
 }
+
+variable "ingress_controller_ip" {
+  description = "LoadBalancer IP for Cilium Ingress Controller"
+  type        = string
+  default     = "10.10.2.20"
+
+  validation {
+    condition     = can(regex("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$", var.ingress_controller_ip))
+    error_message = "ingress_controller_ip must be a valid IPv4 address."
+  }
+}

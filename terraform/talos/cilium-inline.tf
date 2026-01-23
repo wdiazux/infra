@@ -204,6 +204,19 @@ data "helm_template" "cilium" {
         maxUnavailable = 1
       }
     }
+
+    # Ingress Controller
+    ingressController = {
+      enabled          = true
+      default          = true
+      loadbalancerMode = "shared"
+      service = {
+        type = "LoadBalancer"
+        annotations = {
+          "io.cilium/lb-ipam-ips" = var.ingress_controller_ip
+        }
+      }
+    }
   })]
 }
 

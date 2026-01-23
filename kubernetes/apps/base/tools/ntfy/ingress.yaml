@@ -1,0 +1,27 @@
+# ntfy Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ntfy
+  namespace: tools
+  labels:
+    app.kubernetes.io/name: ntfy
+  annotations:
+    kubernetes.io/ingress.class: cilium
+spec:
+  tls:
+    - hosts:
+        - ntfy.home-infra.net
+      secretName: wildcard-home-infra-net-tls
+  rules:
+    - host: ntfy.home-infra.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ntfy
+                port:
+                  number: 80

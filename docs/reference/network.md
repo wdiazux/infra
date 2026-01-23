@@ -49,8 +49,8 @@ LoadBalancer IPs assigned to core Kubernetes services.
 | 10.10.2.15 | FluxCD Webhook | 80 | flux-system |
 | 10.10.2.16 | Weave GitOps | 80 | flux-system |
 | 10.10.2.17 | MinIO Console | 80 | backup |
-| 10.10.2.19 | Open WebUI | 80 | ai |
-| 10.10.2.20 | Ollama | 11434 | ai |
+| 10.10.2.18 | Logto | 80 | auth |
+| 10.10.2.20 | Ingress | 443 | ingress |
 
 ---
 
@@ -65,7 +65,6 @@ LoadBalancer IPs assigned to core Kubernetes services.
 | 10.10.2.25 | Home Assistant | 80 | automation |
 | 10.10.2.26 | n8n | 80 | automation |
 | 10.10.2.27 | Obico | 80 | printing |
-| 10.10.2.28 | ComfyUI | 80 | ai |
 | 10.10.2.29 | Attic | 80 | tools |
 | 10.10.2.30 | Emby | 80 | media |
 | 10.10.2.31 | Navidrome | 80 | media |
@@ -79,6 +78,9 @@ LoadBalancer IPs assigned to core Kubernetes services.
 | 10.10.2.43 | Radarr | 80 | arr-stack |
 | 10.10.2.44 | Sonarr | 80 | arr-stack |
 | 10.10.2.45 | Bazarr | 80 | arr-stack |
+| 10.10.2.50 | Ollama | 11434 | ai |
+| 10.10.2.51 | Open WebUI | 80 | ai |
+| 10.10.2.52 | ComfyUI | 80 | ai |
 
 ---
 
@@ -123,8 +125,8 @@ spec:
 | Forgejo SSH | ssh://git@10.10.2.14 | SSH Key |
 | Weave GitOps | http://10.10.2.16 | Username/Password |
 | MinIO Console | http://10.10.2.17 | Username/Password |
-| Open WebUI | http://10.10.2.19 | Username/Password |
-| Ollama | http://10.10.2.20:11434 | None |
+| Logto | http://10.10.2.18 | Username/Password |
+| Ingress | https://10.10.2.20 | TLS Termination |
 | Homepage | http://10.10.2.21 | None |
 | Immich | http://10.10.2.22 | Username/Password |
 | Grafana | http://10.10.2.23 | Username/Password |
@@ -132,7 +134,6 @@ spec:
 | Home Assistant | http://10.10.2.25 | Username/Password |
 | n8n | http://10.10.2.26 | Username/Password |
 | Obico | http://10.10.2.27 | Username/Password |
-| ComfyUI | http://10.10.2.28 | None (API auth optional) |
 | Attic | http://10.10.2.29 | Token |
 | Emby | http://10.10.2.30 | Username/Password |
 | Navidrome | http://10.10.2.31 | Username/Password |
@@ -146,6 +147,9 @@ spec:
 | Radarr | http://10.10.2.43 | Username/Password |
 | Sonarr | http://10.10.2.44 | Username/Password |
 | Bazarr | http://10.10.2.45 | Username/Password |
+| Ollama | http://10.10.2.50:11434 | None |
+| Open WebUI | http://10.10.2.51 | Username/Password |
+| ComfyUI | http://10.10.2.52 | None (API auth optional) |
 
 ---
 
@@ -163,8 +167,8 @@ Configure in your DNS server or `/etc/hosts`:
 10.10.2.13   git.home-infra.net
 10.10.2.16   gitops.home-infra.net
 10.10.2.17   minio.home-infra.net
-10.10.2.19   chat.home-infra.net
-10.10.2.20   ollama.home-infra.net
+10.10.2.18   auth.home-infra.net
+10.10.2.20   ingress.home-infra.net
 10.10.2.21   home.home-infra.net
 10.10.2.22   photos.home-infra.net photos.reynoza.org
 10.10.2.23   grafana.home-infra.net
@@ -172,7 +176,6 @@ Configure in your DNS server or `/etc/hosts`:
 10.10.2.25   hass.home-infra.net
 10.10.2.26   n8n.home-infra.net
 10.10.2.27   obico.home-infra.net
-10.10.2.28   comfy.home-infra.net comfy.home.arpa
 10.10.2.29   attic.home-infra.net
 10.10.2.30   emby.home-infra.net
 10.10.2.31   music.home-infra.net
@@ -186,6 +189,9 @@ Configure in your DNS server or `/etc/hosts`:
 10.10.2.43   radarr.home-infra.net
 10.10.2.44   sonarr.home-infra.net
 10.10.2.45   bazarr.home-infra.net
+10.10.2.50   ollama.home-infra.net
+10.10.2.51   chat.home-infra.net
+10.10.2.52   comfy.home-infra.net comfy.home.arpa
 ```
 
 ---
@@ -210,8 +216,9 @@ curl -s http://10.10.2.32  # IT-Tools
 curl -s http://10.10.2.34  # Wallos
 
 # AI services
-curl -s http://10.10.2.19  # Open WebUI
-curl -s http://10.10.2.28  # ComfyUI
+curl -s http://10.10.2.50:11434  # Ollama
+curl -s http://10.10.2.51  # Open WebUI
+curl -s http://10.10.2.52  # ComfyUI
 
 # Media services
 curl -s http://10.10.2.30  # Emby
@@ -322,17 +329,53 @@ Format: `<service>.<namespace>.svc.cluster.local`
 
 ---
 
+## Domain Management
+
+### Cloudflare Domains
+
+All external domains are registered and managed in Cloudflare, pointing to the Pangolin VPS.
+
+| Domain | Registrar | DNS Provider | Points To | Purpose |
+|--------|-----------|--------------|-----------|---------|
+| `home-infra.net` | Cloudflare | Cloudflare | VPS (207.246.115.3) | Primary homelab domain |
+| `reynoza.org` | Cloudflare | Cloudflare | VPS (207.246.115.3) | Family/personal services |
+| `wdiaz.org` | Cloudflare | Cloudflare | VPS (207.246.115.3) | Personal domain |
+| `unix.red` | Cloudflare | Cloudflare | VPS (207.246.115.3) | Tech/projects domain |
+
+### Domain Resolution Strategy
+
+| Domain | Purpose | Resolution Method |
+|--------|---------|-------------------|
+| `.home.arpa` | Internal only | ControlD (home) / Pangolin VPN (remote) |
+| `home-infra.net` | Homelab services | ControlD (home) / Cloudflare → Pangolin (external) |
+| `reynoza.org` | External services | Cloudflare → Pangolin |
+| `wdiaz.org` | External services | Cloudflare → Pangolin |
+| `unix.red` | External services | Cloudflare → Pangolin |
+| `.local` | mDNS | Router/mDNS |
+
+### Traffic Flow
+
+```
+External Request (e.g., photos.reynoza.org)
+         │
+         ▼
+    Cloudflare DNS
+         │ (resolves to VPS IP)
+         ▼
+  Pangolin VPS (207.246.115.3)
+         │ (WireGuard tunnel)
+         ▼
+    Talos Homelab
+         │
+         ▼
+  Kubernetes Service
+```
+
+---
+
 ## External Access via Pangolin
 
 Services can be exposed externally via Pangolin tunneling (no port forwarding required).
-
-### Domain Strategy
-
-| Domain | Purpose | Resolution |
-|--------|---------|------------|
-| `.home.arpa` | Internal only | ControlD (home) / Pangolin VPN (remote) |
-| `home-infra.net` | Exposed services | ControlD (home) / Pangolin (remote) |
-| `reynoza.org` | Public domains | Pangolin only |
 
 ### Exposed Services
 
@@ -366,4 +409,4 @@ When adding resources in Pangolin, use either:
 
 ---
 
-**Last Updated:** 2026-01-21
+**Last Updated:** 2026-01-23

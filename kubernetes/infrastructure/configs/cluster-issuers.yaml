@@ -1,0 +1,45 @@
+# ClusterIssuers for Let's Encrypt
+#
+# Uses Cloudflare DNS-01 challenge for wildcard certificate support.
+# Two issuers: staging (for testing) and production.
+#
+# Usage in Certificate:
+#   issuerRef:
+#     name: letsencrypt-production
+#     kind: ClusterIssuer
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+spec:
+  acme:
+    # Staging server (use for testing to avoid rate limits)
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    email: wdiaz@reynoza.org
+    privateKeySecretRef:
+      name: letsencrypt-staging-account-key
+    solvers:
+      - dns01:
+          cloudflare:
+            apiTokenSecretRef:
+              name: cloudflare-api-token
+              key: api-token
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-production
+spec:
+  acme:
+    # Production server
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: wdiaz@reynoza.org
+    privateKeySecretRef:
+      name: letsencrypt-production-account-key
+    solvers:
+      - dns01:
+          cloudflare:
+            apiTokenSecretRef:
+              name: cloudflare-api-token
+              key: api-token

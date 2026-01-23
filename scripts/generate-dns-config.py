@@ -27,6 +27,16 @@ except ImportError:
     sys.exit(1)
 
 
+# Ingress Controller IP for HTTPS access
+# Services with Ingress resources route their external domains (home-infra.net, reynoza.org)
+# through this IP for TLS termination
+INGRESS_IP = "10.10.2.20"
+
+# Domain suffixes that should route through Ingress (HTTPS)
+# These will resolve to INGRESS_IP instead of the service's LoadBalancer IP
+INGRESS_SUFFIXES = {"home-infra.net", "reynoza.org"}
+
+
 # Name mappings: IP variable suffix -> DNS short name
 # Used when the variable name doesn't match the desired DNS name
 NAME_MAPPINGS = {
@@ -124,10 +134,10 @@ CATEGORY_ORDER = [
 def get_category(ip: str) -> str:
     """Determine category based on IP address."""
     last_octet = int(ip.split(".")[-1])
-    # Check AI range first (subset of infrastructure range)
-    if last_octet in (19, 20, 28):  # AI services
+    # Check AI range (50-59)
+    if 50 <= last_octet <= 59:  # AI services
         return "ai"
-    elif 11 <= last_octet <= 17:  # Infrastructure (excluding AI IPs)
+    elif 11 <= last_octet <= 20:  # Infrastructure (includes Ingress at .20)
         return "infrastructure"
     elif 40 <= last_octet <= 49:
         return "arr-stack"

@@ -168,3 +168,13 @@ variable "enable_pangolin" {
   type        = bool
   default     = true
 }
+
+# ============================================================================
+# cert-manager Configuration
+# ============================================================================
+
+variable "enable_cert_manager" {
+  description = "Enable cert-manager namespace and Cloudflare API token secret (requires secrets/cloudflare-api-token.enc.yaml)"
+  type        = bool
+  default     = true
+}

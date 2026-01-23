@@ -1,0 +1,230 @@
+# Wildcard Certificates for Local HTTPS Access
+#
+# These certificates are requested from Let's Encrypt using DNS-01 challenge.
+# cert-manager will automatically renew them before expiry (30 days).
+#
+# Certificates are created in each namespace where Ingress resources need them
+# because Kubernetes Secrets are namespace-scoped.
+#
+# ClusterIssuer: letsencrypt-production (defined in cluster-issuers.yaml)
+---
+# Media namespace: Immich, Emby, Navidrome
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wildcard-home-infra-net
+  namespace: media
+spec:
+  secretName: wildcard-home-infra-net-tls
+  issuerRef:
+    name: letsencrypt-production
+    kind: ClusterIssuer
+  commonName: "*.home-infra.net"
+  dnsNames:
+    - "home-infra.net"
+    - "*.home-infra.net"
+  renewBefore: 720h
+---
+# Media namespace also needs reynoza.org for Immich (photos.reynoza.org)
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wildcard-reynoza-org
+  namespace: media
+spec:
+  secretName: wildcard-reynoza-org-tls
+  issuerRef:
+    name: letsencrypt-production
+    kind: ClusterIssuer
+  commonName: "*.reynoza.org"
+  dnsNames:
+    - "reynoza.org"
+    - "*.reynoza.org"
+  renewBefore: 720h
+---
+# Tools namespace: Homepage, IT-Tools, Attic, ntfy, Affine, Copyparty
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wildcard-home-infra-net
+  namespace: tools
+spec:
+  secretName: wildcard-home-infra-net-tls
+  issuerRef:
+    name: letsencrypt-production
+    kind: ClusterIssuer
+  commonName: "*.home-infra.net"
+  dnsNames:
+    - "home-infra.net"
+    - "*.home-infra.net"
+  renewBefore: 720h
+---
+# Monitoring namespace: Grafana, VictoriaMetrics
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wildcard-home-infra-net
+  namespace: monitoring
+spec:
+  secretName: wildcard-home-infra-net-tls
+  issuerRef:
+    name: letsencrypt-production
+    kind: ClusterIssuer
+  commonName: "*.home-infra.net"
+  dnsNames:
+    - "home-infra.net"
+    - "*.home-infra.net"
+  renewBefore: 720h
+---
+# Automation namespace: Home Assistant, n8n
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wildcard-home-infra-net
+  namespace: automation
+spec:
+  secretName: wildcard-home-infra-net-tls
+  issuerRef:
+    name: letsencrypt-production
+    kind: ClusterIssuer
+  commonName: "*.home-infra.net"
+  dnsNames:
+    - "home-infra.net"
+    - "*.home-infra.net"
+  renewBefore: 720h
+---
+# AI namespace: Open WebUI, ComfyUI
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wildcard-home-infra-net
+  namespace: ai
+spec:
+  secretName: wildcard-home-infra-net-tls
+  issuerRef:
+    name: letsencrypt-production
+    kind: ClusterIssuer
+  commonName: "*.home-infra.net"
+  dnsNames:
+    - "home-infra.net"
+    - "*.home-infra.net"
+  renewBefore: 720h
+---
+# Management namespace: Wallos, Paperless-ngx
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wildcard-home-infra-net
+  namespace: management
+spec:
+  secretName: wildcard-home-infra-net-tls
+  issuerRef:
+    name: letsencrypt-production
+    kind: ClusterIssuer
+  commonName: "*.home-infra.net"
+  dnsNames:
+    - "home-infra.net"
+    - "*.home-infra.net"
+  renewBefore: 720h
+---
+# Arr-stack namespace: SABnzbd, qBittorrent, Prowlarr, Radarr, Sonarr, Bazarr
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wildcard-home-infra-net
+  namespace: arr-stack
+spec:
+  secretName: wildcard-home-infra-net-tls
+  issuerRef:
+    name: letsencrypt-production
+    kind: ClusterIssuer
+  commonName: "*.home-infra.net"
+  dnsNames:
+    - "home-infra.net"
+    - "*.home-infra.net"
+  renewBefore: 720h
+---
+# Backup namespace: MinIO Console
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wildcard-home-infra-net
+  namespace: backup
+spec:
+  secretName: wildcard-home-infra-net-tls
+  issuerRef:
+    name: letsencrypt-production
+    kind: ClusterIssuer
+  commonName: "*.home-infra.net"
+  dnsNames:
+    - "home-infra.net"
+    - "*.home-infra.net"
+  renewBefore: 720h
+---
+# Forgejo namespace: Git server
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wildcard-home-infra-net
+  namespace: forgejo
+spec:
+  secretName: wildcard-home-infra-net-tls
+  issuerRef:
+    name: letsencrypt-production
+    kind: ClusterIssuer
+  commonName: "*.home-infra.net"
+  dnsNames:
+    - "home-infra.net"
+    - "*.home-infra.net"
+  renewBefore: 720h
+---
+# Auth namespace: Logto SSO
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wildcard-home-infra-net
+  namespace: auth
+spec:
+  secretName: wildcard-home-infra-net-tls
+  issuerRef:
+    name: letsencrypt-production
+    kind: ClusterIssuer
+  commonName: "*.home-infra.net"
+  dnsNames:
+    - "home-infra.net"
+    - "*.home-infra.net"
+  renewBefore: 720h
+---
+# Flux-system namespace: Weave GitOps
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wildcard-home-infra-net
+  namespace: flux-system
+spec:
+  secretName: wildcard-home-infra-net-tls
+  issuerRef:
+    name: letsencrypt-production
+    kind: ClusterIssuer
+  commonName: "*.home-infra.net"
+  dnsNames:
+    - "home-infra.net"
+    - "*.home-infra.net"
+  renewBefore: 720h
+---
+# Printing namespace: Obico
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wildcard-home-infra-net
+  namespace: printing
+spec:
+  secretName: wildcard-home-infra-net-tls
+  issuerRef:
+    name: letsencrypt-production
+    kind: ClusterIssuer
+  commonName: "*.home-infra.net"
+  dnsNames:
+    - "home-infra.net"
+    - "*.home-infra.net"
+  renewBefore: 720h

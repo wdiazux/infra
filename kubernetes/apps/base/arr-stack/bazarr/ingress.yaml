@@ -1,0 +1,27 @@
+# Bazarr Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: bazarr
+  namespace: arr-stack
+  labels:
+    app.kubernetes.io/name: bazarr
+  annotations:
+    kubernetes.io/ingress.class: cilium
+spec:
+  tls:
+    - hosts:
+        - bazarr.home-infra.net
+      secretName: wildcard-home-infra-net-tls
+  rules:
+    - host: bazarr.home-infra.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: bazarr
+                port:
+                  number: 80

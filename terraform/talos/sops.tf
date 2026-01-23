@@ -25,6 +25,12 @@ data "sops_file" "pangolin_secrets" {
   source_file = "${path.module}/../../secrets/pangolin-creds.enc.yaml"
 }
 
+# Load SOPS-encrypted Cloudflare credentials (for cert-manager DNS-01 challenge)
+data "sops_file" "cloudflare_secrets" {
+  count       = var.enable_cert_manager ? 1 : 0
+  source_file = "${path.module}/../../secrets/cloudflare-api-token.enc.yaml"
+}
+
 locals {
   # SOPS-decrypted secrets
   secrets = {

@@ -28,3 +28,5 @@ resources:
   - snapshot-controller.yaml
   # Backup and Disaster Recovery (requires Longhorn for CSI snapshots)
   - velero.yaml
+  # TLS certificate management (Let's Encrypt via Cloudflare DNS-01)
+  - cert-manager.yaml

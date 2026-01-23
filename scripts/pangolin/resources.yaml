@@ -25,6 +25,12 @@ resources:
   - name: minio
     destination: 10.10.2.17
 
+  - name: auth
+    destination: 10.10.2.18
+
+  - name: ingress
+    destination: 10.10.2.20
+
   - name: proxmox
     destination: 10.10.2.2
 
@@ -34,21 +40,18 @@ resources:
   # ==========================================================================
   # Ai
   # ==========================================================================
-  - name: chat
-    destination: 10.10.2.19
-
   - name: ollama
-    destination: 10.10.2.20
+    destination: 10.10.2.50
+
+  - name: chat
+    destination: 10.10.2.51
 
   - name: comfy
-    destination: 10.10.2.28
+    destination: 10.10.2.52
 
   # ==========================================================================
   # Applications
   # ==========================================================================
-  - name: auth
-    destination: 10.10.2.18
-
   - name: home
     destination: 10.10.2.21
 

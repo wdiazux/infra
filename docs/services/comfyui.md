@@ -4,7 +4,7 @@ Node-based Stable Diffusion image generation interface.
 
 **Image**: `yanwk/comfyui-boot:cu128-slim`
 **Namespace**: `ai`
-**IP**: `10.10.2.28`
+**IP**: `10.10.2.52`
 
 ## Environment Variables
 

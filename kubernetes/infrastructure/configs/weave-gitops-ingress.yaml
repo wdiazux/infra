@@ -1,0 +1,27 @@
+# Weave GitOps Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: weave-gitops
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/name: weave-gitops
+  annotations:
+    kubernetes.io/ingress.class: cilium
+spec:
+  tls:
+    - hosts:
+        - gitops.home-infra.net
+      secretName: wildcard-home-infra-net-tls
+  rules:
+    - host: gitops.home-infra.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: weave-gitops-lb
+                port:
+                  number: 80

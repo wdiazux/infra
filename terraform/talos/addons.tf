@@ -245,6 +245,52 @@ EOF
 }
 
 # ============================================================================
+# cert-manager Namespace and Secrets
+# ============================================================================
+#
+# Creates the cert-manager namespace and Cloudflare API token secret.
+# cert-manager itself is deployed via FluxCD, but the namespace and secret
+# must exist before FluxCD can deploy cert-manager with the ClusterIssuer.
+
+# cert-manager namespace
+resource "kubernetes_namespace" "cert_manager" {
+  count = var.auto_bootstrap && var.enable_cert_manager ? 1 : 0
+
+  metadata {
+    name = "cert-manager"
+
+    labels = {
+      "app.kubernetes.io/name" = "cert-manager"
+    }
+  }
+
+  depends_on = [
+    null_resource.remove_control_plane_taint
+  ]
+}
+
+# Cloudflare API Token Secret for cert-manager
+# Used by ClusterIssuer for DNS-01 challenge (wildcard certificates)
+resource "kubernetes_secret" "cloudflare_api_token" {
+  count = var.auto_bootstrap && var.enable_cert_manager ? 1 : 0
+
+  metadata {
+    name      = "cloudflare-api-token"
+    namespace = kubernetes_namespace.cert_manager[0].metadata[0].name
+  }
+
+  data = {
+    "api-token" = data.sops_file.cloudflare_secrets[0].data["cloudflare_api_token"]
+  }
+
+  type = "Opaque"
+
+  depends_on = [
+    kubernetes_namespace.cert_manager
+  ]
+}
+
+# ============================================================================
 # Notes
 # ============================================================================
 #
@@ -253,16 +299,18 @@ EOF
 # 2. Remove control-plane taint (single-node)
 # 3. Create Longhorn namespace with privileged PSS
 # 4. Label node for Longhorn disk creation
-# 5. Cilium CNI ready (via inlineManifest) - node becomes Ready
-# 6. Install Longhorn storage (via Helm)
-# 7. Create nvidia RuntimeClass
-# 8. Install NVIDIA device plugin DaemonSet
+# 5. Create cert-manager namespace and Cloudflare secret
+# 6. Cilium CNI ready (via inlineManifest) - node becomes Ready
+# 7. Install Longhorn storage (via Helm)
+# 8. Create nvidia RuntimeClass
+# 9. Install NVIDIA device plugin DaemonSet
 #
 # Verification:
 # - kubectl get nodes (should be Ready)
 # - kubectl get pods -n kube-system -l k8s-app=cilium
 # - kubectl get pods -n longhorn-system
 # - kubectl get ciliumloadbalancerippools
+# - kubectl get secret cloudflare-api-token -n cert-manager
 #
 # GPU Verification:
 # - kubectl describe node | grep nvidia.com/gpu

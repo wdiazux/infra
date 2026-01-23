@@ -1,0 +1,10 @@
+# cert-manager Namespace
+#
+# Namespace for certificate management components.
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cert-manager
+  labels:
+    app.kubernetes.io/name: cert-manager

@@ -4,7 +4,7 @@ Local LLM inference server.
 
 **Image**: `ollama/ollama:0.14.2`
 **Namespace**: `ai`
-**IP**: `10.10.2.20`
+**IP**: `10.10.2.50`
 
 ## Environment Variables
 

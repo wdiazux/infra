@@ -6,9 +6,9 @@ AI/ML services with GPU time-slicing support.
 
 | Service | IP | Port | Purpose |
 |---------|-----|------|---------|
-| Ollama | 10.10.2.20 | 11434 | LLM inference API |
-| Open WebUI | 10.10.2.25 | 80 | LLM chat interface |
-| ComfyUI | 10.10.2.26 | 80 | Node-based image generation |
+| Ollama | 10.10.2.50 | 11434 | LLM inference API |
+| Open WebUI | 10.10.2.51 | 80 | LLM chat interface |
+| ComfyUI | 10.10.2.52 | 80 | Node-based image generation |
 
 ## GPU Configuration
 
@@ -132,9 +132,9 @@ kubectl rollout restart -n ai deploy/comfyui
 
 | Service | Access |
 |---------|--------|
-| Ollama | http://10.10.2.25 (via Open WebUI) |
-| ComfyUI | http://10.10.2.26 |
-| ComfyUI API | http://10.10.2.26/api |
+| Ollama | http://10.10.2.51 (via Open WebUI) |
+| ComfyUI | http://10.10.2.52 |
+| ComfyUI API | http://10.10.2.52/api |
 
 ### ComfyUI API Usage
 
@@ -142,20 +142,20 @@ ComfyUI has a powerful API for programmatic image generation:
 
 ```bash
 # Queue a workflow
-curl -X POST http://10.10.2.26/prompt \
+curl -X POST http://10.10.2.52/prompt \
   -H "Content-Type: application/json" \
   -d '{"prompt": {...workflow json...}}'
 
 # Get queue status
-curl http://10.10.2.26/queue
+curl http://10.10.2.52/queue
 
 # Get history
-curl http://10.10.2.26/history
+curl http://10.10.2.52/history
 ```
 
 ## Accessing Ollama
 
-Ollama is exposed via LoadBalancer at `http://10.10.2.20:11434`.
+Ollama is exposed via LoadBalancer at `http://10.10.2.50:11434`.
 
 **Note:** Ollama has no built-in authentication. Only expose on trusted networks.
 
@@ -163,22 +163,22 @@ Ollama is exposed via LoadBalancer at `http://10.10.2.20:11434`.
 
 #### opencode / Continue / Other Tools
 
-Set Ollama URL to: `http://10.10.2.20:11434`
+Set Ollama URL to: `http://10.10.2.50:11434`
 
 #### Command Line (curl)
 
 ```bash
 # List models
-curl http://10.10.2.20:11434/api/tags
+curl http://10.10.2.50:11434/api/tags
 
 # Generate completion
-curl http://10.10.2.20:11434/api/generate -d '{
+curl http://10.10.2.50:11434/api/generate -d '{
   "model": "llama3.2",
   "prompt": "Hello, world!"
 }'
 
 # Chat
-curl http://10.10.2.20:11434/api/chat -d '{
+curl http://10.10.2.50:11434/api/chat -d '{
   "model": "llama3.2",
   "messages": [{"role": "user", "content": "Hello!"}]
 }'
@@ -190,7 +190,7 @@ curl http://10.10.2.20:11434/api/chat -d '{
 import ollama
 from ollama import Client
 
-client = Client(host='http://10.10.2.20:11434')
+client = Client(host='http://10.10.2.50:11434')
 response = client.chat(model='llama3.2', messages=[
     {'role': 'user', 'content': 'Hello!'}
 ])
@@ -200,7 +200,7 @@ print(response['message']['content'])
 #### Environment Variable
 
 ```bash
-export OLLAMA_HOST=http://10.10.2.20:11434
+export OLLAMA_HOST=http://10.10.2.50:11434
 ```
 
 ## ComfyUI vs AUTOMATIC1111

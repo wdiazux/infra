@@ -6,7 +6,7 @@ Disaster recovery and backup infrastructure for the Kubernetes cluster.
 
 | Service | Purpose | Access |
 |---------|---------|--------|
-| MinIO | S3-compatible storage backend | Console: 10.10.2.28:9001 |
+| MinIO | S3-compatible storage backend | Console: 10.10.2.17:9001 |
 | Velero | Kubernetes backup/restore | CLI: `velero` command |
 
 ## Architecture

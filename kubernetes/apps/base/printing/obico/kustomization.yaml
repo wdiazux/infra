@@ -21,4 +21,5 @@ resources:
   - ml-api-deployment.yaml
   - server-deployment.yaml
   - services.yaml
+  - ingress.yaml
   - secret.enc.yaml

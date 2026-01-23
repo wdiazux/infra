@@ -12,3 +12,4 @@ resources:
   - server-deployment.yaml
   - services.yaml
   - pvc.yaml
+  - ingress.yaml

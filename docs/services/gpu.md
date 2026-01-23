@@ -175,14 +175,14 @@ spec:
 kubectl create namespace ai
 kubectl apply -f ollama.yaml
 
-# Check LoadBalancer IP (should be 10.10.2.20)
+# Check LoadBalancer IP (should be 10.10.2.50)
 kubectl get svc ollama -n ai
 
 # Pull a model
-curl http://10.10.2.20:11434/api/pull -d '{"name": "llama3.2"}'
+curl http://10.10.2.50:11434/api/pull -d '{"name": "llama3.2"}'
 
 # Generate text
-curl http://10.10.2.20:11434/api/generate -d '{
+curl http://10.10.2.50:11434/api/generate -d '{
   "model": "llama3.2",
   "prompt": "Why is the sky blue?"
 }'
@@ -322,9 +322,9 @@ Current services using GPU acceleration:
 
 | Service | Namespace | IP | GPU Usage | Purpose |
 |---------|-----------|-----|-----------|---------|
-| Ollama | ai | 10.10.2.20 | Full GPU | LLM inference (primary) |
-| Open WebUI | ai | 10.10.2.19 | None | Chat interface for Ollama |
-| ComfyUI | ai | 10.10.2.28 | Full GPU | Node-based image generation |
+| Ollama | ai | 10.10.2.50 | Full GPU | LLM inference (primary) |
+| Open WebUI | ai | 10.10.2.51 | None | Chat interface for Ollama |
+| ComfyUI | ai | 10.10.2.52 | Full GPU | Node-based image generation |
 | Immich ML | media | Internal | CUDA | Photo/video ML processing |
 | Obico | printing | 10.10.2.27 | CUDA | 3D printer failure detection |
 | Emby | media | 10.10.2.30 | NVENC/NVDEC | Hardware transcoding |
@@ -333,27 +333,27 @@ Current services using GPU acceleration:
 
 ### Ollama LoadBalancer
 
-Ollama is exposed via LoadBalancer at **10.10.2.20:11434** for direct API access:
+Ollama is exposed via LoadBalancer at **10.10.2.50:11434** for direct API access:
 
 ```bash
 # Pull a model
-curl http://10.10.2.20:11434/api/pull -d '{"name": "llama3.2"}'
+curl http://10.10.2.50:11434/api/pull -d '{"name": "llama3.2"}'
 
 # Generate text
-curl http://10.10.2.20:11434/api/generate -d '{
+curl http://10.10.2.50:11434/api/generate -d '{
   "model": "llama3.2",
   "prompt": "Why is the sky blue?"
 }'
 
 # Chat completion (OpenAI compatible)
-curl http://10.10.2.20:11434/v1/chat/completions \
+curl http://10.10.2.50:11434/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{"model": "llama3.2", "messages": [{"role": "user", "content": "Hello"}]}'
 ```
 
 ### ComfyUI
 
-Node-based image generation interface at **http://10.10.2.28**:
+Node-based image generation interface at **http://10.10.2.52**:
 - Uses CUDA 12.8 with Python 3.12
 - Model storage on NFS for persistence
 - Syncthing integration for workflow sharing

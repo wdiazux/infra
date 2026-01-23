@@ -115,7 +115,7 @@ Historical research with 90+ official sources:
 | FluxCD Webhook | http://10.10.2.15 |
 | Weave GitOps | http://10.10.2.16 |
 | MinIO Console | http://10.10.2.17 |
-| Open WebUI | http://10.10.2.19 |
+| Ingress | https://10.10.2.20 |
 | Homepage | http://10.10.2.21 |
 | Immich | http://10.10.2.22 |
 | Grafana | http://10.10.2.23 |

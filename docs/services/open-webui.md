@@ -4,7 +4,7 @@ User-friendly AI interface supporting Ollama and OpenAI API.
 
 **Image**: `ghcr.io/open-webui/open-webui:v0.7.2`
 **Namespace**: `ai`
-**IP**: `10.10.2.19`
+**IP**: `10.10.2.51`
 
 ## Environment Variables
 

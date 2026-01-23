@@ -13,3 +13,4 @@ resources:
   - ml-deployment.yaml
   - services.yaml
   - pvc.yaml
+  - ingress.yaml

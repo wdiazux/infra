@@ -10,3 +10,4 @@ resources:
   - postgres-statefulset.yaml
   - server-deployment.yaml
   - services.yaml
+  - ingress.yaml
