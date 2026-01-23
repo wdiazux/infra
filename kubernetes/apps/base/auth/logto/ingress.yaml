@@ -1,11 +1,10 @@
 # Logto Ingress
 #
-# Two subdomains for proper tenant separation:
-# - auth.home-infra.net → Experience/OIDC (port 3001) - end-user authentication
-# - logto.home-infra.net → Admin Console/Management API (port 3002) - admin operations
+# Single domain routing based on official Logto documentation:
+# - PORT 3001: Core service (OIDC, Experience API, Management API)
+# - ADMIN_PORT 3002: Admin Console UI only
 #
-# This is the recommended configuration per Logto documentation.
-# https://docs.logto.io/docs/logto-oss/deployment-and-configuration
+# https://docs.logto.io/concepts/core-service/configuration
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -20,13 +19,21 @@ spec:
   tls:
     - hosts:
         - auth.home-infra.net
-        - logto.home-infra.net
       secretName: wildcard-home-infra-net-tls
   rules:
-    # End-user authentication (OIDC, Experience API, Sign-in UI)
     - host: auth.home-infra.net
       http:
         paths:
+          # Admin Console UI only (port 3002)
+          - path: /console
+            pathType: Prefix
+            backend:
+              service:
+                name: logto
+                port:
+                  number: 3002
+          # Everything else: Core service (port 3001)
+          # Includes: OIDC, Experience API, Management API, Sign-in UI
           - path: /
             pathType: Prefix
             backend:
@@ -34,14 +41,3 @@ spec:
                 name: logto
                 port:
                   number: 3001
-    # Admin Console and Management API
-    - host: logto.home-infra.net
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: logto
-                port:
-                  number: 3002
