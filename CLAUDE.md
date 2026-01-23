@@ -93,7 +93,7 @@ infra/
 | FluxCD Webhook | 10.10.2.15 | GitOps webhook |
 | Weave GitOps | 10.10.2.16 | FluxCD UI |
 | MinIO Console | 10.10.2.17 | Velero S3 storage |
-| Casdoor | 10.10.2.18 | SSO/IAM |
+| Logto | 10.10.2.18 | SSO/IAM |
 | Open WebUI | 10.10.2.19 | LLM interface |
 | Ollama | 10.10.2.20 | LLM API |
 | Homepage | 10.10.2.21 | Dashboard |
@@ -254,6 +254,7 @@ docs/
 
 ## Recent Changes
 
+- **2026-01-23**: Replaced Casdoor with Logto for SSO/IAM
 - **2026-01-22**: Terraform code review, memory ballooning implementation, NetworkPolicies, security-strategy.md, backup verification procedures
 - **2026-01-21**: Documentation audit and cleanup
 - **2026-01-20**: Velero backup, PodGC, ComfyUI, Obico, version updates
@@ -264,4 +265,4 @@ docs/
 See `docs/CHANGELOG.md` for full history.
 
 ---
-**Last Updated**: 2026-01-22 | **Status**: Production-Ready
+**Last Updated**: 2026-01-23 | **Status**: Production-Ready
