@@ -98,6 +98,9 @@ spec:
               value: "https://auth.${DOMAIN_PRIMARY}"
             - name: ADMIN_ENDPOINT
               value: "https://logto.${DOMAIN_PRIMARY}"
+            # Redis cache for well-known data (improves response times)
+            - name: REDIS_URL
+              value: "redis://logto-redis:6379"
           startupProbe:
             httpGet:
               path: /api/status

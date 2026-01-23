@@ -1402,11 +1402,51 @@ spec:
       ports:
         - protocol: TCP
           port: 5432
+    # Allow Redis (central cache)
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: logto-redis
+      ports:
+        - protocol: TCP
+          port: 6379
     # Allow HTTPS for social login, HaveIBeenPwned API, etc.
     # Empty 'to' allows external IPs (namespaceSelector only matches cluster pods)
     - ports:
         - protocol: TCP
           port: 443
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: auth-logto-redis-allow
+  namespace: auth
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: logto-redis
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow connections from logto-server
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: logto-server
+      ports:
+        - protocol: TCP
+          port: 6379
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
 
 ---
 apiVersion: networking.k8s.io/v1

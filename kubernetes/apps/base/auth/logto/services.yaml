@@ -45,3 +45,23 @@ spec:
       port: 3001
       targetPort: 3001
       protocol: TCP
+---
+# Redis Service (ClusterIP)
+apiVersion: v1
+kind: Service
+metadata:
+  name: logto-redis
+  namespace: auth
+  labels:
+    app.kubernetes.io/name: logto-redis
+    app.kubernetes.io/component: cache
+    app.kubernetes.io/part-of: logto
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: logto-redis
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: 6379
+      protocol: TCP
