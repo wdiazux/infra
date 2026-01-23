@@ -1,4 +1,8 @@
 # Logto Ingress
+#
+# Two endpoints are required:
+# - auth.home-infra.net (port 3001): User SSO/OIDC flows
+# - admin-auth.home-infra.net (port 3002): Admin console
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -13,12 +17,13 @@ spec:
   tls:
     - hosts:
         - auth.home-infra.net
+        - admin-auth.home-infra.net
       secretName: wildcard-home-infra-net-tls
   rules:
+    # User SSO/OIDC endpoint
     - host: auth.home-infra.net
       http:
         paths:
-          # App/Experience port (3001) handles OIDC/SSO flows
           - path: /
             pathType: Prefix
             backend:
@@ -26,3 +31,14 @@ spec:
                 name: logto
                 port:
                   number: 3001
+    # Admin console endpoint
+    - host: admin-auth.home-infra.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: logto
+                port:
+                  number: 3002

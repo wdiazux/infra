@@ -76,6 +76,16 @@ FQDN_OVERRIDES = {
     "home": ["home.arpa"],  # Homepage accessible at home.arpa (not home.home.arpa)
 }
 
+# Additional domains not derived from cluster-vars IP variables
+# Format: {short_name: {"suffixes": [...], "ip": "..."}}
+# Use "INGRESS" for ip to use INGRESS_IP
+ADDITIONAL_DOMAINS = {
+    "admin-auth": {
+        "suffixes": ["home.arpa", "home-infra.net"],
+        "ip": "INGRESS",  # Logto admin console via Ingress
+    },
+}
+
 # Services to skip (not user-facing or internal only)
 SKIP_SERVICES = {
     "FORGEJO_SSH",  # SSH access, not HTTP
@@ -305,6 +315,25 @@ def build_service_registry(
         }
         if verbose:
             print(f"  {name:<15} {info['ip']:<15} -> (static)")
+        services.append(service)
+
+    # Add additional domains not derived from cluster-vars
+    for name, info in ADDITIONAL_DOMAINS.items():
+        ip = INGRESS_IP if info["ip"] == "INGRESS" else info["ip"]
+        service = {
+            "name": name,
+            "ip": ip,
+            "var_name": f"ADDITIONAL_{name.upper().replace('-', '_')}",
+            "k8s_service": None,
+            "namespace": None,
+            "k8s_dns": None,
+            "suffixes": info.get("suffixes", ["home.arpa"]),
+            "aliases": [],
+            "fqdn": None,
+            "category": get_category(ip),
+        }
+        if verbose:
+            print(f"  {name:<15} {ip:<15} -> (additional)")
         services.append(service)
 
     return services
