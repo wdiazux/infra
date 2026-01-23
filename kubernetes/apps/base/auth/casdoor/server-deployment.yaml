@@ -26,6 +26,13 @@ spec:
         app.kubernetes.io/part-of: casdoor
     spec:
       enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       initContainers:
         # Wait for PostgreSQL to be ready
         - name: wait-for-db
@@ -54,6 +61,11 @@ spec:
       containers:
         - name: casdoor
           image: casbin/casdoor:2.257.0 # {"$imagepolicy": "flux-system:casdoor"}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           ports:
             - name: http
               containerPort: 8000
