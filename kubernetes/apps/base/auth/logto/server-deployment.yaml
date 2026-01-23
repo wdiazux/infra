@@ -61,7 +61,7 @@ spec:
               npm run cli db seed -- --swe
               echo "Database seeding complete"
               echo "Running database alterations (migrations)..."
-              npm run alteration deploy
+              npm run cli db alt deploy next
               echo "Database alterations complete"
           env:
             - name: TZ
