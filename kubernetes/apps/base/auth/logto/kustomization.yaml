@@ -1,0 +1,12 @@
+# Logto Kustomization
+#
+# SSO/IAM platform with PostgreSQL.
+# https://docs.logto.io/
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - secret.enc.yaml
+  - postgres-statefulset.yaml
+  - server-deployment.yaml
+  - services.yaml

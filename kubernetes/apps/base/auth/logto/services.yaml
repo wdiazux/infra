@@ -1,0 +1,47 @@
+# Logto Services
+---
+# PostgreSQL Service (ClusterIP)
+apiVersion: v1
+kind: Service
+metadata:
+  name: logto-postgres
+  namespace: auth
+  labels:
+    app.kubernetes.io/name: logto-postgres
+    app.kubernetes.io/component: database
+    app.kubernetes.io/part-of: logto
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: logto-postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+      protocol: TCP
+---
+# Logto Server Service (LoadBalancer)
+apiVersion: v1
+kind: Service
+metadata:
+  name: logto
+  namespace: auth
+  labels:
+    app.kubernetes.io/name: logto-server
+    app.kubernetes.io/component: server
+    app.kubernetes.io/part-of: logto
+  annotations:
+    io.cilium/lb-ipam-ips: "${IP_LOGTO}"
+spec:
+  type: LoadBalancer
+  selector:
+    app.kubernetes.io/name: logto-server
+  ports:
+    - name: admin
+      port: 80
+      targetPort: 3002
+      protocol: TCP
+    - name: app
+      port: 3001
+      targetPort: 3001
+      protocol: TCP
