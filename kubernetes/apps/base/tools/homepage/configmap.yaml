@@ -36,7 +36,7 @@ data:
         columns: 3
       Tools:
         style: row
-        columns: 4
+        columns: 5
       Management:
         style: row
         columns: 2
@@ -155,6 +155,10 @@ data:
             icon: it-tools.png
             href: http://tools.${DOMAIN_INTERNAL}
             description: Developer Toolbox
+        - Copyparty:
+            icon: mdi-folder-network-outline
+            href: http://files.${DOMAIN_INTERNAL}
+            description: File Browser
         - ntfy:
             icon: ntfy.png
             href: http://ntfy.${DOMAIN_INTERNAL}
