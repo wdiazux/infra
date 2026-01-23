@@ -102,10 +102,13 @@ build {
   # Wait for cloud-init to be ready
   provisioner "shell" {
     inline = [
-      "cloud-init status --wait",
-      "echo 'Cloud-init ready!'"
+      "cloud-init status --wait; EXIT_CODE=$?",
+      "if [ $EXIT_CODE -eq 2 ]; then echo 'WARNING: cloud-init completed with degraded status (exit 2) - likely Proxmox deprecation warnings'; fi",
+      "if [ $EXIT_CODE -eq 0 ]; then echo 'Cloud-init completed successfully'; fi",
+      "exit $EXIT_CODE"
     ]
     # Accept exit code 2 (degraded/done) due to Proxmox cloud-init deprecation warnings
+    # See: https://cloudinit.readthedocs.io/en/latest/explanation/return_codes.html
     valid_exit_codes = [0, 2]
     timeout          = "5m"
   }

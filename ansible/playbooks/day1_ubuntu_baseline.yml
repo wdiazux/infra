@@ -177,13 +177,29 @@
       changed_when: false
       failed_when: false
 
-    - name: Ensure CrowdSec collections are installed
-      ansible.builtin.shell: |
-        cscli hub update
-        cscli collections install crowdsecurity/linux --force
-        cscli collections install crowdsecurity/sshd --force
+    - name: Update CrowdSec hub
+      ansible.builtin.command: cscli hub update
       when: crowdsec_installed.rc == 0
       changed_when: false
+      failed_when: false
+
+    - name: Check installed CrowdSec collections
+      ansible.builtin.command: cscli collections list -o raw
+      register: crowdsec_collections
+      when: crowdsec_installed.rc == 0
+      changed_when: false
+      failed_when: false
+
+    - name: Install CrowdSec collections if missing
+      ansible.builtin.command: "cscli collections install {{ item }}"
+      loop:
+        - crowdsecurity/linux
+        - crowdsecurity/sshd
+      when:
+        - crowdsec_installed.rc == 0
+        - item not in (crowdsec_collections.stdout | default(''))
+      register: crowdsec_install_result
+      changed_when: crowdsec_install_result.rc == 0
       failed_when: false
 
     - name: Enable and start CrowdSec services
