@@ -1,0 +1,42 @@
+# Reflector - Kubernetes Secret/ConfigMap Synchronization
+#
+# Automatically replicates secrets and configmaps across namespaces.
+# Used to sync wildcard TLS certificates from cert-manager to app namespaces.
+#
+# Usage: Add annotations to source secret:
+#   reflector.v1.k8s.emberstack.com/reflection-allowed: "true"
+#   reflector.v1.k8s.emberstack.com/reflection-allowed-namespaces: "ns1,ns2"
+#   reflector.v1.k8s.emberstack.com/reflection-auto-enabled: "true"
+#   reflector.v1.k8s.emberstack.com/reflection-auto-namespaces: "ns1,ns2"
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: reflector
+  namespace: kube-system
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: reflector
+      version: "7.1.288"
+      sourceRef:
+        kind: HelmRepository
+        name: emberstack
+        namespace: flux-system
+  install:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  upgrade:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  values:
+    # Resource limits for homelab
+    resources:
+      requests:
+        cpu: 10m
+        memory: 64Mi
+      limits:
+        memory: 128Mi

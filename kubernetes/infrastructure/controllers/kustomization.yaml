@@ -30,3 +30,5 @@ resources:
   - velero.yaml
   # TLS certificate management (Let's Encrypt via Cloudflare DNS-01)
   - cert-manager.yaml
+  # Secret/ConfigMap replication across namespaces (for TLS cert distribution)
+  - reflector.yaml

@@ -11,6 +11,7 @@ Automated TLS certificate management with Let's Encrypt and Cloudflare DNS-01 ch
 | **cert-manager** | Kubernetes certificate controller |
 | **ClusterIssuer** | Let's Encrypt ACME configuration |
 | **DNS-01 Challenge** | Cloudflare API for wildcard certificates |
+| **Reflector** | Syncs TLS secrets across namespaces |
 | **Auto-Renewal** | 30 days before expiry |
 
 ### Why cert-manager?
@@ -26,18 +27,24 @@ Automated TLS certificate management with Let's Encrypt and Cloudflare DNS-01 ch
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│  Certificate Request Flow                                           │
+│  Certificate Flow with Reflector                                    │
 │                                                                     │
-│  1. Certificate resource created in namespace                       │
-│  2. cert-manager detects new Certificate                           │
-│  3. cert-manager creates ACME order with Let's Encrypt             │
-│  4. Let's Encrypt requests DNS-01 challenge                        │
-│  5. cert-manager creates TXT record via Cloudflare API             │
-│  6. Let's Encrypt verifies TXT record                              │
-│  7. Certificate issued and stored as Kubernetes Secret             │
-│  8. Ingress uses Secret for TLS termination                        │
+│  1. Certificate resource created in cert-manager namespace          │
+│  2. cert-manager issues certificate via Let's Encrypt               │
+│  3. TLS secret created with reflector annotations                   │
+│  4. Reflector automatically copies secret to target namespaces      │
+│  5. Ingress in each namespace uses the replicated secret            │
+│  6. On renewal, reflector syncs the updated secret everywhere       │
 └─────────────────────────────────────────────────────────────────────┘
 ```
+
+### Why Reflector?
+
+**Problem:** Kubernetes Secrets are namespace-scoped, but we need the same TLS cert in many namespaces.
+
+**Bad approach:** Create identical Certificate in each namespace → hits Let's Encrypt rate limits (5/week per domain set).
+
+**Good approach:** ONE Certificate in cert-manager namespace → Reflector syncs the secret everywhere.
 
 ---
 
@@ -56,25 +63,18 @@ Two ClusterIssuers are configured:
 
 ### Wildcard Certificates
 
-Certificates are created **per namespace** (Kubernetes Secrets are namespace-scoped).
+**Source certificates** (in cert-manager namespace):
 
-| Namespace | Certificate | Domain |
-|-----------|-------------|--------|
-| media | wildcard-home-infra-net | *.home-infra.net |
-| media | wildcard-reynoza-org | *.reynoza.org |
-| tools | wildcard-home-infra-net | *.home-infra.net |
-| monitoring | wildcard-home-infra-net | *.home-infra.net |
-| automation | wildcard-home-infra-net | *.home-infra.net |
-| ai | wildcard-home-infra-net | *.home-infra.net |
-| management | wildcard-home-infra-net | *.home-infra.net |
-| arr-stack | wildcard-home-infra-net | *.home-infra.net |
-| backup | wildcard-home-infra-net | *.home-infra.net |
-| forgejo | wildcard-home-infra-net | *.home-infra.net |
-| auth | wildcard-home-infra-net | *.home-infra.net |
-| flux-system | wildcard-home-infra-net | *.home-infra.net |
-| printing | wildcard-home-infra-net | *.home-infra.net |
+| Certificate | Domain | Synced To |
+|-------------|--------|-----------|
+| wildcard-home-infra-net | *.home-infra.net | All app namespaces |
+| wildcard-reynoza-org | *.reynoza.org | media namespace |
 
 **Location:** `kubernetes/infrastructure/configs/wildcard-certificates.yaml`
+
+The TLS secrets are automatically synced by Reflector to:
+- media, tools, monitoring, automation, ai, management
+- arr-stack, backup, forgejo, auth, flux-system, printing
 
 ---
 
@@ -88,6 +88,14 @@ kubectl get pods -n cert-manager
 
 Expected: 3 pods running (cert-manager, cainjector, webhook)
 
+### Check Reflector
+
+```bash
+kubectl get pods -n kube-system -l app.kubernetes.io/name=reflector
+```
+
+Expected: 1 pod running
+
 ### Check ClusterIssuers
 
 ```bash
@@ -96,27 +104,23 @@ kubectl get clusterissuers
 
 Expected: Both issuers show `Ready: True`
 
-### Check Certificates
+### Check Source Certificates
 
 ```bash
-# List all certificates
-kubectl get certificates -A
-
-# Check specific certificate details
-kubectl describe certificate wildcard-home-infra-net -n media
+# Source certificates in cert-manager namespace
+kubectl get certificates -n cert-manager
 ```
 
-Expected: `Ready: True`, valid dates shown
+Expected: `Ready: True` for both wildcards
 
-### Check Certificate Secrets
+### Check Replicated Secrets
 
 ```bash
-# List TLS secrets
-kubectl get secrets -A | grep tls
-
-# Verify certificate content
-kubectl get secret wildcard-home-infra-net-tls -n media -o jsonpath='{.data.tls\.crt}' | base64 -d | openssl x509 -text -noout | head -20
+# Verify secrets exist in all app namespaces
+kubectl get secrets -A | grep wildcard-home-infra-net-tls
 ```
+
+Expected: Secret exists in cert-manager + all app namespaces
 
 ### Test HTTPS Access
 
@@ -132,31 +136,19 @@ curl -v --resolve music.home-infra.net:443:10.10.2.20 https://music.home-infra.n
 
 ## Adding New Services
 
-### Step 1: Check if Certificate Exists in Namespace
+### Step 1: Check if TLS Secret Exists in Namespace
 
 ```bash
-kubectl get certificates -n <namespace>
+kubectl get secret wildcard-home-infra-net-tls -n <namespace>
 ```
 
-If no certificate exists, add one to `wildcard-certificates.yaml`:
+If the secret doesn't exist, add the namespace to the reflector sync list in `wildcard-certificates.yaml`:
 
 ```yaml
----
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: wildcard-home-infra-net
-  namespace: <namespace>
-spec:
-  secretName: wildcard-home-infra-net-tls
-  issuerRef:
-    name: letsencrypt-production
-    kind: ClusterIssuer
-  commonName: "*.home-infra.net"
-  dnsNames:
-    - "home-infra.net"
-    - "*.home-infra.net"
-  renewBefore: 720h
+secretTemplate:
+  annotations:
+    reflector.v1.k8s.emberstack.com/reflection-allowed-namespaces: "...,<new-namespace>"
+    reflector.v1.k8s.emberstack.com/reflection-auto-namespaces: "...,<new-namespace>"
 ```
 
 ### Step 2: Create Ingress Resource
@@ -199,15 +191,26 @@ Add entry to ControlD pointing to Ingress IP (10.10.2.20).
 
 ```bash
 # Check certificate status
-kubectl describe certificate <name> -n <namespace>
+kubectl describe certificate wildcard-home-infra-net -n cert-manager
 
 # Check certificate request
-kubectl get certificaterequest -n <namespace>
-kubectl describe certificaterequest <name> -n <namespace>
+kubectl get certificaterequest -n cert-manager
 
 # Check ACME challenges
 kubectl get challenges -A
-kubectl describe challenge <name> -n <namespace>
+```
+
+### Secret Not Syncing to Namespace
+
+```bash
+# Check reflector logs
+kubectl logs -n kube-system -l app.kubernetes.io/name=reflector
+
+# Verify source secret has reflector annotations
+kubectl get secret wildcard-home-infra-net-tls -n cert-manager -o yaml | grep reflector
+
+# Check if namespace is in the allowed list
+kubectl get secret wildcard-home-infra-net-tls -n cert-manager -o jsonpath='{.metadata.annotations}'
 ```
 
 ### DNS-01 Challenge Failing
@@ -223,24 +226,13 @@ kubectl logs -n cert-manager deploy/cert-manager -f
 dig TXT _acme-challenge.home-infra.net
 ```
 
-### Certificate Not Renewing
-
-```bash
-# Check renewal time
-kubectl get certificates -A -o custom-columns='NAMESPACE:.metadata.namespace,NAME:.metadata.name,READY:.status.conditions[0].status,EXPIRY:.status.notAfter,RENEWAL:.status.renewalTime'
-
-# Force renewal (delete and recreate)
-kubectl delete certificate <name> -n <namespace>
-# Certificate will be recreated by FluxCD
-```
-
 ### Ingress Not Using Certificate
 
 ```bash
 # Check Ingress has correct secretName
 kubectl get ingress <name> -n <namespace> -o yaml | grep -A5 tls
 
-# Check secret exists in same namespace
+# Check secret exists in namespace
 kubectl get secret wildcard-home-infra-net-tls -n <namespace>
 
 # Check Cilium Ingress controller logs
@@ -255,14 +247,13 @@ Let's Encrypt has rate limits:
 
 | Limit | Value | Period |
 |-------|-------|--------|
-| Certificates per domain | 50 | Week |
+| Certificates per exact domain set | 5 | Week |
 | Failed validations | 5 | Hour |
-| Duplicate certificates | 5 | Week |
 
-**Best practices:**
-- Use staging issuer for testing
-- Wildcard certificates reduce certificate count
-- Don't delete/recreate certificates unnecessarily
+**Our setup avoids rate limits by:**
+- Using ONE source certificate per domain (not one per namespace)
+- Reflector syncs the secret instead of issuing duplicate certs
+- Using staging issuer for testing
 
 ---
 
@@ -287,6 +278,7 @@ To rotate the token:
 ## References
 
 - [cert-manager Documentation](https://cert-manager.io/docs/)
+- [Reflector](https://github.com/emberstack/kubernetes-reflector)
 - [Let's Encrypt Rate Limits](https://letsencrypt.org/docs/rate-limits/)
 - [Cloudflare API Tokens](https://developers.cloudflare.com/fundamentals/api/get-started/create-token/)
 - [Cilium Ingress Controller](https://docs.cilium.io/en/stable/network/servicemesh/ingress/)
