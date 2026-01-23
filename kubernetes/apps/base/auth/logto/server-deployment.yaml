@@ -95,9 +95,9 @@ spec:
             - name: DB_URL
               value: "postgres://logto:$(POSTGRES_PASSWORD)@logto-postgres:5432/logto"
             - name: ENDPOINT
-              value: "http://auth.${DOMAIN_PRIMARY}:3001"
+              value: "https://auth.${DOMAIN_PRIMARY}"
             - name: ADMIN_ENDPOINT
-              value: "http://auth.${DOMAIN_PRIMARY}"
+              value: "https://auth.${DOMAIN_PRIMARY}"
           startupProbe:
             httpGet:
               path: /api/status
