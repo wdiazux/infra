@@ -228,8 +228,14 @@ sops -e secrets/file.yaml > secrets/file.enc.yaml
 4. **Sync docs with code** - Update docs when changing versions/configs
 5. **Never commit secrets** - Use SOPS encryption
 6. **Run linters** - tflint, trivy, ansible-lint before committing
+7. **Code reviews** - Use `/code-review` for comprehensive IaC reviews (quarterly recommended)
 
 **Skip**: archive/research docs (historical snapshots)
+
+**Last Terraform Review**: 2026-01-22 (see `docs/reviews/2026-01-22-terraform-review.md`)
+- Status: ✅ Production-ready, all providers up-to-date
+- Findings: 0 critical, 2 warnings (addressed), 3 info
+- Next review: 2026-04-22 (quarterly)
 
 ## Documentation
 
@@ -247,7 +253,7 @@ docs/
 
 ## Recent Changes
 
-- **2026-01-22**: NetworkPolicies, security-strategy.md, backup verification procedures
+- **2026-01-22**: Terraform code review, memory ballooning implementation, NetworkPolicies, security-strategy.md, backup verification procedures
 - **2026-01-21**: Documentation audit and cleanup
 - **2026-01-20**: Velero backup, PodGC, ComfyUI, Obico, version updates
 - **2026-01-19**: Claude Code optimization (hooks, commands, sub-agents)
