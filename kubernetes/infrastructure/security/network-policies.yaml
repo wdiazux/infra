@@ -1402,10 +1402,9 @@ spec:
       ports:
         - protocol: TCP
           port: 5432
-    # Allow HTTPS for social login providers (GitHub, Google, etc.)
-    - to:
-        - namespaceSelector: {}
-      ports:
+    # Allow HTTPS for social login, HaveIBeenPwned API, etc.
+    # Empty 'to' allows external IPs (namespaceSelector only matches cluster pods)
+    - ports:
         - protocol: TCP
           port: 443
 
