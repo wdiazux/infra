@@ -179,8 +179,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: immich
-      app.kubernetes.io/component: server
+      app.kubernetes.io/name: immich-server
   policyTypes:
     - Ingress
     - Egress
@@ -218,8 +217,7 @@ spec:
     - to:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: immich
-              app.kubernetes.io/component: machine-learning
+              app.kubernetes.io/name: immich-machine-learning
       ports:
         - protocol: TCP
           port: 3003
@@ -233,8 +231,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: immich
-      app.kubernetes.io/component: machine-learning
+      app.kubernetes.io/name: immich-machine-learning
   policyTypes:
     - Ingress
     - Egress
@@ -243,8 +240,7 @@ spec:
     - from:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: immich
-              app.kubernetes.io/component: server
+              app.kubernetes.io/name: immich-server
       ports:
         - protocol: TCP
           port: 3003
