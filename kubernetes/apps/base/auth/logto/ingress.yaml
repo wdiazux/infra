@@ -2,7 +2,7 @@
 #
 # Two endpoints are required:
 # - auth.home-infra.net (port 3001): User SSO/OIDC flows
-# - admin-auth.home-infra.net (port 3002): Admin console
+# - logto.home-infra.net (port 3002): Admin console
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -17,7 +17,7 @@ spec:
   tls:
     - hosts:
         - auth.home-infra.net
-        - admin-auth.home-infra.net
+        - logto.home-infra.net
       secretName: wildcard-home-infra-net-tls
   rules:
     # User SSO/OIDC endpoint
@@ -32,7 +32,7 @@ spec:
                 port:
                   number: 3001
     # Admin console endpoint
-    - host: admin-auth.home-infra.net
+    - host: logto.home-infra.net
       http:
         paths:
           - path: /

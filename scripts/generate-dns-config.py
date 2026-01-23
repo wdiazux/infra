@@ -80,7 +80,7 @@ FQDN_OVERRIDES = {
 # Format: {short_name: {"suffixes": [...], "ip": "..."}}
 # Use "INGRESS" for ip to use INGRESS_IP
 ADDITIONAL_DOMAINS = {
-    "admin-auth": {
+    "logto": {
         "suffixes": ["home.arpa", "home-infra.net"],
         "ip": "INGRESS",  # Logto admin console via Ingress
     },
