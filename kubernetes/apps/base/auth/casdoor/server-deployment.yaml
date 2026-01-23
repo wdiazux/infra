@@ -86,7 +86,7 @@ spec:
               mountPath: /init
       containers:
         - name: casdoor
-          image: casbin/casdoor:2.257.0
+          image: casbin/casdoor:2.257.0 # {"$imagepolicy": "flux-system:casdoor"}
           ports:
             - name: http
               containerPort: 8000

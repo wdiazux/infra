@@ -1,0 +1,25 @@
+# Auth Namespace Image Policies
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: casdoor
+  namespace: flux-system
+spec:
+  image: casbin/casdoor
+  interval: 12h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: casdoor
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: casdoor
+  filterTags:
+    # Match semver tags without v prefix: 2.257.0, 2.258.0, etc.
+    pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'
+  policy:
+    semver:
+      range: ">=2.0.0"
