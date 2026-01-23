@@ -1,59 +1,18 @@
-# SSO Integration Plan - Casdoor with Homelab Services
+# SSO Integration Plan - Logto with Homelab Services
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Integrate Casdoor SSO with all compatible homelab services for centralized authentication.
+**Goal:** Integrate Logto SSO with all compatible homelab services for centralized authentication.
 
-**Architecture:** Casdoor at auth.home-infra.net provides OIDC/OAuth2 authentication. Services connect either directly via OIDC or through reverse proxy header authentication.
+**Architecture:** Logto at auth.home-infra.net provides OIDC/OAuth2 authentication. Services connect either directly via OIDC or through reverse proxy header authentication.
 
-**Tech Stack:** Casdoor (OIDC/OAuth2 provider), Kubernetes manifests, environment variables, SOPS secrets
+**Tech Stack:** Logto (OIDC/OAuth2 provider), Kubernetes manifests, environment variables, SOPS secrets
 
 ---
 
 **Date:** 2026-01-23
 **Status:** In Progress
 **Author:** Claude + wdiaz
-
----
-
-## Current Progress (2026-01-23)
-
-### Completed
-- ✅ Casdoor deployed and running at http://10.10.2.18
-- ✅ API access working with client credentials (`homelab-sso-client` / `homelab-sso-secret`)
-- ✅ Created `homelab` organization
-- ✅ Created `homelab-app` application (clientId: `homelab-app-client`, clientSecret: `homelab-app-secret-2026`)
-- ✅ Set `homelab-app` as default application for homelab organization
-
-### In Progress - User Creation Issue
-Attempting to create users in the `homelab` organization via API returns:
-```
-"The organization: homelab does not exist"
-```
-
-This appears to be a Casdoor API bug or permission issue. The organization exists (verified via `get-organization` API).
-
-### Workaround Options
-1. **Use Web UI** - Login at http://10.10.2.18 with `admin/123` and create users manually
-2. **Debug API** - Check Casdoor logs for more details on the error
-3. **Use built-in org** - Enable "Has privilege consent" on built-in organization to allow user creation
-
-### API Credentials Reference
-```
-# Built-in application (global admin access)
-clientId: homelab-sso-client
-clientSecret: homelab-sso-secret
-
-# Homelab application (for homelab org)
-clientId: homelab-app-client
-clientSecret: homelab-app-secret-2026
-```
-
-### Next Steps
-1. Create `wdiaz` user (via UI or debug API)
-2. Change default admin password
-3. Create OAuth applications for Grafana, Forgejo, Open WebUI, Immich
-4. Configure each service with OIDC settings
 
 ---
 
@@ -112,11 +71,11 @@ Based on research, services are categorized by their authentication support:
 
 ---
 
-## Casdoor Configuration
+## Logto Configuration
 
 ### Prerequisites
 
-Before integrating services, configure Casdoor:
+Before integrating services, configure Logto:
 
 1. **Change default admin password** - Login at http://10.10.2.18 with `admin/123`
 2. **Create homelab organization** - Separate from built-in
@@ -125,7 +84,7 @@ Before integrating services, configure Casdoor:
 
 ### Application Template
 
-For each service, create an OAuth2 application in Casdoor with:
+For each service, create an OAuth2 application in Logto with:
 
 ```
 Organization: homelab
@@ -142,10 +101,10 @@ Token Format: JWT
 
 ## Phase 1: High Priority OIDC Integrations
 
-### Task 1: Configure Casdoor Base Setup
+### Task 1: Configure Logto Base Setup
 
 **Files:**
-- Casdoor Web UI at http://10.10.2.18
+- Logto Web UI at http://10.10.2.18
 
 **Step 1: Login and change admin password**
 - Navigate to http://10.10.2.18
@@ -174,7 +133,7 @@ Token Format: JWT
 **Files:**
 - Modify: `kubernetes/apps/base/monitoring/grafana/` deployment/configmap
 
-**Casdoor Application Setup:**
+**Logto Application Setup:**
 - Name: `grafana`
 - Redirect URI: `http://grafana.home-infra.net/login/generic_oauth`
 - Scopes: `openid profile email`
@@ -186,7 +145,7 @@ env:
   - name: GF_AUTH_GENERIC_OAUTH_ENABLED
     value: "true"
   - name: GF_AUTH_GENERIC_OAUTH_NAME
-    value: "Casdoor"
+    value: "Logto"
   - name: GF_AUTH_GENERIC_OAUTH_CLIENT_ID
     value: "grafana"
   - name: GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET
@@ -197,11 +156,11 @@ env:
   - name: GF_AUTH_GENERIC_OAUTH_SCOPES
     value: "openid profile email"
   - name: GF_AUTH_GENERIC_OAUTH_AUTH_URL
-    value: "http://auth.home-infra.net/login/oauth/authorize"
+    value: "http://auth.home-infra.net:3001/oidc/auth"
   - name: GF_AUTH_GENERIC_OAUTH_TOKEN_URL
-    value: "http://auth.home-infra.net/api/login/oauth/access_token"
+    value: "http://auth.home-infra.net:3001/oidc/token"
   - name: GF_AUTH_GENERIC_OAUTH_API_URL
-    value: "http://auth.home-infra.net/api/userinfo"
+    value: "http://auth.home-infra.net:3001/oidc/me"
   - name: GF_AUTH_GENERIC_OAUTH_ALLOW_SIGN_UP
     value: "true"
   - name: GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_PATH
@@ -219,9 +178,9 @@ env:
 **Files:**
 - Modify: Forgejo admin UI (Site Administration → Authentication Sources)
 
-**Casdoor Application Setup:**
+**Logto Application Setup:**
 - Name: `forgejo`
-- Redirect URI: `http://forgejo.home-infra.net/user/oauth2/casdoor/callback`
+- Redirect URI: `http://forgejo.home-infra.net/user/oauth2/logto/callback`
 - Scopes: `openid profile email groups`
 
 **Forgejo Configuration (via Admin UI):**
@@ -229,11 +188,11 @@ env:
 2. Go to Site Administration → Identity & Access → Authentication Sources
 3. Add Authentication Source:
    - Authentication Type: `OAuth2`
-   - Authentication Name: `casdoor`
+   - Authentication Name: `logto`
    - OAuth2 Provider: `OpenID Connect`
    - Client ID: `forgejo`
-   - Client Secret: (from Casdoor)
-   - OpenID Connect Auto Discovery URL: `http://auth.home-infra.net/.well-known/openid-configuration`
+   - Client Secret: (from Logto)
+   - OpenID Connect Auto Discovery URL: `http://auth.home-infra.net:3001/oidc/.well-known/openid-configuration`
    - Additional Scopes: `profile email groups`
 
 **References:**
@@ -247,7 +206,7 @@ env:
 **Files:**
 - Modify: `kubernetes/apps/base/ai/open-webui/` deployment
 
-**Casdoor Application Setup:**
+**Logto Application Setup:**
 - Name: `open-webui`
 - Redirect URI: `http://openwebui.home-infra.net/oauth/oidc/callback`
 - Scopes: `openid profile email`
@@ -259,9 +218,9 @@ env:
   - name: ENABLE_OAUTH_SIGNUP
     value: "true"
   - name: OAUTH_PROVIDER_NAME
-    value: "Casdoor"
+    value: "Logto"
   - name: OPENID_PROVIDER_URL
-    value: "http://auth.home-infra.net/.well-known/openid-configuration"
+    value: "http://auth.home-infra.net:3001/oidc/.well-known/openid-configuration"
   - name: OAUTH_CLIENT_ID
     value: "open-webui"
   - name: OAUTH_CLIENT_SECRET
@@ -286,7 +245,7 @@ env:
 **Files:**
 - Immich Admin UI (Administration → Settings → OAuth Authentication)
 
-**Casdoor Application Setup:**
+**Logto Application Setup:**
 - Name: `immich`
 - Redirect URIs:
   - `app.immich:///oauth-callback` (mobile)
@@ -299,12 +258,12 @@ env:
 2. Go to Administration → Settings → OAuth Authentication
 3. Enable OAuth
 4. Configure:
-   - Issuer URL: `http://auth.home-infra.net`
+   - Issuer URL: `http://auth.home-infra.net:3001/oidc`
    - Client ID: `immich`
-   - Client Secret: (from Casdoor)
+   - Client Secret: (from Logto)
    - Scope: `openid profile email`
    - Signing Algorithm: `RS256`
-   - Button Text: `Login with Casdoor`
+   - Button Text: `Login with Logto`
    - Auto Register: `true`
    - Mobile Redirect URI Override: `true`
 
@@ -319,9 +278,9 @@ env:
 **Files:**
 - Modify: `kubernetes/apps/base/management/paperless/` deployment
 
-**Casdoor Application Setup:**
+**Logto Application Setup:**
 - Name: `paperless`
-- Redirect URI: `http://paperless.home-infra.net/accounts/oidc/casdoor/login/callback/`
+- Redirect URI: `http://paperless.home-infra.net/accounts/oidc/logto/login/callback/`
 - Scopes: `openid profile email`
 
 **Paperless-ngx Configuration (environment variables):**
@@ -335,12 +294,12 @@ env:
       {
         "openid_connect": {
           "APPS": [{
-            "provider_id": "casdoor",
-            "name": "Casdoor",
+            "provider_id": "logto",
+            "name": "Logto",
             "client_id": "paperless",
             "secret": "CLIENT_SECRET_HERE",
             "settings": {
-              "server_url": "http://auth.home-infra.net/.well-known/openid-configuration"
+              "server_url": "http://auth.home-infra.net:3001/oidc/.well-known/openid-configuration"
             }
           }],
           "OAUTH_PKCE_ENABLED": true
@@ -361,7 +320,7 @@ env:
 **Files:**
 - Wallos Admin UI
 
-**Casdoor Application Setup:**
+**Logto Application Setup:**
 - Name: `wallos`
 - Redirect URI: `http://wallos.home-infra.net/callback`
 - Scopes: `openid profile email`
@@ -371,12 +330,12 @@ env:
 2. Go to Admin → OIDC Settings
 3. Enable OIDC/OAuth
 4. Configure:
-   - Provider Name: `Casdoor`
+   - Provider Name: `Logto`
    - Client ID: `wallos`
-   - Client Secret: (from Casdoor)
-   - Auth URL: `http://auth.home-infra.net/login/oauth/authorize`
-   - Token URL: `http://auth.home-infra.net/api/login/oauth/access_token`
-   - User Info URL: `http://auth.home-infra.net/api/userinfo`
+   - Client Secret: (from Logto)
+   - Auth URL: `http://auth.home-infra.net:3001/oidc/auth`
+   - Token URL: `http://auth.home-infra.net:3001/oidc/token`
+   - User Info URL: `http://auth.home-infra.net:3001/oidc/me`
    - Redirect URL: `http://wallos.home-infra.net/callback`
 
 **References:**
@@ -389,7 +348,7 @@ env:
 **Files:**
 - Modify: `kubernetes/apps/base/tools/affine/` deployment
 
-**Casdoor Application Setup:**
+**Logto Application Setup:**
 - Name: `affine`
 - Redirect URI: `http://affine.home-infra.net/oauth/callback`
 - Scopes: `openid profile email`
@@ -401,7 +360,7 @@ env:
   - name: OAUTH_OIDC_ENABLED
     value: "true"
   - name: OAUTH_OIDC_ISSUER
-    value: "http://auth.home-infra.net"
+    value: "http://auth.home-infra.net:3001/oidc"
   - name: OAUTH_OIDC_CLIENT_ID
     value: "affine"
   - name: OAUTH_OIDC_CLIENT_SECRET
@@ -421,7 +380,7 @@ env:
 **Files:**
 - Modify: `kubernetes/apps/base/backup/minio/` deployment
 
-**Casdoor Application Setup:**
+**Logto Application Setup:**
 - Name: `minio`
 - Redirect URI: `http://minio.home-infra.net/oauth_callback`
 - Scopes: `openid profile email`
@@ -431,7 +390,7 @@ env:
 ```yaml
 env:
   - name: MINIO_IDENTITY_OPENID_CONFIG_URL
-    value: "http://auth.home-infra.net/.well-known/openid-configuration"
+    value: "http://auth.home-infra.net:3001/oidc/.well-known/openid-configuration"
   - name: MINIO_IDENTITY_OPENID_CLIENT_ID
     value: "minio"
   - name: MINIO_IDENTITY_OPENID_CLIENT_SECRET
@@ -447,11 +406,11 @@ env:
     value: "http://minio.home-infra.net/oauth_callback"
 ```
 
-**Note:** MinIO requires policies to be mapped to groups. Create policies in MinIO and matching groups in Casdoor.
+**Note:** MinIO requires policies to be mapped to groups. Create policies in MinIO and matching groups in Logto.
 
 **References:**
 - [MinIO OIDC Configuration](https://min.io/docs/minio/linux/operations/external-iam/configure-openid-external-identity-management.html)
-- [Casdoor MinIO Integration](https://www.casdoor.org/docs/integration/go/minio/)
+- [Logto OIDC Documentation](https://docs.logto.io/docs/references/openid-connect/)
 
 ---
 
@@ -496,7 +455,7 @@ If using an ingress controller (not currently deployed), configure forward auth.
 
 ## Implementation Order
 
-1. **Casdoor base setup** (Task 1) - Required first
+1. **Logto base setup** (Task 1) - Required first
 2. **Grafana** (Task 2) - High value, monitoring access
 3. **Forgejo** (Task 3) - High value, code repository
 4. **Open WebUI** (Task 4) - High value, AI interface
@@ -512,16 +471,16 @@ If using an ingress controller (not currently deployed), configure forward auth.
 ## Security Considerations
 
 1. **HTTPS:** For production, all OAuth flows should use HTTPS. Current setup uses HTTP internally.
-2. **Token Expiry:** Configure reasonable token expiry times in Casdoor (default 168 hours may be too long).
-3. **Backup Access:** Keep local admin accounts as backup in case Casdoor is unavailable.
-4. **Network Isolation:** Casdoor NetworkPolicies are already configured.
+2. **Token Expiry:** Configure reasonable token expiry times in Logto (default 168 hours may be too long).
+3. **Backup Access:** Keep local admin accounts as backup in case Logto is unavailable.
+4. **Network Isolation:** Logto NetworkPolicies are already configured.
 
 ---
 
 ## Testing Checklist
 
 For each integrated service:
-- [ ] Can login via Casdoor SSO
+- [ ] Can login via Logto SSO
 - [ ] User info (name, email) populated correctly
 - [ ] Logout works and redirects properly
 - [ ] Local admin account still works (backup access)
@@ -531,7 +490,8 @@ For each integrated service:
 
 ## References
 
-- [Casdoor Documentation](https://casdoor.org/docs/)
-- [Casdoor OIDC Provider](https://casdoor.org/docs/basic/oidc-concept)
+- [Logto Documentation](https://docs.logto.io/)
+- [Logto OIDC Configuration](https://docs.logto.io/docs/references/openid-connect/)
+- [Logto Application Setup](https://docs.logto.io/docs/recipes/integrate-logto/)
 - [Authelia OpenID Connect Integrations](https://www.authelia.com/integration/openid-connect/clients/)
 - [oauth2-proxy](https://github.com/oauth2-proxy/oauth2-proxy)
