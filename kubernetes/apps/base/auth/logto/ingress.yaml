@@ -2,8 +2,10 @@
 #
 # Single domain with path-based routing:
 # - /console/* → Admin console (port 3002)
-# - /api/dashboard/*, /api/users/*, etc. → Management API (port 3002)
-# - Everything else → Experience/OIDC (port 3001)
+# - /api/* → Management API (port 3002), except Experience API
+# - /api/experience/*, /api/interaction/* → Experience API (port 3001)
+# - /.well-known/*, /oidc/* → OIDC endpoints (port 3001)
+# - Everything else → Sign-in experience (port 3001)
 #
 # Note: When ENDPOINT and ADMIN_ENDPOINT are the same, path-based routing is required.
 # See: https://github.com/logto-io/logto/issues/6755
@@ -26,7 +28,7 @@ spec:
     - host: auth.home-infra.net
       http:
         paths:
-          # Admin console UI
+          # Admin console UI (port 3002)
           - path: /console
             pathType: Prefix
             backend:
@@ -34,99 +36,45 @@ spec:
                 name: logto
                 port:
                   number: 3002
-          # Management API endpoints (admin)
-          - path: /api/dashboard
+          # Experience API endpoints - must be before /api catch-all (port 3001)
+          - path: /api/experience
+            pathType: Prefix
+            backend:
+              service:
+                name: logto
+                port:
+                  number: 3001
+          - path: /api/interaction
+            pathType: Prefix
+            backend:
+              service:
+                name: logto
+                port:
+                  number: 3001
+          # Management API - all other /api/* endpoints (port 3002)
+          - path: /api
             pathType: Prefix
             backend:
               service:
                 name: logto
                 port:
                   number: 3002
-          - path: /api/users
+          # OIDC discovery and endpoints (port 3001)
+          - path: /.well-known
             pathType: Prefix
             backend:
               service:
                 name: logto
                 port:
-                  number: 3002
-          - path: /api/applications
+                  number: 3001
+          - path: /oidc
             pathType: Prefix
             backend:
               service:
                 name: logto
                 port:
-                  number: 3002
-          - path: /api/resources
-            pathType: Prefix
-            backend:
-              service:
-                name: logto
-                port:
-                  number: 3002
-          - path: /api/connectors
-            pathType: Prefix
-            backend:
-              service:
-                name: logto
-                port:
-                  number: 3002
-          - path: /api/roles
-            pathType: Prefix
-            backend:
-              service:
-                name: logto
-                port:
-                  number: 3002
-          - path: /api/organizations
-            pathType: Prefix
-            backend:
-              service:
-                name: logto
-                port:
-                  number: 3002
-          - path: /api/sign-in-exp
-            pathType: Prefix
-            backend:
-              service:
-                name: logto
-                port:
-                  number: 3002
-          - path: /api/logs
-            pathType: Prefix
-            backend:
-              service:
-                name: logto
-                port:
-                  number: 3002
-          - path: /api/hooks
-            pathType: Prefix
-            backend:
-              service:
-                name: logto
-                port:
-                  number: 3002
-          - path: /api/configs
-            pathType: Prefix
-            backend:
-              service:
-                name: logto
-                port:
-                  number: 3002
-          - path: /api/domains
-            pathType: Prefix
-            backend:
-              service:
-                name: logto
-                port:
-                  number: 3002
-          - path: /api/sso-connectors
-            pathType: Prefix
-            backend:
-              service:
-                name: logto
-                port:
-                  number: 3002
-          # Default: Experience API and OIDC (must be last due to Prefix matching)
+                  number: 3001
+          # Default: Sign-in experience UI (port 3001)
           - path: /
             pathType: Prefix
             backend:
