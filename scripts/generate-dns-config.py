@@ -80,8 +80,10 @@ FQDN_OVERRIDES = {
 # Format: {short_name: {"suffixes": [...], "ip": "..."}}
 # Use "INGRESS" for ip to use INGRESS_IP
 ADDITIONAL_DOMAINS = {
-    # No additional domains needed currently
-    # Logto admin console is now at auth.home-infra.net/console (same domain, path-based routing)
+    # Logto admin console uses separate subdomain for proper OIDC tenant routing
+    # auth.home-infra.net -> port 3001 (end-user OIDC, Experience API)
+    # logto.home-infra.net -> port 3002 (admin OIDC, Management API)
+    "logto": {"suffixes": ["home-infra.net"], "ip": "INGRESS"},
 }
 
 # Services to skip (not user-facing or internal only)
