@@ -153,45 +153,107 @@ spec:
 
 ---
 
-## DNS Records
+## Local HTTPS Access (Ingress Architecture)
 
-Configure in your DNS server or `/etc/hosts`:
+Services are accessible via HTTPS using wildcard certificates from Let's Encrypt.
+
+### Split-Horizon DNS
+
+| Domain Suffix | Resolves To | Protocol | Purpose |
+|---------------|-------------|----------|---------|
+| `*.home-infra.net` | 10.10.2.20 (Ingress) | HTTPS | Local HTTPS access |
+| `*.reynoza.org` | 10.10.2.20 (Ingress) | HTTPS | Local HTTPS access |
+| `*.home.arpa` | Service LoadBalancer IP | HTTP | Internal direct access |
+
+### How It Works
 
 ```
-10.10.2.1    gateway.home-infra.net
-10.10.2.2    proxmox.home-infra.net pve
-10.10.2.5    nas.home-infra.net
-10.10.2.10   talos.home-infra.net
-10.10.2.11   hubble.home-infra.net
-10.10.2.12   longhorn.home-infra.net
-10.10.2.13   git.home-infra.net
-10.10.2.16   gitops.home-infra.net
-10.10.2.17   minio.home-infra.net
-10.10.2.18   auth.home-infra.net
-10.10.2.20   ingress.home-infra.net
-10.10.2.21   home.home-infra.net
-10.10.2.22   photos.home-infra.net photos.reynoza.org
-10.10.2.23   grafana.home-infra.net
-10.10.2.24   metrics.home-infra.net
-10.10.2.25   hass.home-infra.net
-10.10.2.26   n8n.home-infra.net
-10.10.2.27   obico.home-infra.net
-10.10.2.29   attic.home-infra.net
-10.10.2.30   emby.home-infra.net
-10.10.2.31   music.home-infra.net
-10.10.2.32   tools.home-infra.net
-10.10.2.34   wallos.home-infra.net
-10.10.2.35   ntfy.home-infra.net
-10.10.2.36   paperless.home-infra.net
-10.10.2.40   sabnzbd.home-infra.net
-10.10.2.41   qbittorrent.home-infra.net
-10.10.2.42   prowlarr.home-infra.net
-10.10.2.43   radarr.home-infra.net
-10.10.2.44   sonarr.home-infra.net
-10.10.2.45   bazarr.home-infra.net
-10.10.2.50   ollama.home-infra.net
-10.10.2.51   chat.home-infra.net
-10.10.2.52   comfy.home-infra.net comfy.home.arpa
+Local Client (browser)
+         │
+         ▼
+    ControlD DNS
+         │ resolves *.home-infra.net → 10.10.2.20
+         ▼
+  Cilium Ingress (10.10.2.20)
+         │ TLS termination (Let's Encrypt wildcard cert)
+         │ Routes by hostname
+         ▼
+  Backend Service (e.g., Navidrome)
+```
+
+### HTTPS URLs
+
+| Service | HTTPS URL | Direct HTTP URL |
+|---------|-----------|-----------------|
+| Navidrome | https://music.home-infra.net | http://music.home.arpa |
+| Grafana | https://grafana.home-infra.net | http://grafana.home.arpa |
+| Open WebUI | https://chat.home-infra.net | http://chat.home.arpa |
+| Immich | https://photos.reynoza.org | http://photos.home.arpa |
+
+### Certificate Management
+
+- **Provider:** Let's Encrypt (production)
+- **Type:** Wildcard certificates (*.home-infra.net, *.reynoza.org)
+- **Challenge:** DNS-01 via Cloudflare API
+- **Distribution:** Reflector syncs certs to all app namespaces
+- **Documentation:** See [cert-manager docs](../services/cert-manager.md)
+
+---
+
+## DNS Records (ControlD)
+
+ControlD handles split-horizon DNS for local access:
+
+### HTTPS via Ingress (home-infra.net, reynoza.org)
+
+All `*.home-infra.net` and `*.reynoza.org` domains resolve to Ingress for HTTPS:
+
+```
+10.10.2.20   *.home-infra.net    # Ingress handles TLS termination
+10.10.2.20   *.reynoza.org       # Ingress handles TLS termination
+```
+
+### Direct HTTP Access (home.arpa)
+
+Internal domains resolve directly to service LoadBalancer IPs:
+
+```
+10.10.2.11   hubble.home.arpa
+10.10.2.12   longhorn.home.arpa
+10.10.2.13   git.home.arpa
+10.10.2.16   gitops.home.arpa
+10.10.2.17   minio.home.arpa
+10.10.2.18   auth.home.arpa
+10.10.2.21   home.arpa           # Homepage (special FQDN)
+10.10.2.22   photos.home.arpa
+10.10.2.23   grafana.home.arpa
+10.10.2.24   metrics.home.arpa
+10.10.2.25   hass.home.arpa
+10.10.2.26   n8n.home.arpa
+10.10.2.27   obico.home.arpa
+10.10.2.29   attic.home.arpa
+10.10.2.30   emby.home.arpa
+10.10.2.31   music.home.arpa
+10.10.2.32   tools.home.arpa
+10.10.2.34   wallos.home.arpa
+10.10.2.35   ntfy.home.arpa
+10.10.2.36   paperless.home.arpa
+10.10.2.40   sabnzbd.home.arpa
+10.10.2.41   qbittorrent.home.arpa
+10.10.2.42   prowlarr.home.arpa
+10.10.2.43   radarr.home.arpa
+10.10.2.44   sonarr.home.arpa
+10.10.2.45   bazarr.home.arpa
+10.10.2.50   ollama.home.arpa
+10.10.2.51   chat.home.arpa
+10.10.2.52   comfy.home.arpa
+```
+
+### Static Infrastructure
+
+```
+10.10.2.2    proxmox.home.arpa pve.home.arpa
+10.10.2.5    nas.home.arpa
 ```
 
 ---

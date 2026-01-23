@@ -311,7 +311,12 @@ def build_service_registry(
 
 
 def generate_controld_config(services: list[dict]) -> str:
-    """Generate domains.yaml content for ControlD."""
+    """Generate domains.yaml content for ControlD.
+
+    For services with Ingress (home-infra.net, reynoza.org domains):
+    - HTTPS domains route through INGRESS_IP for TLS termination
+    - Internal domains (home.arpa) route directly to service LoadBalancer IP
+    """
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     lines = [
@@ -322,6 +327,10 @@ def generate_controld_config(services: list[dict]) -> str:
         "#",
         "# DO NOT EDIT MANUALLY - changes will be overwritten",
         "# To customize: edit cluster-vars.yaml or the generator script",
+        "#",
+        "# Routing architecture:",
+        f"#   *.home-infra.net, *.reynoza.org -> {INGRESS_IP} (Cilium Ingress, HTTPS)",
+        "#   *.home.arpa -> direct service LoadBalancer IP (internal, HTTP)",
         "",
         "domains:",
     ]
@@ -345,23 +354,68 @@ def generate_controld_config(services: list[dict]) -> str:
         lines.append(f"  # {'=' * 74}")
 
         for svc in sorted(by_category[category], key=lambda x: x["ip"]):
-            lines.append(f"  - name: {svc['name']}")
-            lines.append(f"    ip: {svc['ip']}")
-            # Add aliases if present
-            if svc.get("aliases"):
-                aliases_str = ", ".join(svc["aliases"])
-                lines.append(f"    aliases: [{aliases_str}]")
-            # Use FQDN override if present, otherwise use suffixes
-            if svc.get("fqdn"):
-                if len(svc["fqdn"]) == 1:
-                    lines.append(f"    fqdn: {svc['fqdn'][0]}")
+            # Check if this service has any Ingress suffixes
+            ingress_suffixes = [s for s in svc["suffixes"] if s in INGRESS_SUFFIXES]
+            internal_suffixes = [s for s in svc["suffixes"] if s not in INGRESS_SUFFIXES]
+
+            # If service has Ingress domains, create separate entries
+            if ingress_suffixes and internal_suffixes:
+                # Entry for internal access (direct to service)
+                lines.append(f"  - name: {svc['name']}")
+                lines.append(f"    ip: {svc['ip']}")
+                if svc.get("aliases"):
+                    aliases_str = ", ".join(svc["aliases"])
+                    lines.append(f"    aliases: [{aliases_str}]")
+                if len(internal_suffixes) == 1 and internal_suffixes[0] == "home.arpa":
+                    pass  # default suffix, no need to specify
                 else:
-                    fqdn_str = ", ".join(svc["fqdn"])
-                    lines.append(f"    fqdn: [{fqdn_str}]")
-            elif svc["suffixes"] != ["home.arpa"]:
-                suffixes_str = ", ".join(svc["suffixes"])
+                    suffixes_str = ", ".join(internal_suffixes)
+                    lines.append(f"    suffixes: [{suffixes_str}]")
+                lines.append(f"    # Internal access (direct to service)")
+                lines.append("")
+
+                # Entry for HTTPS access (via Ingress)
+                lines.append(f"  - name: {svc['name']}")
+                lines.append(f"    ip: {INGRESS_IP}")
+                suffixes_str = ", ".join(ingress_suffixes)
                 lines.append(f"    suffixes: [{suffixes_str}]")
-            lines.append("")
+                lines.append(f"    # HTTPS via Ingress")
+                lines.append("")
+            elif ingress_suffixes:
+                # Only Ingress domains - route through Ingress
+                lines.append(f"  - name: {svc['name']}")
+                lines.append(f"    ip: {INGRESS_IP}")
+                if svc.get("aliases"):
+                    aliases_str = ", ".join(svc["aliases"])
+                    lines.append(f"    aliases: [{aliases_str}]")
+                if svc.get("fqdn"):
+                    if len(svc["fqdn"]) == 1:
+                        lines.append(f"    fqdn: {svc['fqdn'][0]}")
+                    else:
+                        fqdn_str = ", ".join(svc["fqdn"])
+                        lines.append(f"    fqdn: [{fqdn_str}]")
+                else:
+                    suffixes_str = ", ".join(ingress_suffixes)
+                    lines.append(f"    suffixes: [{suffixes_str}]")
+                lines.append(f"    # HTTPS via Ingress")
+                lines.append("")
+            else:
+                # No Ingress domains - direct access only
+                lines.append(f"  - name: {svc['name']}")
+                lines.append(f"    ip: {svc['ip']}")
+                if svc.get("aliases"):
+                    aliases_str = ", ".join(svc["aliases"])
+                    lines.append(f"    aliases: [{aliases_str}]")
+                if svc.get("fqdn"):
+                    if len(svc["fqdn"]) == 1:
+                        lines.append(f"    fqdn: {svc['fqdn'][0]}")
+                    else:
+                        fqdn_str = ", ".join(svc["fqdn"])
+                        lines.append(f"    fqdn: [{fqdn_str}]")
+                elif svc["suffixes"] != ["home.arpa"]:
+                    suffixes_str = ", ".join(svc["suffixes"])
+                    lines.append(f"    suffixes: [{suffixes_str}]")
+                lines.append("")
 
     return "\n".join(lines)
 
