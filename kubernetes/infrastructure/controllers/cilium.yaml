@@ -115,6 +115,10 @@ spec:
       ui:
         enabled: true
         replicas: 1
+        service:
+          type: LoadBalancer
+          annotations:
+            io.cilium/lb-ipam-ips: "${IP_HUBBLE}"
     # Prometheus
     prometheus:
       enabled: true

@@ -16,8 +16,8 @@ kind: Kustomization
 resources:
   # Helm repositories (required for HelmReleases)
   - helm-repositories.yaml
-  # CNI - Installed via Terraform, uncomment to manage with FluxCD:
-  # - cilium.yaml
+  # CNI - Now managed by FluxCD for Ingress controller upgrade
+  - cilium.yaml
   # Storage - Installed via Terraform, uncomment to manage with FluxCD:
   # - longhorn.yaml
   # GPU support
