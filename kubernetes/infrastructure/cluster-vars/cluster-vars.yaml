@@ -26,7 +26,7 @@ data:
   DOMAIN_EXTERNAL: "reynoza.org"
 
   # Service IPs - Auth
-  IP_CASDOOR: "10.10.2.18"
+  IP_LOGTO: "10.10.2.18"
 
   # Service IPs - Infrastructure
   IP_HUBBLE: "10.10.2.11"
