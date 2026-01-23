@@ -115,7 +115,7 @@ variable "postgresql_version" {
 variable "forgejo_chart_version" {
   description = "Forgejo Helm chart version"
   type        = string
-  default     = "16.0.0"
+  default     = "16.0.1"
 }
 
 variable "forgejo_create_repo" {
