@@ -86,7 +86,7 @@ spec:
               mountPath: /init
       containers:
         - name: casdoor
-          image: casbin/casdoor:v2.257.0
+          image: casbin/casdoor:2.257.0
           ports:
             - name: http
               containerPort: 8000
