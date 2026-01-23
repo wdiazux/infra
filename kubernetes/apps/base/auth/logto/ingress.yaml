@@ -1,8 +1,12 @@
 # Logto Ingress
 #
-# Two endpoints are required:
-# - auth.home-infra.net (port 3001): User SSO/OIDC flows
-# - logto.home-infra.net (port 3002): Admin console
+# Single domain with path-based routing:
+# - /console/* → Admin console (port 3002)
+# - /api/dashboard/*, /api/users/*, etc. → Management API (port 3002)
+# - Everything else → Experience/OIDC (port 3001)
+#
+# Note: When ENDPOINT and ADMIN_ENDPOINT are the same, path-based routing is required.
+# See: https://github.com/logto-io/logto/issues/6755
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -17,13 +21,112 @@ spec:
   tls:
     - hosts:
         - auth.home-infra.net
-        - logto.home-infra.net
       secretName: wildcard-home-infra-net-tls
   rules:
-    # User SSO/OIDC endpoint
     - host: auth.home-infra.net
       http:
         paths:
+          # Admin console UI
+          - path: /console
+            pathType: Prefix
+            backend:
+              service:
+                name: logto
+                port:
+                  number: 3002
+          # Management API endpoints (admin)
+          - path: /api/dashboard
+            pathType: Prefix
+            backend:
+              service:
+                name: logto
+                port:
+                  number: 3002
+          - path: /api/users
+            pathType: Prefix
+            backend:
+              service:
+                name: logto
+                port:
+                  number: 3002
+          - path: /api/applications
+            pathType: Prefix
+            backend:
+              service:
+                name: logto
+                port:
+                  number: 3002
+          - path: /api/resources
+            pathType: Prefix
+            backend:
+              service:
+                name: logto
+                port:
+                  number: 3002
+          - path: /api/connectors
+            pathType: Prefix
+            backend:
+              service:
+                name: logto
+                port:
+                  number: 3002
+          - path: /api/roles
+            pathType: Prefix
+            backend:
+              service:
+                name: logto
+                port:
+                  number: 3002
+          - path: /api/organizations
+            pathType: Prefix
+            backend:
+              service:
+                name: logto
+                port:
+                  number: 3002
+          - path: /api/sign-in-exp
+            pathType: Prefix
+            backend:
+              service:
+                name: logto
+                port:
+                  number: 3002
+          - path: /api/logs
+            pathType: Prefix
+            backend:
+              service:
+                name: logto
+                port:
+                  number: 3002
+          - path: /api/hooks
+            pathType: Prefix
+            backend:
+              service:
+                name: logto
+                port:
+                  number: 3002
+          - path: /api/configs
+            pathType: Prefix
+            backend:
+              service:
+                name: logto
+                port:
+                  number: 3002
+          - path: /api/domains
+            pathType: Prefix
+            backend:
+              service:
+                name: logto
+                port:
+                  number: 3002
+          - path: /api/sso-connectors
+            pathType: Prefix
+            backend:
+              service:
+                name: logto
+                port:
+                  number: 3002
+          # Default: Experience API and OIDC (must be last due to Prefix matching)
           - path: /
             pathType: Prefix
             backend:
@@ -31,14 +134,3 @@ spec:
                 name: logto
                 port:
                   number: 3001
-    # Admin console endpoint
-    - host: logto.home-infra.net
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: logto
-                port:
-                  number: 3002

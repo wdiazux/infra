@@ -80,10 +80,8 @@ FQDN_OVERRIDES = {
 # Format: {short_name: {"suffixes": [...], "ip": "..."}}
 # Use "INGRESS" for ip to use INGRESS_IP
 ADDITIONAL_DOMAINS = {
-    "logto": {
-        "suffixes": ["home.arpa", "home-infra.net"],
-        "ip": "INGRESS",  # Logto admin console via Ingress
-    },
+    # No additional domains needed currently
+    # Logto admin console is now at auth.home-infra.net/console (same domain, path-based routing)
 }
 
 # Services to skip (not user-facing or internal only)
