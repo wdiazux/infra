@@ -98,7 +98,12 @@ INFRASTRUCTURE_SERVICES = {
 
 # Static resources not managed by Kubernetes (external infrastructure)
 STATIC_RESOURCES = {
-    "proxmox": {"ip": "10.10.2.2", "category": "infrastructure", "aliases": ["pve"]},
+    "proxmox": {
+        "ip": "10.10.2.2",
+        "category": "infrastructure",
+        "aliases": ["pve"],
+        "suffixes": ["home.arpa", "home-infra.net"],
+    },
     "nas": {
         "ip": "10.10.2.5",
         "category": "infrastructure",
