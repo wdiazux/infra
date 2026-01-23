@@ -26,11 +26,9 @@ spec:
         app.kubernetes.io/part-of: logto
     spec:
       enableServiceLinks: false
+      # Note: Logto requires write access to /etc/logto during startup
+      # Running as root until upstream supports non-root execution
       securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
         seccompProfile:
           type: RuntimeDefault
       initContainers:
@@ -52,6 +50,7 @@ spec:
               drop:
                 - ALL
         # Seed the database if not already seeded
+        # Note: Runs as root because Logto CLI needs write access to container filesystem
         - name: db-seed
           image: ghcr.io/logto-io/logto:1.27.0
           command:
@@ -71,19 +70,9 @@ spec:
                   key: POSTGRES_PASSWORD
             - name: DB_URL
               value: "postgres://logto:$(POSTGRES_PASSWORD)@logto-postgres:5432/logto"
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
       containers:
         - name: logto
           image: ghcr.io/logto-io/logto:1.27.0 # {"$imagepolicy": "flux-system:logto"}
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
           ports:
             - name: app
               containerPort: 3001
