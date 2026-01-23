@@ -1,0 +1,15 @@
+# Casdoor Kustomization
+#
+# SSO/IAM platform with PostgreSQL and Redis.
+# https://casdoor.org/
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - secret.enc.yaml
+  - init-data-configmap.yaml
+  - postgres-statefulset.yaml
+  - redis-deployment.yaml
+  - server-deployment.yaml
+  - services.yaml
+  - pvc.yaml

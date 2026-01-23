@@ -1,0 +1,65 @@
+# Casdoor Init Data ConfigMap
+#
+# Bootstrap configuration for Casdoor.
+# Placeholders are substituted by init container.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: casdoor-init-data
+  namespace: auth
+  labels:
+    app.kubernetes.io/name: casdoor-server
+    app.kubernetes.io/component: config
+    app.kubernetes.io/part-of: casdoor
+data:
+  init_data.json: |
+    {
+      "organizations": [
+        {
+          "owner": "admin",
+          "name": "built-in",
+          "displayName": "Built-in Organization",
+          "websiteUrl": "https://home-infra.net",
+          "passwordType": "bcrypt",
+          "passwordOptions": ["AtLeast6"],
+          "countryCodes": ["US", "SV"],
+          "defaultAvatar": "https://cdn.casbin.org/img/casbin.svg",
+          "tags": [],
+          "languages": ["en"],
+          "initScore": 2000,
+          "enableSoftDeletion": false,
+          "isProfilePublic": false
+        }
+      ],
+      "users": [
+        {
+          "owner": "built-in",
+          "name": "ADMIN_USER_PLACEHOLDER",
+          "type": "normal-user",
+          "password": "ADMIN_PASSWORD_PLACEHOLDER",
+          "displayName": "Admin",
+          "email": "ADMIN_EMAIL_PLACEHOLDER",
+          "isAdmin": true,
+          "isForbidden": false,
+          "isDeleted": false,
+          "signupApplication": "app-built-in",
+          "createdTime": "2026-01-22T00:00:00Z"
+        }
+      ],
+      "applications": [
+        {
+          "owner": "built-in",
+          "name": "app-built-in",
+          "displayName": "Homelab SSO",
+          "logo": "https://cdn.casbin.org/img/casbin.svg",
+          "homepageUrl": "http://auth.home-infra.net",
+          "organization": "built-in",
+          "enablePassword": true,
+          "enableSignUp": false,
+          "clientId": "homelab-sso-client",
+          "clientSecret": "homelab-sso-secret",
+          "redirectUris": ["http://auth.home-infra.net/callback"],
+          "expireInHours": 168
+        }
+      ]
+    }

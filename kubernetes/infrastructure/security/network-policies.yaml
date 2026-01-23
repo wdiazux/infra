@@ -1340,3 +1340,141 @@ spec:
       ports:
         - protocol: UDP
           port: 53
+
+---
+# =============================================================================
+# Auth Namespace - SSO/IAM (Casdoor)
+# =============================================================================
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: auth-default-deny-egress
+  namespace: auth
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    # Allow DNS queries
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: auth-casdoor-allow
+  namespace: auth
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: casdoor-server
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from LoadBalancer (Cilium L2 - host network traffic)
+    - ports:
+        - protocol: TCP
+          port: 8000
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow PostgreSQL
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: casdoor-postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    # Allow Redis
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: casdoor-redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    # Allow HTTPS for OAuth providers (GitHub, Google, etc.)
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 443
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: auth-casdoor-postgres-allow
+  namespace: auth
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: casdoor-postgres
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow connections from casdoor-server
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: casdoor-server
+      ports:
+        - protocol: TCP
+          port: 5432
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: auth-casdoor-redis-allow
+  namespace: auth
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: casdoor-redis
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow connections from casdoor-server
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: casdoor-server
+      ports:
+        - protocol: TCP
+          port: 6379
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
