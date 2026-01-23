@@ -54,6 +54,13 @@ gitea:
     security:
       INSTALL_LOCK: true  # Skip installer, use admin from config
 
+    # CORS settings to fix cross-origin CSRF errors
+    cors:
+      ENABLED: true
+      ALLOW_DOMAIN: "*"
+      METHODS: "GET,HEAD,POST,PUT,PATCH,DELETE,OPTIONS"
+      ALLOW_CREDENTIALS: true
+
     database:
       DB_TYPE: postgres
       HOST: forgejo-postgres-postgresql.forgejo.svc.cluster.local:5432

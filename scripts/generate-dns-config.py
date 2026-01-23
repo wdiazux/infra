@@ -102,7 +102,7 @@ STATIC_RESOURCES = {
         "ip": "10.10.2.2",
         "category": "infrastructure",
         "aliases": ["pve"],
-        "suffixes": ["home.arpa", "home-infra.net"],
+        # Only home.arpa - Proxmox is internal infrastructure, not exposed via home-infra.net
     },
     "nas": {
         "ip": "10.10.2.5",
