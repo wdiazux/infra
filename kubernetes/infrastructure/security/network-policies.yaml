@@ -56,12 +56,8 @@ spec:
       ports:
         - protocol: TCP
           port: 11434
-    # Allow from Cilium ingress (external access)
-    - from:
-        - namespaceSelector:
-            matchLabels:
-              name: kube-system
-      ports:
+    # Allow from LoadBalancer (Cilium L2 - host network traffic)
+    - ports:
         - protocol: TCP
           port: 11434
   egress:
@@ -94,12 +90,8 @@ spec:
     - Ingress
     - Egress
   ingress:
-    # Allow from LoadBalancer
-    - from:
-        - namespaceSelector:
-            matchLabels:
-              name: kube-system
-      ports:
+    # Allow from LoadBalancer (Cilium L2 - host network traffic)
+    - ports:
         - protocol: TCP
           port: 8080
   egress:
@@ -134,12 +126,8 @@ spec:
     - Ingress
     - Egress
   ingress:
-    # Allow from LoadBalancer
-    - from:
-        - namespaceSelector:
-            matchLabels:
-              name: kube-system
-      ports:
+    # Allow from LoadBalancer (Cilium L2 - host network traffic)
+    - ports:
         - protocol: TCP
           port: 8188
   egress:
@@ -197,14 +185,10 @@ spec:
     - Ingress
     - Egress
   ingress:
-    # Allow from LoadBalancer
-    - from:
-        - namespaceSelector:
-            matchLabels:
-              name: kube-system
-      ports:
+    # Allow from LoadBalancer (Cilium L2 - host network traffic)
+    - ports:
         - protocol: TCP
-          port: 3001
+          port: 2283
   egress:
     # Allow DNS
     - to:
@@ -318,12 +302,8 @@ spec:
     - Ingress
     - Egress
   ingress:
-    # Allow from LoadBalancer
-    - from:
-        - namespaceSelector:
-            matchLabels:
-              name: kube-system
-      ports:
+    # Allow from LoadBalancer (Cilium L2 - host network traffic)
+    - ports:
         - protocol: TCP
           port: 8000
   egress:
@@ -528,12 +508,8 @@ spec:
       ports:
         - protocol: TCP
           port: 9000
-    # Allow MinIO console access
-    - from:
-        - namespaceSelector:
-            matchLabels:
-              name: kube-system
-      ports:
+    # Allow MinIO console access from LoadBalancer (Cilium L2 - host network traffic)
+    - ports:
         - protocol: TCP
           port: 9001
   egress:
@@ -604,22 +580,14 @@ spec:
     - Ingress
     - Egress
   ingress:
-    # Allow HTTP/HTTPS from LoadBalancer
-    - from:
-        - namespaceSelector:
-            matchLabels:
-              name: kube-system
-      ports:
+    # Allow HTTP from LoadBalancer (Cilium L2 - host network traffic)
+    - ports:
         - protocol: TCP
-          port: 3000
-    # Allow SSH from LoadBalancer
-    - from:
-        - namespaceSelector:
-            matchLabels:
-              name: kube-system
-      ports:
+          port: 80
+    # Allow SSH from LoadBalancer (Cilium L2 - host network traffic)
+    - ports:
         - protocol: TCP
-          port: 22
+          port: 2222
   egress:
     # Allow DNS
     - to:
@@ -671,10 +639,9 @@ spec:
         - podSelector:
             matchLabels:
               app.kubernetes.io/name: forgejo
-              app.kubernetes.io/component: server
       ports:
         - protocol: TCP
-          port: 3000
+          port: 80
     # Allow Docker registry and internet (CI builds)
     - to:
         - namespaceSelector: {}
@@ -702,12 +669,8 @@ spec:
     - Ingress
     - Egress
   ingress:
-    # Allow from LoadBalancer
-    - from:
-        - namespaceSelector:
-            matchLabels:
-              name: kube-system
-      ports:
+    # Allow from LoadBalancer (Cilium L2 - host network traffic)
+    - ports:
         - protocol: TCP
           port: 8123
   egress:
@@ -728,12 +691,8 @@ spec:
     - Ingress
     - Egress
   ingress:
-    # Allow from LoadBalancer
-    - from:
-        - namespaceSelector:
-            matchLabels:
-              name: kube-system
-      ports:
+    # Allow from LoadBalancer (Cilium L2 - host network traffic)
+    - ports:
         - protocol: TCP
           port: 5678
   egress:
