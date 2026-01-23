@@ -156,6 +156,15 @@ spec:
       type: RollingUpdate
       rollingUpdate:
         maxUnavailable: 1
+    # Envoy Configuration for L7 traffic
+    # Enables proper X-Forwarded-* header handling
+    envoy:
+      enabled: true
+      securityContext:
+        capabilities:
+          envoy:
+            - NET_ADMIN
+            - SYS_ADMIN
     # Ingress Controller
     ingressController:
       enabled: true
