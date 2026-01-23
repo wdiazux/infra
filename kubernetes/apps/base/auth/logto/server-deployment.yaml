@@ -51,6 +51,31 @@ spec:
             capabilities:
               drop:
                 - ALL
+        # Seed the database if not already seeded
+        - name: db-seed
+          image: ghcr.io/logto-io/logto:1.27.0
+          command:
+            - sh
+            - -c
+            - |
+              echo "Checking if database needs seeding..."
+              npm run cli db seed -- --swe
+              echo "Database seeding complete"
+          env:
+            - name: TZ
+              value: "America/El_Salvador"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: logto-secrets
+                  key: POSTGRES_PASSWORD
+            - name: DB_URL
+              value: "postgres://logto:$(POSTGRES_PASSWORD)@logto-postgres:5432/logto"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
       containers:
         - name: logto
           image: ghcr.io/logto-io/logto:1.27.0 # {"$imagepolicy": "flux-system:logto"}
