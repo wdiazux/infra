@@ -26,6 +26,14 @@ spec:
         app.kubernetes.io/part-of: logto
     spec:
       enableServiceLinks: false
+      # Host aliases to prevent hairpin routing for internal API calls
+      # Without this, internal requests to ENDPOINT/ADMIN_ENDPOINT go through
+      # the external Ingress and fail with 403
+      hostAliases:
+        - ip: "127.0.0.1"
+          hostnames:
+            - "auth.home-infra.net"
+            - "logto.home-infra.net"
       # Note: Logto requires write access to /etc/logto during startup
       # Running as root until upstream supports non-root execution
       securityContext:
