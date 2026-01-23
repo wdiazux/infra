@@ -11,8 +11,51 @@
 ---
 
 **Date:** 2026-01-23
-**Status:** Draft
+**Status:** In Progress
 **Author:** Claude + wdiaz
+
+---
+
+## Current Progress (2026-01-23)
+
+### Completed
+- ✅ Casdoor deployed and running at http://10.10.2.18
+- ✅ API access working with client credentials (`homelab-sso-client` / `homelab-sso-secret`)
+- ✅ Created `homelab` organization
+- ✅ Created `homelab-app` application (clientId: `homelab-app-client`, clientSecret: `homelab-app-secret-2026`)
+- ✅ Set `homelab-app` as default application for homelab organization
+
+### In Progress - User Creation Issue
+Attempting to create users in the `homelab` organization via API returns:
+```
+"The organization: homelab does not exist"
+```
+
+This appears to be a Casdoor API bug or permission issue. The organization exists (verified via `get-organization` API).
+
+### Workaround Options
+1. **Use Web UI** - Login at http://10.10.2.18 with `admin/123` and create users manually
+2. **Debug API** - Check Casdoor logs for more details on the error
+3. **Use built-in org** - Enable "Has privilege consent" on built-in organization to allow user creation
+
+### API Credentials Reference
+```
+# Built-in application (global admin access)
+clientId: homelab-sso-client
+clientSecret: homelab-sso-secret
+
+# Homelab application (for homelab org)
+clientId: homelab-app-client
+clientSecret: homelab-app-secret-2026
+```
+
+### Next Steps
+1. Create `wdiaz` user (via UI or debug API)
+2. Change default admin password
+3. Create OAuth applications for Grafana, Forgejo, Open WebUI, Immich
+4. Configure each service with OIDC settings
+
+---
 
 ## Service Authentication Matrix
 
