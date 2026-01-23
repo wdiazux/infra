@@ -51,6 +51,7 @@ resource "proxmox_virtual_environment_vm" "talos_node" {
   # Memory configuration
   memory {
     dedicated = var.node_memory
+    floating  = var.node_memory # Enable memory ballooning
   }
 
   # Disk configuration

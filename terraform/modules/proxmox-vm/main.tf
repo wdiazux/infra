@@ -50,6 +50,7 @@ resource "proxmox_virtual_environment_vm" "vm" {
   # Memory configuration
   memory {
     dedicated = var.memory
+    floating  = var.memory # Enable memory ballooning
   }
 
   # Disk configuration
