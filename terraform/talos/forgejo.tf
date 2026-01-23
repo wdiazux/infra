@@ -75,10 +75,10 @@ resource "helm_release" "forgejo" {
       name  = "service.ssh.loadBalancerIP"
       value = var.forgejo_ssh_ip
     },
-    # ROOT_URL uses the HTTP service IP (port 80)
+    # ROOT_URL uses the domain name (must match browser access for CSRF validation)
     {
       name  = "gitea.config.server.ROOT_URL"
-      value = "http://${var.forgejo_ip}/"
+      value = "http://${var.git_hostname}/"
     },
     # PostgreSQL database credentials
     {

@@ -698,3 +698,649 @@ spec:
   egress:
     # Allow all egress (workflow automation needs external API access)
     - {}
+
+---
+# =============================================================================
+# Media Namespace - Additional Services (Emby, Navidrome)
+# =============================================================================
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: media-emby-allow
+  namespace: media
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: emby
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from LoadBalancer (Cilium L2 - host network traffic)
+    - ports:
+        - protocol: TCP
+          port: 8096
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: media-navidrome-allow
+  namespace: media
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: navidrome
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from LoadBalancer (Cilium L2 - host network traffic)
+    - ports:
+        - protocol: TCP
+          port: 4533
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow HTTPS for optional Last.fm/Gravatar integration
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 443
+
+---
+# =============================================================================
+# Management Namespace - Additional Services (Wallos)
+# =============================================================================
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: management-wallos-allow
+  namespace: management
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: wallos
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from LoadBalancer (Cilium L2 - host network traffic)
+    - ports:
+        - protocol: TCP
+          port: 80
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+
+---
+# =============================================================================
+# Monitoring Namespace - VictoriaMetrics Stack
+# =============================================================================
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: monitoring-default-deny-egress
+  namespace: monitoring
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    # Allow DNS queries
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: monitoring-victoriametrics-allow
+  namespace: monitoring
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: victoriametrics
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from VMAgent (metrics push)
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: vmagent
+      ports:
+        - protocol: TCP
+          port: 8428
+    # Allow from Grafana (queries)
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: grafana
+      ports:
+        - protocol: TCP
+          port: 8428
+    # Allow from LoadBalancer (Cilium L2 - host network traffic)
+    - ports:
+        - protocol: TCP
+          port: 8428
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: monitoring-vmagent-allow
+  namespace: monitoring
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: vmagent
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow self-scrape
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: vmagent
+      ports:
+        - protocol: TCP
+          port: 8429
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow VictoriaMetrics (push metrics)
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: victoriametrics
+      ports:
+        - protocol: TCP
+          port: 8428
+    # Allow kube-state-metrics scraping
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: kube-state-metrics
+      ports:
+        - protocol: TCP
+          port: 8080
+        - protocol: TCP
+          port: 8081
+    # Allow node-exporter scraping (runs with hostNetwork)
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 9100
+    # Allow Kubernetes API scraping (apiserver, kubelet)
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 6443
+        - protocol: TCP
+          port: 10250
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: monitoring-grafana-allow
+  namespace: monitoring
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: grafana
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from LoadBalancer (Cilium L2 - host network traffic)
+    - ports:
+        - protocol: TCP
+          port: 3000
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow VictoriaMetrics (data source)
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: victoriametrics
+      ports:
+        - protocol: TCP
+          port: 8428
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: monitoring-kube-state-metrics-allow
+  namespace: monitoring
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: kube-state-metrics
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from VMAgent (scraping)
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: vmagent
+      ports:
+        - protocol: TCP
+          port: 8080
+        - protocol: TCP
+          port: 8081
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow Kubernetes API (read cluster state)
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 6443
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: monitoring-node-exporter-allow
+  namespace: monitoring
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: node-exporter
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from VMAgent (scraping) - note: node-exporter uses hostNetwork
+    - ports:
+        - protocol: TCP
+          port: 9100
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+
+---
+# =============================================================================
+# Tools Namespace - Developer Tools
+# =============================================================================
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: tools-default-deny-egress
+  namespace: tools
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    # Allow DNS queries
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: tools-it-tools-allow
+  namespace: tools
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: it-tools
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from LoadBalancer (Cilium L2 - host network traffic)
+    - ports:
+        - protocol: TCP
+          port: 80
+  egress:
+    # Allow DNS only (stateless tool, no external dependencies)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: tools-ntfy-allow
+  namespace: tools
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: ntfy
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from LoadBalancer (Cilium L2 - host network traffic)
+    - ports:
+        - protocol: TCP
+          port: 80
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: tools-homepage-allow
+  namespace: tools
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: homepage
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from LoadBalancer (Cilium L2 - host network traffic)
+    - ports:
+        - protocol: TCP
+          port: 3000
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: tools-copyparty-allow
+  namespace: tools
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: copyparty
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from LoadBalancer (Cilium L2 - host network traffic)
+    - ports:
+        - protocol: TCP
+          port: 3923
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: tools-attic-server-allow
+  namespace: tools
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: attic
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from LoadBalancer (Cilium L2 - host network traffic)
+    - ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow PostgreSQL
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: attic-db
+      ports:
+        - protocol: TCP
+          port: 5432
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: tools-attic-db-allow
+  namespace: tools
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: attic-db
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from Attic server
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: attic
+      ports:
+        - protocol: TCP
+          port: 5432
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: tools-affine-server-allow
+  namespace: tools
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: affine-server
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from LoadBalancer (Cilium L2 - host network traffic)
+    - ports:
+        - protocol: TCP
+          port: 3010
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow PostgreSQL
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: affine-postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    # Allow Redis
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: affine-redis
+      ports:
+        - protocol: TCP
+          port: 6379
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: tools-affine-postgres-allow
+  namespace: tools
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: affine-postgres
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from Affine server
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: affine-server
+      ports:
+        - protocol: TCP
+          port: 5432
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: tools-affine-redis-allow
+  namespace: tools
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: affine-redis
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from Affine server
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: affine-server
+      ports:
+        - protocol: TCP
+          port: 6379
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
