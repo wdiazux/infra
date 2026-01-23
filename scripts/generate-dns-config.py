@@ -15,7 +15,6 @@ Source of truth: kubernetes/infrastructure/cluster-vars/cluster-vars.yaml
 
 import argparse
 import difflib
-import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -41,11 +40,13 @@ NAME_MAPPINGS = {
     "IMMICH": "photos",
     "COMFYUI": "comfy",
     "COPYPARTY": "files",
+    "CASDOOR": "auth",
 }
 
 # Services that need multiple domain suffixes
 MULTI_SUFFIX_SERVICES = {
     "affine": ["home.arpa", "home-infra.net"],
+    "auth": ["home.arpa", "home-infra.net"],
     "git": ["home.arpa", "home-infra.net"],
     "gitops": ["home.arpa", "home-infra.net"],
     "chat": ["home.arpa", "home-infra.net"],
