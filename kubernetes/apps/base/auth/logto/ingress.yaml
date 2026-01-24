@@ -1,8 +1,11 @@
 # Logto Ingress
 #
-# Single domain routing based on official Logto documentation:
-# - PORT 3001: Core service (OIDC, Experience API, Management API)
-# - ADMIN_PORT 3002: Admin Console UI only
+# Routing for Logto multi-tenant architecture:
+# - PORT 3001: Default tenant (user OIDC, Experience API)
+# - PORT 3002: Admin tenant (Admin Console + Management API)
+#
+# The admin console (port 3002) issues tokens that must be validated
+# by the same tenant, so /api must route to port 3002.
 #
 # https://docs.logto.io/concepts/core-service/configuration
 ---
@@ -24,7 +27,8 @@ spec:
     - host: auth.home-infra.net
       http:
         paths:
-          # Admin Console UI only (port 3002)
+          # Admin Console and Management API (port 3002 - admin tenant)
+          # Tokens are issued and validated by the same tenant
           - path: /console
             pathType: Prefix
             backend:
@@ -32,8 +36,14 @@ spec:
                 name: logto
                 port:
                   number: 3002
-          # Everything else: Core service (port 3001)
-          # Includes: OIDC, Experience API, Management API, Sign-in UI
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: logto
+                port:
+                  number: 3002
+          # Default tenant: User OIDC and Experience UI (port 3001)
           - path: /
             pathType: Prefix
             backend:
