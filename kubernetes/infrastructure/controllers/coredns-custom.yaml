@@ -1,0 +1,54 @@
+# CoreDNS Custom Configuration
+#
+# Custom DNS entries for internal resolution to avoid hairpin routing.
+# Maps external domains to the Cilium Ingress ClusterIP so internal
+# services can resolve them without going through external network.
+#
+# NOTE: ClusterIP may change on service recreation. If DNS resolution
+# fails, verify the cilium-ingress ClusterIP:
+#   kubectl -n kube-system get svc cilium-ingress -o jsonpath='{.spec.clusterIP}'
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coredns
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: coredns
+data:
+  Corefile: |
+    .:53 {
+        errors
+        health {
+            lameduck 5s
+        }
+        ready
+        log . {
+            class error
+        }
+        prometheus :9153
+
+        # Custom hosts for internal resolution (hairpin routing fix)
+        # Maps Logto domains to Cilium Ingress ClusterIP
+        hosts {
+            10.109.143.170 auth.home-infra.net
+            10.109.143.170 logto.home-infra.net
+            fallthrough
+        }
+
+        kubernetes cluster.local in-addr.arpa ip6.arpa {
+            pods insecure
+            fallthrough in-addr.arpa ip6.arpa
+            ttl 30
+        }
+        forward . /etc/resolv.conf {
+           max_concurrent 1000
+        }
+        cache 30 {
+           disable success cluster.local
+           disable denial cluster.local
+        }
+        loop
+        reload
+        loadbalance
+    }

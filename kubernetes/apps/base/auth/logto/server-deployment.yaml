@@ -100,7 +100,7 @@ spec:
             - name: ENDPOINT
               value: "https://auth.${DOMAIN_PRIMARY}"
             - name: ADMIN_ENDPOINT
-              value: "https://auth.${DOMAIN_PRIMARY}"
+              value: "https://logto.${DOMAIN_PRIMARY}"
             # Redis cache for well-known data (improves response times)
             - name: REDIS_URL
               value: "redis://logto-redis:6379"
