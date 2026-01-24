@@ -93,7 +93,6 @@ infra/
 | FluxCD Webhook | 10.10.2.15 | GitOps webhook |
 | Weave GitOps | 10.10.2.16 | FluxCD UI |
 | MinIO Console | 10.10.2.17 | Velero S3 storage |
-| Logto | 10.10.2.18 | SSO/IAM |
 | Ingress | 10.10.2.20 | HTTPS termination |
 | Homepage | 10.10.2.21 | Dashboard |
 | Immich | 10.10.2.22 | Photo backup |
@@ -255,7 +254,7 @@ docs/
 
 ## Recent Changes
 
-- **2026-01-23**: Replaced Casdoor with Logto for SSO/IAM
+- **2026-01-24**: Removed SSO/Logto (Cilium Ingress hairpin limitation)
 - **2026-01-22**: Terraform code review, memory ballooning implementation, NetworkPolicies, security-strategy.md, backup verification procedures
 - **2026-01-21**: Documentation audit and cleanup
 - **2026-01-20**: Velero backup, PodGC, ComfyUI, Obico, version updates

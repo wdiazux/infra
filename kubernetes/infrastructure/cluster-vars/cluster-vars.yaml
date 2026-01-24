@@ -25,9 +25,6 @@ data:
   DOMAIN_INTERNAL: "home.arpa"
   DOMAIN_EXTERNAL: "reynoza.org"
 
-  # Service IPs - Auth
-  IP_LOGTO: "10.10.2.18"
-
   # Service IPs - Infrastructure
   IP_HUBBLE: "10.10.2.11"
   IP_LONGHORN: "10.10.2.12"
