@@ -1455,6 +1455,22 @@ spec:
       ports:
         - protocol: TCP
           port: 443
+    # Allow setup job to reach Zitadel API (same label app.kubernetes.io/name: zitadel)
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: zitadel
+      ports:
+        - protocol: TCP
+          port: 8080
+    # Allow setup job to reach Kubernetes API (for creating secrets)
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 6443
+        - protocol: TCP
+          port: 443
 
 ---
 apiVersion: networking.k8s.io/v1
