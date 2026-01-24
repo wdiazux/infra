@@ -20,6 +20,15 @@ spec:
     - host: auth.home-infra.net
       http:
         paths:
+          # Login UI (Zitadel v4.x uses separate login service)
+          - path: /ui/v2/login
+            pathType: Prefix
+            backend:
+              service:
+                name: zitadel-login
+                port:
+                  number: 3000
+          # Main Zitadel API and console
           - path: /
             pathType: Prefix
             backend:
