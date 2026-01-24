@@ -1,0 +1,31 @@
+# CiliumNetworkPolicy for Kubernetes API Server Access
+#
+# Standard Kubernetes NetworkPolicy with ipBlock doesn't work with Cilium's
+# socket-level load balancing (bpf-lb-sock: true). When a pod connects to the
+# K8s API ClusterIP (10.96.0.1:443), Cilium translates it to the backend
+# (10.10.2.10:6443) at the socket level, before NetworkPolicy evaluation.
+#
+# CiliumNetworkPolicy with toEntities: kube-apiserver correctly identifies
+# the API server and allows traffic regardless of the IP translation.
+#
+# See: https://docs.cilium.io/en/stable/security/policy/index.html
+
+---
+# Allow zitadel pods (including setup job) to access the Kubernetes API
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: auth-zitadel-kube-api-allow
+  namespace: auth
+spec:
+  description: "Allow Zitadel setup job to access Kubernetes API for creating secrets"
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: zitadel
+  egress:
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: "6443"
+              protocol: TCP

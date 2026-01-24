@@ -1463,14 +1463,10 @@ spec:
       ports:
         - protocol: TCP
           port: 8080
-    # Allow setup job to reach Kubernetes API (for creating secrets)
-    # Note: Cilium with bpf-lb-sock routes ClusterIP traffic directly to endpoints,
-    # so we must allow the actual API server port (6443), not the service port (443)
-    - to:
-        - namespaceSelector: {}
-      ports:
-        - protocol: TCP
-          port: 6443
+    # K8s API access is handled by CiliumNetworkPolicy (auth-zitadel-kube-api-allow)
+    # Standard NetworkPolicy with ipBlock/namespaceSelector doesn't work with Cilium's
+    # socket-level LB (bpf-lb-sock: true) because the ClusterIP gets translated before
+    # NetworkPolicy evaluation. CiliumNetworkPolicy with toEntities: kube-apiserver works.
 
 ---
 apiVersion: networking.k8s.io/v1

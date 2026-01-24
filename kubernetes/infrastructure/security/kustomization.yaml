@@ -8,3 +8,4 @@ kind: Kustomization
 
 resources:
   - network-policies.yaml
+  - cilium-network-policies.yaml
