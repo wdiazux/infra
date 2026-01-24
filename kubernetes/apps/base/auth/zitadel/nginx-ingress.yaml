@@ -7,7 +7,44 @@
 # v2 APIs use Connect RPC which works over HTTP/1.1.
 #
 # IP: 10.10.2.18 (dedicated nginx-ingress for Zitadel)
+#
+# Routing:
+# - /ui/v2/login/* -> zitadel-login (Next.js hosted login, HTTP)
+# - /* -> zitadel (gRPC API and console)
 ---
+# Zitadel Login UI (hosted login v2)
+# Must be separate ingress because it uses HTTP, not gRPC
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: zitadel-login-nginx
+  namespace: auth
+  labels:
+    app.kubernetes.io/name: zitadel-login
+  annotations:
+    # HTTP backend (Next.js)
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    nginx.ingress.kubernetes.io/proxy-body-size: "16m"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - auth.home-infra.net
+      secretName: wildcard-home-infra-net-tls
+  rules:
+    - host: auth.home-infra.net
+      http:
+        paths:
+          # Hosted login v2 UI
+          - path: /ui/v2/login
+            pathType: Prefix
+            backend:
+              service:
+                name: zitadel-login
+                port:
+                  number: 3000
+---
+# Zitadel API and Console (gRPC)
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
