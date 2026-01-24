@@ -43,7 +43,16 @@ spec:
                 name: logto
                 port:
                   number: 3002
-          # Default tenant: User OIDC and Experience UI (port 3001)
+          # Admin OIDC endpoints - needed for token validation
+          # Management API fetches JWKS from issuer URL for signature validation
+          - path: /oidc
+            pathType: Prefix
+            backend:
+              service:
+                name: logto
+                port:
+                  number: 3002
+          # Default tenant: Experience UI (port 3001)
           - path: /
             pathType: Prefix
             backend:
