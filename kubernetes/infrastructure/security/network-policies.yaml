@@ -1410,6 +1410,17 @@ spec:
       ports:
         - protocol: TCP
           port: 6379
+    # Allow HTTPS to Cilium Ingress for internal token validation
+    # (admin tenant needs to fetch JWKS from logto.home-infra.net)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
     # Allow HTTPS for social login, HaveIBeenPwned API, etc.
     # Empty 'to' allows external IPs (namespaceSelector only matches cluster pods)
     - ports:
