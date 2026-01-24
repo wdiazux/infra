@@ -1,0 +1,24 @@
+# Zitadel GRPCRoute (Gateway API)
+#
+# Routes gRPC traffic to Zitadel. Uses Gateway API native gRPC support
+# instead of nginx-ingress with backend-protocol annotation.
+#
+# This allows eliminating the nginx-ingress dependency for Zitadel.
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: GRPCRoute
+metadata:
+  name: zitadel-grpc
+  namespace: auth
+  labels:
+    app.kubernetes.io/name: zitadel
+spec:
+  parentRefs:
+    - name: cilium-gateway
+      namespace: kube-system
+  hostnames:
+    - auth.home-infra.net
+  rules:
+    - backendRefs:
+        - name: zitadel
+          port: 8080

@@ -1,0 +1,26 @@
+# Zitadel Login UI HTTPRoute (Gateway API)
+#
+# Routes hosted login v2 UI traffic to zitadel-login service.
+# Path must match before GRPCRoute catches all other traffic.
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: zitadel-login
+  namespace: auth
+  labels:
+    app.kubernetes.io/name: zitadel-login
+spec:
+  parentRefs:
+    - name: cilium-gateway
+      namespace: kube-system
+  hostnames:
+    - auth.home-infra.net
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /ui/v2/login
+      backendRefs:
+        - name: zitadel-login
+          port: 3000

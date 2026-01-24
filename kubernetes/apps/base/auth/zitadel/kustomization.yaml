@@ -10,3 +10,5 @@ resources:
   - helmrelease.yaml
   - nginx-ingress.yaml
   - networkpolicy-nginx.yaml
+  - httproute.yaml
+  - grpcroute.yaml
