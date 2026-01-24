@@ -217,6 +217,15 @@ data "helm_template" "cilium" {
         }
       }
     }
+
+    # Gateway API (for HTTP/2 backend support via appProtocol)
+    gatewayAPI = {
+      enabled = true
+      # Enable appProtocol for backend HTTP/2 selection (GEP-1911)
+      enableAppProtocol = true
+      # Enable ALPN for HTTP/2 negotiation
+      enableAlpn = true
+    }
   })]
 }
 

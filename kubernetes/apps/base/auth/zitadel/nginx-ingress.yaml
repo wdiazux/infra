@@ -1,0 +1,41 @@
+# Zitadel Nginx Ingress
+#
+# Uses nginx-ingress with GRPC backend protocol to enable HTTP/2 for
+# Zitadel's v1 gRPC APIs which require HTTP/2.
+#
+# The Cilium ingress uses HTTP/1.1 to backends, which breaks v1 gRPC APIs.
+# v2 APIs use Connect RPC which works over HTTP/1.1.
+#
+# IP: 10.10.2.18 (dedicated nginx-ingress for Zitadel)
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: zitadel-nginx
+  namespace: auth
+  labels:
+    app.kubernetes.io/name: zitadel
+  annotations:
+    # Enable HTTP/2 to backend for gRPC
+    nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
+    # Increase buffer sizes for gRPC
+    nginx.ingress.kubernetes.io/proxy-body-size: "16m"
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "8k"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - auth.home-infra.net
+      secretName: wildcard-home-infra-net-tls
+  rules:
+    - host: auth.home-infra.net
+      http:
+        paths:
+          # Main Zitadel API and console
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: zitadel
+                port:
+                  number: 8080

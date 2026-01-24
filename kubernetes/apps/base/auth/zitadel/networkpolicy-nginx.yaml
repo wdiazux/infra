@@ -1,0 +1,22 @@
+# NetworkPolicy for nginx-ingress controller in auth namespace
+#
+# Allows nginx-ingress to connect to Kubernetes API and Zitadel services
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: auth-nginx-ingress-allow
+  namespace: auth
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: ingress-nginx
+  policyTypes:
+    - Egress
+    - Ingress
+  ingress:
+    # Allow all ingress (LoadBalancer traffic)
+    - {}
+  egress:
+    # Allow all egress (API server, DNS, Zitadel services)
+    - {}

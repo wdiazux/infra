@@ -3,9 +3,12 @@
 # Custom DNS resolution for internal service access.
 #
 # Zitadel (auth.home-infra.net):
-#   Internal pods resolve to Zitadel's fixed ClusterIP (10.96.100.18)
-#   to bypass Cilium Ingress hairpin routing issues.
-#   External traffic still goes through Ingress normally.
+#   Internal pods resolve to nginx-ingress ClusterIP for proper
+#   HTTP/2 gRPC support. Cilium Ingress uses HTTP/1.1 which breaks
+#   Zitadel's v1 gRPC APIs.
+#
+#   External DNS: 10.10.2.18 (nginx-ingress LoadBalancer IP)
+#   Internal DNS: nginx-ingress ClusterIP (see below)
 #
 # See: docs/plans/2026-01-24-zitadel-sso-design.md
 ---
@@ -30,9 +33,10 @@ data:
         prometheus :9153
 
         # Internal hostname resolution for SSO
-        # Bypasses Cilium Ingress to avoid hairpin routing issues
+        # Routes to nginx-ingress for HTTP/2 gRPC support
+        # Note: ClusterIP may change if nginx-ingress is reinstalled
         hosts {
-            10.96.100.18 auth.home-infra.net
+            10.109.133.199 auth.home-infra.net
             fallthrough
         }
 
