@@ -74,7 +74,7 @@ spec:
     # Service configuration
     service:
       type: ClusterIP
-      port: 4180
+      portNumber: 4180
 
     # Resources (homelab-friendly)
     resources:

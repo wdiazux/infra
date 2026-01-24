@@ -35,7 +35,7 @@ spec:
     zitadel:
       # Masterkey from secret
       masterkeySecretName: zitadel-secrets
-      masterkeySecretKey: ZITADEL_MASTERKEY
+      masterkeySecretKey: masterkey
 
       # Configuration
       configmapConfig:
