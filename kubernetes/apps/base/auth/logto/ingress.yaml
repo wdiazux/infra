@@ -36,13 +36,14 @@ spec:
                 name: logto
                 port:
                   number: 3002
+          # Management API on port 3001 - accepts https://default.logto.app/api audience
           - path: /api
             pathType: Prefix
             backend:
               service:
                 name: logto
                 port:
-                  number: 3002
+                  number: 3001
           # Admin OIDC endpoints - needed for token validation
           # Management API fetches JWKS from issuer URL for signature validation
           - path: /oidc
