@@ -6,6 +6,5 @@ kind: Kustomization
 
 resources:
   - secret.enc.yaml
-  - certificate.yaml
   - statefulset.yaml
   - service.yaml

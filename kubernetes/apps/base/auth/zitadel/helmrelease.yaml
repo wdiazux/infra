@@ -52,11 +52,11 @@ spec:
             User:
               Username: zitadel
               SSL:
-                Mode: require
+                Mode: disable
             Admin:
               Username: zitadel
               SSL:
-                Mode: require
+                Mode: disable
             MaxOpenConns: 20
             MaxIdleConns: 10
             ConnMaxLifetime: 30m
