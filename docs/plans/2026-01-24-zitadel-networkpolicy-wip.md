@@ -1,84 +1,81 @@
-# Zitadel NetworkPolicy Fix - Work In Progress
+# Zitadel NetworkPolicy Fix - Completed
 
 **Date**: 2026-01-24
-**Status**: Incomplete - K8s API access issue
+**Status**: Complete
 
-## Completed
+## Problem
 
-1. **nginx-ingress for HTTP/2 gRPC** - Zitadel v1 APIs now work
-   - Files: `kubernetes/apps/base/auth/zitadel/nginx-ingress.yaml`
-   - LoadBalancer IP: 10.10.2.18
-
-2. **NetworkPolicy fixes**:
-   - `backup-minio-allow` - minio-init-bucket can reach MinIO (completed)
-   - `auth-zitadel-login-allow` - zitadel-login can reach Zitadel API
-   - `auth-zitadel-allow` - Added egress for setup job
-
-3. **Working pods**:
-   - zitadel: 1/1 Running
-   - zitadel-login: 1/1 Running
-   - zitadel-postgres: 1/1 Running
-   - zitadel-redis: 1/1 Running
-   - minio-init-bucket: Completed
-
-## Outstanding Issue
-
-The `zitadel-setup` Helm pre-upgrade hook job fails because containers (zitadel-machinekey, zitadel-machine-pat, zitadel-login-client-pat) cannot reach the Kubernetes API server.
+The `zitadel-setup` Helm pre-upgrade hook job failed because containers couldn't reach the Kubernetes API server.
 
 **Error**:
 ```
 couldn't get current server API group list: Get "https://10.96.0.1:443/api?timeout=32s": dial tcp 10.96.0.1:443: i/o timeout
 ```
 
-**Current NetworkPolicy** (`auth-zitadel-allow`):
+## Root Cause
+
+Standard Kubernetes NetworkPolicy with `ipBlock: 10.96.0.1/32` or `namespaceSelector: {} port: 6443` doesn't work with Cilium's socket-level load balancing (`bpf-lb-sock: true`).
+
+When a pod connects to the K8s API ClusterIP (`10.96.0.1:443`), Cilium translates it to the backend (`10.10.2.10:6443`) at the socket level, **before** NetworkPolicy evaluation. The NetworkPolicy never sees the original destination.
+
+## Solution
+
+Use `CiliumNetworkPolicy` with `toEntities: kube-apiserver` instead of standard NetworkPolicy. CiliumNetworkPolicy correctly identifies the API server regardless of IP translation.
+
 ```yaml
-egress:
-  - ports:
-    - port: 443
-      protocol: TCP
-    to:
-    - ipBlock:
-        cidr: 10.96.0.1/32
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: auth-zitadel-kube-api-allow
+  namespace: auth
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: zitadel
+  egress:
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: "6443"
+              protocol: TCP
 ```
 
-The ipBlock rule should allow access but doesn't work. Cilium may handle K8s API access differently.
+## Additional Fix
 
-## Next Steps
+`oauth2-proxy` was also failing because it needed HTTPS egress for OIDC discovery to `auth.home-infra.net` (external URL). Added HTTPS egress rule to `auth-oauth2-proxy-allow` NetworkPolicy.
 
-1. **Investigate Cilium K8s API access**:
-   - Check if Cilium requires specific CiliumNetworkPolicy for K8s API
-   - Test with `cilium connectivity test`
+## Commits
 
-2. **Workarounds to try**:
-   - Allow all egress temporarily for pods with `app.kubernetes.io/name: zitadel`
-   - Use CiliumNetworkPolicy with toEntities: kube-apiserver
-   - Skip Helm pre-upgrade hooks if Zitadel is already running
+- `78f7f59` - fix(auth): correct NetworkPolicy for K8s API and oauth2-proxy (initial attempt)
+- `f9259dc` - fix(auth): use CiliumNetworkPolicy for K8s API access (final fix)
 
-3. **Quick fix** (if needed):
-   ```bash
-   # Temporarily allow all egress for auth namespace
-   kubectl delete networkpolicy auth-default-deny-egress -n auth
+## Files Modified
 
-   # Retry HelmRelease
-   kubectl delete job zitadel-setup -n auth
-   flux reconcile helmrelease zitadel -n auth
-
-   # Re-apply policies after success
-   flux reconcile kustomization infrastructure-security
-   ```
-
-## Commits Made
-
-- `60f7cb6` - nginx-ingress for Zitadel HTTP/2 gRPC support
-- `fb9ef48` - minio init-bucket NetworkPolicy fix
-- `ef0931a` - zitadel-login NetworkPolicy
-- `451e70d` - K8s API egress for setup job
-- `47e5f92` - Use ipBlock for K8s API
-
-## Related Files
-
+- `kubernetes/infrastructure/security/cilium-network-policies.yaml` (new)
 - `kubernetes/infrastructure/security/network-policies.yaml`
-- `kubernetes/apps/base/auth/zitadel/kustomization.yaml`
-- `kubernetes/apps/base/auth/zitadel/nginx-ingress.yaml`
-- `kubernetes/apps/base/auth/zitadel/networkpolicy-nginx.yaml`
-- `kubernetes/infrastructure/controllers/coredns-custom.yaml`
+- `kubernetes/infrastructure/security/kustomization.yaml`
+
+## Verification
+
+```bash
+# CiliumNetworkPolicy is valid
+kubectl get ciliumnetworkpolicies -n auth
+# NAME                          AGE   VALID
+# auth-zitadel-kube-api-allow   5s    True
+
+# zitadel-setup job completed
+kubectl get jobs -n auth
+# NAME            STATUS     COMPLETIONS
+# zitadel-setup   Complete   1/1
+
+# All pods running
+kubectl get pods -n auth
+# oauth2-proxy   1/1   Running
+# zitadel        1/1   Running
+```
+
+## References
+
+- [Cilium Network Policy documentation](https://docs.cilium.io/en/stable/security/policy/index.html)
+- [GitHub Issue #20550 - Kubernetes network policy for api-server](https://github.com/cilium/cilium/issues/20550)
