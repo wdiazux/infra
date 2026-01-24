@@ -1,16 +1,15 @@
 # CoreDNS Custom Configuration
 #
-# Custom DNS resolution for internal service access.
+# Custom DNS resolution for internal service access (hairpin routing).
 #
-# Zitadel (auth.home-infra.net):
-#   Internal pods resolve to nginx-ingress ClusterIP for proper
-#   HTTP/2 gRPC support. Cilium Ingress uses HTTP/1.1 which breaks
-#   Zitadel's v1 gRPC APIs.
+# Internal pods resolve auth.home-infra.net to the Cilium Gateway API
+# service for proper TLS termination and routing.
 #
-#   External DNS: 10.10.2.18 (nginx-ingress LoadBalancer IP)
-#   Internal DNS: nginx-ingress ClusterIP (see below)
+# External DNS: 10.10.2.19 (Gateway API LoadBalancer IP)
+# Internal DNS: cilium-gateway-cilium-gateway.kube-system.svc.cluster.local
 #
-# See: docs/plans/2026-01-24-zitadel-sso-design.md
+# Note: Gateway API handles gRPC natively via GRPCRoute, so nginx-ingress
+# is no longer needed for Zitadel.
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -32,13 +31,9 @@ data:
         }
         prometheus :9153
 
-        # Internal hostname resolution for SSO
-        # Routes to nginx-ingress for HTTP/2 gRPC support
-        # Note: ClusterIP may change if nginx-ingress is reinstalled
-        hosts {
-            10.109.133.199 auth.home-infra.net
-            fallthrough
-        }
+        # Hairpin routing: rewrite external hostnames to Gateway service
+        # This is stable - uses service DNS name, not ClusterIP
+        rewrite name auth.home-infra.net cilium-gateway-cilium-gateway.kube-system.svc.cluster.local
 
         kubernetes cluster.local in-addr.arpa ip6.arpa {
             pods insecure
