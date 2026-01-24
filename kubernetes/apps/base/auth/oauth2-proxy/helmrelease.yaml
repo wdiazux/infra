@@ -84,10 +84,6 @@ spec:
       limits:
         memory: 128Mi
 
-    # Pod labels for NetworkPolicy
-    podLabels:
-      app.kubernetes.io/name: oauth2-proxy
-
     # Liveness and readiness probes
     livenessProbe:
       enabled: true
