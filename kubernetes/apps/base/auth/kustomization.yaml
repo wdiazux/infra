@@ -1,0 +1,13 @@
+# Auth namespace - Single Sign-On services
+#
+# Services:
+#   - Zitadel: Identity provider (10.10.2.18)
+#   - oauth2-proxy: Forward auth for apps without native OIDC
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - postgres
+  - redis
+  - zitadel
+  - oauth2-proxy

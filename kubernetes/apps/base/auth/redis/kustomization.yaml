@@ -1,0 +1,10 @@
+# Zitadel Redis Kustomization
+#
+# Redis 8 cache for Zitadel session and query caching.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - secret.enc.yaml
+  - deployment.yaml
+  - service.yaml

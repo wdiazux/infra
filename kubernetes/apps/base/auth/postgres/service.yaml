@@ -1,0 +1,22 @@
+# Zitadel PostgreSQL Service
+#
+# Headless service for StatefulSet DNS resolution.
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: auth
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/component: database
+    app.kubernetes.io/part-of: zitadel
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+      protocol: TCP

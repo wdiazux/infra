@@ -56,3 +56,21 @@ metadata:
 spec:
   interval: 1h
   url: https://emberstack.github.io/helm-charts
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: zitadel
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: https://charts.zitadel.com
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: oauth2-proxy
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: https://oauth2-proxy.github.io/manifests

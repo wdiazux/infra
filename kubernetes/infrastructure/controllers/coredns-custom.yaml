@@ -1,11 +1,13 @@
 # CoreDNS Custom Configuration
 #
-# Standard CoreDNS configuration for Kubernetes.
-# No custom hosts needed at this time.
+# Custom DNS resolution for internal service access.
 #
-# NOTE: ClusterIP may change on service recreation. If DNS resolution
-# fails, verify the cilium-ingress ClusterIP:
-#   kubectl -n kube-system get svc cilium-ingress -o jsonpath='{.spec.clusterIP}'
+# Zitadel (auth.home-infra.net):
+#   Internal pods resolve to Zitadel's fixed ClusterIP (10.96.100.18)
+#   to bypass Cilium Ingress hairpin routing issues.
+#   External traffic still goes through Ingress normally.
+#
+# See: docs/plans/2026-01-24-zitadel-sso-design.md
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -26,6 +28,13 @@ data:
             class error
         }
         prometheus :9153
+
+        # Internal hostname resolution for SSO
+        # Bypasses Cilium Ingress to avoid hairpin routing issues
+        hosts {
+            10.96.100.18 auth.home-infra.net
+            fallthrough
+        }
 
         kubernetes cluster.local in-addr.arpa ip6.arpa {
             pods insecure

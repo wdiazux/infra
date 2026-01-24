@@ -1,7 +1,7 @@
 # Zitadel SSO Design
 
 **Date**: 2026-01-24
-**Status**: Approved
+**Status**: In Progress (Infrastructure deployed, post-deployment config pending)
 **Author**: Claude + wdiaz
 
 ## Overview

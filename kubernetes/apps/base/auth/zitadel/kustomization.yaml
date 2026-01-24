@@ -1,0 +1,11 @@
+# Zitadel Kustomization
+#
+# Single Sign-On identity provider using Zitadel.
+# https://zitadel.com/docs/self-hosting/deploy/kubernetes
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - secret.enc.yaml
+  - helmrelease.yaml
+  - ingress.yaml

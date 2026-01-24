@@ -1,0 +1,10 @@
+# oauth2-proxy Kustomization
+#
+# Forward authentication proxy for apps without native OIDC support.
+# https://oauth2-proxy.github.io/oauth2-proxy/
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - secret.enc.yaml
+  - helmrelease.yaml

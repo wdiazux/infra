@@ -1,0 +1,120 @@
+# Zitadel PostgreSQL StatefulSet
+#
+# PostgreSQL 17 database with TLS support for Zitadel.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: auth
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/component: database
+    app.kubernetes.io/part-of: zitadel
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: postgres
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: postgres
+        app.kubernetes.io/component: database
+        app.kubernetes.io/part-of: zitadel
+    spec:
+      securityContext:
+        fsGroup: 999
+        fsGroupChangePolicy: "OnRootMismatch"
+      initContainers:
+        - name: copy-certs
+          image: docker.io/library/alpine:3.21
+          command:
+            - sh
+            - -c
+            - |
+              cp /certs/tls.crt /pgcerts/server.crt
+              cp /certs/tls.key /pgcerts/server.key
+              chmod 600 /pgcerts/server.key
+              chown 999:999 /pgcerts/*
+          volumeMounts:
+            - name: certs
+              mountPath: /certs
+              readOnly: true
+            - name: pgcerts
+              mountPath: /pgcerts
+      containers:
+        - name: postgres
+          image: docker.io/library/postgres:17-alpine
+          args:
+            - -c
+            - ssl=on
+            - -c
+            - ssl_cert_file=/pgcerts/server.crt
+            - -c
+            - ssl_key_file=/pgcerts/server.key
+          ports:
+            - name: postgres
+              containerPort: 5432
+              protocol: TCP
+          env:
+            - name: TZ
+              value: "America/El_Salvador"
+            - name: POSTGRES_DB
+              value: zitadel
+            - name: POSTGRES_USER
+              value: zitadel
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: zitadel-postgres-secrets
+                  key: POSTGRES_PASSWORD
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: pgcerts
+              mountPath: /pgcerts
+              readOnly: true
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - zitadel
+                - -d
+                - zitadel
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - zitadel
+                - -d
+                - zitadel
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+      volumes:
+        - name: certs
+          secret:
+            secretName: zitadel-postgres-tls
+        - name: pgcerts
+          emptyDir: {}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: longhorn
+        resources:
+          requests:
+            storage: 10Gi

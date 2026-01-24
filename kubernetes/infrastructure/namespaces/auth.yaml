@@ -1,0 +1,11 @@
+# Auth Namespace
+#
+# Single Sign-On and authentication services.
+# Services: zitadel, oauth2-proxy
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: auth
+  labels:
+    app.kubernetes.io/name: auth
+    purpose: authentication

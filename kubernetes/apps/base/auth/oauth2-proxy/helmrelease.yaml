@@ -1,0 +1,99 @@
+# oauth2-proxy HelmRelease
+#
+# Forward authentication proxy for apps without native OIDC support.
+# Used with CiliumEnvoyConfig ext_authz for header-based authentication.
+#
+# Docs: https://oauth2-proxy.github.io/oauth2-proxy/
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: oauth2-proxy
+  namespace: auth
+spec:
+  interval: 30m
+  timeout: 10m
+  chart:
+    spec:
+      chart: oauth2-proxy
+      version: "7.12.0"
+      sourceRef:
+        kind: HelmRepository
+        name: oauth2-proxy
+        namespace: flux-system
+      interval: 12h
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    replicaCount: 1
+
+    config:
+      # OIDC configuration
+      configFile: |-
+        provider = "oidc"
+        provider_display_name = "Zitadel"
+        oidc_issuer_url = "https://auth.home-infra.net"
+
+        # For forward auth (ext_authz), return 200 on success
+        upstreams = ["static://200"]
+
+        # Cookie settings
+        cookie_secure = true
+        cookie_samesite = "lax"
+        cookie_name = "_oauth2_proxy"
+        cookie_domains = [".home-infra.net"]
+
+        # Header settings for downstream apps
+        set_xauthrequest = true
+        pass_access_token = true
+        pass_authorization_header = true
+
+        # Email domain restriction (allow all for homelab)
+        email_domains = ["*"]
+
+        # Silence auth pages (for API requests)
+        silence_ping_logging = true
+
+        # Skip provider button (direct to Zitadel)
+        skip_provider_button = true
+
+        # Reverse proxy mode (trust X-Forwarded headers)
+        reverse_proxy = true
+
+        # OIDC scopes
+        scope = "openid profile email"
+
+    # Secrets from external secret
+    existingSecret: oauth2-proxy-secrets
+
+    # Service configuration
+    service:
+      type: ClusterIP
+      port: 4180
+
+    # Resources (homelab-friendly)
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        memory: 128Mi
+
+    # Pod labels for NetworkPolicy
+    podLabels:
+      app.kubernetes.io/name: oauth2-proxy
+
+    # Liveness and readiness probes
+    livenessProbe:
+      enabled: true
+      initialDelaySeconds: 10
+      periodSeconds: 10
+    readinessProbe:
+      enabled: true
+      initialDelaySeconds: 10
+      periodSeconds: 10

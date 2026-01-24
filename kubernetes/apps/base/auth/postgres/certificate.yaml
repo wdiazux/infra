@@ -1,0 +1,74 @@
+# Zitadel PostgreSQL TLS Certificate
+#
+# Self-signed certificate for PostgreSQL internal TLS.
+# Uses cert-manager with a self-signed issuer.
+---
+# Self-signed CA issuer for internal certificates
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: selfsigned-issuer
+  namespace: auth
+spec:
+  selfSigned: {}
+---
+# CA certificate for the auth namespace
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: auth-ca
+  namespace: auth
+spec:
+  isCA: true
+  commonName: auth-ca
+  secretName: auth-ca-tls
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: selfsigned-issuer
+    kind: Issuer
+    group: cert-manager.io
+---
+# Issuer using the CA certificate
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: auth-ca-issuer
+  namespace: auth
+spec:
+  ca:
+    secretName: auth-ca-tls
+---
+# PostgreSQL server certificate
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: zitadel-postgres-tls
+  namespace: auth
+spec:
+  secretName: zitadel-postgres-tls
+  duration: 8760h  # 1 year
+  renewBefore: 720h  # 30 days
+  subject:
+    organizations:
+      - homelab
+  commonName: postgres.auth.svc.cluster.local
+  isCA: false
+  privateKey:
+    algorithm: RSA
+    encoding: PKCS1
+    size: 2048
+  usages:
+    - server auth
+    - digital signature
+    - key encipherment
+  dnsNames:
+    - postgres
+    - postgres.auth
+    - postgres.auth.svc
+    - postgres.auth.svc.cluster.local
+  issuerRef:
+    name: auth-ca-issuer
+    kind: Issuer
+    group: cert-manager.io

@@ -57,6 +57,7 @@ infra/
 | Storage | Longhorn + NFS CSI |
 | GitOps | FluxCD |
 | Secrets | SOPS + Age |
+| SSO | Zitadel + oauth2-proxy |
 | Monitoring | VictoriaMetrics + Grafana |
 
 **Providers**: siderolabs/talos ~> 0.10.0, bpg/proxmox ~> 0.92.0
@@ -93,6 +94,7 @@ infra/
 | FluxCD Webhook | 10.10.2.15 | GitOps webhook |
 | Weave GitOps | 10.10.2.16 | FluxCD UI |
 | MinIO Console | 10.10.2.17 | Velero S3 storage |
+| Zitadel | 10.10.2.18 | SSO identity provider |
 | Ingress | 10.10.2.20 | HTTPS termination |
 | Homepage | 10.10.2.21 | Dashboard |
 | Immich | 10.10.2.22 | Photo backup |
@@ -254,7 +256,7 @@ docs/
 
 ## Recent Changes
 
-- **2026-01-24**: Removed SSO/Logto (Cilium Ingress hairpin limitation)
+- **2026-01-24**: Zitadel SSO implementation (replaces Logto, CoreDNS rewrite for hairpin fix)
 - **2026-01-22**: Terraform code review, memory ballooning implementation, NetworkPolicies, security-strategy.md, backup verification procedures
 - **2026-01-21**: Documentation audit and cleanup
 - **2026-01-20**: Velero backup, PodGC, ComfyUI, Obico, version updates
@@ -265,4 +267,4 @@ docs/
 See `docs/CHANGELOG.md` for full history.
 
 ---
-**Last Updated**: 2026-01-23 | **Status**: Production-Ready
+**Last Updated**: 2026-01-24 | **Status**: Production-Ready

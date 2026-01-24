@@ -16,3 +16,4 @@ resources:
   - monitoring.yaml
   - backup.yaml
   - cert-manager.yaml
+  - auth.yaml

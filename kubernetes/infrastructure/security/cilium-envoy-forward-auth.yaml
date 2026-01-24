@@ -1,0 +1,83 @@
+# CiliumEnvoyConfig for Forward Authentication
+#
+# EXPERIMENTAL: Uses Cilium's Envoy ext_authz filter for forward auth.
+# This configuration intercepts requests to protected services and
+# validates them against oauth2-proxy before forwarding.
+#
+# If this proves unreliable, use Traefik fallback instead.
+# See: docs/plans/2026-01-24-zitadel-sso-design.md
+#
+# NOTE: This is DISABLED by default. To enable:
+# 1. Uncomment the resource in kustomization.yaml
+# 2. Test with a single app first (e.g., Radarr)
+# 3. Extend to other apps if working
+#
+---
+apiVersion: cilium.io/v2
+kind: CiliumEnvoyConfig
+metadata:
+  name: forward-auth
+  namespace: auth
+spec:
+  # Services that require forward authentication
+  # Add services here as needed
+  services:
+    - name: radarr
+      namespace: arr-stack
+    - name: sonarr
+      namespace: arr-stack
+    - name: prowlarr
+      namespace: arr-stack
+    - name: bazarr
+      namespace: arr-stack
+    - name: sabnzbd
+      namespace: arr-stack
+    - name: qbittorrent
+      namespace: arr-stack
+  resources:
+    # External authorization cluster (oauth2-proxy)
+    - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
+      name: oauth2-proxy
+      type: STRICT_DNS
+      connect_timeout: 5s
+      lb_policy: ROUND_ROBIN
+      load_assignment:
+        cluster_name: oauth2-proxy
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: oauth2-proxy.auth.svc.cluster.local
+                      port_value: 4180
+    # HTTP filter configuration with ext_authz
+    - "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+      stat_prefix: forward_auth
+      http_filters:
+        # External authorization filter
+        - name: envoy.filters.http.ext_authz
+          typed_config:
+            "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz
+            transport_api_version: V3
+            http_service:
+              server_uri:
+                uri: oauth2-proxy.auth.svc.cluster.local
+                cluster: oauth2-proxy
+                timeout: 5s
+              path_prefix: /oauth2/auth
+              authorization_request:
+                allowed_headers:
+                  patterns:
+                    - exact: cookie
+                    - exact: authorization
+              authorization_response:
+                allowed_upstream_headers:
+                  patterns:
+                    - exact: x-auth-request-user
+                    - exact: x-auth-request-email
+                    - exact: x-auth-request-access-token
+            failure_mode_allow: false
+        # Router filter (must be last)
+        - name: envoy.filters.http.router
+          typed_config:
+            "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router

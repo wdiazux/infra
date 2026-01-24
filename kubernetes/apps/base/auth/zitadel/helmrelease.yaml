@@ -1,0 +1,143 @@
+# Zitadel HelmRelease
+#
+# Single Sign-On identity provider for the homelab.
+# Uses external TLS termination at Cilium Ingress.
+#
+# Docs: https://zitadel.com/docs/self-hosting/deploy/kubernetes
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: zitadel
+  namespace: auth
+spec:
+  interval: 30m
+  timeout: 15m
+  chart:
+    spec:
+      chart: zitadel
+      version: "9.0.0"
+      sourceRef:
+        kind: HelmRepository
+        name: zitadel
+        namespace: flux-system
+      interval: 12h
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    replicaCount: 1
+
+    zitadel:
+      # Masterkey from secret
+      masterkeySecretName: zitadel-secrets
+      masterkeySecretKey: ZITADEL_MASTERKEY
+
+      # Configuration
+      configmapConfig:
+        ExternalSecure: true
+        ExternalDomain: auth.home-infra.net
+        ExternalPort: 443
+        TLS:
+          Enabled: false  # TLS terminated at Ingress
+        Database:
+          Postgres:
+            Host: postgres.auth.svc.cluster.local
+            Port: 5432
+            Database: zitadel
+            User:
+              Username: zitadel
+              SSL:
+                Mode: require
+            Admin:
+              Username: zitadel
+              SSL:
+                Mode: require
+            MaxOpenConns: 20
+            MaxIdleConns: 10
+            ConnMaxLifetime: 30m
+        Caches:
+          Connector:
+            Redis:
+              Enabled: true
+              Addr: redis.auth.svc.cluster.local:6379
+        LogStore:
+          Access:
+            Stdout:
+              Enabled: true
+
+      # Database password from secret
+      dbSslCaCrtSecret: ""
+      secretConfig:
+        Database:
+          Postgres:
+            User:
+              Password: ""
+            Admin:
+              Password: ""
+
+      # First instance configuration
+      configSecretName: ""
+
+    env:
+      - name: ZITADEL_DATABASE_POSTGRES_USER_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: zitadel-postgres-secrets
+            key: POSTGRES_PASSWORD
+      - name: ZITADEL_DATABASE_POSTGRES_ADMIN_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: zitadel-postgres-secrets
+            key: POSTGRES_PASSWORD
+      - name: ZITADEL_CACHES_CONNECTOR_REDIS_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: zitadel-redis-secrets
+            key: REDIS_PASSWORD
+      - name: ZITADEL_FIRSTINSTANCE_ORG_HUMAN_USERNAME
+        value: "wdiaz"
+      - name: ZITADEL_FIRSTINSTANCE_ORG_HUMAN_FIRSTNAME
+        value: "William"
+      - name: ZITADEL_FIRSTINSTANCE_ORG_HUMAN_LASTNAME
+        value: "Diaz"
+      - name: ZITADEL_FIRSTINSTANCE_ORG_HUMAN_EMAIL
+        value: "root@wdiaz.org"
+      - name: ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: zitadel-secrets
+            key: ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORD
+      - name: ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORDCHANGEREQUIRED
+        value: "false"
+
+    # Service configuration
+    service:
+      type: ClusterIP
+      port: 8080
+      clusterIP: "10.96.100.18"  # Fixed for CoreDNS rewrite
+
+    # Disable built-in ingress (we use separate ingress resource)
+    ingress:
+      enabled: false
+
+    # Resources (homelab-friendly)
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        memory: 512Mi
+
+    # Init job
+    initJob:
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          memory: 512Mi
