@@ -22,4 +22,5 @@ resources:
   - server-deployment.yaml
   - services.yaml
   - ingress.yaml
+  - httproute.yaml
   - secret.enc.yaml

@@ -8,3 +8,4 @@ resources:
   - pvc.yaml
   - secret.enc.yaml
   - ingress.yaml
+  - httproute.yaml

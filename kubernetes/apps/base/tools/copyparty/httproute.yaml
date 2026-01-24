@@ -1,0 +1,26 @@
+# copyparty HTTPRoute (Gateway API)
+#
+# Parallel to existing Ingress for migration testing.
+# Uses shared Gateway at 10.10.2.19 for TLS termination.
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: copyparty
+  namespace: tools
+  labels:
+    app.kubernetes.io/name: copyparty
+spec:
+  parentRefs:
+    - name: cilium-gateway
+      namespace: kube-system
+  hostnames:
+    - copyparty.home-infra.net
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: copyparty
+          port: 80

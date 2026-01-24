@@ -7,4 +7,5 @@ kind: Kustomization
 
 resources:
   - ingress.yaml
+  - httproute.yaml
   - runner

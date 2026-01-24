@@ -6,5 +6,6 @@ resources:
   - deployment.yaml
   - service.yaml
   - ingress.yaml
+  - httproute.yaml
   - secret.enc.yaml
   - init-bucket-job.yaml

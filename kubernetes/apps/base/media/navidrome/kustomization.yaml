@@ -10,3 +10,4 @@ resources:
   - service.yaml
   - secret.enc.yaml
   - ingress.yaml
+  - httproute.yaml

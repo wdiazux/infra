@@ -1,0 +1,26 @@
+# obico-server HTTPRoute (Gateway API)
+#
+# Parallel to existing Ingress for migration testing.
+# Uses shared Gateway at 10.10.2.19 for TLS termination.
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: obico-server
+  namespace: printing
+  labels:
+    app.kubernetes.io/name: obico-server
+spec:
+  parentRefs:
+    - name: cilium-gateway
+      namespace: kube-system
+  hostnames:
+    - obico.home-infra.net
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: obico-server
+          port: 80

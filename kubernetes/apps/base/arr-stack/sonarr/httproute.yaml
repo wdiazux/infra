@@ -1,0 +1,26 @@
+# sonarr HTTPRoute (Gateway API)
+#
+# Parallel to existing Ingress for migration testing.
+# Uses shared Gateway at 10.10.2.19 for TLS termination.
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: sonarr
+  namespace: arr-stack
+  labels:
+    app.kubernetes.io/name: sonarr
+spec:
+  parentRefs:
+    - name: cilium-gateway
+      namespace: kube-system
+  hostnames:
+    - sonarr.home-infra.net
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: sonarr
+          port: 80
