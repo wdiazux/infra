@@ -46,7 +46,7 @@ spec:
           Enabled: false  # TLS terminated at Ingress
         Database:
           Postgres:
-            Host: postgres.auth.svc.cluster.local
+            Host: zitadel-postgres.auth.svc.cluster.local
             Port: 5432
             Database: zitadel
             User:
@@ -64,7 +64,7 @@ spec:
           Connector:
             Redis:
               Enabled: true
-              Addr: redis.auth.svc.cluster.local:6379
+              Addr: zitadel-redis.auth.svc.cluster.local:6379
         LogStore:
           Access:
             Stdout:
