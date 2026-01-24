@@ -1465,10 +1465,9 @@ spec:
           port: 8080
     # Allow setup job to reach Kubernetes API (for creating secrets)
     - to:
-        - namespaceSelector: {}
+        - ipBlock:
+            cidr: 10.96.0.1/32
       ports:
-        - protocol: TCP
-          port: 6443
         - protocol: TCP
           port: 443
 
