@@ -1,0 +1,26 @@
+# Grafana HTTPRoute (Gateway API)
+#
+# Parallel to existing Ingress for migration testing.
+# Uses shared Gateway at 10.10.2.19 for TLS termination.
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: grafana
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: grafana
+spec:
+  parentRefs:
+    - name: cilium-gateway
+      namespace: kube-system
+  hostnames:
+    - grafana.home-infra.net
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: grafana
+          port: 80
