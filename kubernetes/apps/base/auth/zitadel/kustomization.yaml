@@ -8,7 +8,5 @@ kind: Kustomization
 resources:
   - secret.enc.yaml
   - helmrelease.yaml
-  - nginx-ingress.yaml
-  - networkpolicy-nginx.yaml
   - httproute.yaml
   - grpcroute.yaml

@@ -9,5 +9,4 @@ namespace: arr-stack
 resources:
   - deployment.yaml
   - service.yaml
-  - ingress.yaml
   - httproute.yaml

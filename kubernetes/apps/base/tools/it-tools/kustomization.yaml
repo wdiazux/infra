@@ -12,5 +12,4 @@ namespace: tools
 resources:
   - deployment.yaml
   - service.yaml
-  - ingress.yaml
   - httproute.yaml
