@@ -1464,12 +1464,13 @@ spec:
         - protocol: TCP
           port: 8080
     # Allow setup job to reach Kubernetes API (for creating secrets)
+    # Note: Cilium with bpf-lb-sock routes ClusterIP traffic directly to endpoints,
+    # so we must allow the actual API server port (6443), not the service port (443)
     - to:
-        - ipBlock:
-            cidr: 10.96.0.1/32
+        - namespaceSelector: {}
       ports:
         - protocol: TCP
-          port: 443
+          port: 6443
 
 ---
 apiVersion: networking.k8s.io/v1
@@ -1606,7 +1607,7 @@ spec:
       ports:
         - protocol: UDP
           port: 53
-    # Allow Zitadel for token validation
+    # Allow Zitadel for token validation (internal)
     - to:
         - podSelector:
             matchLabels:
@@ -1614,4 +1615,10 @@ spec:
       ports:
         - protocol: TCP
           port: 8080
+    # Allow HTTPS for OIDC discovery (auth.home-infra.net via external DNS)
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 443
 
