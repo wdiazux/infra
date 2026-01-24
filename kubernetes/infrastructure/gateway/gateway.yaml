@@ -1,0 +1,87 @@
+# kubernetes/infrastructure/gateway/gateway.yaml
+---
+# Cilium Gateway API Gateway
+#
+# Central gateway for all HTTPS traffic. Uses shared LoadBalancer IP.
+# Each app namespace creates HTTPRoutes that reference this Gateway.
+#
+# IP: 10.10.2.19 (new, parallel to existing ingress on 10.10.2.20)
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: cilium-gateway
+  namespace: kube-system
+  annotations:
+    # Static IP for the Gateway LoadBalancer
+    io.cilium/lb-ipam-ips: "10.10.2.19"
+spec:
+  gatewayClassName: cilium
+  infrastructure:
+    annotations:
+      io.cilium/lb-ipam-ips: "10.10.2.19"
+  listeners:
+    # HTTP listener (redirects to HTTPS in production, but useful for testing)
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: All
+    # HTTPS listener for *.home-infra.net
+    - name: https-home-infra
+      protocol: HTTPS
+      port: 443
+      hostname: "*.home-infra.net"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: wildcard-home-infra-net-tls
+            namespace: cert-manager
+      allowedRoutes:
+        namespaces:
+          from: All
+    # HTTPS listener for home-infra.net (apex)
+    - name: https-home-infra-apex
+      protocol: HTTPS
+      port: 443
+      hostname: "home-infra.net"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: wildcard-home-infra-net-tls
+            namespace: cert-manager
+      allowedRoutes:
+        namespaces:
+          from: All
+    # HTTPS listener for *.reynoza.org (Immich)
+    - name: https-reynoza
+      protocol: HTTPS
+      port: 443
+      hostname: "*.reynoza.org"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: wildcard-reynoza-org-tls
+            namespace: cert-manager
+      allowedRoutes:
+        namespaces:
+          from: All
+---
+# ReferenceGrant: Allow Gateway to reference TLS secrets in cert-manager namespace
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: gateway-cert-manager-secrets
+  namespace: cert-manager
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      namespace: kube-system
+  to:
+    - group: ""
+      kind: Secret
