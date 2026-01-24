@@ -50,7 +50,7 @@ NAME_MAPPINGS = {
     "IMMICH": "photos",
     "COMFYUI": "comfy",
     "COPYPARTY": "files",
-    "LOGTO": "auth",
+    "ZITADEL": "auth",
 }
 
 # Services that need multiple domain suffixes
@@ -80,16 +80,20 @@ FQDN_OVERRIDES = {
 # Format: {short_name: {"suffixes": [...], "ip": "..."}}
 # Use "INGRESS" for ip to use INGRESS_IP
 ADDITIONAL_DOMAINS = {
-    # Logto admin console uses separate domain per official documentation
-    # auth.home-infra.net → port 3001 (user OIDC)
-    # logto.home-infra.net → port 3002 (admin console)
-    "logto": {"suffixes": ["home-infra.net"], "ip": "INGRESS"},
+    # Empty - Logto replaced by Zitadel which uses IP_ZITADEL from cluster-vars
 }
 
 # Services to skip (not user-facing or internal only)
 SKIP_SERVICES = {
     "FORGEJO_SSH",  # SSH access, not HTTP
     "WEBHOOK",  # FluxCD internal webhook
+}
+
+# Services with their own ingress controller (bypass main INGRESS_IP)
+# These services use their own LoadBalancer IP even for HTTPS domains
+# because they need special ingress features (e.g., HTTP/2 gRPC)
+OWN_INGRESS_SERVICES = {
+    "ZITADEL",  # Has dedicated nginx-ingress for HTTP/2 gRPC support
 }
 
 # Infrastructure services that need manual K8s service definitions
@@ -291,6 +295,7 @@ def build_service_registry(
             "suffixes": suffixes,
             "fqdn": fqdn_override,  # None if no override
             "category": get_category(ip),
+            "own_ingress": var_suffix in OWN_INGRESS_SERVICES,
         }
 
         if verbose:
@@ -312,6 +317,7 @@ def build_service_registry(
             "aliases": info.get("aliases", []),
             "fqdn": None,
             "category": info["category"],
+            "own_ingress": False,
         }
         if verbose:
             print(f"  {name:<15} {info['ip']:<15} -> (static)")
@@ -331,6 +337,7 @@ def build_service_registry(
             "aliases": [],
             "fqdn": None,
             "category": get_category(ip),
+            "own_ingress": False,
         }
         if verbose:
             print(f"  {name:<15} {ip:<15} -> (additional)")
@@ -387,6 +394,11 @@ def generate_controld_config(services: list[dict]) -> str:
             ingress_suffixes = [s for s in svc["suffixes"] if s in INGRESS_SUFFIXES]
             internal_suffixes = [s for s in svc["suffixes"] if s not in INGRESS_SUFFIXES]
 
+            # Determine IP for HTTPS domains
+            # Services with own_ingress use their own IP (e.g., Zitadel with dedicated nginx-ingress)
+            https_ip = svc["ip"] if svc.get("own_ingress") else INGRESS_IP
+            https_comment = "HTTPS via own Ingress" if svc.get("own_ingress") else "HTTPS via Ingress"
+
             # If service has Ingress domains, create separate entries
             if ingress_suffixes and internal_suffixes:
                 # Entry for internal access (direct to service)
@@ -403,17 +415,17 @@ def generate_controld_config(services: list[dict]) -> str:
                 lines.append(f"    # Internal access (direct to service)")
                 lines.append("")
 
-                # Entry for HTTPS access (via Ingress)
+                # Entry for HTTPS access (via Ingress or own Ingress)
                 lines.append(f"  - name: {svc['name']}")
-                lines.append(f"    ip: {INGRESS_IP}")
+                lines.append(f"    ip: {https_ip}")
                 suffixes_str = ", ".join(ingress_suffixes)
                 lines.append(f"    suffixes: [{suffixes_str}]")
-                lines.append(f"    # HTTPS via Ingress")
+                lines.append(f"    # {https_comment}")
                 lines.append("")
             elif ingress_suffixes:
-                # Only Ingress domains - route through Ingress
+                # Only Ingress domains - route through Ingress (or own Ingress)
                 lines.append(f"  - name: {svc['name']}")
-                lines.append(f"    ip: {INGRESS_IP}")
+                lines.append(f"    ip: {https_ip}")
                 if svc.get("aliases"):
                     aliases_str = ", ".join(svc["aliases"])
                     lines.append(f"    aliases: [{aliases_str}]")
@@ -426,7 +438,7 @@ def generate_controld_config(services: list[dict]) -> str:
                 else:
                     suffixes_str = ", ".join(ingress_suffixes)
                     lines.append(f"    suffixes: [{suffixes_str}]")
-                lines.append(f"    # HTTPS via Ingress")
+                lines.append(f"    # {https_comment}")
                 lines.append("")
             else:
                 # No Ingress domains - direct access only
