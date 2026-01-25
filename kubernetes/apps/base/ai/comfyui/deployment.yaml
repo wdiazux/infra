@@ -46,7 +46,7 @@ spec:
             - name: NVIDIA_VISIBLE_DEVICES
               value: "all"
             - name: CUDA_VISIBLE_DEVICES
-              value: "0"
+              value: "all"
             # Memory optimization for RTX 4000 (20GB VRAM)
             - name: PYTORCH_CUDA_ALLOC_CONF
               value: "garbage_collection_threshold:0.9,max_split_size_mb:512"
