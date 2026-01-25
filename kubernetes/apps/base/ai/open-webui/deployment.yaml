@@ -47,6 +47,13 @@ spec:
                 secretKeyRef:
                   name: open-webui-secrets
                   key: WEBUI_SECRET_KEY
+            # Image Generation with ComfyUI
+            - name: ENABLE_IMAGE_GENERATION
+              value: "true"
+            - name: COMFYUI_BASE_URL
+              value: "http://comfyui:80/"
+            - name: ENABLE_IMAGE_PROMPT_GENERATION
+              value: "true"
           volumeMounts:
             - name: data
               mountPath: /app/backend/data

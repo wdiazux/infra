@@ -1,7 +1,9 @@
 # Arr-stack Image Policies
 #
-# Hotio images use release-X.X.X.BUILD tags
-# Using semver extraction for proper version comparison
+# Hotio tagging varies by app:
+# - bazarr, qbittorrent, sabnzbd: release-X.Y.Z format
+# - radarr: zeus-X.Y.Z.BUILD format (changed ~Jan 2026)
+# - sonarr, prowlarr: No version tags (commit-based only)
 ---
 apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageRepository
@@ -21,37 +23,39 @@ spec:
   imageRepositoryRef:
     name: radarr
   filterTags:
-    # Extract semver from release-X.Y.Z.BUILD format
-    pattern: '^release-(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)\.(?P<build>\d+)$'
+    # Radarr v6+ uses zeus-X.Y.Z.BUILD format
+    pattern: '^zeus-(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)\.(?P<build>\d+)$'
     extract: '$major.$minor.$patch-$build'
   policy:
     semver:
-      range: ">=4.0.0"
----
-apiVersion: image.toolkit.fluxcd.io/v1
-kind: ImageRepository
-metadata:
-  name: sonarr
-  namespace: flux-system
-spec:
-  image: ghcr.io/hotio/sonarr
-  interval: 12h
----
-apiVersion: image.toolkit.fluxcd.io/v1
-kind: ImagePolicy
-metadata:
-  name: sonarr
-  namespace: flux-system
-spec:
-  imageRepositoryRef:
-    name: sonarr
-  filterTags:
-    # Extract semver from release-X.Y.Z.BUILD format
-    pattern: '^release-(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)\.(?P<build>\d+)$'
-    extract: '$major.$minor.$patch-$build'
-  policy:
-    semver:
-      range: ">=4.0.0"
+      range: ">=6.0.0 <8.0.0"
+# Sonarr - ImagePolicy DISABLED
+# Reason: Hotio switched to commit-based tags (v4-<hash>) without version info.
+# Updates managed by Renovate instead.
+# ---
+# apiVersion: image.toolkit.fluxcd.io/v1
+# kind: ImageRepository
+# metadata:
+#   name: sonarr
+#   namespace: flux-system
+# spec:
+#   image: ghcr.io/hotio/sonarr
+#   interval: 12h
+# ---
+# apiVersion: image.toolkit.fluxcd.io/v1
+# kind: ImagePolicy
+# metadata:
+#   name: sonarr
+#   namespace: flux-system
+# spec:
+#   imageRepositoryRef:
+#     name: sonarr
+#   filterTags:
+#     pattern: '^release-(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)\.(?P<build>\d+)$'
+#     extract: '$major.$minor.$patch-$build'
+#   policy:
+#     semver:
+#       range: ">=4.0.0 <6.0.0"
 ---
 apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageRepository
@@ -76,7 +80,7 @@ spec:
     extract: '$major.$minor.$patch'
   policy:
     semver:
-      range: ">=1.0.0"
+      range: ">=1.0.0 <3.0.0"
 ---
 apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageRepository
@@ -101,7 +105,7 @@ spec:
     extract: '$major.$minor.$patch-$build'
   policy:
     semver:
-      range: ">=2.0.0"
+      range: ">=2.0.0 <4.0.0"
 ---
 apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageRepository
@@ -126,7 +130,7 @@ spec:
     extract: '$major.$minor.$patch'
   policy:
     semver:
-      range: ">=5.0.0"
+      range: ">=5.0.0 <7.0.0"
 ---
 apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageRepository
@@ -151,4 +155,4 @@ spec:
     extract: '$major.$minor.$patch'
   policy:
     semver:
-      range: ">=4.0.0"
+      range: ">=4.0.0 <6.0.0"

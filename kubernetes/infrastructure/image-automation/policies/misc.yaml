@@ -21,7 +21,7 @@ spec:
     pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'
   policy:
     semver:
-      range: ">=4.0.0"
+      range: ">=4.0.0 <6.0.0"
 ---
 apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageRepository
@@ -44,7 +44,7 @@ spec:
     pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'
   policy:
     semver:
-      range: ">=2.0.0"
+      range: ">=2.0.0 <4.0.0"
 ---
 apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageRepository
@@ -68,7 +68,7 @@ spec:
     pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'
   policy:
     semver:
-      range: ">=1.30.0"
+      range: ">=1.30.0 <3.0.0"
 # Obico Web - ImagePolicy DISABLED
 # Reason: gabe565/docker-obico uses rolling 'release' tag, not semver.
 # The deployment uses 'release' tag directly (documented exception).

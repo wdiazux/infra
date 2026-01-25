@@ -1,0 +1,116 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    "docker:enableMajor",
+    ":disableRateLimiting"
+  ],
+  "platform": "gitea",
+  "labels": ["dependencies", "renovate"],
+  "timezone": "America/El_Salvador",
+  "schedule": ["before 6am on saturday"],
+  "prHourlyLimit": 0,
+  "prConcurrentLimit": 10,
+  "minimumReleaseAge": "3 days",
+  "vulnerabilityAlerts": {
+    "enabled": true
+  },
+  "kubernetes": {
+    "fileMatch": ["kubernetes/.+\\.yaml$"]
+  },
+  "packageRules": [
+    {
+      "description": "Group all patch updates together",
+      "matchUpdateTypes": ["patch"],
+      "groupName": "patch updates",
+      "groupSlug": "patch"
+    },
+    {
+      "description": "Group monitoring stack updates",
+      "matchPackagePatterns": ["grafana", "victoriametrics", "prometheus"],
+      "groupName": "monitoring stack",
+      "groupSlug": "monitoring"
+    },
+    {
+      "description": "Group arr-stack updates",
+      "matchPackagePatterns": ["radarr", "sonarr", "prowlarr", "bazarr", "qbittorrent", "sabnzbd"],
+      "groupName": "arr-stack",
+      "groupSlug": "arr-stack"
+    },
+    {
+      "description": "Group Immich updates (must stay in sync)",
+      "matchPackagePatterns": ["immich"],
+      "groupName": "immich",
+      "groupSlug": "immich"
+    },
+    {
+      "description": "Group AI stack updates",
+      "matchPackagePatterns": ["ollama", "open-webui", "comfyui"],
+      "groupName": "ai-stack",
+      "groupSlug": "ai"
+    },
+    {
+      "description": "Hotio images - use release tag pattern",
+      "matchDatasources": ["docker"],
+      "matchPackagePatterns": ["ghcr.io/hotio/"],
+      "versioning": "regex:^release-(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)(\\.(?<build>\\d+))?$"
+    },
+    {
+      "description": "Hotio Radarr - uses zeus prefix for v6+",
+      "matchPackageNames": ["ghcr.io/hotio/radarr"],
+      "versioning": "regex:^zeus-(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)\\.(?<build>\\d+)$"
+    },
+    {
+      "description": "LinuxServer images - standard semver",
+      "matchPackagePatterns": ["lscr.io/linuxserver/"],
+      "versioning": "semver"
+    },
+    {
+      "description": "Home Assistant - year-based versioning",
+      "matchPackageNames": ["ghcr.io/home-assistant/home-assistant"],
+      "versioning": "regex:^(?<major>\\d{4})\\.(?<minor>\\d+)\\.(?<patch>\\d+)$"
+    },
+    {
+      "description": "MinIO - date-based releases",
+      "matchPackagePatterns": ["minio"],
+      "versioning": "regex:^RELEASE\\.(?<major>\\d{4})-(?<minor>\\d{2})-(?<patch>\\d{2})T\\d{2}-\\d{2}-\\d{2}Z$"
+    },
+    {
+      "description": "Affine - canary date tags",
+      "matchPackageNames": ["ghcr.io/toeverything/affine"],
+      "versioning": "regex:^(?<major>\\d{4})\\.(?<minor>\\d+)\\.(?<patch>\\d+)-canary\\.(?<build>\\d+)$"
+    },
+    {
+      "description": "Pin major versions for critical infrastructure",
+      "matchPackagePatterns": ["grafana", "victoriametrics"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
+      "description": "Auto-merge patch updates for stable apps",
+      "matchPackagePatterns": ["busybox", "node-exporter"],
+      "matchUpdateTypes": ["patch"],
+      "automerge": true,
+      "automergeType": "pr"
+    },
+    {
+      "description": "Disable updates for rolling-tag images",
+      "matchPackagePatterns": ["it-tools", "obico"],
+      "enabled": false
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Flux imagepolicy markers",
+      "fileMatch": ["kubernetes/.+\\.yaml$"],
+      "matchStrings": [
+        "image:\\s*(?<depName>[^:]+):(?<currentValue>[^\\s#]+)\\s*#\\s*\\{\"\\$imagepolicy\""
+      ],
+      "datasourceTemplate": "docker"
+    }
+  ],
+  "ignoreDeps": [
+    "code.forgejo.org/forgejo/runner"
+  ]
+}

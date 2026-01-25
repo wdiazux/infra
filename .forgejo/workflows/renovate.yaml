@@ -1,0 +1,64 @@
+# Renovate Dependency Update Workflow
+#
+# Scans Kubernetes manifests for container image updates and creates PRs.
+# Runs weekly on Saturday mornings (configurable in renovate.json).
+#
+# Benefits over FluxCD Image Automation:
+# - No regex needed for most images (auto-detects version schemes)
+# - Creates PRs for review instead of direct commits
+# - Groups related updates together
+# - Better handling of non-semver tags
+#
+# Required secrets:
+# - RENOVATE_TOKEN: Forgejo access token with repo write permissions
+#
+name: Renovate
+
+on:
+  # Weekly schedule (additional to renovate.json schedule for redundancy)
+  schedule:
+    - cron: '0 5 * * 6'  # 5 AM every Saturday
+  # Manual trigger
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (no PRs created)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+
+env:
+  RENOVATE_VERSION: "39"
+  LOG_LEVEL: "info"
+
+jobs:
+  renovate:
+    name: Run Renovate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Renovate
+        run: |
+          # Set dry-run flag if requested
+          DRY_RUN_FLAG=""
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            DRY_RUN_FLAG="--dry-run"
+            echo "Running in dry-run mode - no PRs will be created"
+          fi
+
+          docker run --rm \
+            -e RENOVATE_TOKEN="${{ secrets.RENOVATE_TOKEN }}" \
+            -e RENOVATE_PLATFORM="gitea" \
+            -e RENOVATE_ENDPOINT="https://git.home-infra.net/api/v1" \
+            -e RENOVATE_GIT_AUTHOR="Renovate Bot <renovate@home-infra.net>" \
+            -e LOG_LEVEL="${{ env.LOG_LEVEL }}" \
+            -v $PWD:/usr/src/app:ro \
+            renovate/renovate:${{ env.RENOVATE_VERSION }} \
+            $DRY_RUN_FLAG \
+            --autodiscover=false \
+            wdiaz/infra

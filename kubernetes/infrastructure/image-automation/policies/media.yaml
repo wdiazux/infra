@@ -46,7 +46,7 @@ spec:
     pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'
   policy:
     semver:
-      range: ">=0.50.0"
+      range: ">=0.50.0 <2.0.0"
 ---
 apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageRepository
@@ -69,7 +69,8 @@ spec:
     pattern: '^v[0-9]+\.[0-9]+\.[0-9]+$'
   policy:
     semver:
-      range: ">=1.0.0"
+      # IMPORTANT: immich-server and immich-machine-learning versions must match
+      range: ">=1.0.0 <3.0.0"
 ---
 apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageRepository
@@ -94,4 +95,5 @@ spec:
     extract: '$1'
   policy:
     semver:
-      range: ">=1.0.0"
+      # IMPORTANT: immich-machine-learning and immich-server versions must match
+      range: ">=1.0.0 <3.0.0"

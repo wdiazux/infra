@@ -21,7 +21,7 @@ spec:
     pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'
   policy:
     semver:
-      range: ">=10.0.0"
+      range: ">=10.0.0 <13.0.0"
 ---
 apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageRepository
@@ -44,7 +44,7 @@ spec:
     pattern: '^v[0-9]+\.[0-9]+\.[0-9]+$'
   policy:
     semver:
-      range: ">=1.90.0"
+      range: ">=1.90.0 <3.0.0"
 ---
 apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageRepository
@@ -67,7 +67,7 @@ spec:
     pattern: '^v[0-9]+\.[0-9]+\.[0-9]+$'
   policy:
     semver:
-      range: ">=1.90.0"
+      range: ">=1.90.0 <3.0.0"
 ---
 apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageRepository
@@ -90,7 +90,7 @@ spec:
     pattern: '^v[0-9]+\.[0-9]+\.[0-9]+$'
   policy:
     semver:
-      range: ">=1.0.0"
+      range: ">=1.0.0 <3.0.0"
 ---
 apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageRepository
@@ -113,4 +113,4 @@ spec:
     pattern: '^v[0-9]+\.[0-9]+\.[0-9]+$'
   policy:
     semver:
-      range: ">=2.0.0"
+      range: ">=2.0.0 <4.0.0"
