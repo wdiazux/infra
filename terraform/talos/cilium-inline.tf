@@ -205,20 +205,14 @@ data "helm_template" "cilium" {
       }
     }
 
-    # Ingress Controller
+    # Ingress Controller - DISABLED (replaced by Gateway API)
+    # Legacy Ingress resources migrated to HTTPRoute/GRPCRoute
     ingressController = {
-      enabled          = true
-      default          = true
-      loadbalancerMode = "shared"
-      service = {
-        type = "LoadBalancer"
-        annotations = {
-          "io.cilium/lb-ipam-ips" = var.ingress_controller_ip
-        }
-      }
+      enabled = false
     }
 
-    # Gateway API (for HTTP/2 backend support via appProtocol)
+    # Gateway API - Primary ingress method
+    # Handles all HTTP/HTTPS/gRPC traffic via HTTPRoute and GRPCRoute
     gatewayAPI = {
       enabled = true
       # Enable appProtocol for backend HTTP/2 selection (GEP-1911)
