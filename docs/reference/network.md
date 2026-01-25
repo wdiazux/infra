@@ -49,8 +49,8 @@ LoadBalancer IPs assigned to core Kubernetes services.
 | 10.10.2.15 | FluxCD Webhook | 80 | flux-system |
 | 10.10.2.16 | Weave GitOps | 80 | flux-system |
 | 10.10.2.17 | MinIO Console | 80 | backup |
-| 10.10.2.18 | Logto | 80 | auth |
-| 10.10.2.20 | Ingress | 443 | ingress |
+| 10.10.2.18 | Zitadel | 8080 | auth |
+| 10.10.2.20 | Gateway API | 443 | kube-system |
 
 ---
 
@@ -125,8 +125,8 @@ spec:
 | Forgejo SSH | ssh://git@10.10.2.14 | SSH Key |
 | Weave GitOps | http://10.10.2.16 | Username/Password |
 | MinIO Console | http://10.10.2.17 | Username/Password |
-| Logto | http://10.10.2.18 | Username/Password |
-| Ingress | https://10.10.2.20 | TLS Termination |
+| Zitadel | https://auth.home-infra.net | SSO |
+| Gateway API | https://10.10.2.20 | TLS Termination |
 | Homepage | http://10.10.2.21 | None |
 | Immich | http://10.10.2.22 | Username/Password |
 | Grafana | http://10.10.2.23 | Username/Password |
@@ -153,16 +153,17 @@ spec:
 
 ---
 
-## Local HTTPS Access (Ingress Architecture)
+## Local HTTPS Access (Gateway API Architecture)
 
 Services are accessible via HTTPS using wildcard certificates from Let's Encrypt.
+Cilium Gateway API provides TLS termination with HTTPRoute/GRPCRoute routing.
 
 ### Split-Horizon DNS
 
 | Domain Suffix | Resolves To | Protocol | Purpose |
 |---------------|-------------|----------|---------|
-| `*.home-infra.net` | 10.10.2.20 (Ingress) | HTTPS | Local HTTPS access |
-| `*.reynoza.org` | 10.10.2.20 (Ingress) | HTTPS | Local HTTPS access |
+| `*.home-infra.net` | 10.10.2.20 (Gateway) | HTTPS | Local HTTPS access |
+| `*.reynoza.org` | 10.10.2.20 (Gateway) | HTTPS | Local HTTPS access |
 | `*.home.arpa` | Service LoadBalancer IP | HTTP | Internal direct access |
 
 ### How It Works
@@ -174,9 +175,9 @@ Local Client (browser)
     ControlD DNS
          │ resolves *.home-infra.net → 10.10.2.20
          ▼
-  Cilium Ingress (10.10.2.20)
+  Cilium Gateway API (10.10.2.20)
          │ TLS termination (Let's Encrypt wildcard cert)
-         │ Routes by hostname
+         │ Routes by hostname (HTTPRoute/GRPCRoute)
          ▼
   Backend Service (e.g., Navidrome)
 ```
@@ -204,13 +205,13 @@ Local Client (browser)
 
 ControlD handles split-horizon DNS for local access:
 
-### HTTPS via Ingress (home-infra.net, reynoza.org)
+### HTTPS via Gateway API (home-infra.net, reynoza.org)
 
-All `*.home-infra.net` and `*.reynoza.org` domains resolve to Ingress for HTTPS:
+All `*.home-infra.net` and `*.reynoza.org` domains resolve to Gateway API for HTTPS:
 
 ```
-10.10.2.20   *.home-infra.net    # Ingress handles TLS termination
-10.10.2.20   *.reynoza.org       # Ingress handles TLS termination
+10.10.2.20   *.home-infra.net    # Gateway API handles TLS termination
+10.10.2.20   *.reynoza.org       # Gateway API handles TLS termination
 ```
 
 ### Direct HTTP Access (home.arpa)
@@ -471,4 +472,4 @@ When adding resources in Pangolin, use either:
 
 ---
 
-**Last Updated:** 2026-01-23
+**Last Updated:** 2026-01-25

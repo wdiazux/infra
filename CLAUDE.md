@@ -95,7 +95,7 @@ infra/
 | Weave GitOps | 10.10.2.16 | FluxCD UI |
 | MinIO Console | 10.10.2.17 | Velero S3 storage |
 | Zitadel | 10.10.2.18 | SSO identity provider |
-| Ingress | 10.10.2.20 | HTTPS termination |
+| Gateway API | 10.10.2.20 | HTTPS termination (HTTPRoute/GRPCRoute) |
 | Homepage | 10.10.2.21 | Dashboard |
 | Immich | 10.10.2.22 | Photo backup |
 | Grafana | 10.10.2.23 | Monitoring dashboards |
@@ -256,6 +256,7 @@ docs/
 
 ## Recent Changes
 
+- **2026-01-25**: Cilium Gateway API migration (replaces Ingress Controller), auto-generated Forgejo runner tokens, CiliumNetworkPolicies for K8s API access
 - **2026-01-24**: Zitadel SSO implementation (replaces Logto, CoreDNS rewrite for hairpin fix)
 - **2026-01-22**: Terraform code review, memory ballooning implementation, NetworkPolicies, security-strategy.md, backup verification procedures
 - **2026-01-21**: Documentation audit and cleanup
@@ -267,4 +268,4 @@ docs/
 See `docs/CHANGELOG.md` for full history.
 
 ---
-**Last Updated**: 2026-01-24 | **Status**: Production-Ready
+**Last Updated**: 2026-01-25 | **Status**: Production-Ready
