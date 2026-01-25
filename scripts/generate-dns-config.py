@@ -110,16 +110,18 @@ INFRASTRUCTURE_SERVICES = {
 }
 
 # Static resources not managed by Kubernetes (external infrastructure)
-# These use the default suffix (home-infra.net)
+# These use direct IPs (not routed through Gateway API)
 STATIC_RESOURCES = {
     "proxmox": {
         "ip": "10.10.2.2",
         "category": "infrastructure",
         "aliases": ["pve"],
+        "own_ingress": True,  # Direct IP access
     },
     "nas": {
         "ip": "10.10.2.5",
         "category": "infrastructure",
+        "own_ingress": True,  # Direct IP access
     },
 }
 
@@ -305,7 +307,7 @@ def build_service_registry(
             "aliases": info.get("aliases", []),
             "fqdn": None,
             "category": info["category"],
-            "own_ingress": False,
+            "own_ingress": info.get("own_ingress", False),
         }
         if verbose:
             print(f"  {name:<15} {info['ip']:<15} -> (static)")
