@@ -5,7 +5,7 @@
 # Central gateway for all HTTPS traffic. Uses shared LoadBalancer IP.
 # Each app namespace creates HTTPRoutes that reference this Gateway.
 #
-# IP: 10.10.2.19 (Gateway API, parallel to Cilium Ingress on 10.10.2.20)
+# IP: 10.10.2.20 (Gateway API, parallel to Cilium Ingress on 10.10.2.20)
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
@@ -14,12 +14,12 @@ metadata:
   namespace: kube-system
   annotations:
     # Static IP for the Gateway LoadBalancer
-    io.cilium/lb-ipam-ips: "10.10.2.19"
+    io.cilium/lb-ipam-ips: "10.10.2.20"
 spec:
   gatewayClassName: cilium
   infrastructure:
     annotations:
-      io.cilium/lb-ipam-ips: "10.10.2.19"
+      io.cilium/lb-ipam-ips: "10.10.2.20"
   listeners:
     # HTTP listener (redirects to HTTPS in production, but useful for testing)
     - name: http

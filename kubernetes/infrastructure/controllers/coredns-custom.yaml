@@ -5,7 +5,7 @@
 # Internal pods resolve auth.home-infra.net to the Cilium Gateway API
 # service for proper TLS termination and routing.
 #
-# External DNS: 10.10.2.19 (Gateway API LoadBalancer IP)
+# External DNS: 10.10.2.20 (Gateway API LoadBalancer IP)
 # Internal DNS: cilium-gateway-cilium-gateway.kube-system.svc.cluster.local
 #
 # Note: Gateway API handles gRPC natively via GRPCRoute, so nginx-ingress
