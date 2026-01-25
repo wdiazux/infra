@@ -22,7 +22,6 @@ data:
 
   # Domains
   DOMAIN_PRIMARY: "home-infra.net"
-  DOMAIN_INTERNAL: "home.arpa"
   DOMAIN_EXTERNAL: "reynoza.org"
 
   # Service IPs - Infrastructure

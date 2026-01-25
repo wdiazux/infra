@@ -122,7 +122,7 @@ infra/
 | Open WebUI | 10.10.2.51 | LLM interface |
 | ComfyUI | 10.10.2.52 | Image generation (node-based) |
 
-**Domains**: home-infra.net, reynoza.org, wdiaz.org, unix.red (all Cloudflare → VPS), home.arpa (ControlD), .local (mDNS)
+**Domains**: home-infra.net, reynoza.org, wdiaz.org, unix.red (all Cloudflare → VPS, ControlD for local), .local (mDNS)
 
 ## Talos Implementation
 
@@ -256,7 +256,7 @@ docs/
 
 ## Recent Changes
 
-- **2026-01-25**: Cilium Gateway API migration (replaces Ingress Controller), auto-generated Forgejo runner tokens, CiliumNetworkPolicies for K8s API access
+- **2026-01-25**: Consolidated domains to home-infra.net (removed home.arpa), Cilium Gateway API migration, auto-generated Forgejo runner tokens, CiliumNetworkPolicies for K8s API access
 - **2026-01-24**: Zitadel SSO implementation (replaces Logto, CoreDNS rewrite for hairpin fix)
 - **2026-01-22**: Terraform code review, memory ballooning implementation, NetworkPolicies, security-strategy.md, backup verification procedures
 - **2026-01-21**: Documentation audit and cleanup

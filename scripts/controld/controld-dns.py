@@ -3,7 +3,7 @@
 ControlD DNS Management Script
 
 Manages DNS domains in ControlD for homelab services.
-Creates rules that redirect *.home-infra.net and *.home.arpa to local IPs.
+Creates rules that redirect *.home-infra.net and *.reynoza.org to local IPs.
 
 Supports syncing to multiple profiles (e.g., Default, Infra, IoT).
 
@@ -211,7 +211,7 @@ def load_config(config_path: Path) -> dict:
     Single-profile format (backward compatible):
         profile_name: Default
         folder_name: home-infra
-        suffixes: [home.arpa]
+        suffixes: [home-infra.net]
 
     Multi-profile format:
         profiles:
@@ -219,7 +219,7 @@ def load_config(config_path: Path) -> dict:
             folder_name: home-infra
           - name: Infra
             folder_name: home-infra
-        suffixes: [home.arpa]
+        suffixes: [home-infra.net]
 
     Returns:
         Dict with keys: api_base_url, profiles (list), suffixes (list)

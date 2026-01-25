@@ -158,13 +158,12 @@ spec:
 Services are accessible via HTTPS using wildcard certificates from Let's Encrypt.
 Cilium Gateway API provides TLS termination with HTTPRoute/GRPCRoute routing.
 
-### Split-Horizon DNS
+### DNS Resolution
 
 | Domain Suffix | Resolves To | Protocol | Purpose |
 |---------------|-------------|----------|---------|
 | `*.home-infra.net` | 10.10.2.20 (Gateway) | HTTPS | Local HTTPS access |
-| `*.reynoza.org` | 10.10.2.20 (Gateway) | HTTPS | Local HTTPS access |
-| `*.home.arpa` | Service LoadBalancer IP | HTTP | Internal direct access |
+| `*.reynoza.org` | 10.10.2.20 (Gateway) | HTTPS | External domain (Immich) |
 
 ### How It Works
 
@@ -184,12 +183,13 @@ Local Client (browser)
 
 ### HTTPS URLs
 
-| Service | HTTPS URL | Direct HTTP URL |
-|---------|-----------|-----------------|
-| Navidrome | https://music.home-infra.net | http://music.home.arpa |
-| Grafana | https://grafana.home-infra.net | http://grafana.home.arpa |
-| Open WebUI | https://chat.home-infra.net | http://chat.home.arpa |
-| Immich | https://photos.reynoza.org | http://photos.home.arpa |
+| Service | HTTPS URL |
+|---------|-----------|
+| Homepage | https://home-infra.net |
+| Navidrome | https://music.home-infra.net |
+| Grafana | https://grafana.home-infra.net |
+| Open WebUI | https://chat.home-infra.net |
+| Immich | https://photos.reynoza.org |
 
 ### Certificate Management
 
@@ -203,58 +203,23 @@ Local Client (browser)
 
 ## DNS Records (ControlD)
 
-ControlD handles split-horizon DNS for local access:
+ControlD handles local DNS for homelab access. All services use HTTPS via Gateway API.
 
-### HTTPS via Gateway API (home-infra.net, reynoza.org)
+### Domain Resolution
 
 All `*.home-infra.net` and `*.reynoza.org` domains resolve to Gateway API for HTTPS:
 
 ```
-10.10.2.20   *.home-infra.net    # Gateway API handles TLS termination
-10.10.2.20   *.reynoza.org       # Gateway API handles TLS termination
-```
-
-### Direct HTTP Access (home.arpa)
-
-Internal domains resolve directly to service LoadBalancer IPs:
-
-```
-10.10.2.11   hubble.home.arpa
-10.10.2.12   longhorn.home.arpa
-10.10.2.13   git.home.arpa
-10.10.2.16   gitops.home.arpa
-10.10.2.17   minio.home.arpa
-10.10.2.18   auth.home.arpa
-10.10.2.21   home.arpa           # Homepage (special FQDN)
-10.10.2.22   photos.home.arpa
-10.10.2.23   grafana.home.arpa
-10.10.2.24   metrics.home.arpa
-10.10.2.25   hass.home.arpa
-10.10.2.26   n8n.home.arpa
-10.10.2.27   obico.home.arpa
-10.10.2.29   attic.home.arpa
-10.10.2.30   emby.home.arpa
-10.10.2.31   music.home.arpa
-10.10.2.32   tools.home.arpa
-10.10.2.34   wallos.home.arpa
-10.10.2.35   ntfy.home.arpa
-10.10.2.36   paperless.home.arpa
-10.10.2.40   sabnzbd.home.arpa
-10.10.2.41   qbittorrent.home.arpa
-10.10.2.42   prowlarr.home.arpa
-10.10.2.43   radarr.home.arpa
-10.10.2.44   sonarr.home.arpa
-10.10.2.45   bazarr.home.arpa
-10.10.2.50   ollama.home.arpa
-10.10.2.51   chat.home.arpa
-10.10.2.52   comfy.home.arpa
+10.10.2.20   home-infra.net      # Homepage (root domain)
+10.10.2.20   *.home-infra.net    # All services via Gateway API
+10.10.2.20   *.reynoza.org       # Immich (photos.reynoza.org)
 ```
 
 ### Static Infrastructure
 
 ```
-10.10.2.2    proxmox.home.arpa pve.home.arpa
-10.10.2.5    nas.home.arpa
+10.10.2.20   proxmox.home-infra.net pve.home-infra.net
+10.10.2.20   nas.home-infra.net
 ```
 
 ---
@@ -409,9 +374,8 @@ All external domains are registered and managed in Cloudflare, pointing to the P
 
 | Domain | Purpose | Resolution Method |
 |--------|---------|-------------------|
-| `.home.arpa` | Internal only | ControlD (home) / Pangolin VPN (remote) |
 | `home-infra.net` | Homelab services | ControlD (home) / Cloudflare → Pangolin (external) |
-| `reynoza.org` | External services | Cloudflare → Pangolin |
+| `reynoza.org` | External services (Immich) | ControlD (home) / Cloudflare → Pangolin (external) |
 | `wdiaz.org` | External services | Cloudflare → Pangolin |
 | `unix.red` | External services | Cloudflare → Pangolin |
 | `.local` | mDNS | Router/mDNS |
@@ -444,7 +408,7 @@ Services can be exposed externally via Pangolin tunneling (no port forwarding re
 
 | External Domain | Internal DNS | LoadBalancer IP | Access |
 |-----------------|--------------|-----------------|--------|
-| home.home-infra.net | `homepage.tools.svc.cluster.local` | 10.10.2.21 | Private |
+| home-infra.net | `homepage.tools.svc.cluster.local` | 10.10.2.21 | Private |
 | photos.reynoza.org | `immich.media.svc.cluster.local` | 10.10.2.22 | Private |
 
 ### Pangolin Resource Configuration

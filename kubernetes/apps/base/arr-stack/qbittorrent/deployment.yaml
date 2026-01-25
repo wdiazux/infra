@@ -43,7 +43,7 @@ spec:
                   echo "[Preferences]" >> "$CONFIG_FILE"
                   echo "WebUI\\HostHeaderValidation=false" >> "$CONFIG_FILE"
                   echo "WebUI\\CSRFProtection=false" >> "$CONFIG_FILE"
-                  echo "WebUI\\ServerDomains=qbittorrent.${DOMAIN_PRIMARY};qbittorrent.${DOMAIN_INTERNAL};${IP_QBITTORRENT}" >> "$CONFIG_FILE"
+                  echo "WebUI\\ServerDomains=qbittorrent.${DOMAIN_PRIMARY};${IP_QBITTORRENT}" >> "$CONFIG_FILE"
                   echo "Host validation settings added to qBittorrent.conf"
                 else
                   echo "Host validation settings already configured"

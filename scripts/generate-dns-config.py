@@ -53,27 +53,16 @@ NAME_MAPPINGS = {
     "ZITADEL": "auth",
 }
 
-# Services that need multiple domain suffixes
+# Services that use non-default domain suffixes
+# Default is ["home-infra.net"] - only list services that differ
 MULTI_SUFFIX_SERVICES = {
-    "affine": ["home.arpa", "home-infra.net"],
-    "auth": ["home.arpa", "home-infra.net"],
-    "git": ["home.arpa", "home-infra.net"],
-    "gitops": ["home.arpa", "home-infra.net"],
-    "chat": ["home.arpa", "home-infra.net"],
-    "ollama": ["home.arpa", "home-infra.net"],
-    "comfy": ["home.arpa", "home-infra.net"],
-    "attic": ["home.arpa", "home-infra.net"],
-    "emby": ["home.arpa", "home-infra.net"],
-    "music": ["home.arpa", "home-infra.net"],
-    "tools": ["home.arpa", "home-infra.net"],
-    "ntfy": ["home.arpa", "home-infra.net"],
-    "photos": ["home.arpa", "reynoza.org"],
+    "photos": ["reynoza.org"],  # Immich uses reynoza.org only
 }
 
 # Services with explicit FQDN (no suffix processing)
-# Use when the service name would create a bad FQDN (e.g., home.home.arpa)
+# Use when the service name would create a bad FQDN
 FQDN_OVERRIDES = {
-    "home": ["home.arpa"],  # Homepage accessible at home.arpa (not home.home.arpa)
+    "home": ["home-infra.net"],  # Homepage accessible at home-infra.net (root domain)
 }
 
 # Additional domains not derived from cluster-vars IP variables
@@ -121,12 +110,12 @@ INFRASTRUCTURE_SERVICES = {
 }
 
 # Static resources not managed by Kubernetes (external infrastructure)
+# These use the default suffix (home-infra.net)
 STATIC_RESOURCES = {
     "proxmox": {
         "ip": "10.10.2.2",
         "category": "infrastructure",
         "aliases": ["pve"],
-        # Only home.arpa - Proxmox is internal infrastructure, not exposed via home-infra.net
     },
     "nas": {
         "ip": "10.10.2.5",
@@ -282,7 +271,7 @@ def build_service_registry(
 
         # Get domain suffixes or FQDN override
         fqdn_override = FQDN_OVERRIDES.get(short_name)
-        suffixes = MULTI_SUFFIX_SERVICES.get(short_name, ["home.arpa"])
+        suffixes = MULTI_SUFFIX_SERVICES.get(short_name, ["home-infra.net"])
 
         service = {
             "name": short_name,
@@ -312,7 +301,7 @@ def build_service_registry(
             "k8s_service": None,
             "namespace": None,
             "k8s_dns": None,
-            "suffixes": info.get("suffixes", ["home.arpa"]),
+            "suffixes": info.get("suffixes", ["home-infra.net"]),
             "aliases": info.get("aliases", []),
             "fqdn": None,
             "category": info["category"],
@@ -332,7 +321,7 @@ def build_service_registry(
             "k8s_service": None,
             "namespace": None,
             "k8s_dns": None,
-            "suffixes": info.get("suffixes", ["home.arpa"]),
+            "suffixes": info.get("suffixes", ["home-infra.net"]),
             "aliases": [],
             "fqdn": None,
             "category": get_category(ip),
@@ -364,8 +353,7 @@ def generate_controld_config(services: list[dict]) -> str:
         "# To customize: edit cluster-vars.yaml or the generator script",
         "#",
         "# Routing architecture:",
-        f"#   *.home-infra.net, *.reynoza.org -> {INGRESS_IP} (Cilium Ingress, HTTPS)",
-        "#   *.home.arpa -> direct service LoadBalancer IP (internal, HTTP)",
+        f"#   *.home-infra.net, *.reynoza.org -> {INGRESS_IP} (Cilium Gateway API, HTTPS)",
         "",
         "domains:",
     ]
@@ -452,7 +440,7 @@ def generate_controld_config(services: list[dict]) -> str:
                     else:
                         fqdn_str = ", ".join(svc["fqdn"])
                         lines.append(f"    fqdn: [{fqdn_str}]")
-                elif svc["suffixes"] != ["home.arpa"]:
+                elif svc["suffixes"] != ["home-infra.net"]:
                     suffixes_str = ", ".join(svc["suffixes"])
                     lines.append(f"    suffixes: [{suffixes_str}]")
                 lines.append("")

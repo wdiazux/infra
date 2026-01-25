@@ -70,8 +70,8 @@ spec:
             - -c
             - |
               from django.contrib.sites.models import Site
-              Site.objects.update_or_create(id=1, defaults={'domain': 'obico.${DOMAIN_INTERNAL}', 'name': 'Obico'})
-              print('Site configured: obico.${DOMAIN_INTERNAL}')
+              Site.objects.update_or_create(id=1, defaults={'domain': 'obico.${DOMAIN_PRIMARY}', 'name': 'Obico'})
+              print('Site configured: obico.${DOMAIN_PRIMARY}')
           envFrom:
             - secretRef:
                 name: obico-secret
@@ -102,7 +102,7 @@ spec:
             - name: SITE_IS_PUBLIC
               value: "False"
             - name: ALLOWED_HOSTS
-              value: "obico.${DOMAIN_INTERNAL},obico.${DOMAIN_PRIMARY},${IP_OBICO},localhost"
+              value: "obico.${DOMAIN_PRIMARY},${IP_OBICO},localhost"
             # Internal URLs
             - name: INTERNAL_MEDIA_HOST
               value: "http://obico-server:3334"
