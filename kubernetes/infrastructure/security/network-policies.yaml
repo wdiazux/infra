@@ -658,10 +658,8 @@ spec:
       ports:
         - protocol: TCP
           port: 80
-    # Allow Docker registry and internet (CI builds)
-    - to:
-        - namespaceSelector: {}
-      ports:
+    # Allow Docker registry and internet (CI builds need to pull images)
+    - ports:
         - protocol: TCP
           port: 443
         - protocol: TCP
