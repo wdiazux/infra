@@ -47,6 +47,10 @@ data:
             icon: proxmox.png
             href: https://proxmox.${DOMAIN_INTERNAL}:8006
             description: Hypervisor
+        - Zitadel:
+            icon: zitadel.png
+            href: https://auth.${DOMAIN_PRIMARY}
+            description: Identity Provider (SSO)
         - Longhorn:
             icon: longhorn.png
             href: http://longhorn.${DOMAIN_INTERNAL}
@@ -79,7 +83,7 @@ data:
     - Media:
         - Immich:
             icon: immich.png
-            href: http://photos.${DOMAIN_EXTERNAL}
+            href: https://photos.${DOMAIN_EXTERNAL}
             description: Photo & Video Backup
         - Emby:
             icon: emby.png
