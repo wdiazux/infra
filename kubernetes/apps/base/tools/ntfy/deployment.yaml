@@ -25,6 +25,7 @@ spec:
     spec:
       securityContext:
         fsGroup: 1000
+        fsGroupChangePolicy: "OnRootMismatch"
       containers:
         - name: ntfy
           image: binwiederhier/ntfy:v2.16.0 # {"$imagepolicy": "flux-system:ntfy"}

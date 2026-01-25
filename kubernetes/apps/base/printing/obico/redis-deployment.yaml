@@ -30,6 +30,9 @@ spec:
       containers:
         - name: redis
           image: redis:7-alpine
+          env:
+            - name: TZ
+              value: "America/El_Salvador"
           ports:
             - name: redis
               containerPort: 6379

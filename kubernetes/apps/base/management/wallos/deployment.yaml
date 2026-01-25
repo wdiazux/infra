@@ -27,6 +27,7 @@ spec:
     spec:
       securityContext:
         fsGroup: 3001
+        fsGroupChangePolicy: "OnRootMismatch"
       containers:
         - name: wallos
           image: docker.io/bellamy/wallos:4.6.0 # {"$imagepolicy": "flux-system:wallos"}

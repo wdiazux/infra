@@ -38,6 +38,8 @@ spec:
               containerPort: 3333
               protocol: TCP
           env:
+            - name: TZ
+              value: "America/El_Salvador"
             - name: DEBUG
               value: "False"
             - name: FLASK_APP

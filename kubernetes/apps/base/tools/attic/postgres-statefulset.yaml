@@ -8,6 +8,7 @@ metadata:
   namespace: tools
   labels:
     app.kubernetes.io/name: attic-db
+    app.kubernetes.io/component: database
     app.kubernetes.io/part-of: attic
 spec:
   serviceName: attic-db
@@ -19,6 +20,7 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: attic-db
+        app.kubernetes.io/component: database
         app.kubernetes.io/part-of: attic
     spec:
       securityContext:
@@ -32,6 +34,8 @@ spec:
               containerPort: 5432
               protocol: TCP
           env:
+            - name: TZ
+              value: "America/El_Salvador"
             - name: POSTGRES_DB
               value: attic
             - name: POSTGRES_USER

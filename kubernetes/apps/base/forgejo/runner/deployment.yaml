@@ -143,6 +143,14 @@ spec:
                 - "pgrep -f 'forgejo-runner daemon'"
             initialDelaySeconds: 30
             periodSeconds: 30
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - "pgrep -f 'forgejo-runner daemon'"
+            initialDelaySeconds: 10
+            periodSeconds: 10
 
         # Docker-in-Docker sidecar for job execution
         - name: docker-dind

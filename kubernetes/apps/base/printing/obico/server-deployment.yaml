@@ -156,6 +156,14 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /app/data
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - "pgrep -f 'celery.*worker'"
+            initialDelaySeconds: 30
+            periodSeconds: 30
       volumes:
         - name: data
           persistentVolumeClaim:
