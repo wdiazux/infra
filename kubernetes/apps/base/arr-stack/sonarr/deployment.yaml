@@ -30,7 +30,7 @@ spec:
         fsGroupChangePolicy: "OnRootMismatch"
       containers:
         - name: sonarr
-          image: ghcr.io/hotio/sonarr:release-4.0.16.2944 # {"$imagepolicy": "flux-system:sonarr"}
+          image: ghcr.io/hotio/sonarr:release-4.0.9.2244 # {"$imagepolicy": "flux-system:sonarr"}
           ports:
             - name: http
               containerPort: 8989

@@ -30,7 +30,7 @@ spec:
         fsGroupChangePolicy: "OnRootMismatch"
       containers:
         - name: ollama
-          image: ollama/ollama:0.15.0 # {"$imagepolicy": "flux-system:ollama"}
+          image: ollama/ollama:0.15.1 # {"$imagepolicy": "flux-system:ollama"}
           ports:
             - name: http
               containerPort: 11434
