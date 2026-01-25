@@ -33,7 +33,7 @@ spec:
           type: RuntimeDefault
       initContainers:
         - name: copy-config
-          image: busybox:1.37 # {"$imagepolicy": "flux-system:busybox"}
+          image: busybox:1.37.0 # {"$imagepolicy": "flux-system:busybox"}
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
