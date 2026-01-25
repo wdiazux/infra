@@ -76,9 +76,10 @@ resource "helm_release" "forgejo" {
       value = var.forgejo_ssh_ip
     },
     # ROOT_URL uses the domain name (must match browser access for CSRF validation)
+    # HTTPS because users access via Gateway API with TLS termination
     {
       name  = "gitea.config.server.ROOT_URL"
-      value = "http://${var.git_hostname}/"
+      value = "https://${var.git_hostname}/"
     },
     # PostgreSQL database credentials
     {
