@@ -111,6 +111,10 @@ spec:
       ports:
         - protocol: TCP
           port: 11434
+    # Allow external HTTPS (HuggingFace, model downloads, OIDC endpoints)
+    - ports:
+        - protocol: TCP
+          port: 443
 
 ---
 apiVersion: networking.k8s.io/v1
