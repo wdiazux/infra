@@ -77,52 +77,48 @@ infra/
 | Range | Purpose |
 |-------|---------|
 | 10.10.2.1-10 | Core infrastructure |
-| 10.10.2.11-20 | Management services |
-| 10.10.2.21-150 | Applications (LoadBalancer pool) |
+| 10.10.2.11-20 | Management LoadBalancers |
+| 10.10.2.41-50 | Application LoadBalancers |
 | 10.10.2.151-254 | Traditional VMs |
+
+### Network Architecture
+
+All web UIs use ClusterIP services and are accessed via Cilium Gateway API:
+- **Gateway IP**: 10.10.2.20 (HTTPS termination via HTTPRoute/GRPCRoute)
+- **Domain**: *.home-infra.net, *.reynoza.org → 10.10.2.20
+
+Only services requiring direct network access use LoadBalancer IPs:
 
 | Component | IP | Purpose |
 |-----------|-----|---------|
-| Gateway | 10.10.2.1 | Router |
+| Gateway | 10.10.2.1 | Network router |
 | Proxmox | 10.10.2.2 | Hypervisor |
-| NAS | 10.10.2.5 | Backup target |
-| Talos Node | 10.10.2.10 | K8s node |
-| Hubble UI | 10.10.2.11 | Network observability |
-| Longhorn UI | 10.10.2.12 | Storage management |
-| Forgejo | 10.10.2.13 | Git server |
-| Forgejo SSH | 10.10.2.14 | Git SSH |
-| FluxCD Webhook | 10.10.2.15 | GitOps webhook |
-| Weave GitOps | 10.10.2.16 | FluxCD UI |
-| MinIO Console | 10.10.2.17 | Velero S3 storage |
-| Zitadel | 10.10.2.18 | SSO identity provider |
-| Gateway API | 10.10.2.20 | HTTPS termination (HTTPRoute/GRPCRoute) |
-| Homepage | 10.10.2.21 | Dashboard |
-| Immich | 10.10.2.22 | Photo backup |
-| Grafana | 10.10.2.23 | Monitoring dashboards |
-| VictoriaMetrics | 10.10.2.24 | Metrics storage |
-| Home Assistant | 10.10.2.25 | Smart home |
-| n8n | 10.10.2.26 | Workflow automation |
-| Obico | 10.10.2.27 | 3D printer monitoring |
-| Attic | 10.10.2.29 | Nix binary cache |
-| Emby | 10.10.2.30 | Media server |
-| Navidrome | 10.10.2.31 | Music server |
-| IT-Tools | 10.10.2.32 | Dev toolbox |
-| Affine | 10.10.2.33 | Knowledge base |
-| Wallos | 10.10.2.34 | Subscriptions |
-| ntfy | 10.10.2.35 | Push notifications |
-| Paperless-ngx | 10.10.2.36 | Documents |
-| Copyparty | 10.10.2.37 | File browser |
-| SABnzbd | 10.10.2.40 | Usenet |
-| qBittorrent | 10.10.2.41 | Torrent |
-| Prowlarr | 10.10.2.42 | Indexer |
-| Radarr | 10.10.2.43 | Movies |
-| Sonarr | 10.10.2.44 | TV |
-| Bazarr | 10.10.2.45 | Subtitles |
-| Ollama | 10.10.2.50 | LLM API |
-| Open WebUI | 10.10.2.51 | LLM interface |
-| ComfyUI | 10.10.2.52 | Image generation (node-based) |
+| NAS | 10.10.2.5 | TrueNAS backup target |
+| Talos Node | 10.10.2.10 | Kubernetes node |
+| Forgejo SSH | 10.10.2.14 | Git SSH (LoadBalancer) |
+| FluxCD Webhook | 10.10.2.15 | External webhooks (LoadBalancer) |
+| Gateway API | 10.10.2.20 | HTTPS termination (LoadBalancer) |
+| qBittorrent | 10.10.2.41 | BitTorrent protocol (LoadBalancer) |
+| Ollama | 10.10.2.50 | LLM API (LoadBalancer) |
 
-**Domains**: home-infra.net, reynoza.org, wdiaz.org, unix.red (all Cloudflare → VPS, ControlD for local), .local (mDNS)
+### Web Services (via Gateway API)
+
+All accessed via HTTPS at `https://<service>.home-infra.net`:
+
+| Service | URL | Description |
+|---------|-----|-------------|
+| Homepage | home-infra.net | Dashboard |
+| Grafana | grafana.home-infra.net | Monitoring |
+| Longhorn | longhorn.home-infra.net | Storage UI |
+| Hubble | hubble.home-infra.net | Network UI |
+| Forgejo | git.home-infra.net | Git server |
+| Zitadel | auth.home-infra.net | SSO |
+| Immich | photos.reynoza.org | Photo backup |
+| Open WebUI | chat.home-infra.net | LLM interface |
+| ComfyUI | comfy.home-infra.net | Image generation |
+| Home Assistant | hass.home-infra.net | Smart home |
+
+**Domains**: home-infra.net, reynoza.org (ControlD for local DNS)
 
 ## Talos Implementation
 
@@ -256,7 +252,7 @@ docs/
 
 ## Recent Changes
 
-- **2026-01-25**: Consolidated domains to home-infra.net (removed home.arpa), Cilium Gateway API migration, auto-generated Forgejo runner tokens, CiliumNetworkPolicies for K8s API access
+- **2026-01-25**: Migrated web UIs from LoadBalancer to ClusterIP (all via Gateway API), consolidated domains to home-infra.net, auto-generated Forgejo runner tokens, CiliumNetworkPolicies for K8s API access
 - **2026-01-24**: Zitadel SSO implementation (replaces Logto, CoreDNS rewrite for hairpin fix)
 - **2026-01-22**: Terraform code review, memory ballooning implementation, NetworkPolicies, security-strategy.md, backup verification procedures
 - **2026-01-21**: Documentation audit and cleanup
