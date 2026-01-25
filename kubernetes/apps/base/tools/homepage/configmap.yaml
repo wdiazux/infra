@@ -57,11 +57,11 @@ data:
             description: Storage Manager
         - Forgejo:
             icon: forgejo.png
-            href: http://git.${DOMAIN_INTERNAL}
+            href: https://git.${DOMAIN_PRIMARY}
             description: Git Server
         - Weave GitOps:
             icon: flux-cd.png
-            href: http://gitops.${DOMAIN_INTERNAL}
+            href: https://gitops.${DOMAIN_PRIMARY}
             description: FluxCD Dashboard
         - Hubble:
             icon: cilium.png
@@ -69,15 +69,15 @@ data:
             description: Network Observability
         - Grafana:
             icon: grafana.png
-            href: http://grafana.${DOMAIN_INTERNAL}
+            href: https://grafana.${DOMAIN_PRIMARY}
             description: Monitoring Dashboards
         - VictoriaMetrics:
             icon: victoriametrics.png
-            href: http://metrics.${DOMAIN_INTERNAL}
+            href: https://metrics.${DOMAIN_PRIMARY}
             description: Metrics Database
         - MinIO:
             icon: minio.png
-            href: http://minio.${DOMAIN_INTERNAL}
+            href: https://minio.${DOMAIN_PRIMARY}
             description: Backup Storage
 
     - Media:
@@ -87,21 +87,21 @@ data:
             description: Photo & Video Backup
         - Emby:
             icon: emby.png
-            href: http://emby.${DOMAIN_INTERNAL}
+            href: https://emby.${DOMAIN_PRIMARY}
             description: Media Server
         - Navidrome:
             icon: navidrome.png
-            href: http://music.${DOMAIN_INTERNAL}
+            href: https://music.${DOMAIN_PRIMARY}
             description: Music Server
 
     - Automation:
         - Home Assistant:
             icon: home-assistant.png
-            href: http://hass.${DOMAIN_INTERNAL}
+            href: https://hass.${DOMAIN_PRIMARY}
             description: Smart Home
         - n8n:
             icon: n8n.png
-            href: http://n8n.${DOMAIN_INTERNAL}
+            href: https://n8n.${DOMAIN_PRIMARY}
             description: Workflow Automation
 
     - AI:
@@ -111,75 +111,75 @@ data:
             description: LLM Inference API
         - Open WebUI:
             icon: open-webui.png
-            href: http://chat.${DOMAIN_INTERNAL}
+            href: https://chat.${DOMAIN_PRIMARY}
             description: LLM Chat Interface
         - ComfyUI:
             icon: comfyui.png
-            href: http://comfy.${DOMAIN_INTERNAL}
+            href: https://comfy.${DOMAIN_PRIMARY}
             description: Node-based Image Generation
 
     - 3D Print:
         - Obico:
             icon: obico.png
-            href: http://obico.${DOMAIN_INTERNAL}
+            href: https://obico.${DOMAIN_PRIMARY}
             description: 3D Printer Monitoring
 
     - Arr Stack:
         - SABnzbd:
             icon: sabnzbd.png
-            href: http://sabnzbd.${DOMAIN_INTERNAL}
+            href: https://sabnzbd.${DOMAIN_PRIMARY}
             description: Usenet Downloader
         - qBittorrent:
             icon: qbittorrent.png
-            href: http://qbittorrent.${DOMAIN_INTERNAL}
+            href: https://qbittorrent.${DOMAIN_PRIMARY}
             description: Torrent Client
         - Prowlarr:
             icon: prowlarr.png
-            href: http://prowlarr.${DOMAIN_INTERNAL}
+            href: https://prowlarr.${DOMAIN_PRIMARY}
             description: Indexer Manager
         - Radarr:
             icon: radarr.png
-            href: http://radarr.${DOMAIN_INTERNAL}
+            href: https://radarr.${DOMAIN_PRIMARY}
             description: Movie Manager
         - Sonarr:
             icon: sonarr.png
-            href: http://sonarr.${DOMAIN_INTERNAL}
+            href: https://sonarr.${DOMAIN_PRIMARY}
             description: TV Series Manager
         - Bazarr:
             icon: bazarr.png
-            href: http://bazarr.${DOMAIN_INTERNAL}
+            href: https://bazarr.${DOMAIN_PRIMARY}
             description: Subtitle Manager
 
     - Tools:
         - Affine:
             icon: affine.png
-            href: http://affine.${DOMAIN_INTERNAL}
+            href: https://affine.${DOMAIN_PRIMARY}
             description: Knowledge Base & Notes
         - IT-Tools:
             icon: it-tools.png
-            href: http://tools.${DOMAIN_INTERNAL}
+            href: https://tools.${DOMAIN_PRIMARY}
             description: Developer Toolbox
         - Copyparty:
             icon: mdi-folder-network-outline
-            href: http://files.${DOMAIN_INTERNAL}
+            href: https://copyparty.${DOMAIN_PRIMARY}
             description: File Browser
         - ntfy:
             icon: ntfy.png
-            href: http://ntfy.${DOMAIN_INTERNAL}
+            href: https://ntfy.${DOMAIN_PRIMARY}
             description: Push Notifications
         - Attic:
             icon: nix.png
-            href: http://attic.${DOMAIN_INTERNAL}
+            href: https://attic.${DOMAIN_PRIMARY}
             description: Nix Binary Cache
 
     - Management:
         - Wallos:
             icon: wallos.png
-            href: http://wallos.${DOMAIN_INTERNAL}
+            href: https://wallos.${DOMAIN_PRIMARY}
             description: Subscription Tracker
         - Paperless-ngx:
             icon: paperless-ngx.png
-            href: http://paperless.${DOMAIN_INTERNAL}
+            href: https://paperless.${DOMAIN_PRIMARY}
             description: Document Management
 
   bookmarks.yaml: |
