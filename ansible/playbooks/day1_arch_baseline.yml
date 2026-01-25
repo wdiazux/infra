@@ -36,7 +36,7 @@
     # Only install instance-specific packages here (e.g., nfs-utils for NFS mounts)
 
     # AUR helper (optional)
-    install_yay: false
+    install_yay: true
 
     # Optional: Docker installation
     install_docker: false
@@ -46,7 +46,7 @@
 
     # Firewall allowed ports
     firewall_allowed_ports:
-      - 22   # SSH
+      - 22 # SSH
 
     # Optional: NFS mount configuration
     nfs_mounts: []
@@ -95,7 +95,7 @@
         dest: /etc/locale.conf
         content: |
           LANG={{ locale }}
-        mode: '0644'
+        mode: "0644"
 
     - name: Set hostname
       ansible.builtin.hostname:
@@ -116,13 +116,19 @@
         line: "{{ item.line }}"
         backup: true
       loop:
-        - { regexp: '^#?PermitRootLogin', line: 'PermitRootLogin no' }
-        - { regexp: '^#?PasswordAuthentication', line: 'PasswordAuthentication no' }
-        - { regexp: '^#?PubkeyAuthentication', line: 'PubkeyAuthentication yes' }
-        - { regexp: '^#?X11Forwarding', line: 'X11Forwarding no' }
-        - { regexp: '^#?MaxAuthTries', line: 'MaxAuthTries 3' }
-        - { regexp: '^#?ClientAliveInterval', line: 'ClientAliveInterval 300' }
-        - { regexp: '^#?ClientAliveCountMax', line: 'ClientAliveCountMax 2' }
+        - { regexp: "^#?PermitRootLogin", line: "PermitRootLogin no" }
+        - {
+            regexp: "^#?PasswordAuthentication",
+            line: "PasswordAuthentication no",
+          }
+        - {
+            regexp: "^#?PubkeyAuthentication",
+            line: "PubkeyAuthentication yes",
+          }
+        - { regexp: "^#?X11Forwarding", line: "X11Forwarding no" }
+        - { regexp: "^#?MaxAuthTries", line: "MaxAuthTries 3" }
+        - { regexp: "^#?ClientAliveInterval", line: "ClientAliveInterval 300" }
+        - { regexp: "^#?ClientAliveCountMax", line: "ClientAliveCountMax 2" }
       notify: Restart SSH
 
     - name: Reset UFW to defaults
@@ -135,9 +141,9 @@
         direction: "{{ item.direction }}"
         policy: "{{ item.policy }}"
       loop:
-        - { direction: 'incoming', policy: 'deny' }
-        - { direction: 'outgoing', policy: 'allow' }
-        - { direction: 'routed', policy: 'deny' }
+        - { direction: "incoming", policy: "deny" }
+        - { direction: "outgoing", policy: "allow" }
+        - { direction: "routed", policy: "deny" }
 
     - name: Allow firewall ports
       community.general.ufw:
@@ -247,7 +253,7 @@
       ansible.builtin.file:
         path: "{{ item.path }}"
         state: directory
-        mode: '0755'
+        mode: "0755"
       loop: "{{ nfs_mounts }}"
       when: nfs_mounts | length > 0
 
@@ -268,21 +274,21 @@
         state: present
         reload: true
       loop:
-        - { name: 'vm.swappiness', value: '10' }
-        - { name: 'net.ipv4.tcp_keepalive_time', value: '600' }
-        - { name: 'net.core.somaxconn', value: '1024' }
+        - { name: "vm.swappiness", value: "10" }
+        - { name: "net.ipv4.tcp_keepalive_time", value: "600" }
+        - { name: "net.core.somaxconn", value: "1024" }
 
     - name: Enable color output in pacman
       ansible.builtin.lineinfile:
         path: /etc/pacman.conf
-        regexp: '^#?Color'
-        line: 'Color'
+        regexp: "^#?Color"
+        line: "Color"
 
     - name: Enable parallel downloads in pacman
       ansible.builtin.lineinfile:
         path: /etc/pacman.conf
-        regexp: '^#?ParallelDownloads'
-        line: 'ParallelDownloads = 5'
+        regexp: "^#?ParallelDownloads"
+        line: "ParallelDownloads = 5"
 
     - name: Clean pacman cache
       ansible.builtin.command: pacman -Sc --noconfirm
