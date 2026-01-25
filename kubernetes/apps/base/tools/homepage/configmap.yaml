@@ -45,15 +45,19 @@ data:
     - Infrastructure:
         - Proxmox:
             icon: proxmox.png
-            href: https://proxmox.${DOMAIN_PRIMARY}:8006
+            href: https://10.10.2.2:8006
             description: Hypervisor
+        - TrueNAS:
+            icon: truenas.png
+            href: https://10.10.2.5
+            description: Network Storage
         - Zitadel:
             icon: zitadel.png
             href: https://auth.${DOMAIN_PRIMARY}
             description: Identity Provider (SSO)
         - Longhorn:
             icon: longhorn.png
-            href: http://longhorn.${DOMAIN_PRIMARY}
+            href: https://longhorn.${DOMAIN_PRIMARY}
             description: Storage Manager
         - Forgejo:
             icon: forgejo.png
@@ -65,7 +69,7 @@ data:
             description: FluxCD Dashboard
         - Hubble:
             icon: cilium.png
-            href: http://hubble.${DOMAIN_PRIMARY}
+            href: https://hubble.${DOMAIN_PRIMARY}
             description: Network Observability
         - Grafana:
             icon: grafana.png
@@ -107,7 +111,7 @@ data:
     - AI:
         - Ollama:
             icon: ollama.png
-            href: http://ollama.${DOMAIN_PRIMARY}:11434
+            href: http://${IP_OLLAMA}:11434
             description: LLM Inference API
         - Open WebUI:
             icon: open-webui.png
