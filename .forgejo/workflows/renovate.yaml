@@ -51,10 +51,11 @@ jobs:
             echo "Running in dry-run mode - no PRs will be created"
           fi
 
+          # Use LoadBalancer IP since Docker container can't resolve internal DNS
           docker run --rm \
             -e RENOVATE_TOKEN="${{ secrets.RENOVATE_TOKEN }}" \
             -e RENOVATE_PLATFORM="gitea" \
-            -e RENOVATE_ENDPOINT="https://git.home-infra.net/api/v1" \
+            -e RENOVATE_ENDPOINT="http://10.10.2.13/api/v1" \
             -e RENOVATE_GIT_AUTHOR="Renovate Bot <renovate@home-infra.net>" \
             -e LOG_LEVEL="${{ env.LOG_LEVEL }}" \
             -v $PWD:/usr/src/app:ro \
