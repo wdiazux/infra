@@ -20,5 +20,5 @@ resources:
   - cluster-issuers.yaml
   # Wildcard TLS certificates for all domains
   - wildcard-certificates.yaml
-  # Weave GitOps Ingress (FluxCD UI)
-  - weave-gitops-ingress.yaml
+  # Weave GitOps HTTPRoute (FluxCD UI)
+  - weave-gitops-httproute.yaml
