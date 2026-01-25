@@ -92,9 +92,8 @@ SKIP_SERVICES = {
 # Services with their own ingress controller (bypass main INGRESS_IP)
 # These services use their own LoadBalancer IP even for HTTPS domains
 # because they need special ingress features (e.g., HTTP/2 gRPC)
-OWN_INGRESS_SERVICES = {
-    "ZITADEL",  # Has dedicated nginx-ingress for HTTP/2 gRPC support
-}
+# Note: Zitadel was here but now uses Gateway API with GRPCRoute
+OWN_INGRESS_SERVICES = set()
 
 # Infrastructure services that need manual K8s service definitions
 # (not auto-discoverable from apps/)
