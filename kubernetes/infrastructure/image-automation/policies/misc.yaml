@@ -64,10 +64,11 @@ spec:
   imageRepositoryRef:
     name: busybox
   filterTags:
-    pattern: '^[0-9]+\.[0-9]+$'
+    # Match 3-part versions like 1.37.0 (not 2-part like 1.37)
+    pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'
   policy:
     semver:
-      range: ">=1.30"
+      range: ">=1.30.0"
 # Obico Web - ImagePolicy DISABLED
 # Reason: gabe565/docker-obico uses rolling 'release' tag, not semver.
 # The deployment uses 'release' tag directly (documented exception).

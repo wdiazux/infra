@@ -17,6 +17,16 @@ spec:
   path: ./kubernetes/infrastructure/controllers
   prune: true
   wait: true
+  # Health checks ensure critical controllers are ready before dependent resources deploy
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: cilium-operator
+      namespace: kube-system
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: cert-manager
+      namespace: cert-manager
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization

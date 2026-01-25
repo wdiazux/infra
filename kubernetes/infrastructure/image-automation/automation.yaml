@@ -1,7 +1,8 @@
 # Flux Image Update Automation
 #
-# Scans registries for new image versions and creates weekly
-# branches for review before merging to main.
+# Scans registries for new image versions and commits directly to main.
+# Weekly branch approach removed - was causing template parsing issues.
+# Review image updates via git log or Forgejo notifications.
 apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageUpdateAutomation
 metadata:
@@ -23,7 +24,7 @@ spec:
       messageTemplate: |
         chore(images): update {{ range .Changed.Changes }}{{ .OldValue }} -> {{ .NewValue }} {{ end }}
     push:
-      branch: image-updates/{{ now "2006-w02" }}
+      branch: main
   update:
     path: ./kubernetes/apps
     strategy: Setters

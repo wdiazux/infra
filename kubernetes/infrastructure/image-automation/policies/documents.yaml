@@ -41,7 +41,9 @@ spec:
   imageRepositoryRef:
     name: tika
   filterTags:
-    pattern: '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$'
+    # Match 4-part versions like 3.2.3.0, extract first 3 parts for semver
+    pattern: '^([0-9]+\.[0-9]+\.[0-9]+)\.[0-9]+$'
+    extract: '$1'
   policy:
     semver:
       range: ">=3.0.0"
