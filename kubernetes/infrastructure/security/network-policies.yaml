@@ -568,7 +568,7 @@ spec:
         - namespaceSelector: {}
       ports:
         - protocol: TCP
-          port: 6443
+          port: 443
 
 ---
 # =============================================================================
@@ -937,6 +937,8 @@ spec:
         - namespaceSelector: {}
       ports:
         - protocol: TCP
+          port: 443
+        - protocol: TCP
           port: 6443
         - protocol: TCP
           port: 10250
@@ -1026,7 +1028,7 @@ spec:
         - namespaceSelector: {}
       ports:
         - protocol: TCP
-          port: 6443
+          port: 443
 
 ---
 apiVersion: networking.k8s.io/v1

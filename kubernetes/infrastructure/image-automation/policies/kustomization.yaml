@@ -3,7 +3,6 @@ kind: Kustomization
 resources:
   - arr-stack.yaml
   - ai.yaml
-  - auth.yaml
   - media.yaml
   - tools.yaml
   - automation.yaml
