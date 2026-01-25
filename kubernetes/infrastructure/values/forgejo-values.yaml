@@ -34,7 +34,7 @@ gitea:
 
     server:
       DOMAIN: git.home-infra.net
-      ROOT_URL: http://git.home-infra.net/  # Overridden by Terraform var.git_hostname
+      ROOT_URL: https://git.home-infra.net/  # HTTPS via Gateway API
       # LOCAL_ROOT_URL is used by git hooks to connect back to the server
       # Must be accessible from within the container
       LOCAL_ROOT_URL: http://localhost:80/
