@@ -20,8 +20,8 @@ Golden images provide consistent, pre-configured VM templates that can be rapidl
 **Solution**: Unified approach using Ansible for all configuration:
 - **Templates affected**: Debian, Ubuntu, Arch (NixOS uses shell provisioner)
 - **Password authentication**: Switched to `sshpass` with `ansible_password` variable
-- **SSH key management**: Created `ansible/packer-provisioning/tasks/ssh_keys.yml` for idempotent key configuration
-- **Template cleanup**: Created `ansible/packer-provisioning/tasks/cleanup.yml` for standardized cleanup
+- **SSH key management**: Created `ansible/packer_provisioning/tasks/ssh_keys.yml` for idempotent key configuration
+- **Template cleanup**: Created `ansible/packer_provisioning/tasks/cleanup.yml` for standardized cleanup
 - **SOPS integration**: SSH public keys stored in encrypted `secrets/proxmox-creds.enc.yaml`
 - **File transfer**: Added `use_sftp = true` (replaces deprecated SCP)
 - **Single provisioner**: Consolidated SSH keys, package installation, and cleanup into one Ansible provisioner
@@ -320,7 +320,7 @@ All cloud-image templates (Debian, Ubuntu, Arch) use a unified Ansible provision
 
 ```hcl
 provisioner "ansible" {
-  playbook_file = "../../ansible/packer-provisioning/install_baseline_packages.yml"
+  playbook_file = "../../ansible/packer_provisioning/install_baseline_packages.yml"
   user          = "debian"  # or ubuntu, root for Arch
   use_proxy     = false
   use_sftp      = true

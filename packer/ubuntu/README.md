@@ -124,7 +124,7 @@ ssh_public_key = ""
 
 ## Ansible Provisioning
 
-The Packer build runs: `ansible/packer-provisioning/install_baseline_packages.yml`
+The Packer build runs: `ansible/packer_provisioning/install_baseline_packages.yml`
 
 **Installed packages**:
 - build-essential, git, vim, curl, wget

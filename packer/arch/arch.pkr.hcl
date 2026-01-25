@@ -116,7 +116,7 @@ build {
   #   2. SSH key configuration (idempotent, from SOPS or direct variable)
   #   3. Template cleanup (machine-id reset, temp files, cloud-init data)
   provisioner "ansible" {
-    playbook_file = "../../ansible/packer-provisioning/install_baseline_packages.yml"
+    playbook_file = "../../ansible/packer_provisioning/install_baseline_packages.yml"
     user          = "arch"
     use_proxy     = false
     timeout       = "15m"

@@ -5,7 +5,7 @@ This directory contains Ansible playbooks and tasks used during Packer image bui
 ## Architecture
 
 ```
-ansible/packer-provisioning/
+ansible/packer_provisioning/
 ├── install_baseline_packages.yml    # Main orchestration playbook
 ├── tasks/                            # Modular task files
 │   ├── debian_packages.yml           # Debian/Ubuntu package installation
@@ -58,7 +58,7 @@ All Packer templates use a unified Ansible provisioner configuration:
 ```hcl
 # Debian/Ubuntu example
 provisioner "ansible" {
-  playbook_file = "../../ansible/packer-provisioning/install_baseline_packages.yml"
+  playbook_file = "../../ansible/packer_provisioning/install_baseline_packages.yml"
   user          = "debian"  # or "ubuntu"
   use_proxy     = false
   use_sftp      = true      # Recommended by Packer, replaces deprecated SCP
@@ -82,7 +82,7 @@ provisioner "ansible" {
 
 # Arch Linux example
 provisioner "ansible" {
-  playbook_file = "../../ansible/packer-provisioning/install_baseline_packages.yml"
+  playbook_file = "../../ansible/packer_provisioning/install_baseline_packages.yml"
   user          = "root"
   use_proxy     = false
   use_sftp      = true
@@ -104,7 +104,7 @@ provisioner "ansible" {
 
 # Windows example (future)
 provisioner "ansible" {
-  playbook_file = "../../ansible/packer-provisioning/install_baseline_packages.yml"
+  playbook_file = "../../ansible/packer_provisioning/install_baseline_packages.yml"
   user          = "Administrator"
   use_proxy     = false
   extra_arguments = [

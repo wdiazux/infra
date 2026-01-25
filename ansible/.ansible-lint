@@ -61,4 +61,4 @@ kinds:
   - yaml: "**/handlers/*.yml"
   - yaml: "**/roles/**/tasks/*.yml"
   - yaml: "**/roles/**/handlers/*.yml"
-  - yaml: "**/packer-provisioning/*.yml"
+  - yaml: "**/packer_provisioning/*.yml"

@@ -210,7 +210,7 @@ Edit the Ansible playbook to add/remove packages:
 
 ```bash
 # Arch-specific package list
-vim ../../ansible/packer-provisioning/tasks/archlinux_packages.yml
+vim ../../ansible/packer_provisioning/tasks/archlinux_packages.yml
 ```
 
 Then rebuild the template:

@@ -279,7 +279,7 @@ infra/
 │   │   ├── day1_arch_baseline.yml         # Arch Linux VM baseline
 │   │   ├── day1_windows_baseline.yml      # Windows VM baseline
 │   │   └── day1_all_vms.yml               # Orchestration for all VMs
-│   ├── packer-provisioning/    # Packer Ansible provisioner
+│   ├── packer_provisioning/    # Packer Ansible provisioner
 │   │   ├── install_baseline_packages.yml  # Main provisioning playbook
 │   │   └── tasks/                         # OS-specific tasks
 │   └── inventories/            # Inventory files

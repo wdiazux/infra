@@ -576,6 +576,7 @@
 
     - name: Get GPU IOMMU group
       ansible.builtin.shell: |
+        set -o pipefail
         GPU_ADDR=$(lspci | grep -i nvidia | grep -i vga | awk '{print $1}' | cut -d: -f1-2)
         readlink -f /sys/bus/pci/devices/0000:${GPU_ADDR}.0/iommu_group 2>/dev/null | xargs basename || echo "unknown"
       args:
