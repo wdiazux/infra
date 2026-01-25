@@ -21,6 +21,8 @@ spec:
       targetPort: api
       protocol: TCP
 ---
+# MinIO Console Service (ClusterIP)
+# Accessed via Gateway API (https://minio.home-infra.net)
 apiVersion: v1
 kind: Service
 metadata:
@@ -29,10 +31,8 @@ metadata:
   labels:
     app.kubernetes.io/name: minio
     app.kubernetes.io/part-of: backup
-  annotations:
-    io.cilium/lb-ipam-ips: "${IP_MINIO}"
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app.kubernetes.io/name: minio
   ports:

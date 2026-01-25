@@ -1,6 +1,6 @@
-# Home Assistant LoadBalancer Service
+# Home Assistant Service
 #
-# Exposes Home Assistant on 10.10.2.25:80
+# ClusterIP - accessed via Gateway API (https://hass.home-infra.net)
 apiVersion: v1
 kind: Service
 metadata:
@@ -9,10 +9,8 @@ metadata:
   labels:
     app.kubernetes.io/name: home-assistant
     app.kubernetes.io/part-of: automation
-  annotations:
-    io.cilium/lb-ipam-ips: "${IP_HOMEASSISTANT}"
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app.kubernetes.io/name: home-assistant
   ports:

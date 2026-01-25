@@ -2,19 +2,21 @@
 """
 DNS Configuration Generator
 
-Generates configuration files for ControlD DNS and Pangolin VPN from
-FluxCD manifests, using cluster-vars.yaml as the source of truth.
+Generates configuration files for ControlD DNS and Pangolin VPN by scanning
+HTTPRoute manifests. All services route through Gateway API (INGRESS_IP).
 
 Usage:
     ./scripts/generate-dns-config.py --dry-run    # Preview changes
     ./scripts/generate-dns-config.py              # Generate both configs
     ./scripts/generate-dns-config.py --diff       # Show diff from current
 
-Source of truth: kubernetes/infrastructure/cluster-vars/cluster-vars.yaml
+Architecture: All web services use ClusterIP and are accessed via Cilium Gateway API.
+Only the Gateway itself (10.10.2.20) needs a LoadBalancer IP for HTTPS termination.
 """
 
 import argparse
 import difflib
+import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -27,87 +29,12 @@ except ImportError:
     sys.exit(1)
 
 
-# Ingress Controller IP for HTTPS access
-# Services with Ingress resources route their external domains (home-infra.net, reynoza.org)
-# through this IP for TLS termination
+# Gateway API LoadBalancer IP
+# All web services route through this IP for HTTPS termination
 INGRESS_IP = "10.10.2.20"
 
-# Domain suffixes that should route through Ingress (HTTPS)
-# These will resolve to INGRESS_IP instead of the service's LoadBalancer IP
-INGRESS_SUFFIXES = {"home-infra.net", "reynoza.org"}
-
-
-# Name mappings: IP variable suffix -> DNS short name
-# Used when the variable name doesn't match the desired DNS name
-NAME_MAPPINGS = {
-    "OPENWEBUI": "chat",
-    "HOMEASSISTANT": "hass",
-    "VICTORIAMETRICS": "metrics",
-    "ITTOOLS": "tools",
-    "FORGEJO_HTTP": "git",
-    "NAVIDROME": "music",
-    "HOMEPAGE": "home",
-    "IMMICH": "photos",
-    "COMFYUI": "comfy",
-    "COPYPARTY": "files",
-    "ZITADEL": "auth",
-}
-
-# Services that use non-default domain suffixes
-# Default is ["home-infra.net"] - only list services that differ
-MULTI_SUFFIX_SERVICES = {
-    "photos": ["reynoza.org"],  # Immich uses reynoza.org only
-}
-
-# Services with explicit FQDN (no suffix processing)
-# Use when the service name would create a bad FQDN
-FQDN_OVERRIDES = {
-    "home": ["home-infra.net"],  # Homepage accessible at home-infra.net (root domain)
-}
-
-# Additional domains not derived from cluster-vars IP variables
-# Format: {short_name: {"suffixes": [...], "ip": "..."}}
-# Use "INGRESS" for ip to use INGRESS_IP
-ADDITIONAL_DOMAINS = {
-    # Empty - Logto replaced by Zitadel which uses IP_ZITADEL from cluster-vars
-}
-
-# Services to skip (not user-facing or internal only)
-SKIP_SERVICES = {
-    "FORGEJO_SSH",  # SSH access, not HTTP
-    "WEBHOOK",  # FluxCD internal webhook
-}
-
-# Services with their own ingress controller (bypass main INGRESS_IP)
-# These services use their own LoadBalancer IP even for HTTPS domains
-# because they need special ingress features (e.g., HTTP/2 gRPC)
-# Note: Zitadel was here but now uses Gateway API with GRPCRoute
-OWN_INGRESS_SERVICES = set()
-
-# Infrastructure services that need manual K8s service definitions
-# (not auto-discoverable from apps/)
-INFRASTRUCTURE_SERVICES = {
-    "HUBBLE": {
-        "k8s_service": "hubble-ui",
-        "namespace": "kube-system",
-    },
-    "LONGHORN": {
-        "k8s_service": "longhorn-frontend",
-        "namespace": "longhorn-system",
-    },
-    "FORGEJO_HTTP": {
-        "k8s_service": "forgejo-http",
-        "namespace": "forgejo",
-    },
-    "GITOPS": {
-        "k8s_service": "weave-gitops-lb",
-        "namespace": "flux-system",
-    },
-    "MINIO": {
-        "k8s_service": "minio-console",
-        "namespace": "backup",
-    },
-}
+# Domain suffixes managed by Gateway API
+MANAGED_SUFFIXES = {"home-infra.net", "reynoza.org"}
 
 # Static resources not managed by Kubernetes (external infrastructure)
 # These use direct IPs (not routed through Gateway API)
@@ -116,12 +43,12 @@ STATIC_RESOURCES = {
         "ip": "10.10.2.2",
         "category": "infrastructure",
         "aliases": ["pve"],
-        "own_ingress": True,  # Direct IP access
+        "suffixes": ["home-infra.net"],
     },
     "nas": {
         "ip": "10.10.2.5",
         "category": "infrastructure",
-        "own_ingress": True,  # Direct IP access
+        "suffixes": ["home-infra.net"],
     },
 }
 
@@ -134,17 +61,14 @@ CATEGORY_ORDER = [
 ]
 
 
-# IP range to category mapping
-def get_category(ip: str) -> str:
-    """Determine category based on IP address."""
-    last_octet = int(ip.split(".")[-1])
-    # Check AI range (50-59)
-    if 50 <= last_octet <= 59:  # AI services
+def get_category_from_path(file_path: str) -> str:
+    """Determine category based on file path."""
+    if "/ai/" in file_path:
         return "ai"
-    elif 11 <= last_octet <= 20:  # Infrastructure (includes Ingress at .20)
-        return "infrastructure"
-    elif 40 <= last_octet <= 49:
+    elif "/arr-stack/" in file_path:
         return "arr-stack"
+    elif "/infrastructure/" in file_path or "/kube-system/" in file_path:
+        return "infrastructure"
     else:
         return "applications"
 
@@ -159,179 +83,109 @@ def find_repo_root() -> Path:
     return Path(__file__).resolve().parent.parent
 
 
-def load_cluster_vars(repo_root: Path) -> dict[str, str]:
-    """Load IP variables from cluster-vars.yaml."""
-    cluster_vars_path = (
-        repo_root / "kubernetes/infrastructure/cluster-vars/cluster-vars.yaml"
-    )
-
-    if not cluster_vars_path.exists():
-        print(f"Error: cluster-vars.yaml not found at {cluster_vars_path}")
-        sys.exit(1)
-
-    with open(cluster_vars_path) as f:
-        docs = list(yaml.safe_load_all(f))
-
-    for doc in docs:
-        if doc and doc.get("kind") == "ConfigMap":
-            return doc.get("data", {})
-
-    print("Error: No ConfigMap found in cluster-vars.yaml")
-    sys.exit(1)
-
-
-def extract_ip_services(cluster_vars: dict[str, str]) -> dict[str, str]:
-    """Extract IP_* variables and their values."""
-    ip_services = {}
-    for key, value in cluster_vars.items():
-        if key.startswith("IP_"):
-            suffix = key[3:]  # Remove "IP_" prefix
-            if suffix not in SKIP_SERVICES:
-                ip_services[suffix] = value
-    return ip_services
-
-
-def scan_kubernetes_manifests(repo_root: Path, ip_var_name: str) -> dict | None:
-    """Scan kubernetes manifests for a service using the given IP variable."""
-    apps_dir = repo_root / "kubernetes/apps/base"
-    infra_dir = repo_root / "kubernetes/infrastructure"
-
-    # Search pattern for the IP variable
-    patterns = [
-        f'"${{IP_{ip_var_name}}}"',
-        f"'${{IP_{ip_var_name}}}'",
-        f"${{IP_{ip_var_name}}}",
-    ]
-
-    # Search in apps directory
-    for yaml_file in apps_dir.rglob("*.yaml"):
-        try:
-            content = yaml_file.read_text()
-            if any(p in content for p in patterns):
-                # Parse the YAML to extract service info
-                for doc in yaml.safe_load_all(content):
-                    if doc and doc.get("kind") == "Service":
-                        spec = doc.get("spec", {})
-                        if spec.get("type") == "LoadBalancer":
-                            metadata = doc.get("metadata", {})
-                            return {
-                                "k8s_service": metadata.get("name"),
-                                "namespace": metadata.get("namespace"),
-                                "file": str(yaml_file.relative_to(repo_root)),
-                            }
-        except Exception:
-            continue
-
-    # Search in infrastructure directory
-    for yaml_file in infra_dir.rglob("*.yaml"):
-        try:
-            content = yaml_file.read_text()
-            if any(p in content for p in patterns):
-                for doc in yaml.safe_load_all(content):
-                    if doc and doc.get("kind") == "Service":
-                        spec = doc.get("spec", {})
-                        if spec.get("type") == "LoadBalancer":
-                            metadata = doc.get("metadata", {})
-                            return {
-                                "k8s_service": metadata.get("name"),
-                                "namespace": metadata.get("namespace"),
-                                "file": str(yaml_file.relative_to(repo_root)),
-                            }
-        except Exception:
-            continue
-
-    return None
-
-
-def build_service_registry(
-    repo_root: Path, ip_services: dict[str, str], verbose: bool = False
-) -> list[dict]:
-    """Build a complete registry of services with their metadata."""
+def scan_httproutes(repo_root: Path, verbose: bool = False) -> list[dict]:
+    """Scan HTTPRoute manifests to discover services and their hostnames."""
     services = []
+    seen_hostnames = set()
 
-    for var_suffix, ip in sorted(ip_services.items(), key=lambda x: x[1]):
-        # Get short name (apply mappings)
-        short_name = NAME_MAPPINGS.get(var_suffix, var_suffix.lower())
+    # Scan all directories for HTTPRoute files
+    for yaml_file in repo_root.rglob("*httproute*.yaml"):
+        if ".git" in str(yaml_file):
+            continue
 
-        # Get K8s service info
-        if var_suffix in INFRASTRUCTURE_SERVICES:
-            k8s_info = INFRASTRUCTURE_SERVICES[var_suffix]
-        else:
-            k8s_info = scan_kubernetes_manifests(repo_root, var_suffix)
+        try:
+            content = yaml_file.read_text()
+            for doc in yaml.safe_load_all(content):
+                if not doc:
+                    continue
+                if doc.get("kind") != "HTTPRoute":
+                    continue
 
-        if k8s_info is None:
+                metadata = doc.get("metadata", {})
+                spec = doc.get("spec", {})
+                hostnames = spec.get("hostnames", [])
+
+                for hostname in hostnames:
+                    if hostname in seen_hostnames:
+                        continue
+                    seen_hostnames.add(hostname)
+
+                    # Determine if it's a full hostname or needs suffix
+                    # Parse the hostname to get service name and suffix
+                    parts = hostname.split(".", 1)
+                    if len(parts) == 2:
+                        name = parts[0]
+                        suffix = parts[1]
+                    else:
+                        name = hostname
+                        suffix = "home-infra.net"
+
+                    # Special case: root domain (e.g., home-infra.net)
+                    if hostname in MANAGED_SUFFIXES:
+                        name = "home"
+                        suffix = hostname
+
+                    service = {
+                        "name": name,
+                        "hostname": hostname,
+                        "ip": INGRESS_IP,
+                        "suffix": suffix,
+                        "category": get_category_from_path(str(yaml_file)),
+                        "file": str(yaml_file.relative_to(repo_root)),
+                        "namespace": metadata.get("namespace", "unknown"),
+                        "is_fqdn": hostname in MANAGED_SUFFIXES,
+                    }
+
+                    if verbose:
+                        print(f"  {name:<15} {hostname:<35} ({service['file']})")
+
+                    services.append(service)
+
+        except Exception as e:
             if verbose:
-                print(f"  Warning: No K8s service found for IP_{var_suffix}")
-            # Create placeholder for ControlD-only entry
-            k8s_info = {
-                "k8s_service": short_name,
-                "namespace": "unknown",
-            }
+                print(f"  Warning: Failed to parse {yaml_file}: {e}")
+            continue
 
-        # Build K8s internal DNS name
-        k8s_dns = f"{k8s_info['k8s_service']}.{k8s_info['namespace']}.svc.cluster.local"
+    return services
 
-        # Get domain suffixes or FQDN override
-        fqdn_override = FQDN_OVERRIDES.get(short_name)
-        suffixes = MULTI_SUFFIX_SERVICES.get(short_name, ["home-infra.net"])
 
-        service = {
-            "name": short_name,
-            "ip": ip,
-            "var_name": f"IP_{var_suffix}",
-            "k8s_service": k8s_info["k8s_service"],
-            "namespace": k8s_info["namespace"],
-            "k8s_dns": k8s_dns,
-            "suffixes": suffixes,
-            "fqdn": fqdn_override,  # None if no override
-            "category": get_category(ip),
-            "own_ingress": var_suffix in OWN_INGRESS_SERVICES,
-        }
-
-        if verbose:
-            file_info = k8s_info.get("file", "infrastructure")
-            print(f"  {short_name:<15} {ip:<15} -> {k8s_dns} ({file_info})")
-
-        services.append(service)
+def build_service_registry(repo_root: Path, verbose: bool = False) -> list[dict]:
+    """Build a complete registry of services from HTTPRoutes and static resources."""
+    services = scan_httproutes(repo_root, verbose)
 
     # Add static resources (external infrastructure not managed by Kubernetes)
     for name, info in STATIC_RESOURCES.items():
-        service = {
-            "name": name,
-            "ip": info["ip"],
-            "var_name": f"STATIC_{name.upper()}",
-            "k8s_service": None,
-            "namespace": None,
-            "k8s_dns": None,
-            "suffixes": info.get("suffixes", ["home-infra.net"]),
-            "aliases": info.get("aliases", []),
-            "fqdn": None,
-            "category": info["category"],
-            "own_ingress": info.get("own_ingress", False),
-        }
-        if verbose:
-            print(f"  {name:<15} {info['ip']:<15} -> (static)")
-        services.append(service)
+        for suffix in info.get("suffixes", ["home-infra.net"]):
+            hostname = f"{name}.{suffix}"
+            service = {
+                "name": name,
+                "hostname": hostname,
+                "ip": info["ip"],  # Static resources use direct IP
+                "suffix": suffix,
+                "category": info["category"],
+                "file": "static",
+                "namespace": None,
+                "is_fqdn": False,
+                "aliases": info.get("aliases", []),
+            }
+            if verbose:
+                print(f"  {name:<15} {info['ip']:<15} -> (static)")
+            services.append(service)
 
-    # Add additional domains not derived from cluster-vars
-    for name, info in ADDITIONAL_DOMAINS.items():
-        ip = INGRESS_IP if info["ip"] == "INGRESS" else info["ip"]
-        service = {
-            "name": name,
-            "ip": ip,
-            "var_name": f"ADDITIONAL_{name.upper().replace('-', '_')}",
-            "k8s_service": None,
-            "namespace": None,
-            "k8s_dns": None,
-            "suffixes": info.get("suffixes", ["home-infra.net"]),
-            "aliases": [],
-            "fqdn": None,
-            "category": get_category(ip),
-            "own_ingress": False,
-        }
-        if verbose:
-            print(f"  {name:<15} {ip:<15} -> (additional)")
-        services.append(service)
+            # Add aliases
+            for alias in info.get("aliases", []):
+                alias_hostname = f"{alias}.{suffix}"
+                alias_service = {
+                    "name": alias,
+                    "hostname": alias_hostname,
+                    "ip": info["ip"],
+                    "suffix": suffix,
+                    "category": info["category"],
+                    "file": "static-alias",
+                    "namespace": None,
+                    "is_fqdn": False,
+                }
+                services.append(alias_service)
 
     return services
 
@@ -339,23 +193,23 @@ def build_service_registry(
 def generate_controld_config(services: list[dict]) -> str:
     """Generate domains.yaml content for ControlD.
 
-    For services with Ingress (home-infra.net, reynoza.org domains):
-    - HTTPS domains route through INGRESS_IP for TLS termination
-    - Internal domains (home.arpa) route directly to service LoadBalancer IP
+    All web services route through Gateway API (INGRESS_IP) for HTTPS termination.
+    Static resources (proxmox, nas) use their direct IPs.
     """
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     lines = [
         "# ControlD DNS Domain Definitions",
         "# Auto-generated by generate-dns-config.py",
-        f"# Source: kubernetes/infrastructure/cluster-vars/cluster-vars.yaml",
+        "# Source: HTTPRoute manifests in kubernetes/",
         f"# Generated: {now}",
         "#",
         "# DO NOT EDIT MANUALLY - changes will be overwritten",
-        "# To customize: edit cluster-vars.yaml or the generator script",
+        "# To customize: edit HTTPRoutes or the generator script",
         "#",
         "# Routing architecture:",
         f"#   *.home-infra.net, *.reynoza.org -> {INGRESS_IP} (Cilium Gateway API, HTTPS)",
+        "#   Static resources (proxmox, nas) -> direct IPs",
         "",
         "domains:",
     ]
@@ -378,74 +232,22 @@ def generate_controld_config(services: list[dict]) -> str:
         lines.append(f"  # {header}")
         lines.append(f"  # {'=' * 74}")
 
-        for svc in sorted(by_category[category], key=lambda x: x["ip"]):
-            # Check if this service has any Ingress suffixes
-            ingress_suffixes = [s for s in svc["suffixes"] if s in INGRESS_SUFFIXES]
-            internal_suffixes = [s for s in svc["suffixes"] if s not in INGRESS_SUFFIXES]
+        for svc in sorted(by_category[category], key=lambda x: x["hostname"]):
+            lines.append(f"  - name: {svc['name']}")
+            lines.append(f"    ip: {svc['ip']}")
 
-            # Determine IP for HTTPS domains
-            # Services with own_ingress use their own IP (e.g., Zitadel with dedicated nginx-ingress)
-            https_ip = svc["ip"] if svc.get("own_ingress") else INGRESS_IP
-            https_comment = "HTTPS via own Ingress" if svc.get("own_ingress") else "HTTPS via Ingress"
-
-            # If service has Ingress domains, create separate entries
-            if ingress_suffixes and internal_suffixes:
-                # Entry for internal access (direct to service)
-                lines.append(f"  - name: {svc['name']}")
-                lines.append(f"    ip: {svc['ip']}")
-                if svc.get("aliases"):
-                    aliases_str = ", ".join(svc["aliases"])
-                    lines.append(f"    aliases: [{aliases_str}]")
-                if len(internal_suffixes) == 1 and internal_suffixes[0] == "home.arpa":
-                    pass  # default suffix, no need to specify
-                else:
-                    suffixes_str = ", ".join(internal_suffixes)
-                    lines.append(f"    suffixes: [{suffixes_str}]")
-                lines.append(f"    # Internal access (direct to service)")
-                lines.append("")
-
-                # Entry for HTTPS access (via Ingress or own Ingress)
-                lines.append(f"  - name: {svc['name']}")
-                lines.append(f"    ip: {https_ip}")
-                suffixes_str = ", ".join(ingress_suffixes)
-                lines.append(f"    suffixes: [{suffixes_str}]")
-                lines.append(f"    # {https_comment}")
-                lines.append("")
-            elif ingress_suffixes:
-                # Only Ingress domains - route through Ingress (or own Ingress)
-                lines.append(f"  - name: {svc['name']}")
-                lines.append(f"    ip: {https_ip}")
-                if svc.get("aliases"):
-                    aliases_str = ", ".join(svc["aliases"])
-                    lines.append(f"    aliases: [{aliases_str}]")
-                if svc.get("fqdn"):
-                    if len(svc["fqdn"]) == 1:
-                        lines.append(f"    fqdn: {svc['fqdn'][0]}")
-                    else:
-                        fqdn_str = ", ".join(svc["fqdn"])
-                        lines.append(f"    fqdn: [{fqdn_str}]")
-                else:
-                    suffixes_str = ", ".join(ingress_suffixes)
-                    lines.append(f"    suffixes: [{suffixes_str}]")
-                lines.append(f"    # {https_comment}")
-                lines.append("")
+            # Handle FQDN vs suffix-based hostname
+            if svc.get("is_fqdn"):
+                lines.append(f"    fqdn: {svc['hostname']}")
             else:
-                # No Ingress domains - direct access only
-                lines.append(f"  - name: {svc['name']}")
-                lines.append(f"    ip: {svc['ip']}")
-                if svc.get("aliases"):
-                    aliases_str = ", ".join(svc["aliases"])
-                    lines.append(f"    aliases: [{aliases_str}]")
-                if svc.get("fqdn"):
-                    if len(svc["fqdn"]) == 1:
-                        lines.append(f"    fqdn: {svc['fqdn'][0]}")
-                    else:
-                        fqdn_str = ", ".join(svc["fqdn"])
-                        lines.append(f"    fqdn: [{fqdn_str}]")
-                elif svc["suffixes"] != ["home-infra.net"]:
-                    suffixes_str = ", ".join(svc["suffixes"])
-                    lines.append(f"    suffixes: [{suffixes_str}]")
-                lines.append("")
+                lines.append(f"    suffixes: [{svc['suffix']}]")
+
+            # Add comment about routing
+            if svc["ip"] == INGRESS_IP:
+                lines.append("    # HTTPS via Gateway API")
+            else:
+                lines.append("    # Direct IP access")
+            lines.append("")
 
     return "\n".join(lines)
 
@@ -457,11 +259,11 @@ def generate_pangolin_config(services: list[dict]) -> str:
     lines = [
         "# Pangolin Private Resource Definitions",
         "# Auto-generated by generate-dns-config.py",
-        f"# Source: kubernetes/infrastructure/cluster-vars/cluster-vars.yaml",
+        "# Source: HTTPRoute manifests in kubernetes/",
         f"# Generated: {now}",
         "#",
         "# DO NOT EDIT MANUALLY - changes will be overwritten",
-        "# To customize: edit cluster-vars.yaml or the generator script",
+        "# To customize: edit HTTPRoutes or the generator script",
         "",
         "resources:",
     ]
@@ -474,6 +276,9 @@ def generate_pangolin_config(services: list[dict]) -> str:
             by_category[cat] = []
         by_category[cat].append(svc)
 
+    # Track seen names to avoid duplicates
+    seen_names = set()
+
     for category in CATEGORY_ORDER:
         if category not in by_category:
             continue
@@ -484,7 +289,11 @@ def generate_pangolin_config(services: list[dict]) -> str:
         lines.append(f"  # {header}")
         lines.append(f"  # {'=' * 74}")
 
-        for svc in sorted(by_category[category], key=lambda x: x["ip"]):
+        for svc in sorted(by_category[category], key=lambda x: x["hostname"]):
+            if svc["name"] in seen_names:
+                continue
+            seen_names.add(svc["name"])
+
             lines.append(f"  - name: {svc['name']}")
             lines.append(f"    destination: {svc['ip']}")
             lines.append("")
@@ -516,7 +325,7 @@ def show_diff(current_content: str, new_content: str, filename: str) -> bool:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Generate DNS configs from FluxCD manifests"
+        description="Generate DNS configs from HTTPRoute manifests"
     )
     parser.add_argument(
         "--dry-run",
@@ -551,16 +360,9 @@ def main():
     controld_path = repo_root / "scripts/controld/domains.yaml"
     pangolin_path = repo_root / "scripts/pangolin/resources.yaml"
 
-    print("Loading cluster-vars.yaml...")
-    cluster_vars = load_cluster_vars(repo_root)
-
-    print("Extracting IP services...")
-    ip_services = extract_ip_services(cluster_vars)
-    print(f"Found {len(ip_services)} IP services")
-
-    print("\nScanning Kubernetes manifests...")
-    services = build_service_registry(repo_root, ip_services, args.verbose)
-    print(f"Discovered {len(services)} services")
+    print("Scanning HTTPRoute manifests...")
+    services = build_service_registry(repo_root, args.verbose)
+    print(f"Discovered {len(services)} services/hostnames")
 
     # Generate configs
     generate_controld = not args.pangolin_only

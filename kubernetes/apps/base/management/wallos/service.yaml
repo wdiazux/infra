@@ -1,6 +1,6 @@
-# Wallos LoadBalancer Service
+# Wallos Service
 #
-# Static IP via Cilium L2 LoadBalancer
+# ClusterIP - accessed via Gateway API (https://wallos.home-infra.net)
 apiVersion: v1
 kind: Service
 metadata:
@@ -8,11 +8,8 @@ metadata:
   namespace: management
   labels:
     app.kubernetes.io/name: wallos
-  annotations:
-    io.cilium/lb-ipam-ips: "${IP_WALLOS}"
 spec:
-  type: LoadBalancer
-  loadBalancerIP: "${IP_WALLOS}"
+  type: ClusterIP
   ports:
     - name: http
       port: 80

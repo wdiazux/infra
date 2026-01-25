@@ -1,6 +1,6 @@
-# Attic LoadBalancer Service
+# Attic Service
 #
-# External access to Attic binary cache at 10.10.2.29
+# ClusterIP - accessed via Gateway API (https://cache.home-infra.net)
 apiVersion: v1
 kind: Service
 metadata:
@@ -10,8 +10,7 @@ metadata:
     app.kubernetes.io/name: attic
     app.kubernetes.io/part-of: attic
 spec:
-  type: LoadBalancer
-  loadBalancerIP: "${IP_ATTIC}"
+  type: ClusterIP
   selector:
     app.kubernetes.io/name: attic
   ports:

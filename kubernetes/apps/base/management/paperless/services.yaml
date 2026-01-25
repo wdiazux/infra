@@ -80,7 +80,8 @@ spec:
       targetPort: 3000
       protocol: TCP
 ---
-# Paperless Server Service (LoadBalancer)
+# Paperless Server Service (ClusterIP)
+# Accessed via Gateway API (https://docs.home-infra.net)
 apiVersion: v1
 kind: Service
 metadata:
@@ -90,10 +91,8 @@ metadata:
     app.kubernetes.io/name: paperless-server
     app.kubernetes.io/component: server
     app.kubernetes.io/part-of: paperless
-  annotations:
-    io.cilium/lb-ipam-ips: "${IP_PAPERLESS}"
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app.kubernetes.io/name: paperless-server
   ports:

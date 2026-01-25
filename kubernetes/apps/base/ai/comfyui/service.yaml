@@ -1,7 +1,6 @@
-# ComfyUI LoadBalancer Service
+# ComfyUI Service
 #
-# Exposes ComfyUI on 10.10.2.52
-# Using yanwk/comfyui-boot image which exposes port 8188 directly
+# ClusterIP - accessed via Gateway API (https://comfyui.home-infra.net)
 apiVersion: v1
 kind: Service
 metadata:
@@ -10,14 +9,11 @@ metadata:
   labels:
     app.kubernetes.io/name: comfyui
     app.kubernetes.io/part-of: ai
-  annotations:
-    io.cilium/lb-ipam-ips: "${IP_COMFYUI}"
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app.kubernetes.io/name: comfyui
   ports:
-    # ComfyUI web interface on port 80
     - name: http
       port: 80
       targetPort: 8188

@@ -102,7 +102,7 @@ spec:
             - name: SITE_IS_PUBLIC
               value: "False"
             - name: ALLOWED_HOSTS
-              value: "obico.${DOMAIN_PRIMARY},${IP_OBICO},localhost"
+              value: "obico.${DOMAIN_PRIMARY},localhost,obico-server.printing.svc.cluster.local"
             # Internal URLs
             - name: INTERNAL_MEDIA_HOST
               value: "http://obico-server:3334"

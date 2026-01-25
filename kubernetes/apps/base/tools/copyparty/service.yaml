@@ -1,6 +1,6 @@
-# Copyparty LoadBalancer Service
+# Copyparty Service
 #
-# Exposes Copyparty file browser on 10.10.2.37
+# ClusterIP - accessed via Gateway API (https://files.home-infra.net)
 apiVersion: v1
 kind: Service
 metadata:
@@ -10,8 +10,7 @@ metadata:
     app.kubernetes.io/name: copyparty
     app.kubernetes.io/part-of: tools
 spec:
-  type: LoadBalancer
-  loadBalancerIP: 10.10.2.37
+  type: ClusterIP
   ports:
     - name: http
       port: 80

@@ -1,6 +1,6 @@
-# ntfy LoadBalancer Service
+# ntfy Service
 #
-# Static IP via Cilium L2 LoadBalancer
+# ClusterIP - accessed via Gateway API (https://ntfy.home-infra.net)
 apiVersion: v1
 kind: Service
 metadata:
@@ -8,11 +8,8 @@ metadata:
   namespace: tools
   labels:
     app.kubernetes.io/name: ntfy
-  annotations:
-    io.cilium/lb-ipam-ips: "${IP_NTFY}"
 spec:
-  type: LoadBalancer
-  loadBalancerIP: "${IP_NTFY}"
+  type: ClusterIP
   ports:
     - name: http
       port: 80

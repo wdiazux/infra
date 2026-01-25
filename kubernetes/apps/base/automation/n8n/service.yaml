@@ -1,6 +1,6 @@
-# n8n LoadBalancer Service
+# n8n Service
 #
-# Exposes n8n on 10.10.2.26:80
+# ClusterIP - accessed via Gateway API (https://n8n.home-infra.net)
 apiVersion: v1
 kind: Service
 metadata:
@@ -9,10 +9,8 @@ metadata:
   labels:
     app.kubernetes.io/name: n8n
     app.kubernetes.io/part-of: automation
-  annotations:
-    io.cilium/lb-ipam-ips: "${IP_N8N}"
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app.kubernetes.io/name: n8n
   ports:

@@ -1,6 +1,6 @@
-# SABnzbd LoadBalancer Service
+# SABnzbd Service
 #
-# Static IP via Cilium L2 LoadBalancer
+# ClusterIP - accessed via Gateway API (https://sabnzbd.home-infra.net)
 apiVersion: v1
 kind: Service
 metadata:
@@ -9,11 +9,8 @@ metadata:
   labels:
     app.kubernetes.io/name: sabnzbd
     app.kubernetes.io/part-of: arr-stack
-  annotations:
-    io.cilium/lb-ipam-ips: "${IP_SABNZBD}"
 spec:
-  type: LoadBalancer
-  loadBalancerIP: "${IP_SABNZBD}"
+  type: ClusterIP
   ports:
     - name: http
       port: 80

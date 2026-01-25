@@ -116,9 +116,8 @@ spec:
         enabled: true
         replicas: 1
         service:
-          type: LoadBalancer
-          annotations:
-            io.cilium/lb-ipam-ips: "${IP_HUBBLE}"
+          # ClusterIP - accessed via Gateway API (https://hubble.home-infra.net)
+          type: ClusterIP
     # Prometheus
     prometheus:
       enabled: true

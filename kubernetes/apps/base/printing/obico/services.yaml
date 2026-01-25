@@ -42,7 +42,8 @@ spec:
       targetPort: 3333
       protocol: TCP
 ---
-# Web server (LoadBalancer)
+# Web server (ClusterIP)
+# Accessed via Gateway API (https://obico.home-infra.net)
 apiVersion: v1
 kind: Service
 metadata:
@@ -52,10 +53,8 @@ metadata:
     app.kubernetes.io/name: obico-server
     app.kubernetes.io/component: web
     app.kubernetes.io/part-of: printing
-  annotations:
-    io.cilium/lb-ipam-ips: "${IP_OBICO}"
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app.kubernetes.io/name: obico-server
   ports:

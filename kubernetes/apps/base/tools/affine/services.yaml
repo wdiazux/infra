@@ -40,7 +40,8 @@ spec:
       targetPort: 6379
       protocol: TCP
 ---
-# Affine Server Service (LoadBalancer)
+# Affine Server Service (ClusterIP)
+# Accessed via Gateway API (https://affine.home-infra.net)
 apiVersion: v1
 kind: Service
 metadata:
@@ -50,10 +51,8 @@ metadata:
     app.kubernetes.io/name: affine-server
     app.kubernetes.io/component: server
     app.kubernetes.io/part-of: affine
-  annotations:
-    io.cilium/lb-ipam-ips: "${IP_AFFINE}"
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app.kubernetes.io/name: affine-server
   ports:

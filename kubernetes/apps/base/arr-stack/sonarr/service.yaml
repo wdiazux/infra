@@ -1,6 +1,6 @@
-# Sonarr LoadBalancer Service
+# Sonarr Service
 #
-# Static IP via Cilium L2 LoadBalancer
+# ClusterIP - accessed via Gateway API (https://sonarr.home-infra.net)
 apiVersion: v1
 kind: Service
 metadata:
@@ -9,11 +9,8 @@ metadata:
   labels:
     app.kubernetes.io/name: sonarr
     app.kubernetes.io/part-of: arr-stack
-  annotations:
-    io.cilium/lb-ipam-ips: "${IP_SONARR}"
 spec:
-  type: LoadBalancer
-  loadBalancerIP: "${IP_SONARR}"
+  type: ClusterIP
   ports:
     - name: http
       port: 80

@@ -1,6 +1,6 @@
-# Bazarr LoadBalancer Service
+# Bazarr Service
 #
-# Static IP via Cilium L2 LoadBalancer
+# ClusterIP - accessed via Gateway API (https://bazarr.home-infra.net)
 apiVersion: v1
 kind: Service
 metadata:
@@ -9,11 +9,8 @@ metadata:
   labels:
     app.kubernetes.io/name: bazarr
     app.kubernetes.io/part-of: arr-stack
-  annotations:
-    io.cilium/lb-ipam-ips: "${IP_BAZARR}"
 spec:
-  type: LoadBalancer
-  loadBalancerIP: "${IP_BAZARR}"
+  type: ClusterIP
   ports:
     - name: http
       port: 80

@@ -1,6 +1,6 @@
-# IT-Tools LoadBalancer Service
+# IT-Tools Service
 #
-# Static IP via Cilium L2 LoadBalancer
+# ClusterIP - accessed via Gateway API (https://tools.home-infra.net)
 apiVersion: v1
 kind: Service
 metadata:
@@ -8,11 +8,8 @@ metadata:
   namespace: tools
   labels:
     app.kubernetes.io/name: it-tools
-  annotations:
-    io.cilium/lb-ipam-ips: "${IP_ITTOOLS}"
 spec:
-  type: LoadBalancer
-  loadBalancerIP: "${IP_ITTOOLS}"
+  type: ClusterIP
   ports:
     - name: http
       port: 80

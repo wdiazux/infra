@@ -1,6 +1,6 @@
-# Navidrome LoadBalancer Service
+# Navidrome Service
 #
-# Exposes Navidrome on 10.10.2.31:80
+# ClusterIP - accessed via Gateway API (https://music.home-infra.net)
 apiVersion: v1
 kind: Service
 metadata:
@@ -9,10 +9,8 @@ metadata:
   labels:
     app.kubernetes.io/name: navidrome
     app.kubernetes.io/part-of: media
-  annotations:
-    io.cilium/lb-ipam-ips: "${IP_NAVIDROME}"
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app.kubernetes.io/name: navidrome
   ports:

@@ -116,12 +116,13 @@ persistence:
 # ============================================================================
 
 service:
+  # HTTP accessed via Gateway API (https://git.home-infra.net)
   http:
-    type: LoadBalancer
+    type: ClusterIP
     port: 80  # External port (routes to container port 3000)
-    loadBalancerIP: "10.10.2.13"
     annotations: {}
 
+  # SSH needs LoadBalancer for direct Git SSH access
   ssh:
     type: LoadBalancer
     port: 22
@@ -195,9 +196,9 @@ initContainers:
 # - PostgreSQL 2Gi deployed separately as forgejo-postgres (see postgresql.tf)
 #
 # Networking:
-# - HTTP on port 80 via LoadBalancer (10.10.2.13)
+# - HTTP via Gateway API (https://git.home-infra.net)
 # - SSH on port 22 via LoadBalancer (10.10.2.14)
-# - Cilium L2 provides static IPs
+# - Cilium L2 provides static IP for SSH
 #
 # Security:
 # - Registration disabled (admin creates users)

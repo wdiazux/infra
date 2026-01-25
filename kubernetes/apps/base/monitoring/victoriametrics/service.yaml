@@ -1,8 +1,6 @@
-# VictoriaMetrics Services
+# VictoriaMetrics Service
 #
-# ClusterIP for internal access (Grafana, VMAgent)
-# LoadBalancer for direct UI access (optional)
----
+# ClusterIP - accessed via Gateway API (https://metrics.home-infra.net)
 apiVersion: v1
 kind: Service
 metadata:
@@ -18,26 +16,5 @@ spec:
   ports:
     - name: http
       port: 8428
-      targetPort: http
-      protocol: TCP
----
-# Optional: LoadBalancer for direct access to VM UI
-apiVersion: v1
-kind: Service
-metadata:
-  name: victoriametrics-lb
-  namespace: monitoring
-  labels:
-    app.kubernetes.io/name: victoriametrics
-    app.kubernetes.io/part-of: monitoring
-  annotations:
-    io.cilium/lb-ipam-ips: "${IP_VICTORIAMETRICS}"
-spec:
-  type: LoadBalancer
-  selector:
-    app.kubernetes.io/name: victoriametrics
-  ports:
-    - name: http
-      port: 80
       targetPort: http
       protocol: TCP

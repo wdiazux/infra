@@ -1,6 +1,6 @@
-# Emby LoadBalancer Service
+# Emby Service
 #
-# Exposes Emby on 10.10.2.30:80
+# ClusterIP - accessed via Gateway API (https://emby.home-infra.net)
 apiVersion: v1
 kind: Service
 metadata:
@@ -9,10 +9,8 @@ metadata:
   labels:
     app.kubernetes.io/name: emby
     app.kubernetes.io/part-of: media
-  annotations:
-    io.cilium/lb-ipam-ips: "${IP_EMBY}"
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app.kubernetes.io/name: emby
   ports:

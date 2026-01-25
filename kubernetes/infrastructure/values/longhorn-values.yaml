@@ -84,10 +84,10 @@ ingress:
   # tlsSecret: longhorn-tls
 
 # Service configuration
+# UI accessed via Gateway API (https://longhorn.home-infra.net)
 service:
   ui:
-    type: LoadBalancer
-    loadBalancerIP: "10.10.2.12"
+    type: ClusterIP
     nodePort: null
   manager:
     type: ClusterIP

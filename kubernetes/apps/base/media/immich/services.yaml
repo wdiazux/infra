@@ -60,7 +60,8 @@ spec:
       targetPort: 3003
       protocol: TCP
 ---
-# Immich Server Service (LoadBalancer)
+# Immich Server Service (ClusterIP)
+# Accessed via Gateway API (https://photos.reynoza.org)
 apiVersion: v1
 kind: Service
 metadata:
@@ -70,10 +71,8 @@ metadata:
     app.kubernetes.io/name: immich-server
     app.kubernetes.io/component: server
     app.kubernetes.io/part-of: immich
-  annotations:
-    io.cilium/lb-ipam-ips: "${IP_IMMICH}"
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app.kubernetes.io/name: immich-server
   ports:

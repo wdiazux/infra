@@ -1,6 +1,6 @@
-# Open WebUI LoadBalancer Service
+# Open WebUI Service
 #
-# Exposes Open WebUI on 10.10.2.51:80
+# ClusterIP - accessed via Gateway API (https://ai.home-infra.net)
 apiVersion: v1
 kind: Service
 metadata:
@@ -9,10 +9,8 @@ metadata:
   labels:
     app.kubernetes.io/name: open-webui
     app.kubernetes.io/part-of: ai
-  annotations:
-    io.cilium/lb-ipam-ips: "${IP_OPENWEBUI}"
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app.kubernetes.io/name: open-webui
   ports:

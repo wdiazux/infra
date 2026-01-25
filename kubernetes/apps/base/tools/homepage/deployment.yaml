@@ -67,7 +67,7 @@ spec:
             - name: TZ
               value: America/El_Salvador
             - name: HOMEPAGE_ALLOWED_HOSTS
-              value: "${IP_HOMEPAGE},${DOMAIN_PRIMARY},home.local,homepage.tools.svc.cluster.local"
+              value: "${DOMAIN_PRIMARY},home.local,homepage.tools.svc.cluster.local"
           volumeMounts:
             - name: config
               mountPath: /app/config
