@@ -2,15 +2,24 @@
 
 Document management system with OCR capabilities.
 
-**Image**: `ghcr.io/paperless-ngx/paperless-ngx:2.20.5`
-**Supporting Images**:
-- Tika: `docker.io/apache/tika:3.2.3.0`
-- Gotenberg: `docker.io/gotenberg/gotenberg:8.25.1`
-- PostgreSQL: `docker.io/library/postgres:18`
-- Redis: `docker.io/library/redis:8`
+## Images
 
-**Namespace**: `management`
-**IP**: `10.10.2.36`
+| Component | Registry | Image | Version |
+|-----------|----------|-------|---------|
+| Server | GitHub Container Registry | `ghcr.io/paperless-ngx/paperless-ngx` | `2.20.5` |
+| PostgreSQL | Docker Hub | `postgres` | `18` |
+| Redis | Docker Hub | `redis` | `8` |
+| Tika | Docker Hub | `apache/tika` | `3.2.3.0` |
+| Gotenberg | Docker Hub | `gotenberg/gotenberg` | `8.25.1` |
+
+## Deployment
+
+| Property | Value |
+|----------|-------|
+| Namespace | `management` |
+| IP | `10.10.2.36` |
+| Port | `8000` |
+| URL | `https://paperless.home-infra.net` |
 
 ## Environment Variables
 
@@ -118,5 +127,7 @@ services:
 
 ## Documentation
 
-- [Paperless-ngx Configuration](https://docs.paperless-ngx.com/configuration/)
+- [Configuration](https://docs.paperless-ngx.com/configuration/)
 - [Docker Setup](https://docs.paperless-ngx.com/setup/)
+- [GitHub](https://github.com/paperless-ngx/paperless-ngx)
+- [Docker Hub](https://hub.docker.com/r/paperlessngx/paperless-ngx)

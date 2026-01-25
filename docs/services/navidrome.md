@@ -1,10 +1,21 @@
 # Navidrome
 
-Self-hosted music streaming server compatible with Subsonic/Airsonic.
+Self-hosted music streaming server compatible with Subsonic/Airsonic clients.
 
-**Image**: `docker.io/deluan/navidrome:0.59.0`
-**Namespace**: `media`
-**IP**: `10.10.2.31`
+## Image
+
+| Registry | Image | Version |
+|----------|-------|---------|
+| Docker Hub | `deluan/navidrome` | `0.59.0` |
+
+## Deployment
+
+| Property | Value |
+|----------|-------|
+| Namespace | `media` |
+| IP | `10.10.2.31` |
+| Port | `4533` |
+| URL | `https://music.home-infra.net` |
 
 ## Environment Variables
 
@@ -73,5 +84,7 @@ Size values use format: `100MB`, `1GB`, `150MiB`
 
 ## Documentation
 
-- [Navidrome Configuration Options](https://www.navidrome.org/docs/usage/configuration/options/)
+- [Configuration Options](https://www.navidrome.org/docs/usage/configuration/options/)
 - [Docker Installation](https://www.navidrome.org/docs/installation/docker/)
+- [GitHub](https://github.com/navidrome/navidrome)
+- [Docker Hub](https://hub.docker.com/r/deluan/navidrome)

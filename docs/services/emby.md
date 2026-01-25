@@ -2,9 +2,20 @@
 
 Media server for organizing and streaming media.
 
-**Image**: `lscr.io/linuxserver/emby:4.9.3`
-**Namespace**: `media`
-**IP**: `10.10.2.30`
+## Image
+
+| Registry | Image | Version |
+|----------|-------|---------|
+| LinuxServer.io | `lscr.io/linuxserver/emby` | `4.9.3` |
+
+## Deployment
+
+| Property | Value |
+|----------|-------|
+| Namespace | `media` |
+| IP | `10.10.2.30` |
+| Port | `8096` |
+| URL | `https://emby.home-infra.net` |
 
 ## Environment Variables
 
@@ -56,5 +67,7 @@ environment:
 
 ## Documentation
 
-- [LinuxServer Emby](https://docs.linuxserver.io/images/docker-emby/)
+- [LinuxServer.io Emby](https://docs.linuxserver.io/images/docker-emby/)
+- [Emby Official](https://emby.media/)
+- [GitHub](https://github.com/linuxserver/docker-emby)
 - [Docker Hub](https://hub.docker.com/r/linuxserver/emby)

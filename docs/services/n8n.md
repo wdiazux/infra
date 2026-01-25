@@ -2,9 +2,20 @@
 
 Workflow automation platform with 400+ integrations.
 
-**Image**: `n8nio/n8n:2.5.0`
-**Namespace**: `automation`
-**IP**: `10.10.2.26`
+## Image
+
+| Registry | Image | Version |
+|----------|-------|---------|
+| Docker Hub | `n8nio/n8n` | `2.5.0` |
+
+## Deployment
+
+| Property | Value |
+|----------|-------|
+| Namespace | `automation` |
+| IP | `10.10.2.26` |
+| Port | `5678` |
+| URL | `https://n8n.home-infra.net` |
 
 ## Environment Variables
 
@@ -101,5 +112,8 @@ Variables support the `_FILE` suffix pattern:
 
 ## Documentation
 
-- [n8n Environment Variables](https://docs.n8n.io/hosting/configuration/environment-variables/)
+- [Environment Variables](https://docs.n8n.io/hosting/configuration/environment-variables/)
+- [Database Configuration](https://docs.n8n.io/hosting/configuration/environment-variables/database/)
 - [Docker Installation](https://docs.n8n.io/hosting/installation/docker/)
+- [GitHub](https://github.com/n8n-io/n8n)
+- [Docker Hub](https://hub.docker.com/r/n8nio/n8n)

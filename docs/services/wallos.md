@@ -2,9 +2,20 @@
 
 Personal subscription tracker for managing recurring expenses.
 
-**Image**: `docker.io/bellamy/wallos:4.6.0`
-**Namespace**: `management`
-**IP**: `10.10.2.34`
+## Image
+
+| Registry | Image | Version |
+|----------|-------|---------|
+| Docker Hub | `bellamy/wallos` | `4.6.0` |
+
+## Deployment
+
+| Property | Value |
+|----------|-------|
+| Namespace | `management` |
+| IP | `10.10.2.34` |
+| Port | `80` |
+| URL | `https://wallos.home-infra.net` |
 
 ## Environment Variables
 
@@ -52,5 +63,6 @@ services:
 
 ## Documentation
 
-- [Wallos GitHub](https://github.com/ellite/Wallos)
+- [GitHub](https://github.com/ellite/Wallos)
 - [Official Website](https://wallosapp.com/)
+- [Docker Hub](https://hub.docker.com/r/bellamy/wallos)

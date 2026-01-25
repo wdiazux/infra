@@ -2,9 +2,20 @@
 
 Highly customizable application dashboard with Docker and service integrations.
 
-**Image**: `ghcr.io/gethomepage/homepage:v1.9.0`
-**Namespace**: `tools`
-**IP**: `10.10.2.21`
+## Image
+
+| Registry | Image | Version |
+|----------|-------|---------|
+| GitHub Container Registry | `ghcr.io/gethomepage/homepage` | `v1.9.0` |
+
+## Deployment
+
+| Property | Value |
+|----------|-------|
+| Namespace | `tools` |
+| IP | `10.10.2.21` |
+| Port | `3000` |
+| URL | `https://home-infra.net` |
 
 ## Environment Variables
 
@@ -114,6 +125,8 @@ docker exec -it homepage env | grep HOMEPAGE_VAR
 
 ## Documentation
 
-- [Homepage Docker Installation](https://gethomepage.dev/installation/docker/)
+- [Docker Installation](https://gethomepage.dev/installation/docker/)
 - [Configuration](https://gethomepage.dev/configs/)
+- [Widgets](https://gethomepage.dev/widgets/)
 - [GitHub](https://github.com/gethomepage/homepage)
+- [Docker Hub](https://hub.docker.com/r/ghcr.io/gethomepage/homepage)

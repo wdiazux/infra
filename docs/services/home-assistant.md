@@ -2,9 +2,20 @@
 
 Open source home automation platform.
 
-**Image**: `ghcr.io/home-assistant/home-assistant:2026.1.2`
-**Namespace**: `automation`
-**IP**: `10.10.2.25`
+## Image
+
+| Registry | Image | Version |
+|----------|-------|---------|
+| GitHub Container Registry | `ghcr.io/home-assistant/home-assistant` | `2026.1.2` |
+
+## Deployment
+
+| Property | Value |
+|----------|-------|
+| Namespace | `automation` |
+| IP | `10.10.2.25` |
+| Port | `8123` |
+| URL | `https://hass.home-infra.net` |
 
 ## Environment Variables
 
@@ -80,5 +91,7 @@ http:
 
 ## Documentation
 
-- [Home Assistant Docker Installation](https://www.home-assistant.io/installation/linux#docker-compose)
+- [Docker Installation](https://www.home-assistant.io/installation/linux#docker-compose)
 - [Configuration Guide](https://www.home-assistant.io/docs/configuration/)
+- [GitHub](https://github.com/home-assistant/core)
+- [Docker Hub](https://hub.docker.com/r/homeassistant/home-assistant)

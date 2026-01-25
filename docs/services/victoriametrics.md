@@ -2,12 +2,21 @@
 
 Fast, cost-effective monitoring solution and time series database.
 
-**Images**:
-- VictoriaMetrics: `victoriametrics/victoria-metrics:v1.134.0`
-- VMAgent: `victoriametrics/vmagent:v1.134.0`
+## Images
 
-**Namespace**: `monitoring`
-**IP**: `10.10.2.24`
+| Component | Registry | Image | Version |
+|-----------|----------|-------|---------|
+| VictoriaMetrics | Docker Hub | `victoriametrics/victoria-metrics` | `v1.134.0` |
+| VMAgent | Docker Hub | `victoriametrics/vmagent` | `v1.134.0` |
+
+## Deployment
+
+| Property | Value |
+|----------|-------|
+| Namespace | `monitoring` |
+| IP | `10.10.2.24` |
+| Port | `8428` |
+| URL | `https://metrics.home-infra.net` |
 
 ## Configuration Method
 
@@ -104,3 +113,5 @@ services:
 - [VictoriaMetrics Settings](https://docs.victoriametrics.com/victoriametrics/)
 - [VMAgent Docs](https://docs.victoriametrics.com/vmagent.html)
 - [Quick Start](https://docs.victoriametrics.com/Quick-Start.html)
+- [GitHub](https://github.com/VictoriaMetrics/VictoriaMetrics)
+- [Docker Hub](https://hub.docker.com/r/victoriametrics/victoria-metrics)

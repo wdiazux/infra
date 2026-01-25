@@ -2,9 +2,20 @@
 
 Observability and data visualization platform.
 
-**Image**: `grafana/grafana:12.3.1`
-**Namespace**: `monitoring`
-**IP**: `10.10.2.23`
+## Image
+
+| Registry | Image | Version |
+|----------|-------|---------|
+| Docker Hub | `grafana/grafana` | `12.3.1` |
+
+## Deployment
+
+| Property | Value |
+|----------|-------|
+| Namespace | `monitoring` |
+| IP | `10.10.2.23` |
+| Port | `3000` |
+| URL | `https://grafana.home-infra.net` |
 
 ## Environment Variables
 
@@ -111,3 +122,5 @@ Use `$ENV_VAR` or `${ENV_VAR}` syntax in provisioning files.
 
 - [Configure Grafana Docker](https://grafana.com/docs/grafana/latest/setup-grafana/configure-docker/)
 - [Environment Variables](https://grafana.com/docs/grafana/latest/setup-grafana/configure-grafana/)
+- [GitHub](https://github.com/grafana/grafana)
+- [Docker Hub](https://hub.docker.com/r/grafana/grafana)
