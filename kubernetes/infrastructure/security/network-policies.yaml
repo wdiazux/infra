@@ -1623,3 +1623,87 @@ spec:
         - protocol: TCP
           port: 443
 
+
+---
+# =============================================================================
+# CiliumNetworkPolicies for Kubernetes API Access
+# =============================================================================
+# Standard NetworkPolicy cannot allow traffic to the API server because:
+# 1. API server runs on node (10.10.2.10:6443), not as a pod
+# 2. Cilium's socket-level LB (bpf-lb-sock) rewrites before policy evaluation
+# Use CiliumNetworkPolicy with toEntities: kube-apiserver instead.
+
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: monitoring-kube-state-metrics-kube-api-allow
+  namespace: monitoring
+spec:
+  description: Allow kube-state-metrics to access Kubernetes API for reading cluster state
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: kube-state-metrics
+  egress:
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: "6443"
+              protocol: TCP
+
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: monitoring-vmagent-kube-api-allow
+  namespace: monitoring
+spec:
+  description: Allow vmagent to access Kubernetes API for service discovery and scraping
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: vmagent
+  egress:
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: "6443"
+              protocol: TCP
+
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: backup-velero-kube-api-allow
+  namespace: backup
+spec:
+  description: Allow Velero to access Kubernetes API for backup/restore operations
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: velero
+  egress:
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: "6443"
+              protocol: TCP
+
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: backup-node-agent-kube-api-allow
+  namespace: backup
+spec:
+  description: Allow node-agent to access Kubernetes API for PV backup operations
+  endpointSelector:
+    matchLabels:
+      name: node-agent
+  egress:
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: "6443"
+              protocol: TCP
