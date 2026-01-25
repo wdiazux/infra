@@ -56,13 +56,25 @@ spec:
                 sleep 5
               done
 
-              echo "Forgejo is ready. Registering runner..."
+              echo "Forgejo is ready. Fetching registration token..."
+
+              # Get fresh registration token using admin credentials
+              REGISTRATION_TOKEN=$(wget -q -O - \
+                --header "Authorization: Basic $(echo -n "$FORGEJO_ADMIN_USER:$FORGEJO_ADMIN_PASS" | base64)" \
+                "$FORGEJO_INSTANCE/api/v1/admin/runners/registration-token" | sed 's/.*"token":"\([^"]*\)".*/\1/')
+
+              if [ -z "$REGISTRATION_TOKEN" ]; then
+                echo "Error: Failed to get registration token"
+                exit 1
+              fi
+
+              echo "Got registration token. Registering runner..."
 
               # Register runner in /data directory (creates .runner file in cwd)
               cd /data
               forgejo-runner register \
                 --instance "$FORGEJO_INSTANCE" \
-                --token "$FORGEJO_RUNNER_TOKEN" \
+                --token "$REGISTRATION_TOKEN" \
                 --name "$(hostname)" \
                 --labels "ubuntu-latest:docker://node:20-bookworm,docker:docker://docker:28-cli" \
                 --no-interactive
@@ -75,11 +87,16 @@ spec:
                 secretKeyRef:
                   name: forgejo-runner-secret
                   key: FORGEJO_INSTANCE
-            - name: FORGEJO_RUNNER_TOKEN
+            - name: FORGEJO_ADMIN_USER
               valueFrom:
                 secretKeyRef:
-                  name: forgejo-runner-secret
-                  key: FORGEJO_RUNNER_TOKEN
+                  name: forgejo-admin
+                  key: username
+            - name: FORGEJO_ADMIN_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: forgejo-admin
+                  key: password
           volumeMounts:
             - name: runner-data
               mountPath: /data
