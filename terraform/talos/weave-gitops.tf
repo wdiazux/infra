@@ -94,11 +94,14 @@ resource "kubernetes_service" "weave_gitops_lb" {
       "app.kubernetes.io/component"  = "loadbalancer"
       "app.kubernetes.io/managed-by" = "terraform"
     }
+    annotations = {
+      # Cilium L2 LoadBalancer IP assignment (replaces deprecated load_balancer_ip)
+      "io.cilium/lb-ipam-ips" = var.weave_gitops_ip
+    }
   }
 
   spec {
-    type             = "LoadBalancer"
-    load_balancer_ip = var.weave_gitops_ip
+    type = "LoadBalancer"
 
     port {
       name        = "http"

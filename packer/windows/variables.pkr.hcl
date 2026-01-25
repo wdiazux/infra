@@ -139,9 +139,14 @@ variable "winrm_username" {
 
 variable "winrm_password" {
   type        = string
-  description = "WinRM password for provisioning"
-  default     = "P@ssw0rd!"
+  description = "WinRM password for provisioning (provide via PKR_VAR_winrm_password)"
+  default     = null
   sensitive   = true
+
+  validation {
+    condition     = var.winrm_password != null && var.winrm_password != ""
+    error_message = "winrm_password must be provided via PKR_VAR_winrm_password environment variable or .auto.pkrvars.hcl file."
+  }
 }
 
 variable "winrm_timeout" {
