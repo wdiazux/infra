@@ -71,6 +71,27 @@ spec:
         namespaces:
           from: All
 ---
+# HTTP → HTTPS Redirect
+#
+# Catch-all route that redirects all HTTP requests to HTTPS.
+# Applies to all hostnames on the HTTP listener.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: http-to-https-redirect
+  namespace: kube-system
+spec:
+  parentRefs:
+    - name: cilium-gateway
+      namespace: kube-system
+      sectionName: http  # Only attach to HTTP listener
+  rules:
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            statusCode: 301
+---
 # ReferenceGrant: Allow Gateway to reference TLS secrets in cert-manager namespace
 apiVersion: gateway.networking.k8s.io/v1beta1
 kind: ReferenceGrant
