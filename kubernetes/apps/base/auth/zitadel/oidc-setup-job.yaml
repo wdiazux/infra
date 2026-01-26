@@ -27,20 +27,20 @@ data:
     set -e
 
     ZITADEL_URL="http://zitadel.auth.svc.cluster.local:8080"
-    MACHINEKEY_PATH="/machinekey/zitadel-admin-sa.json"
     MAX_RETRIES=30
     RETRY_INTERVAL=10
     SECRETS_CHANGED=false
 
     echo "=== Zitadel OIDC Sync $(date -Iseconds) ==="
 
-    # Check if machine key file exists (don't wait long for CronJob runs)
-    if [ ! -f "$MACHINEKEY_PATH" ]; then
-      echo "Machine key file not found. Zitadel may not be initialized yet."
+    # Read machine key from K8s Secret (created by chart's machinekeyWriter)
+    MACHINEKEY_JSON=$(kubectl get secret iam-admin -n auth -o jsonpath='{.data.iam-admin\.json}' 2>/dev/null | base64 -d 2>/dev/null)
+    if [ -z "$MACHINEKEY_JSON" ]; then
+      echo "Machine key secret not found. Zitadel may not be initialized yet."
       echo "Will retry on next scheduled run."
       exit 0
     fi
-    echo "Machine key file found."
+    echo "Machine key secret found."
 
     # Check if Zitadel is ready
     if ! curl -sf "$ZITADEL_URL/debug/healthz" > /dev/null 2>&1; then
@@ -50,9 +50,9 @@ data:
     echo "Zitadel is ready."
 
     # Extract key info from machine key JSON
-    KEY_ID=$(jq -r '.keyId' "$MACHINEKEY_PATH")
-    USER_ID=$(jq -r '.userId' "$MACHINEKEY_PATH")
-    PRIVATE_KEY=$(jq -r '.key' "$MACHINEKEY_PATH")
+    KEY_ID=$(echo "$MACHINEKEY_JSON" | jq -r '.keyId')
+    USER_ID=$(echo "$MACHINEKEY_JSON" | jq -r '.userId')
+    PRIVATE_KEY=$(echo "$MACHINEKEY_JSON" | jq -r '.key')
 
     echo "Using machine key: $KEY_ID"
 
@@ -347,9 +347,6 @@ spec:
                   apk add --no-cache bash curl jq openssl > /dev/null 2>&1
                   /bin/bash /scripts/setup.sh
               volumeMounts:
-                - name: machinekey
-                  mountPath: /machinekey
-                  readOnly: true
                 - name: scripts
                   mountPath: /scripts
                   readOnly: true
@@ -360,9 +357,6 @@ spec:
                 limits:
                   memory: 256Mi
           volumes:
-            - name: machinekey
-              persistentVolumeClaim:
-                claimName: zitadel-machinekey
             - name: scripts
               configMap:
                 name: zitadel-oidc-setup-script
@@ -400,20 +394,19 @@ spec:
               # Wait longer for initial setup
               MAX_RETRIES=60
               RETRY_INTERVAL=10
-              MACHINEKEY_PATH="/machinekey/zitadel-admin-sa.json"
               ZITADEL_URL="http://zitadel.auth.svc.cluster.local:8080"
 
               echo "=== Initial OIDC Setup - Waiting for Zitadel ==="
 
-              # Wait for machine key
+              # Wait for machine key secret (created by chart's machinekeyWriter)
               retries=0
-              while [ ! -f "$MACHINEKEY_PATH" ]; do
+              while ! kubectl get secret iam-admin -n auth > /dev/null 2>&1; do
                 retries=$((retries + 1))
                 if [ $retries -ge $MAX_RETRIES ]; then
-                  echo "ERROR: Machine key not found after $MAX_RETRIES retries"
+                  echo "ERROR: Machine key secret not found after $MAX_RETRIES retries"
                   exit 1
                 fi
-                echo "Waiting for machine key... ($retries/$MAX_RETRIES)"
+                echo "Waiting for machine key secret... ($retries/$MAX_RETRIES)"
                 sleep $RETRY_INTERVAL
               done
 
@@ -432,9 +425,6 @@ spec:
               echo "Zitadel is ready, running setup..."
               /bin/bash /scripts/setup.sh
           volumeMounts:
-            - name: machinekey
-              mountPath: /machinekey
-              readOnly: true
             - name: scripts
               mountPath: /scripts
               readOnly: true
@@ -444,9 +434,6 @@ spec:
             limits:
               memory: 256Mi
       volumes:
-        - name: machinekey
-          persistentVolumeClaim:
-            claimName: zitadel-machinekey
         - name: scripts
           configMap:
             name: zitadel-oidc-setup-script
