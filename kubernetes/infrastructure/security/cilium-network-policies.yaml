@@ -29,3 +29,28 @@ spec:
         - ports:
             - port: "6443"
               protocol: TCP
+
+---
+# Allow OIDC setup/sync jobs to access the Kubernetes API
+# These jobs manage OIDC secrets across namespaces and restart deployments
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: auth-oidc-setup-kube-api-allow
+  namespace: auth
+spec:
+  description: "Allow OIDC setup jobs to access Kubernetes API for managing secrets"
+  endpointSelector:
+    matchExpressions:
+      - key: app.kubernetes.io/name
+        operator: In
+        values:
+          - zitadel-oidc-setup
+          - zitadel-oidc-sync
+  egress:
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: "6443"
+              protocol: TCP
