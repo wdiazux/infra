@@ -62,32 +62,11 @@ resource "null_resource" "flux_install" {
   }
 
   provisioner "local-exec" {
-    command = <<-EOT
-      set -e
-      echo "=== Installing FluxCD Components ==="
+    command = "${path.module}/scripts/fluxcd-install.sh"
 
-      # Validate flux CLI
-      if ! command -v flux &> /dev/null; then
-        echo "ERROR: flux CLI not found. Install via nix-shell."
-        exit 1
-      fi
-
-      # Pre-flight check
-      flux check --pre --kubeconfig=${local.kubeconfig_path} || true
-
-      # Install FluxCD components
-      flux install --kubeconfig=${local.kubeconfig_path} \
-        --components-extra=image-reflector-controller,image-automation-controller
-
-      # Wait for controllers to be ready
-      echo "Waiting for FluxCD controllers..."
-      kubectl --kubeconfig=${local.kubeconfig_path} wait --for=condition=available \
-        --timeout=300s deployment/source-controller -n flux-system
-      kubectl --kubeconfig=${local.kubeconfig_path} wait --for=condition=available \
-        --timeout=300s deployment/kustomize-controller -n flux-system
-
-      echo "=== FluxCD Components Installed ==="
-    EOT
+    environment = {
+      KUBECONFIG = local.kubeconfig_path
+    }
   }
 
   depends_on = [
@@ -111,37 +90,12 @@ resource "null_resource" "flux_git_secret" {
   }
 
   provisioner "local-exec" {
-    command = <<-EOT
-      set -e
-      echo "=== Creating FluxCD Git Credentials ==="
-
-      # Validate git owner
-      if [ -z "${local.fluxcd_git_owner}" ]; then
-        echo "ERROR: Git owner is empty."
-        exit 1
-      fi
-
-      # Validate token
-      if [ -z "$GIT_TOKEN" ]; then
-        echo "ERROR: Git token is empty."
-        exit 1
-      fi
-
-      # Delete existing secret if present
-      kubectl --kubeconfig=${local.kubeconfig_path} delete secret flux-system \
-        -n flux-system --ignore-not-found
-
-      # Create git credentials secret
-      kubectl --kubeconfig=${local.kubeconfig_path} create secret generic flux-system \
-        --namespace=flux-system \
-        --from-literal=username="${local.fluxcd_git_owner}" \
-        --from-literal=password="$GIT_TOKEN"
-
-      echo "=== FluxCD Git Credentials Created ==="
-    EOT
+    command = "${path.module}/scripts/fluxcd-git-secret.sh"
 
     environment = {
-      GIT_TOKEN = local.fluxcd_git_token
+      KUBECONFIG = local.kubeconfig_path
+      GIT_OWNER  = local.fluxcd_git_owner
+      GIT_TOKEN  = local.fluxcd_git_token
     }
   }
 
@@ -163,43 +117,13 @@ resource "null_resource" "flux_git_repository" {
   }
 
   provisioner "local-exec" {
-    command = <<-EOT
-      set -e
-      echo "=== Creating FluxCD GitRepository Source ==="
-      echo "URL: ${local.forgejo_http_url}"
-      echo "Branch: ${var.git_branch}"
+    command = "${path.module}/scripts/fluxcd-git-repository.sh"
 
-      # Create GitRepository pointing to HTTP Forgejo
-      kubectl --kubeconfig=${local.kubeconfig_path} apply -f - <<EOF
-apiVersion: source.toolkit.fluxcd.io/v1
-kind: GitRepository
-metadata:
-  name: flux-system
-  namespace: flux-system
-spec:
-  interval: 5m
-  url: ${local.forgejo_http_url}
-  ref:
-    branch: ${var.git_branch}
-  secretRef:
-    name: flux-system
-EOF
-
-      # Wait for GitRepository to be ready
-      echo "Waiting for GitRepository to sync..."
-      for i in $(seq 1 30); do
-        STATUS=$(kubectl --kubeconfig=${local.kubeconfig_path} get gitrepository flux-system \
-          -n flux-system -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}' 2>/dev/null || echo "Unknown")
-        if [ "$STATUS" = "True" ]; then
-          echo "GitRepository is ready!"
-          break
-        fi
-        echo "Waiting for GitRepository... ($i/30) Status: $STATUS"
-        sleep 10
-      done
-
-      echo "=== FluxCD GitRepository Created ==="
-    EOT
+    environment = {
+      KUBECONFIG = local.kubeconfig_path
+      GIT_URL    = local.forgejo_http_url
+      GIT_BRANCH = var.git_branch
+    }
   }
 
   depends_on = [
@@ -219,34 +143,12 @@ resource "null_resource" "flux_kustomization" {
   }
 
   provisioner "local-exec" {
-    command = <<-EOT
-      set -e
-      echo "=== Creating FluxCD Kustomization ==="
-      echo "Path: ${var.fluxcd_path}"
+    command = "${path.module}/scripts/fluxcd-kustomization.sh"
 
-      # Create Kustomization to sync from path
-      kubectl --kubeconfig=${local.kubeconfig_path} apply -f - <<EOF
-apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization
-metadata:
-  name: flux-system
-  namespace: flux-system
-spec:
-  interval: 10m
-  path: ./${var.fluxcd_path}
-  prune: true
-  sourceRef:
-    kind: GitRepository
-    name: flux-system
-  decryption:
-    provider: sops
-    secretRef:
-      name: sops-age
-  timeout: 3m
-EOF
-
-      echo "=== FluxCD Kustomization Created ==="
-    EOT
+    environment = {
+      KUBECONFIG  = local.kubeconfig_path
+      FLUXCD_PATH = var.fluxcd_path
+    }
   }
 
   depends_on = [
@@ -295,32 +197,10 @@ resource "null_resource" "create_sops_age_secret" {
   count = var.enable_fluxcd && var.sops_age_key_file != "" ? 1 : 0
 
   provisioner "local-exec" {
-    command = <<-EOT
-      set -e
-      echo "Creating SOPS Age secret for FluxCD..."
-
-      # Expand tilde in path (shell expansion doesn't work directly)
-      SOPS_KEY_FILE="$SOPS_AGE_KEY_FILE"
-      if [ ! -f "$SOPS_KEY_FILE" ]; then
-        echo "ERROR: SOPS Age key file not found: $SOPS_KEY_FILE"
-        exit 1
-      fi
-
-      # Check if secret already exists
-      if kubectl --kubeconfig=${local.kubeconfig_path} get secret sops-age -n flux-system &>/dev/null; then
-        echo "sops-age secret already exists, skipping"
-        exit 0
-      fi
-
-      # Create the secret
-      kubectl --kubeconfig=${local.kubeconfig_path} create secret generic sops-age \
-        --namespace=flux-system \
-        --from-file=age.agekey="$SOPS_KEY_FILE"
-
-      echo "SOPS Age secret created successfully"
-    EOT
+    command = "${path.module}/scripts/fluxcd-sops-secret.sh"
 
     environment = {
+      KUBECONFIG        = local.kubeconfig_path
       SOPS_AGE_KEY_FILE = pathexpand(var.sops_age_key_file)
     }
   }

@@ -44,7 +44,7 @@ terraform apply -auto-approve
 
 | Provider | Version | Purpose |
 |----------|---------|---------|
-| `siderolabs/talos` | ~> 0.10.0 | Talos configuration |
+| `siderolabs/talos` | ~> 0.10.0 | Talos config, image factory, cluster health |
 | `bpg/proxmox` | ~> 0.93.0 | VM provisioning |
 | `hashicorp/helm` | ~> 3.1.0 | Helm releases |
 | `hashicorp/kubernetes` | ~> 2.36.0 | K8s resources |
@@ -72,9 +72,10 @@ terraform apply -auto-approve
 |----------|---------|-------------|
 | `talos_version` | `v1.12.1` | Talos Linux version |
 | `talos_template_name` | `talos-1.12.1-nvidia-template` | Template name |
-| `talos_schematic_id` | `b81082c...` | Factory schematic ID |
 | `cluster_name` | `homelab-k8s` | Kubernetes cluster name |
 | `kubernetes_version` | `v1.35.0` | Kubernetes version |
+
+> **Note:** The Talos schematic ID is now dynamically generated via `talos_image_factory_schematic` based on the configured extensions. Cluster health is checked natively via `talos_cluster_health` instead of shell polling.
 
 ### GPU Configuration
 
@@ -113,6 +114,8 @@ terraform apply -auto-approve
 
 | Output | Description |
 |--------|-------------|
+| `talos_schematic_id` | Dynamically generated schematic ID |
+| `talos_extensions` | System extensions in schematic |
 | `kubeconfig` | Kubeconfig content |
 | `kubeconfig_path` | Path to kubeconfig file |
 | `talosconfig_path` | Path to talosconfig file |
@@ -252,6 +255,6 @@ terraform import ...
 
 ---
 
-**Last Updated:** 2026-01-21
+**Last Updated:** 2026-01-26
 
 See [TERRAFORM.md](../../terraform/talos/TERRAFORM.md) for auto-generated provider documentation.

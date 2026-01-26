@@ -4,6 +4,69 @@
 # cluster including network, storage, and GPU settings.
 
 # ============================================================================
+# Image Factory - Dynamic schematic generation
+# ============================================================================
+
+# Query available extensions for the current Talos version
+data "talos_image_factory_extensions_versions" "this" {
+  talos_version = var.talos_version
+  filters = {
+    names = [
+      "siderolabs/qemu-guest-agent",
+      "siderolabs/iscsi-tools",
+      "siderolabs/util-linux-tools",
+      "siderolabs/amd-ucode",
+      "siderolabs/uinput",
+    ]
+  }
+}
+
+# Query GPU extensions separately (conditional)
+data "talos_image_factory_extensions_versions" "gpu" {
+  count         = var.enable_gpu_passthrough ? 1 : 0
+  talos_version = var.talos_version
+  filters = {
+    names = [
+      "siderolabs/nonfree-kmod-nvidia-production",
+      "siderolabs/nvidia-container-toolkit-production",
+    ]
+  }
+}
+
+# Query Pangolin/Newt extension separately (conditional)
+data "talos_image_factory_extensions_versions" "pangolin" {
+  count         = var.enable_pangolin ? 1 : 0
+  talos_version = var.talos_version
+  filters = {
+    names = [
+      "siderolabs/newt",
+    ]
+  }
+}
+
+# Generate schematic ID from extensions list
+resource "talos_image_factory_schematic" "this" {
+  schematic = yamlencode({
+    customization = {
+      systemExtensions = {
+        officialExtensions = concat(
+          data.talos_image_factory_extensions_versions.this.extensions_info[*].name,
+          var.enable_gpu_passthrough ? data.talos_image_factory_extensions_versions.gpu[0].extensions_info[*].name : [],
+          var.enable_pangolin ? data.talos_image_factory_extensions_versions.pangolin[0].extensions_info[*].name : [],
+        )
+      }
+    }
+  })
+}
+
+# Generate installer and ISO URLs from schematic
+data "talos_image_factory_urls" "this" {
+  talos_version = var.talos_version
+  schematic_id  = talos_image_factory_schematic.this.id
+  platform      = "nocloud"
+}
+
+# ============================================================================
 # Machine Configuration
 # ============================================================================
 

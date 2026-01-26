@@ -1,16 +1,10 @@
 # CiliumEnvoyConfig for Forward Authentication
 #
-# EXPERIMENTAL: Uses Cilium's Envoy ext_authz filter for forward auth.
-# This configuration intercepts requests to protected services and
-# validates them against oauth2-proxy before forwarding.
+# Uses Cilium's Envoy ext_authz filter for forward auth.
+# Intercepts requests to protected services and validates
+# them against oauth2-proxy before forwarding.
 #
-# If this proves unreliable, use Traefik fallback instead.
-# See: docs/plans/2026-01-24-zitadel-sso-design.md
-#
-# NOTE: This is DISABLED by default. To enable:
-# 1. Uncomment the resource in kustomization.yaml
-# 2. Test with a single app first (e.g., Radarr)
-# 3. Extend to other apps if working
+# Flow: Client -> Cilium Envoy -> ext_authz(oauth2-proxy) -> Zitadel OIDC
 #
 ---
 apiVersion: cilium.io/v2
@@ -22,6 +16,7 @@ spec:
   # Services that require forward authentication
   # Add services here as needed
   services:
+    # arr-stack (media automation)
     - name: radarr
       namespace: arr-stack
     - name: sonarr
@@ -34,6 +29,13 @@ spec:
       namespace: arr-stack
     - name: qbittorrent
       namespace: arr-stack
+    # Infrastructure UIs (no built-in auth)
+    - name: longhorn-frontend
+      namespace: longhorn-system
+    - name: hubble-ui
+      namespace: kube-system
+    - name: victoriametrics
+      namespace: monitoring
   resources:
     # External authorization cluster (oauth2-proxy)
     - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster

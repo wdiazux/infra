@@ -4,6 +4,38 @@ All notable changes to this project are documented here.
 
 ## 2026
 
+### 2026-01-26
+- Terraform code organization and cleanup
+  - Extracted 14 inline shell scripts (~600 lines) to `terraform/talos/scripts/` directory
+  - Dynamic Talos image factory schematic generation (replaces hardcoded schematic ID)
+  - Replaced shell-based Kubernetes polling with `talos_cluster_health` data source
+  - Removed Zitadel Terraform provider (OIDC managed via Kubernetes CronJob)
+  - Updated `docs/reference/terraform.md` with new architecture
+- Kubernetes YAML cleanup
+  - Extracted Forgejo runner registration script to ConfigMap
+  - Extracted Home Assistant proxy config script to ConfigMap
+  - Removed unused `HOST_WHITELIST` env var from SABnzbd
+- Zitadel OIDC/SSO review
+  - Removed outdated Terraform alternative section from SSO docs
+  - Updated forward auth header (now active, not disabled)
+  - Fixed stale `enable_zitadel_oidc` reference in oauth2-proxy helmrelease
+- Documentation updates
+  - Updated `docs/reference/network.md` to reflect Gateway API migration (ClusterIP services)
+  - Updated CLAUDE.md with current provider versions and recent changes
+  - Verified first-deployment dependency chain
+
+### 2026-01-25
+- Migrated web UIs from LoadBalancer to ClusterIP (all via Gateway API at 10.10.2.20)
+- Consolidated domains to home-infra.net and reynoza.org
+- Auto-generated Forgejo runner tokens (replaces manual registration)
+- CiliumNetworkPolicies for Kubernetes API access control
+
+### 2026-01-24
+- Zitadel SSO implementation (replaces Logto)
+- OIDC setup via Kubernetes CronJob with self-healing (every 15 minutes)
+- CoreDNS rewrite for hairpin DNS resolution (auth.home-infra.net)
+- oauth2-proxy for forward auth (Cilium Envoy ext_authz)
+
 ### 2026-01-22
 - Kubernetes resource review and memory limits implementation
   - Added researched memory limits to 21 deployments (no CPU to allow burst on single-node)

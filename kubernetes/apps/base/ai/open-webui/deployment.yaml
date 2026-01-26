@@ -54,6 +54,27 @@ spec:
               value: "http://comfyui:80/"
             - name: ENABLE_IMAGE_PROMPT_GENERATION
               value: "true"
+            # Zitadel OIDC Authentication
+            - name: ENABLE_OAUTH_SIGNUP
+              value: "true"
+            - name: OAUTH_PROVIDER_NAME
+              value: "Zitadel"
+            - name: OPENID_PROVIDER_URL
+              value: "https://auth.home-infra.net/.well-known/openid-configuration"
+            - name: OAUTH_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: open-webui-oidc-secrets
+                  key: client-id
+                  optional: true
+            - name: OAUTH_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: open-webui-oidc-secrets
+                  key: client-secret
+                  optional: true
+            - name: OAUTH_SCOPES
+              value: "openid profile email"
           volumeMounts:
             - name: data
               mountPath: /app/backend/data

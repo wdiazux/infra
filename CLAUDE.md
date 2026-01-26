@@ -60,7 +60,7 @@ infra/
 | SSO | Zitadel + oauth2-proxy |
 | Monitoring | VictoriaMetrics + Grafana |
 
-**Providers**: siderolabs/talos ~> 0.10.0, bpg/proxmox ~> 0.92.0
+**Providers**: siderolabs/talos ~> 0.10.0, bpg/proxmox ~> 0.93.0
 
 ## Hardware
 
@@ -77,8 +77,7 @@ infra/
 | Range | Purpose |
 |-------|---------|
 | 10.10.2.1-10 | Core infrastructure |
-| 10.10.2.11-20 | Management LoadBalancers |
-| 10.10.2.41-50 | Application LoadBalancers |
+| 10.10.2.11-50 | Kubernetes LoadBalancers (Cilium L2 pool) |
 | 10.10.2.151-254 | Traditional VMs |
 
 ### Network Architecture
@@ -252,6 +251,7 @@ docs/
 
 ## Recent Changes
 
+- **2026-01-26**: Terraform code organization (14 scripts extracted to scripts/), dynamic Talos image factory schematic, talos_cluster_health, Kubernetes inline script extraction to ConfigMaps, removed Zitadel Terraform provider, documentation updates
 - **2026-01-25**: Migrated web UIs from LoadBalancer to ClusterIP (all via Gateway API), consolidated domains to home-infra.net, auto-generated Forgejo runner tokens, CiliumNetworkPolicies for K8s API access
 - **2026-01-24**: Zitadel SSO implementation (replaces Logto, CoreDNS rewrite for hairpin fix)
 - **2026-01-22**: Terraform code review, memory ballooning implementation, NetworkPolicies, security-strategy.md, backup verification procedures
@@ -264,4 +264,4 @@ docs/
 See `docs/CHANGELOG.md` for full history.
 
 ---
-**Last Updated**: 2026-01-25 | **Status**: Production-Ready
+**Last Updated**: 2026-01-26 | **Status**: Production-Ready

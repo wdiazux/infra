@@ -20,5 +20,6 @@ namespace: forgejo
 resources:
   - serviceaccount.yaml
   - configmap.yaml
+  - configmap-register-script.yaml
   - secret.enc.yaml
   - deployment.yaml

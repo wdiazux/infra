@@ -41,3 +41,4 @@ provider "kubernetes" {
   cluster_ca_certificate = base64decode(try(talos_cluster_kubeconfig.cluster[0].kubernetes_client_configuration.ca_certificate, ""))
 }
 
+

@@ -167,87 +167,13 @@ resource "null_resource" "forgejo_generate_token" {
   }
 
   provisioner "local-exec" {
-    command = <<-EOT
-      set -e
-
-      # Pre-flight checks
-      for cmd in kubectl curl jq; do
-        if ! command -v $cmd &>/dev/null; then
-          echo "ERROR: Required command '$cmd' not found. Install via nix-shell."
-          exit 1
-        fi
-      done
-
-      echo "Generating Forgejo access token for FluxCD..."
-
-      # Use LoadBalancer IP directly
-      FORGEJO_HOST="${var.forgejo_ip}"
-
-      # Create temp netrc file with secure permissions from start (avoids race condition)
-      NETRC_FILE=$(umask 077 && mktemp)
-      cat > "$NETRC_FILE" << NETRC
-machine $FORGEJO_HOST
-login $FORGEJO_ADMIN_USER
-password $FORGEJO_ADMIN_PASS
-NETRC
-
-      # Cleanup on exit
-      trap "rm -f \"$NETRC_FILE\"" EXIT
-
-      # Token name with timestamp to avoid conflicts
-      TOKEN_NAME="flux-$(date +%Y%m%d-%H%M%S)"
-
-      # URL-encode the username to prevent injection
-      ENCODED_USER=$(printf '%s' "$FORGEJO_ADMIN_USER" | jq -sRr @uri)
-
-      # Create JSON payload safely using jq (prevents shell injection)
-      JSON_PAYLOAD=$(jq -n --arg name "$TOKEN_NAME" \
-        '{name: $name, scopes: ["write:repository", "write:user", "read:user", "read:organization"]}')
-
-      # Create token via Forgejo API (using netrc for secure auth)
-      RESPONSE=$(curl -s -X POST \
-        -H "Content-Type: application/json" \
-        --netrc-file "$NETRC_FILE" \
-        -d "$JSON_PAYLOAD" \
-        "http://$FORGEJO_HOST/api/v1/users/$ENCODED_USER/tokens")
-
-      # Extract token (sha1 field)
-      TOKEN=$(echo "$RESPONSE" | jq -r '.sha1 // empty')
-
-      if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
-        echo "WARNING: Failed to create Forgejo token with name $TOKEN_NAME"
-        echo "Response: $RESPONSE"
-
-        # Check if token already exists (409 conflict)
-        if echo "$RESPONSE" | grep -q "already exist"; then
-          echo "Token with similar name may already exist. Trying with random suffix..."
-          TOKEN_NAME="flux-$(date +%s)"
-          JSON_PAYLOAD=$(jq -n --arg name "$TOKEN_NAME" \
-            '{name: $name, scopes: ["write:repository", "write:user", "read:user", "read:organization"]}')
-          RESPONSE=$(curl -s -X POST \
-            -H "Content-Type: application/json" \
-            --netrc-file "$NETRC_FILE" \
-            -d "$JSON_PAYLOAD" \
-            "http://$FORGEJO_HOST/api/v1/users/$ENCODED_USER/tokens")
-          TOKEN=$(echo "$RESPONSE" | jq -r '.sha1 // empty')
-        fi
-
-        if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
-          echo "ERROR: Failed to create Forgejo token."
-          exit 1
-        fi
-      fi
-
-      # Save token to file for FluxCD bootstrap
-      echo "$TOKEN" > ${path.module}/.forgejo-flux-token
-      chmod 600 ${path.module}/.forgejo-flux-token
-
-      echo "Forgejo access token created successfully: $TOKEN_NAME"
-    EOT
+    command = "${path.module}/scripts/forgejo-generate-token.sh"
 
     environment = {
       FORGEJO_ADMIN_USER = local.git_secrets.forgejo_admin_username
       FORGEJO_ADMIN_PASS = local.git_secrets.forgejo_admin_password
+      FORGEJO_IP         = var.forgejo_ip
+      TOKEN_FILE         = "${path.module}/.forgejo-flux-token"
     }
   }
 
@@ -277,69 +203,7 @@ resource "null_resource" "forgejo_create_repo" {
   count = var.enable_forgejo && var.forgejo_create_repo ? 1 : 0
 
   provisioner "local-exec" {
-    command = <<-EOT
-      set -e
-      echo "Creating Forgejo repository: $REPO_NAME..."
-
-      # Use LoadBalancer IP directly
-      FORGEJO_HOST="$FORGEJO_IP"
-
-      # Create temp netrc file with secure permissions from start (avoids race condition)
-      NETRC_FILE=$(umask 077 && mktemp)
-      cat > "$NETRC_FILE" << NETRC
-machine $FORGEJO_HOST
-login $FORGEJO_ADMIN_USER
-password $FORGEJO_ADMIN_PASS
-NETRC
-
-      # Cleanup on exit
-      trap "rm -f \"$NETRC_FILE\"" EXIT
-
-      # URL-encode variables to prevent injection
-      ENCODED_USER=$(printf '%s' "$FORGEJO_ADMIN_USER" | jq -sRr @uri)
-      ENCODED_REPO=$(printf '%s' "$REPO_NAME" | jq -sRr @uri)
-
-      # Check if repo already exists
-      REPO_CHECK=$(curl -s -o /dev/null -w "%%{http_code}" \
-        --netrc-file "$NETRC_FILE" \
-        "http://$FORGEJO_HOST/api/v1/repos/$ENCODED_USER/$ENCODED_REPO")
-
-      if [ "$REPO_CHECK" = "200" ]; then
-        echo "Repository already exists, skipping creation"
-        exit 0
-      fi
-
-      # Create JSON payload safely using jq (prevents shell injection)
-      JSON_PAYLOAD=$(jq -n \
-        --arg name "$REPO_NAME" \
-        --argjson private "$REPO_PRIVATE" \
-        '{name: $name, private: $private, description: "Infrastructure as Code managed by FluxCD"}')
-
-      # Create repository
-      RESPONSE=$(curl -s -X POST \
-        -H "Content-Type: application/json" \
-        --netrc-file "$NETRC_FILE" \
-        -d "$JSON_PAYLOAD" \
-        "http://$FORGEJO_HOST/api/v1/user/repos")
-
-      # Check response using jq for safe parsing
-      CREATED_NAME=$(echo "$RESPONSE" | jq -r '.name // empty')
-      if [ "$CREATED_NAME" = "$REPO_NAME" ]; then
-        echo "Repository created successfully!"
-      else
-        echo "WARNING: Repository creation response: $RESPONSE"
-      fi
-
-      # Enable Actions for the repository
-      echo "Enabling Actions for repository..."
-      curl -s -X PATCH \
-        -H "Content-Type: application/json" \
-        --netrc-file "$NETRC_FILE" \
-        -d '{"has_actions": true}' \
-        "http://$FORGEJO_HOST/api/v1/repos/$ENCODED_USER/$ENCODED_REPO" > /dev/null
-
-      echo "Actions enabled for repository"
-    EOT
+    command = "${path.module}/scripts/forgejo-create-repo.sh"
 
     environment = {
       FORGEJO_ADMIN_USER = local.git_secrets.forgejo_admin_username
@@ -371,60 +235,7 @@ resource "null_resource" "forgejo_push_repo" {
   }
 
   provisioner "local-exec" {
-    command = <<-EOT
-      set -e
-      echo "=== Pushing local infra repository to Forgejo ==="
-
-      # Get the infra repo root (parent of terraform/talos)
-      REPO_ROOT="${path.module}/../.."
-      cd "$REPO_ROOT"
-
-      # Verify we're in a git repo
-      if [ ! -d ".git" ]; then
-        echo "ERROR: Not in a git repository. Cannot push to Forgejo."
-        exit 1
-      fi
-
-      # Forgejo URL for git operations (using token auth on port 80)
-      FORGEJO_URL="http://$GIT_USER:$GIT_TOKEN@$FORGEJO_IP/$GIT_USER/$REPO_NAME.git"
-
-      # Check if forgejo remote already exists
-      if git remote get-url forgejo &>/dev/null; then
-        echo "Remote 'forgejo' already exists, updating URL..."
-        git remote set-url forgejo "$FORGEJO_URL"
-      else
-        echo "Adding 'forgejo' remote..."
-        git remote add forgejo "$FORGEJO_URL"
-      fi
-
-      # Get current branch
-      CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-      echo "Current branch: $CURRENT_BRANCH"
-
-      # Ensure we have commits to push
-      if ! git rev-parse HEAD &>/dev/null; then
-        echo "ERROR: No commits in repository"
-        exit 1
-      fi
-
-      # Push to Forgejo (force to handle empty repo or diverged history)
-      echo "Pushing to Forgejo..."
-      git push -u forgejo "$CURRENT_BRANCH:$GIT_BRANCH" --force
-
-      # Also push all branches if main is different from current
-      if [ "$CURRENT_BRANCH" != "$GIT_BRANCH" ]; then
-        echo "Also pushing $GIT_BRANCH branch..."
-        git push forgejo "$GIT_BRANCH" --force 2>/dev/null || true
-      fi
-
-      # Security: Remove token from git remote URL (replace with non-token URL)
-      # This prevents the token from being exposed in .git/config
-      SAFE_URL="http://$FORGEJO_IP/$GIT_USER/$REPO_NAME.git"
-      git remote set-url forgejo "$SAFE_URL"
-      echo "Git remote URL sanitized (token removed)"
-
-      echo "=== Repository pushed to Forgejo successfully ==="
-    EOT
+    command = "${path.module}/scripts/forgejo-push-repo.sh"
 
     environment = {
       GIT_USER   = local.git_secrets.forgejo_admin_username
@@ -432,6 +243,7 @@ resource "null_resource" "forgejo_push_repo" {
       FORGEJO_IP = var.forgejo_ip
       REPO_NAME  = var.git_repository
       GIT_BRANCH = var.git_branch
+      REPO_ROOT  = "${path.module}/../.."
     }
   }
 

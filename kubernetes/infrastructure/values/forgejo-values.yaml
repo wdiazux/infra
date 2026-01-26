@@ -100,6 +100,22 @@ gitea:
         RUN_AT_START: false
         SCHEDULE: "@daily"
 
+    # OAuth2 / OpenID Connect - Zitadel SSO
+    oauth2_client:
+      ENABLE_AUTO_REGISTRATION: true
+      ACCOUNT_LINKING: auto
+      UPDATE_AVATAR: true
+      OPENID_CONNECT_SCOPES: "openid profile email"
+
+  # OAuth2 providers (Zitadel)
+  oauth:
+    - name: "Zitadel"
+      provider: "openidConnect"
+      existingSecret: forgejo-oidc-secrets
+      key: client-id
+      autoDiscoverUrl: "https://auth.home-infra.net/.well-known/openid-configuration"
+      scopes: "openid profile email"
+
 # ============================================================================
 # Persistence
 # ============================================================================

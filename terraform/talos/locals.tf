@@ -7,7 +7,7 @@ locals {
   cluster_endpoint = var.cluster_endpoint != "" ? var.cluster_endpoint : "https://${var.node_ip}:6443"
 
   # Talos installer image (Factory format: SCHEMATIC_ID:VERSION)
-  talos_installer_image = var.talos_schematic_id != "" ? "${var.talos_schematic_id}:${var.talos_version}" : var.talos_version
+  talos_installer_image = "${talos_image_factory_schematic.this.id}:${var.talos_version}"
 
   # DHCP IP for initial config apply
   talos_initial_ip = trimspace(data.local_file.talos_dhcp_ip.content)

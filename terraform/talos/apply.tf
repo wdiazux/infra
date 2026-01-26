@@ -11,40 +11,16 @@
 # Talos boots with DHCP first, then we apply config to set static IP
 resource "null_resource" "wait_for_vm_dhcp" {
   provisioner "local-exec" {
-    command = <<-EOT
-      set -e
+    command = "${path.module}/scripts/wait-vm-dhcp.sh"
 
-      # Pre-flight checks
-      for cmd in curl jq; do
-        if ! command -v $cmd &>/dev/null; then
-          echo "ERROR: Required command '$cmd' not found. Install via nix-shell."
-          exit 1
-        fi
-      done
-
-      echo "Waiting for Talos VM to boot and get DHCP IP..."
-      for i in $(seq 1 60); do
-        # Try to get IP from Proxmox QEMU guest agent
-        IP=$(curl -s -k -H "Authorization: PVEAPIToken=${local.secrets.proxmox_api_token}" \
-          "${local.secrets.proxmox_url}/nodes/${var.proxmox_node}/qemu/${var.node_vm_id}/agent/network-get-interfaces" 2>/dev/null \
-          | jq -r '.data.result[]? | select(.name != "lo") | .["ip-addresses"][]? | select(.["ip-address-type"] == "ipv4") | .["ip-address"]' \
-          | head -1 || true)
-
-        if [ -n "$IP" ] && [ "$IP" != "null" ]; then
-          echo "$IP" > ${path.module}/.talos_dhcp_ip
-          echo "VM got DHCP IP: $IP"
-          exit 0
-        fi
-        echo "Waiting for DHCP IP... ($i/60)"
-        sleep 5
-      done
-
-      # Timeout - use static IP as fallback but warn
-      echo "WARNING: Timeout waiting for DHCP IP after 5 minutes."
-      echo "Falling back to static IP ${var.node_ip} (VM may not be ready yet)."
-      echo "${var.node_ip}" > ${path.module}/.talos_dhcp_ip
-      # Don't fail - let the config apply attempt proceed
-    EOT
+    environment = {
+      PROXMOX_API_TOKEN = local.secrets.proxmox_api_token
+      PROXMOX_URL       = local.secrets.proxmox_url
+      PROXMOX_NODE      = var.proxmox_node
+      VM_ID             = var.node_vm_id
+      FALLBACK_IP       = var.node_ip
+      OUTPUT_FILE       = "${path.module}/.talos_dhcp_ip"
+    }
   }
 
   depends_on = [
@@ -95,31 +71,13 @@ resource "talos_machine_configuration_apply" "node" {
 # Wait for node to reboot with static IP after config is applied
 resource "null_resource" "wait_for_static_ip" {
   provisioner "local-exec" {
-    command = <<-EOT
-      set -e
+    command = "${path.module}/scripts/wait-static-ip.sh"
 
-      # Pre-flight check
-      if ! command -v talosctl &>/dev/null; then
-        echo "ERROR: talosctl not found. Install via nix-shell."
-        exit 1
-      fi
-
-      echo "Waiting for Talos node to reboot with static IP ${var.node_ip}..."
-      for i in $(seq 1 60); do
-        if talosctl --talosconfig ${path.module}/talosconfig --nodes ${var.node_ip} version --insecure 2>/dev/null | grep -q "Server:"; then
-          echo "Node is up with static IP ${var.node_ip}"
-          # Update the IP file so future Terraform runs use the static IP
-          echo "${var.node_ip}" > ${path.module}/.talos_dhcp_ip
-          exit 0
-        fi
-        echo "Waiting for static IP... ($i/60)"
-        sleep 5
-      done
-
-      echo "ERROR: Timeout waiting for static IP ${var.node_ip} after 5 minutes."
-      echo "Check VM console in Proxmox for boot errors."
-      exit 1
-    EOT
+    environment = {
+      NODE_IP     = var.node_ip
+      TALOSCONFIG = "${path.module}/talosconfig"
+      OUTPUT_FILE = "${path.module}/.talos_dhcp_ip"
+    }
   }
 
   depends_on = [

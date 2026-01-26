@@ -34,7 +34,7 @@ resource "null_resource" "remove_control_plane_taint" {
   }
 
   depends_on = [
-    null_resource.wait_for_kubernetes
+    data.talos_cluster_health.this
   ]
 }
 
@@ -177,66 +177,12 @@ resource "null_resource" "nvidia_gpu_setup" {
   count = var.enable_gpu_passthrough && var.auto_install_gpu_device_plugin && var.auto_bootstrap ? 1 : 0
 
   provisioner "local-exec" {
-    command = <<-EOT
-      set -e
-      echo "=== Installing NVIDIA GPU Support ==="
+    command = "${path.module}/scripts/nvidia-gpu-setup.sh"
 
-      # Create RuntimeClass
-      echo "Creating nvidia RuntimeClass..."
-      kubectl --kubeconfig=${local.kubeconfig_path} apply -f - <<EOF
-apiVersion: node.k8s.io/v1
-kind: RuntimeClass
-metadata:
-  name: nvidia
-handler: nvidia
-EOF
-
-      # Create NVIDIA device plugin DaemonSet
-      echo "Creating NVIDIA device plugin DaemonSet..."
-      kubectl --kubeconfig=${local.kubeconfig_path} apply -f - <<EOF
-apiVersion: apps/v1
-kind: DaemonSet
-metadata:
-  name: nvidia-device-plugin-daemonset
-  namespace: kube-system
-spec:
-  selector:
-    matchLabels:
-      name: nvidia-device-plugin-ds
-  updateStrategy:
-    type: RollingUpdate
-  template:
-    metadata:
-      labels:
-        name: nvidia-device-plugin-ds
-    spec:
-      runtimeClassName: nvidia
-      priorityClassName: system-node-critical
-      tolerations:
-        - key: nvidia.com/gpu
-          operator: Exists
-          effect: NoSchedule
-      containers:
-        - name: nvidia-device-plugin-ctr
-          image: nvcr.io/nvidia/k8s-device-plugin:${var.nvidia_device_plugin_version}
-          env:
-            - name: DEVICE_DISCOVERY_STRATEGY
-              value: nvml
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop: ["ALL"]
-          volumeMounts:
-            - name: device-plugin
-              mountPath: /var/lib/kubelet/device-plugins
-      volumes:
-        - name: device-plugin
-          hostPath:
-            path: /var/lib/kubelet/device-plugins
-EOF
-
-      echo "=== NVIDIA GPU Support Installed ==="
-    EOT
+    environment = {
+      KUBECONFIG                   = local.kubeconfig_path
+      NVIDIA_DEVICE_PLUGIN_VERSION = var.nvidia_device_plugin_version
+    }
   }
 
   depends_on = [

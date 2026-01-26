@@ -1,0 +1,51 @@
+# Forgejo Runner Registration Script
+#
+# Registers a new Actions runner with the Forgejo instance.
+# Waits for Forgejo API availability, fetches a registration token,
+# and registers the runner with configured labels.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: forgejo-runner-register-script
+  namespace: forgejo
+  labels:
+    app.kubernetes.io/name: forgejo-runner
+    app.kubernetes.io/component: runner
+    app.kubernetes.io/part-of: forgejo
+data:
+  register.sh: |
+    #!/bin/sh
+    set -e
+    echo "Waiting for Forgejo to be ready..."
+
+    # Wait for Forgejo API
+    until wget -q -O /dev/null "$FORGEJO_INSTANCE/api/v1/version" 2>/dev/null; do
+      echo "Waiting for Forgejo API..."
+      sleep 5
+    done
+
+    echo "Forgejo is ready. Fetching registration token..."
+
+    # Get fresh registration token using admin credentials
+    REGISTRATION_TOKEN=$(wget -q -O - \
+      --header "Authorization: Basic $(echo -n "$FORGEJO_ADMIN_USER:$FORGEJO_ADMIN_PASS" | base64)" \
+      "$FORGEJO_INSTANCE/api/v1/admin/runners/registration-token" | sed 's/.*"token":"\([^"]*\)".*/\1/')
+
+    if [ -z "$REGISTRATION_TOKEN" ]; then
+      echo "Error: Failed to get registration token"
+      exit 1
+    fi
+
+    echo "Got registration token. Registering runner..."
+
+    # Register runner in /data directory (creates .runner file in cwd)
+    cd /data
+    forgejo-runner register \
+      --instance "$FORGEJO_INSTANCE" \
+      --token "$REGISTRATION_TOKEN" \
+      --name "$(hostname)" \
+      --labels "ubuntu-latest:docker://node:20-bookworm,docker:docker://docker:28-cli" \
+      --no-interactive
+
+    echo "Runner registered successfully"
+    ls -la /data/.runner

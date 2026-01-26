@@ -1,195 +1,408 @@
-# Zitadel SSO Post-Deployment Setup
+# Zitadel SSO Setup
 
-This guide covers the manual configuration steps after deploying the Zitadel SSO infrastructure.
+Centralized Single Sign-On (SSO) for all homelab services using Zitadel.
 
-## Prerequisites
+## Overview
 
-Ensure the following are deployed and running:
-```bash
-kubectl get pods -n auth
-# Expected: postgres-0, redis-*, zitadel-*, oauth2-proxy-*
+The SSO implementation is **fully automated**. On fresh deployment:
+
+1. Zitadel boots and creates a machine user with `IAM_OWNER` role
+2. A Kubernetes Job automatically creates all OIDC applications
+3. The Job creates secrets in target namespaces
+4. The Job restarts pods to apply OIDC configuration
+
+**No manual configuration required.**
+
+## Architecture
+
+```
+                    ┌─────────────────────────────────────┐
+                    │           Zitadel (IdP)             │
+                    │      auth.home-infra.net            │
+                    └──────────────┬──────────────────────┘
+                                   │
+           ┌───────────────────────┼───────────────────────┐
+           │                       │                       │
+    ┌──────▼──────┐         ┌──────▼──────┐         ┌──────▼──────┐
+    │ Native OIDC │         │ Native OIDC │         │Forward Auth │
+    │  (PKCE)     │         │  (Secret)   │         │(oauth2-proxy)│
+    └──────┬──────┘         └──────┬──────┘         └──────┬──────┘
+           │                       │                       │
+    ┌──────▼──────┐         ┌──────▼──────┐         ┌──────▼──────┐
+    │  Grafana    │         │   Immich    │         │  arr-stack  │
+    │  Forgejo    │         │ Open WebUI  │         │  Longhorn   │
+    └─────────────┘         │ Paperless   │         │  Hubble     │
+                            └─────────────┘         │VictoriaMetrics│
+                                                    └─────────────┘
 ```
 
-## Phase 3: Initial Zitadel Setup
+## Services
 
-### 1. Access Zitadel Console
+### Native OIDC (Built-in SSO Support)
 
-1. Open https://auth.home-infra.net
-2. Login with initial admin credentials:
-   - Username: `wdiaz`
-   - Password: Retrieve from secret:
-     ```bash
-     sops -d kubernetes/apps/base/auth/zitadel/secret.enc.yaml | grep ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORD
-     ```
+| Service | Namespace | URL | Auth Method |
+|---------|-----------|-----|-------------|
+| Grafana | monitoring | grafana.home-infra.net | PKCE |
+| Forgejo | forgejo | git.home-infra.net | PKCE |
+| Immich | media | photos.reynoza.org | Client Secret |
+| Open WebUI | ai | chat.home-infra.net | Client Secret |
+| Paperless | management | paperless.home-infra.net | Client Secret |
 
-### 2. Initial Configuration
+### Forward Auth (via oauth2-proxy)
 
-1. **Change Admin Password** (recommended)
-2. **Create Organization**: `homelab`
-3. **Create Project**: `infrastructure`
+| Service | Namespace | URL |
+|---------|-----------|-----|
+| Radarr | arr-stack | radarr.home-infra.net |
+| Sonarr | arr-stack | sonarr.home-infra.net |
+| Prowlarr | arr-stack | prowlarr.home-infra.net |
+| Bazarr | arr-stack | bazarr.home-infra.net |
+| SABnzbd | arr-stack | sabnzbd.home-infra.net |
+| qBittorrent | arr-stack | qbittorrent.home-infra.net |
+| Longhorn | longhorn-system | longhorn.home-infra.net |
+| Hubble | kube-system | hubble.home-infra.net |
+| VictoriaMetrics | monitoring | metrics.home-infra.net |
 
-## Phase 4: Native OIDC Application Setup
+## How It Works
 
-### Grafana
+### Automatic OIDC Setup
 
-1. In Zitadel Console:
-   - Navigate to: Projects > infrastructure > Applications
-   - Create Application:
-     - Name: `grafana`
-     - Type: Web
-     - Authentication Method: PKCE
-     - Redirect URIs: `https://grafana.home-infra.net/login/generic_oauth`
-     - Post Logout URIs: `https://grafana.home-infra.net`
-   - Copy Client ID
+The automation uses two components:
 
-2. Update Grafana configuration:
-   ```bash
-   # Edit kubernetes/apps/base/monitoring/grafana/secret.enc.yaml
-   # Add OIDC configuration to grafana.ini or environment variables
-   ```
+1. **Initial Job** (`zitadel-oidc-setup-initial`) - Runs once on deployment, waits up to 10 minutes for Zitadel
+2. **CronJob** (`zitadel-oidc-sync`) - Runs every 15 minutes for self-healing
 
-   Required Grafana settings:
-   ```ini
-   [auth.generic_oauth]
-   enabled = true
-   name = Zitadel
-   allow_sign_up = true
-   client_id = <CLIENT_ID>
-   scopes = openid profile email
-   auth_url = https://auth.home-infra.net/oauth/v2/authorize
-   token_url = https://auth.home-infra.net/oauth/v2/token
-   api_url = https://auth.home-infra.net/oidc/v1/userinfo
-   ```
+Both use the same setup script that:
 
-### Forgejo
+1. **Authenticates via JWT** - Uses machine key generated on first boot
+2. **Creates/verifies OIDC Applications** - Via Zitadel Management API
+3. **Creates/updates Kubernetes Secrets** - Only when values change
+4. **Restarts Pods** - Only when secrets are modified
 
-1. In Zitadel Console:
-   - Create Application:
-     - Name: `forgejo`
-     - Type: Web
-     - Authentication Method: PKCE
-     - Redirect URIs: `https://git.home-infra.net/user/oauth2/zitadel/callback`
-   - Copy Client ID
+### Self-Healing Features
 
-2. In Forgejo Admin Panel:
-   - Navigate to: Site Administration > Authentication Sources
-   - Add OAuth2 provider with Zitadel settings
+- **Zitadel DB reset**: CronJob recreates apps and secrets automatically
+- **Deleted secrets**: CronJob recreates them within 15 minutes
+- **New app deployment**: CronJob creates secrets when namespace appears
+- **Idempotent**: Safe to run multiple times, no unnecessary restarts
 
-### Other Native OIDC Apps
+### Machine User Authentication
 
-| App | Redirect URI |
-|-----|--------------|
-| Open WebUI | `https://ai.home-infra.net/oauth/callback` |
-| Immich | `https://photos.home-infra.net/auth/login` |
-| Paperless-ngx | `https://docs.home-infra.net/accounts/oidc/zitadel/login/callback/` |
-| n8n | `https://n8n.home-infra.net/rest/oauth2-credential/callback` |
+Zitadel creates a machine user on first boot via environment variables:
 
-## Phase 5: Forward Auth Setup (oauth2-proxy)
+```yaml
+ZITADEL_FIRSTINSTANCE_ORG_MACHINE_MACHINE_USERNAME: "terraform-admin"
+ZITADEL_FIRSTINSTANCE_ORG_MACHINE_MACHINEKEY_TYPE: "1"  # JSON/RSA
+ZITADEL_FIRSTINSTANCE_MACHINEKEYPATH: "/machinekey/zitadel-admin-sa.json"
+```
 
-### 1. Create oauth2-proxy Application in Zitadel
+The machine user automatically gets `IAM_OWNER` role, allowing it to create OIDC applications.
 
-1. In Zitadel Console:
-   - Create Application:
-     - Name: `oauth2-proxy`
-     - Type: Web
-     - Authentication Method: Basic (Client Secret)
-     - Redirect URIs: `https://auth.home-infra.net/oauth2/callback`
-   - Copy Client ID and Client Secret
+### Secrets Created
 
-2. Update oauth2-proxy secret:
-   ```bash
-   # Decrypt, edit, re-encrypt
-   sops kubernetes/apps/base/auth/oauth2-proxy/secret.enc.yaml
+| Secret Name | Namespace | Contents |
+|-------------|-----------|----------|
+| grafana-oidc-secrets | monitoring | client-id |
+| forgejo-oidc-secrets | forgejo | client-id |
+| immich-oidc-secrets | media | client-id, client-secret |
+| open-webui-oidc-secrets | ai | client-id, client-secret |
+| paperless-oidc-secrets | management | client-id, client-secret |
+| oauth2-proxy-oidc-secrets | auth | client-id, client-secret |
 
-   # Update:
-   # - client-id: <ZITADEL_CLIENT_ID>
-   # - client-secret: <ZITADEL_CLIENT_SECRET>
-   ```
+## Upgrading from Job to CronJob
 
-3. Commit and reconcile:
-   ```bash
-   git add -A && git commit -m "feat(auth): configure oauth2-proxy credentials"
-   flux reconcile kustomization apps --with-source
-   ```
+If upgrading from the previous one-time Job approach:
 
-### 2. Enable CiliumEnvoyConfig (Experimental)
+### 1. Delete Old Job
 
-The CiliumEnvoyConfig for forward auth is experimental. To enable:
+```bash
+# Check if old job exists
+kubectl get job zitadel-oidc-setup -n auth
 
-1. Add to kustomization:
-   ```bash
-   # Edit kubernetes/infrastructure/security/kustomization.yaml
-   # Add: - cilium-envoy-forward-auth.yaml
-   ```
+# Delete it (new CronJob will take over)
+kubectl delete job zitadel-oidc-setup -n auth
+```
 
-2. Test with a single app first (e.g., Radarr)
+### 2. Apply Updates
 
-3. If issues occur, use Traefik fallback (see below)
+```bash
+# Commit and push changes
+git add -A && git commit -m "feat(auth): convert OIDC setup to self-healing CronJob"
+git push
 
-### 3. Traefik Fallback (If CiliumEnvoyConfig Fails)
+# Reconcile
+flux reconcile kustomization apps --with-source
+```
 
-If CiliumEnvoyConfig proves unreliable:
+### 3. Verify New Resources
 
-1. Deploy Traefik alongside Cilium:
-   ```yaml
-   # kubernetes/infrastructure/controllers/traefik.yaml
-   # Configure with ForwardAuth middleware
-   ```
+```bash
+# Check CronJob and initial Job were created
+kubectl get cronjob,job -n auth
 
-2. Create IngressRoutes for apps needing forward auth
+# Expected output:
+# NAME                                  SCHEDULE       SUSPEND   ACTIVE
+# cronjob.batch/zitadel-oidc-sync      */15 * * * *   False     0
+#
+# NAME                                  COMPLETIONS   DURATION
+# job.batch/zitadel-oidc-setup-initial 1/1           30s
 
-3. Keep Cilium Ingress for all other apps
+# Watch initial job logs
+kubectl logs -n auth job/zitadel-oidc-setup-initial -f
+```
+
+### 4. Verify Secrets
+
+```bash
+# All secrets should exist
+kubectl get secrets -A | grep oidc-secrets
+
+# Expected:
+# auth         oauth2-proxy-oidc-secrets
+# forgejo      forgejo-oidc-secrets
+# management   paperless-oidc-secrets
+# media        immich-oidc-secrets
+# ai           open-webui-oidc-secrets
+# monitoring   grafana-oidc-secrets
+```
+
+No data loss occurs - the CronJob script is idempotent and preserves existing OIDC apps and secrets.
+
+---
+
+## Fresh Deployment
+
+On a fresh cluster deployment:
+
+```bash
+# 1. Deploy infrastructure (includes Zitadel)
+flux reconcile kustomization infrastructure --with-source
+
+# 2. Wait for Zitadel to be ready
+kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=zitadel -n auth --timeout=5m
+
+# 3. Check OIDC setup job status
+kubectl get cronjob,job -n auth
+kubectl logs -n auth job/zitadel-oidc-setup-initial -f
+
+# 4. Verify secrets were created
+kubectl get secrets -A | grep oidc-secrets
+```
+
+The initial setup job automatically:
+- Creates all OIDC applications in Zitadel
+- Creates Kubernetes secrets in target namespaces
+- Restarts all affected pods (including Forgejo StatefulSet)
+
+The CronJob then maintains this state every 15 minutes.
 
 ## Verification
 
-### Test OIDC Flow
+### Check Zitadel Health
+
 ```bash
-# Check Zitadel is accessible
 curl -s https://auth.home-infra.net/.well-known/openid-configuration | jq .issuer
-
-# Should return: "https://auth.home-infra.net"
+# Expected: "https://auth.home-infra.net"
 ```
 
-### Test Internal Resolution
+### Check OIDC Setup
+
 ```bash
-# From inside a pod
-kubectl run -it --rm debug --image=alpine -- sh
-nslookup auth.home-infra.net
-# Should resolve to 10.96.100.18 (ClusterIP, not Ingress IP)
+# Check initial setup job
+kubectl logs -n auth job/zitadel-oidc-setup-initial
+
+# Check CronJob status
+kubectl get cronjob zitadel-oidc-sync -n auth
+
+# Check latest CronJob run
+kubectl logs -n auth -l app.kubernetes.io/name=zitadel-oidc-sync --tail=50
 ```
+
+Expected output:
+```
+=== Zitadel OIDC Sync 2026-01-25T12:00:00+00:00 ===
+Machine key file found.
+Zitadel is ready.
+Successfully authenticated.
+Project ID: <uuid>
+=== Syncing OIDC Applications ===
+Processing: grafana
+  App 'grafana' exists (ID: <uuid>)
+  Secret 'grafana-oidc-secrets' in 'monitoring' is up-to-date
+...
+No secrets changed, skipping pod restarts.
+=== OIDC Sync Complete ===
+```
+
+### Test SSO Login
+
+1. Open https://grafana.home-infra.net
+2. Click "Sign in with Zitadel"
+3. Login with Zitadel credentials
+4. Should redirect back to Grafana, logged in
 
 ### Test Forward Auth
+
 ```bash
-# Access protected app without auth (should redirect)
+# Without auth - should redirect to Zitadel
 curl -I https://radarr.home-infra.net
-# Should return 302 redirect to auth.home-infra.net
+# Expected: 302 redirect to auth.home-infra.net
 ```
 
 ## Troubleshooting
 
+### OIDC Sync Not Working
+
+```bash
+# Check CronJob status
+kubectl get cronjob zitadel-oidc-sync -n auth
+kubectl get jobs -n auth -l app.kubernetes.io/name=zitadel-oidc-sync
+
+# Check latest job logs
+kubectl logs -n auth -l app.kubernetes.io/name=zitadel-oidc-sync --tail=100
+
+# Check if machine key exists
+kubectl exec -n auth deploy/zitadel -- ls -la /machinekey/
+
+# Force manual sync
+kubectl create job --from=cronjob/zitadel-oidc-sync zitadel-debug -n auth
+kubectl logs -n auth job/zitadel-debug -f
+```
+
+### App Shows "Sign in with Zitadel" But Fails
+
+1. Check secret exists:
+   ```bash
+   kubectl get secret grafana-oidc-secrets -n monitoring -o yaml
+   ```
+
+2. Check app logs for OIDC errors:
+   ```bash
+   kubectl logs -n monitoring -l app.kubernetes.io/name=grafana | grep -i oauth
+   ```
+
+3. Restart the app:
+   ```bash
+   kubectl rollout restart deployment grafana -n monitoring
+   ```
+
 ### Zitadel Not Starting
+
 ```bash
+# Check pod status
+kubectl get pods -n auth -l app.kubernetes.io/name=zitadel
+
+# Check logs
 kubectl logs -n auth -l app.kubernetes.io/name=zitadel
-kubectl describe pod -n auth -l app.kubernetes.io/name=zitadel
+
+# Common issues:
+# - PostgreSQL not ready
+# - Redis not ready
+# - Masterkey secret missing
 ```
 
-### Database Connection Issues
+### Internal OIDC Token Validation Fails
+
+Apps inside the cluster need to resolve `auth.home-infra.net` to the ClusterIP, not the external IP. CoreDNS rewrite handles this:
+
 ```bash
-kubectl logs -n auth postgres-0
-kubectl exec -n auth postgres-0 -- pg_isready -U zitadel
+# Test from inside a pod
+kubectl run -it --rm debug --image=alpine -- nslookup auth.home-infra.net
+# Should resolve to 10.96.100.18 (ClusterIP)
 ```
 
-### OIDC Token Validation Failing
-- Check CoreDNS rewrite is working (internal pods should resolve auth.home-infra.net to ClusterIP)
-- Verify NetworkPolicy allows egress to auth namespace
+## Re-running OIDC Setup
 
-### oauth2-proxy Issues
+The CronJob automatically handles most recovery scenarios. For manual intervention:
+
+### Force Immediate Sync
+
 ```bash
-kubectl logs -n auth -l app.kubernetes.io/name=oauth2-proxy
+# Trigger CronJob manually
+kubectl create job --from=cronjob/zitadel-oidc-sync zitadel-oidc-manual -n auth
+
+# Watch progress
+kubectl logs -n auth job/zitadel-oidc-manual -f
+```
+
+### After Zitadel DB Reset
+
+The CronJob will automatically recreate apps and secrets within 15 minutes. To force immediate recovery:
+
+```bash
+# Delete existing secrets (CronJob will recreate them)
+kubectl delete secret grafana-oidc-secrets -n monitoring
+kubectl delete secret forgejo-oidc-secrets -n forgejo
+kubectl delete secret immich-oidc-secrets -n media
+kubectl delete secret open-webui-oidc-secrets -n ai
+kubectl delete secret paperless-oidc-secrets -n management
+kubectl delete secret oauth2-proxy-oidc-secrets -n auth
+
+# Trigger immediate sync
+kubectl create job --from=cronjob/zitadel-oidc-sync zitadel-oidc-recovery -n auth
+```
+
+### Re-run Initial Setup
+
+```bash
+# Delete and recreate initial job
+kubectl delete job zitadel-oidc-setup-initial -n auth
+flux reconcile kustomization apps --with-source
+```
+
+## Files Reference
+
+| File | Purpose |
+|------|---------|
+| `kubernetes/apps/base/auth/zitadel/helmrelease.yaml` | Zitadel deployment with machine user config |
+| `kubernetes/apps/base/auth/zitadel/machinekey-pvc.yaml` | PVC for machine key storage |
+| `kubernetes/apps/base/auth/zitadel/oidc-setup-job.yaml` | CronJob + Initial Job for OIDC sync |
+| `kubernetes/apps/base/auth/oauth2-proxy/helmrelease.yaml` | Forward auth proxy |
+| `kubernetes/infrastructure/security/cilium-envoy-forward-auth.yaml` | Forward auth routing (CiliumEnvoyConfig) |
+
+## Design Decisions
+
+### Why CronJob Instead of Terraform?
+
+| Approach | Pros | Cons |
+|----------|------|------|
+| **CronJob (current)** | Fully automated, self-healing, no external dependencies | Secrets not in Git |
+| **Terraform** | Declarative, state-managed | Requires PAT token (chicken-and-egg problem) |
+
+Zitadel generates client IDs and secrets - they cannot be pre-defined. This means:
+- OIDC credentials cannot be stored in SOPS before deployment
+- Dynamic secret generation is required regardless of approach
+
+The CronJob approach was chosen because:
+1. **Fully automated** - No manual steps on fresh deployment
+2. **Self-healing** - Recovers from Zitadel DB resets, deleted secrets
+3. **Simple** - No external secret stores needed (Vault, etc.)
+4. **Works with SOPS** - Static secrets (passwords) stay in SOPS, dynamic secrets (OIDC) are managed by CronJob
+
+### Why Both Initial Job and CronJob?
+
+- **Initial Job**: Waits up to 10 minutes for Zitadel on fresh deploy (longer timeout, more retries)
+- **CronJob**: Quick checks every 15 minutes (short timeout, graceful failure)
+
+This separation ensures:
+- Fresh deployments work reliably (Initial Job waits patiently)
+- Ongoing operations are lightweight (CronJob exits quickly if Zitadel unavailable)
+
+### Secret Management Strategy
+
+```
+Static Secrets (in SOPS):          Dynamic Secrets (CronJob-managed):
+├── zitadel-secrets                ├── grafana-oidc-secrets
+│   └── masterkey                  ├── forgejo-oidc-secrets
+│   └── admin password             ├── immich-oidc-secrets
+├── zitadel-postgres-secrets       ├── open-webui-oidc-secrets
+├── oauth2-proxy cookie secret     ├── paperless-oidc-secrets
+└── app API keys                   └── oauth2-proxy-oidc-secrets
 ```
 
 ## References
 
 - [Zitadel Documentation](https://zitadel.com/docs/)
+- [Zitadel Self-Hosting Guide](https://zitadel.com/docs/self-hosting/deploy/kubernetes)
+- [Zitadel Terraform Provider](https://registry.terraform.io/providers/zitadel/zitadel/latest/docs)
 - [oauth2-proxy Documentation](https://oauth2-proxy.github.io/oauth2-proxy/)
-- [Design Document](../plans/2026-01-24-zitadel-sso-design.md)
+- [GitHub Issue #9932](https://github.com/zitadel/zitadel/issues/9932) - Static client ID/secret feature request

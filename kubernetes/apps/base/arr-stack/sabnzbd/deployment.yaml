@@ -66,8 +66,6 @@ spec:
               value: America/El_Salvador
             - name: UMASK
               value: "002"
-            - name: HOST_WHITELIST
-              value: "sabnzbd.${DOMAIN_PRIMARY},sabnzbd.arr-stack.svc.cluster.local"
           volumeMounts:
             - name: config
               mountPath: /config

@@ -32,63 +32,17 @@ resource "terraform_data" "fluxcd_pre_destroy" {
   # This runs BEFORE the resource is destroyed
   provisioner "local-exec" {
     when    = destroy
-    command = <<-EOT
-      set -e
-      echo "=== FluxCD Pre-Destroy Cleanup ==="
+    command = "${path.module}/scripts/fluxcd-pre-destroy.sh"
 
-      KUBECONFIG="${self.triggers_replace.kubeconfig}"
-
-      # Check if cluster is accessible
-      if ! kubectl --kubeconfig="$KUBECONFIG" get nodes &>/dev/null 2>&1; then
-        echo "Cluster not accessible, skipping FluxCD cleanup"
-        exit 0
-      fi
-
-      # Suspend all reconciliations first
-      echo "Suspending FluxCD reconciliation..."
-      if command -v flux &>/dev/null; then
-        flux suspend kustomization --all --kubeconfig="$KUBECONFIG" 2>/dev/null || true
-        flux suspend source git --all --kubeconfig="$KUBECONFIG" 2>/dev/null || true
-      fi
-
-      # Delete FluxCD-managed resources
-      echo "Deleting FluxCD resources..."
-      kubectl --kubeconfig="$KUBECONFIG" delete kustomization --all -A --ignore-not-found 2>/dev/null || true
-      kubectl --kubeconfig="$KUBECONFIG" delete helmrelease --all -A --ignore-not-found 2>/dev/null || true
-      kubectl --kubeconfig="$KUBECONFIG" delete gitrepository --all -A --ignore-not-found 2>/dev/null || true
-
-      # Uninstall FluxCD
-      echo "Uninstalling FluxCD..."
-      if command -v flux &>/dev/null; then
-        flux uninstall --kubeconfig="$KUBECONFIG" --silent 2>/dev/null || true
-      fi
-
-      # Clean up flux-system namespace finalizers
-      echo "Removing flux-system namespace finalizers..."
-      kubectl --kubeconfig="$KUBECONFIG" patch namespace flux-system \
-        -p '{"metadata":{"finalizers":null}}' --type=merge 2>/dev/null || true
-
-      # Clean up FluxCD-managed app namespaces (tools, misc)
-      echo "Cleaning up FluxCD-managed app namespaces..."
-      for ns in tools misc; do
-        if kubectl --kubeconfig="$KUBECONFIG" get namespace "$ns" &>/dev/null 2>&1; then
-          echo "  - Deleting resources in namespace: $ns"
-          kubectl --kubeconfig="$KUBECONFIG" delete deployments,services,pvc,configmaps,secrets \
-            --all -n "$ns" --ignore-not-found 2>/dev/null || true
-          echo "  - Removing finalizers from namespace: $ns"
-          kubectl --kubeconfig="$KUBECONFIG" patch namespace "$ns" \
-            -p '{"metadata":{"finalizers":null}}' --type=merge 2>/dev/null || true
-        fi
-      done
-
-      echo "=== FluxCD Pre-Destroy Complete ==="
-    EOT
+    environment = {
+      KUBECONFIG = self.triggers_replace.kubeconfig
+    }
 
     on_failure = continue
   }
 
   depends_on = [
-    null_resource.wait_for_kubernetes
+    data.talos_cluster_health.this
   ]
 }
 
@@ -108,64 +62,12 @@ resource "terraform_data" "longhorn_pre_destroy" {
 
   provisioner "local-exec" {
     when    = destroy
-    command = <<-EOT
-      set -e
-      echo "=== Longhorn Pre-Destroy Cleanup ==="
+    command = "${path.module}/scripts/longhorn-pre-destroy.sh"
 
-      KUBECONFIG="${self.triggers_replace.kubeconfig}"
-      NAMESPACE="${self.triggers_replace.namespace}"
-
-      # Check if cluster is accessible
-      if ! kubectl --kubeconfig="$KUBECONFIG" get nodes &>/dev/null 2>&1; then
-        echo "Cluster not accessible, skipping Longhorn cleanup"
-        exit 0
-      fi
-
-      # Check if Longhorn namespace exists
-      if ! kubectl --kubeconfig="$KUBECONFIG" get namespace "$NAMESPACE" &>/dev/null 2>&1; then
-        echo "Longhorn namespace does not exist, skipping"
-        exit 0
-      fi
-
-      # Set deleting-confirmation-flag (CRITICAL for Longhorn uninstall)
-      echo "Setting Longhorn deleting-confirmation-flag..."
-      kubectl --kubeconfig="$KUBECONFIG" -n "$NAMESPACE" \
-        patch settings.longhorn.io deleting-confirmation-flag \
-        --type=merge -p '{"value": "true"}' 2>/dev/null || true
-
-      # Delete webhook configurations (can block namespace deletion)
-      echo "Deleting Longhorn webhook configurations..."
-      kubectl --kubeconfig="$KUBECONFIG" delete validatingwebhookconfiguration \
-        longhorn-webhook-validator --ignore-not-found 2>/dev/null || true
-      kubectl --kubeconfig="$KUBECONFIG" delete mutatingwebhookconfiguration \
-        longhorn-webhook-mutator --ignore-not-found 2>/dev/null || true
-
-      # Scale down Longhorn to speed up deletion
-      echo "Scaling down Longhorn deployments..."
-      kubectl --kubeconfig="$KUBECONFIG" -n "$NAMESPACE" \
-        scale deployment --all --replicas=0 2>/dev/null || true
-
-      # Delete any failed uninstall jobs (from previous attempts)
-      echo "Cleaning up failed uninstall jobs..."
-      kubectl --kubeconfig="$KUBECONFIG" delete jobs -n "$NAMESPACE" \
-        -l app=longhorn-uninstall --ignore-not-found 2>/dev/null || true
-      kubectl --kubeconfig="$KUBECONFIG" delete job longhorn-uninstall \
-        -n "$NAMESPACE" --ignore-not-found 2>/dev/null || true
-
-      # Remove finalizers from Longhorn CRDs if they exist
-      echo "Removing Longhorn CRD finalizers..."
-      for crd in $(kubectl --kubeconfig="$KUBECONFIG" get crd -o name 2>/dev/null | grep longhorn || true); do
-        kubectl --kubeconfig="$KUBECONFIG" patch "$crd" \
-          -p '{"metadata":{"finalizers":null}}' --type=merge 2>/dev/null || true
-      done
-
-      # Remove finalizers from namespace
-      echo "Removing namespace finalizers..."
-      kubectl --kubeconfig="$KUBECONFIG" patch namespace "$NAMESPACE" \
-        -p '{"metadata":{"finalizers":null}}' --type=merge 2>/dev/null || true
-
-      echo "=== Longhorn Pre-Destroy Complete ==="
-    EOT
+    environment = {
+      KUBECONFIG = self.triggers_replace.kubeconfig
+      NAMESPACE  = self.triggers_replace.namespace
+    }
 
     on_failure = continue
   }
@@ -270,6 +172,36 @@ resource "terraform_data" "weave_gitops_pre_destroy" {
 }
 
 # ============================================================================
+# Zitadel Pre-Destroy Cleanup
+# ============================================================================
+# Cleans up Zitadel OIDC jobs and auth namespace finalizers before deletion
+
+resource "terraform_data" "zitadel_pre_destroy" {
+  count = var.enable_fluxcd ? 1 : 0
+
+  triggers_replace = {
+    kubeconfig = local.kubeconfig_path
+    namespace  = "auth"
+  }
+
+  provisioner "local-exec" {
+    when    = destroy
+    command = "${path.module}/scripts/zitadel-pre-destroy.sh"
+
+    environment = {
+      KUBECONFIG = self.triggers_replace.kubeconfig
+      NAMESPACE  = self.triggers_replace.namespace
+    }
+
+    on_failure = continue
+  }
+
+  depends_on = [
+    null_resource.wait_for_cilium
+  ]
+}
+
+# ============================================================================
 # Notes
 # ============================================================================
 #
@@ -293,17 +225,26 @@ resource "terraform_data" "weave_gitops_pre_destroy" {
 # 2. terraform_data.longhorn_pre_destroy (set flag, remove webhooks)
 # 3. terraform_data.forgejo_pre_destroy (remove finalizers)
 # 4. terraform_data.weave_gitops_pre_destroy (remove LB service)
-# 5. helm_release.weave_gitops (Helm uninstall)
-# 6. helm_release.postgresql (Helm uninstall)
-# 7. helm_release.forgejo (Helm uninstall)
-# 8. helm_release.longhorn (Helm uninstall)
-# 9. kubernetes_namespace.* (namespace deletion)
-# 10. proxmox_virtual_environment_vm.talos_node (VM deletion)
+# 5. terraform_data.zitadel_pre_destroy (delete OIDC jobs, cleanup secrets)
+# 6. helm_release.weave_gitops (Helm uninstall)
+# 7. helm_release.postgresql (Helm uninstall)
+# 8. helm_release.forgejo (Helm uninstall)
+# 9. helm_release.longhorn (Helm uninstall)
+# 10. kubernetes_namespace.* (namespace deletion)
+# 11. proxmox_virtual_environment_vm.talos_node (VM deletion)
 #
 # FluxCD-managed namespaces (cleaned up in step 1):
 # - flux-system (FluxCD core)
 # - tools (it-tools, ntfy, attic, homepage)
 # - misc (twitch-miner)
+#
+# OIDC-related namespaces (cleaned up in step 5):
+# - auth (Zitadel, oauth2-proxy)
+# - monitoring (Grafana OIDC secret)
+# - forgejo (Forgejo OIDC secret)
+# - media (Immich OIDC secret)
+# - ai (Open WebUI OIDC secret)
+# - management (Paperless OIDC secret)
 #
 # Manual Fallback:
 # If terraform destroy still fails, use ./destroy.sh which handles

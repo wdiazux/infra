@@ -74,6 +74,24 @@ output "kubeconfig" {
 }
 
 # ============================================================================
+# Image Factory
+# ============================================================================
+
+output "talos_schematic_id" {
+  description = "Dynamically generated Talos Factory schematic ID"
+  value       = talos_image_factory_schematic.this.id
+}
+
+output "talos_extensions" {
+  description = "Talos system extensions included in schematic"
+  value = concat(
+    data.talos_image_factory_extensions_versions.this.extensions_info[*].name,
+    var.enable_gpu_passthrough ? data.talos_image_factory_extensions_versions.gpu[0].extensions_info[*].name : [],
+    var.enable_pangolin ? data.talos_image_factory_extensions_versions.pangolin[0].extensions_info[*].name : [],
+  )
+}
+
+# ============================================================================
 # GPU Information
 # ============================================================================
 
@@ -106,18 +124,18 @@ output "longhorn_version" {
 # ============================================================================
 
 output "hubble_ui_url" {
-  description = "Cilium Hubble UI URL"
-  value       = "http://${var.hubble_ui_ip}"
+  description = "Cilium Hubble UI URL (via Gateway API)"
+  value       = "https://hubble.home-infra.net"
 }
 
 output "longhorn_ui_url" {
-  description = "Longhorn storage management UI URL"
-  value       = "http://${var.longhorn_ui_ip}"
+  description = "Longhorn storage management UI URL (via Gateway API)"
+  value       = "https://longhorn.home-infra.net"
 }
 
 output "forgejo_http_url" {
-  description = "Forgejo Git server HTTP URL (port 80)"
-  value       = var.enable_forgejo ? "http://${var.forgejo_ip}" : "Not enabled"
+  description = "Forgejo Git server HTTPS URL (via Gateway API)"
+  value       = var.enable_forgejo ? "https://${var.git_hostname}" : "Not enabled"
 }
 
 output "forgejo_ssh_url" {

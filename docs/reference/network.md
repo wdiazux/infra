@@ -36,51 +36,18 @@ Network configuration and IP allocations for the homelab infrastructure.
 
 ---
 
-## Kubernetes Services (10.10.2.11-20)
+## LoadBalancer Services
 
-LoadBalancer IPs assigned to core Kubernetes services.
+Only services requiring direct network access use LoadBalancer IPs.
+All web UIs use ClusterIP and are accessed via Cilium Gateway API at 10.10.2.20.
 
-| IP | Service | Port | Namespace |
-|----|---------|------|-----------|
-| 10.10.2.11 | Hubble UI | 80 | kube-system |
-| 10.10.2.12 | Longhorn UI | 80 | longhorn-system |
-| 10.10.2.13 | Forgejo HTTP | 80 | forgejo |
-| 10.10.2.14 | Forgejo SSH | 22 | forgejo |
-| 10.10.2.15 | FluxCD Webhook | 80 | flux-system |
-| 10.10.2.16 | Weave GitOps | 80 | flux-system |
-| 10.10.2.17 | MinIO Console | 80 | backup |
-| 10.10.2.18 | Zitadel | 8080 | auth |
-| 10.10.2.20 | Gateway API | 443 | kube-system |
-
----
-
-## Applications (10.10.2.21-150)
-
-| IP | Service | Port | Namespace |
-|----|---------|------|-----------|
-| 10.10.2.21 | Homepage | 80 | tools |
-| 10.10.2.22 | Immich | 80 | media |
-| 10.10.2.23 | Grafana | 80 | monitoring |
-| 10.10.2.24 | VictoriaMetrics | 80 | monitoring |
-| 10.10.2.25 | Home Assistant | 80 | automation |
-| 10.10.2.26 | n8n | 80 | automation |
-| 10.10.2.27 | Obico | 80 | printing |
-| 10.10.2.29 | Attic | 80 | tools |
-| 10.10.2.30 | Emby | 80 | media |
-| 10.10.2.31 | Navidrome | 80 | media |
-| 10.10.2.32 | IT-Tools | 80 | tools |
-| 10.10.2.34 | Wallos | 80 | management |
-| 10.10.2.35 | ntfy | 80 | tools |
-| 10.10.2.36 | Paperless-ngx | 80 | management |
-| 10.10.2.40 | SABnzbd | 80 | arr-stack |
-| 10.10.2.41 | qBittorrent | 80 | arr-stack |
-| 10.10.2.42 | Prowlarr | 80 | arr-stack |
-| 10.10.2.43 | Radarr | 80 | arr-stack |
-| 10.10.2.44 | Sonarr | 80 | arr-stack |
-| 10.10.2.45 | Bazarr | 80 | arr-stack |
-| 10.10.2.50 | Ollama | 11434 | ai |
-| 10.10.2.51 | Open WebUI | 80 | ai |
-| 10.10.2.52 | ComfyUI | 80 | ai |
+| IP | Service | Port | Namespace | Purpose |
+|----|---------|------|-----------|---------|
+| 10.10.2.14 | Forgejo SSH | 22 | forgejo | Git SSH access |
+| 10.10.2.15 | FluxCD Webhook | 80 | flux-system | External webhook receiver |
+| 10.10.2.20 | Gateway API | 443 | kube-system | HTTPS termination (all web UIs) |
+| 10.10.2.41 | qBittorrent | 6881 | arr-stack | BitTorrent protocol |
+| 10.10.2.50 | Ollama | 11434 | ai | LLM API access |
 
 ---
 
@@ -114,42 +81,42 @@ spec:
 
 ## Service Access Points
 
+### Infrastructure (Direct IP)
+
 | Service | URL | Auth |
 |---------|-----|------|
 | Proxmox | https://10.10.2.2:8006 | API Token |
 | Kubernetes API | https://10.10.2.10:6443 | kubeconfig |
 | Talos API | https://10.10.2.10:50000 | talosconfig |
-| Hubble UI | http://10.10.2.11 | None |
-| Longhorn UI | http://10.10.2.12 | None |
-| Forgejo | http://10.10.2.13 | Username/Password |
 | Forgejo SSH | ssh://git@10.10.2.14 | SSH Key |
-| Weave GitOps | http://10.10.2.16 | Username/Password |
-| MinIO Console | http://10.10.2.17 | Username/Password |
-| Zitadel | https://auth.home-infra.net | SSO |
-| Gateway API | https://10.10.2.20 | TLS Termination |
-| Homepage | http://10.10.2.21 | None |
-| Immich | http://10.10.2.22 | Username/Password |
-| Grafana | http://10.10.2.23 | Username/Password |
-| VictoriaMetrics | http://10.10.2.24 | None |
-| Home Assistant | http://10.10.2.25 | Username/Password |
-| n8n | http://10.10.2.26 | Username/Password |
-| Obico | http://10.10.2.27 | Username/Password |
-| Attic | http://10.10.2.29 | Token |
-| Emby | http://10.10.2.30 | Username/Password |
-| Navidrome | http://10.10.2.31 | Username/Password |
-| IT-Tools | http://10.10.2.32 | None |
-| Wallos | http://10.10.2.34 | Username/Password |
-| ntfy | http://10.10.2.35 | Username/Password |
-| Paperless-ngx | http://10.10.2.36 | Username/Password |
-| SABnzbd | http://10.10.2.40 | Username/Password |
-| qBittorrent | http://10.10.2.41 | Username/Password |
-| Prowlarr | http://10.10.2.42 | Username/Password |
-| Radarr | http://10.10.2.43 | Username/Password |
-| Sonarr | http://10.10.2.44 | Username/Password |
-| Bazarr | http://10.10.2.45 | Username/Password |
 | Ollama | http://10.10.2.50:11434 | None |
-| Open WebUI | http://10.10.2.51 | Username/Password |
-| ComfyUI | http://10.10.2.52 | None (API auth optional) |
+
+### Web Services (via Gateway API at 10.10.2.20)
+
+| Service | URL | Auth |
+|---------|-----|------|
+| Homepage | https://home-infra.net | None |
+| Zitadel | https://auth.home-infra.net | SSO |
+| Grafana | https://grafana.home-infra.net | SSO (Zitadel) |
+| Forgejo | https://git.home-infra.net | SSO (Zitadel) |
+| Immich | https://photos.reynoza.org | SSO (Zitadel) |
+| Open WebUI | https://chat.home-infra.net | SSO (Zitadel) |
+| Paperless-ngx | https://paperless.home-infra.net | SSO (Zitadel) |
+| Home Assistant | https://hass.home-infra.net | Username/Password |
+| Hubble UI | https://hubble.home-infra.net | Forward Auth |
+| Longhorn UI | https://longhorn.home-infra.net | Forward Auth |
+| VictoriaMetrics | https://metrics.home-infra.net | Forward Auth |
+| Navidrome | https://music.home-infra.net | Username/Password |
+| Emby | https://emby.home-infra.net | Username/Password |
+| ComfyUI | https://comfy.home-infra.net | None |
+| Weave GitOps | https://gitops.home-infra.net | Username/Password |
+| n8n | https://n8n.home-infra.net | Username/Password |
+| Radarr | https://radarr.home-infra.net | Forward Auth |
+| Sonarr | https://sonarr.home-infra.net | Forward Auth |
+| Prowlarr | https://prowlarr.home-infra.net | Forward Auth |
+| Bazarr | https://bazarr.home-infra.net | Forward Auth |
+| SABnzbd | https://sabnzbd.home-infra.net | Forward Auth |
+| qBittorrent | https://qbittorrent.home-infra.net | Forward Auth |
 
 ---
 
@@ -227,38 +194,22 @@ All `*.home-infra.net` and `*.reynoza.org` domains resolve to Gateway API for HT
 ## Quick Check Commands
 
 ```bash
-# Check service IPs
+# Check LoadBalancer services
 kubectl get svc -A | grep LoadBalancer
 
 # Check Cilium IP pool
 kubectl get ciliumloadbalancerippool -A
 
-# Test service connectivity
-curl -s http://10.10.2.11  # Hubble
-curl -s http://10.10.2.12  # Longhorn
-curl -s http://10.10.2.13  # Forgejo
-curl -s http://10.10.2.16  # Weave GitOps
-curl -s http://10.10.2.23  # Grafana
-curl -s http://10.10.2.24  # VictoriaMetrics
-curl -s http://10.10.2.32  # IT-Tools
-curl -s http://10.10.2.34  # Wallos
+# Test Gateway API (all web services)
+curl -sk https://10.10.2.20 -H "Host: home-infra.net"
 
-# AI services
-curl -s http://10.10.2.50:11434  # Ollama
-curl -s http://10.10.2.51  # Open WebUI
-curl -s http://10.10.2.52  # ComfyUI
+# Test LoadBalancer services
+curl -s http://10.10.2.50:11434/api/version  # Ollama
 
-# Media services
-curl -s http://10.10.2.30  # Emby
-curl -s http://10.10.2.31  # Navidrome
-
-# Arr-stack services
-curl -s http://10.10.2.40  # SABnzbd
-curl -s http://10.10.2.41  # qBittorrent
-curl -s http://10.10.2.42  # Prowlarr
-curl -s http://10.10.2.43  # Radarr
-curl -s http://10.10.2.44  # Sonarr
-curl -s http://10.10.2.45  # Bazarr
+# Test HTTPS services (requires DNS resolution)
+curl -s https://grafana.home-infra.net/api/health
+curl -s https://git.home-infra.net
+curl -s https://auth.home-infra.net/.well-known/openid-configuration
 ```
 
 ---
@@ -436,4 +387,4 @@ When adding resources in Pangolin, use either:
 
 ---
 
-**Last Updated:** 2026-01-25
+**Last Updated:** 2026-01-26

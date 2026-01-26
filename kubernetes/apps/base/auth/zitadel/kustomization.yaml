@@ -10,3 +10,5 @@ resources:
   - helmrelease.yaml
   - httproute.yaml
   - grpcroute.yaml
+  - machinekey-pvc.yaml
+  - oidc-setup-job.yaml

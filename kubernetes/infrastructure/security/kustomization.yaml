@@ -9,3 +9,4 @@ kind: Kustomization
 resources:
   - network-policies.yaml
   - cilium-network-policies.yaml
+  - cilium-envoy-forward-auth.yaml

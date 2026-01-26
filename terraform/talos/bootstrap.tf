@@ -50,30 +50,23 @@ resource "local_file" "kubeconfig" {
 }
 
 # ============================================================================
-# Kubernetes API Wait
+# Cluster Health Check
 # ============================================================================
 
-# Wait for Kubernetes API to be ready
-resource "null_resource" "wait_for_kubernetes" {
-  count = var.auto_bootstrap && var.generate_kubeconfig ? 1 : 0
+# Wait for cluster to be healthy (replaces shell-based polling)
+data "talos_cluster_health" "this" {
+  count = var.auto_bootstrap ? 1 : 0
 
-  provisioner "local-exec" {
-    command = <<-EOT
-      set -e
+  client_configuration = talos_machine_secrets.cluster.client_configuration
+  control_plane_nodes  = [var.node_ip]
+  endpoints            = [var.node_ip]
 
-      if ! command -v kubectl &>/dev/null; then
-        echo "ERROR: kubectl not found. Install via nix-shell."
-        exit 1
-      fi
-
-      echo "Waiting for Kubernetes API to be ready (timeout: ${var.kubernetes_wait_timeout}s)..."
-      timeout ${var.kubernetes_wait_timeout} bash -c 'until kubectl --kubeconfig=${local.kubeconfig_path} get nodes &>/dev/null; do echo "Waiting..."; sleep 5; done'
-      echo "Kubernetes API is ready!"
-    EOT
+  timeouts = {
+    read = "5m"
   }
 
   depends_on = [
+    talos_machine_bootstrap.cluster,
     local_file.kubeconfig,
-    talos_machine_bootstrap.cluster
   ]
 }

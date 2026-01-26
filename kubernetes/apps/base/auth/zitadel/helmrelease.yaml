@@ -84,6 +84,8 @@ spec:
       configSecretName: ""
 
     env:
+      - name: ZITADEL_FIRSTINSTANCE_ORG_NAME
+        value: "HOMELAB"
       - name: ZITADEL_DATABASE_POSTGRES_USER_PASSWORD
         valueFrom:
           secretKeyRef:
@@ -116,6 +118,29 @@ spec:
             key: ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORD
       - name: ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORDCHANGEREQUIRED
         value: "false"
+      # Machine user for Terraform automation (JWT authentication)
+      - name: ZITADEL_FIRSTINSTANCE_ORG_MACHINE_MACHINE_USERNAME
+        value: "terraform-admin"
+      - name: ZITADEL_FIRSTINSTANCE_ORG_MACHINE_MACHINE_NAME
+        value: "Terraform Admin"
+      - name: ZITADEL_FIRSTINSTANCE_ORG_MACHINE_MACHINEKEY_TYPE
+        value: "1"  # 1 = JSON (RSA key)
+      - name: ZITADEL_FIRSTINSTANCE_ORG_MACHINE_MACHINEKEY_EXPIRATIONDATE
+        value: "2099-01-01T00:00:00Z"  # Long-lived for automation
+      - name: ZITADEL_FIRSTINSTANCE_ORG_MACHINE_PAT_EXPIRATIONDATE
+        value: "2099-01-01T00:00:00Z"  # Also create PAT as fallback
+      - name: ZITADEL_FIRSTINSTANCE_MACHINEKEYPATH
+        value: "/machinekey/zitadel-admin-sa.json"
+
+    # Volume mounts for machine key output (shared with setup job)
+    extraVolumes:
+      - name: machinekey
+        persistentVolumeClaim:
+          claimName: zitadel-machinekey
+
+    extraVolumeMounts:
+      - name: machinekey
+        mountPath: /machinekey
 
     # Service configuration
     service:

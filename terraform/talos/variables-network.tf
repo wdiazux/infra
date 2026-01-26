@@ -27,7 +27,7 @@ variable "network_model" {
 variable "dns_servers" {
   description = "DNS servers for the node"
   type        = list(string)
-  default     = ["10.10.2.1", "8.8.8.8"]
+  default     = ["10.10.2.1", "9.9.9.9"]
 }
 
 variable "ntp_servers" {

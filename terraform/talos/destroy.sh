@@ -131,8 +131,14 @@ if cluster_accessible; then
     done
 
     echo ""
-    echo "Step 1.9: Cleaning namespace finalizers..."
-    for ns in flux-system longhorn-system forgejo tools misc; do
+    echo "Step 1.9: Deleting Zitadel OIDC setup jobs..."
+    kctl delete cronjob zitadel-oidc-sync -n auth --ignore-not-found 2>/dev/null || true
+    kctl delete job -n auth -l app.kubernetes.io/name=zitadel-oidc-sync --ignore-not-found 2>/dev/null || true
+    kctl delete job zitadel-oidc-setup-initial -n auth --ignore-not-found 2>/dev/null || true
+
+    echo ""
+    echo "Step 1.10: Cleaning namespace finalizers..."
+    for ns in flux-system longhorn-system forgejo auth media ai management monitoring arr-stack tools misc; do
         if kctl get namespace "$ns" &>/dev/null 2>&1; then
             echo "  - Removing finalizers from namespace: $ns"
             kctl patch namespace "$ns" -p '{"metadata":{"finalizers":null}}' --type=merge 2>/dev/null || true
@@ -140,9 +146,9 @@ if cluster_accessible; then
     done
 
     echo ""
-    echo "Step 1.10: Deleting CRD finalizers (Longhorn)..."
+    echo "Step 1.11: Deleting CRD finalizers (Longhorn, Zitadel)..."
     # Longhorn CRDs can have finalizers that block deletion
-    for crd in $(kctl get crd -o name 2>/dev/null | grep longhorn || true); do
+    for crd in $(kctl get crd -o name 2>/dev/null | grep -E 'longhorn|zitadel' || true); do
         echo "  - Patching: $crd"
         kctl patch "$crd" -p '{"metadata":{"finalizers":null}}' --type=merge 2>/dev/null || true
     done
@@ -225,6 +231,7 @@ terraform state rm 'terraform_data.fluxcd_pre_destroy[0]' 2>/dev/null || true
 terraform state rm 'terraform_data.longhorn_pre_destroy[0]' 2>/dev/null || true
 terraform state rm 'terraform_data.forgejo_pre_destroy[0]' 2>/dev/null || true
 terraform state rm 'terraform_data.weave_gitops_pre_destroy[0]' 2>/dev/null || true
+terraform state rm 'terraform_data.zitadel_pre_destroy[0]' 2>/dev/null || true
 
 echo ""
 echo "=============================================="

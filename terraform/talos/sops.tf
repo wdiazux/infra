@@ -31,6 +31,7 @@ data "sops_file" "cloudflare_secrets" {
   source_file = "${path.module}/../../secrets/cloudflare-api-token.enc.yaml"
 }
 
+
 locals {
   # SOPS-decrypted secrets
   secrets = {
@@ -67,4 +68,5 @@ locals {
     # Weave GitOps admin password hash
     weave_gitops_password_hash = try(data.sops_file.git_secrets[0].data["weave_gitops_password_hash"], var.weave_gitops_password_hash)
   } : {}
+
 }

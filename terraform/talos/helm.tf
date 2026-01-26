@@ -42,7 +42,7 @@ resource "null_resource" "wait_for_cilium" {
   }
 
   depends_on = [
-    null_resource.wait_for_kubernetes
+    data.talos_cluster_health.this
   ]
 }
 
@@ -86,7 +86,7 @@ resource "helm_release" "longhorn" {
 #
 # Installation order:
 # 1. Talos bootstrap (includes Cilium via inlineManifest)
-# 2. Kubernetes API ready (wait_for_kubernetes)
+# 2. Cluster healthy (talos_cluster_health)
 # 3. Cilium becomes Ready (wait_for_cilium)
 # 4. Node becomes Ready
 # 5. Longhorn storage installed (helm_release.longhorn)

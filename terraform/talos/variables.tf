@@ -31,17 +31,6 @@ variable "talos_version" {
   default     = "v1.12.1"
 }
 
-variable "talos_schematic_id" {
-  description = "Talos Factory schematic ID with required system extensions"
-  type        = string
-  default     = "b81082c1666383fec39d911b71e94a3ee21bab3ea039663c6e1aa9beee822321"
-
-  validation {
-    condition     = var.talos_schematic_id == "" || can(regex("^[a-f0-9]{64}$", var.talos_schematic_id))
-    error_message = "Talos schematic ID must be a 64-character hexadecimal string."
-  }
-}
-
 variable "kubernetes_version" {
   description = "Kubernetes version to deploy"
   type        = string

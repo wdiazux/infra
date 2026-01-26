@@ -1,0 +1,487 @@
+# Zitadel OIDC Sync CronJob
+#
+# Automatically creates and maintains OIDC applications and Kubernetes secrets.
+# Runs periodically to ensure SSO configuration is always correct.
+#
+# Features:
+# - Self-healing: recreates apps/secrets if deleted or after Zitadel DB reset
+# - Idempotent: safe to run multiple times, only updates when needed
+# - Automated pod restarts: only restarts pods when secrets change
+#
+# Applications managed:
+# - grafana (monitoring) - PKCE
+# - forgejo (forgejo) - PKCE
+# - immich (media) - Client Secret
+# - open-webui (ai) - Client Secret
+# - paperless (management) - Client Secret
+# - oauth2-proxy (auth) - Client Secret
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: zitadel-oidc-setup-script
+  namespace: auth
+data:
+  setup.sh: |
+    #!/bin/bash
+    set -e
+
+    ZITADEL_URL="http://zitadel.auth.svc.cluster.local:8080"
+    MACHINEKEY_PATH="/machinekey/zitadel-admin-sa.json"
+    MAX_RETRIES=30
+    RETRY_INTERVAL=10
+    SECRETS_CHANGED=false
+
+    echo "=== Zitadel OIDC Sync $(date -Iseconds) ==="
+
+    # Check if machine key file exists (don't wait long for CronJob runs)
+    if [ ! -f "$MACHINEKEY_PATH" ]; then
+      echo "Machine key file not found. Zitadel may not be initialized yet."
+      echo "Will retry on next scheduled run."
+      exit 0
+    fi
+    echo "Machine key file found."
+
+    # Check if Zitadel is ready
+    if ! curl -sf "$ZITADEL_URL/debug/healthz" > /dev/null 2>&1; then
+      echo "Zitadel not ready. Will retry on next scheduled run."
+      exit 0
+    fi
+    echo "Zitadel is ready."
+
+    # Extract key info from machine key JSON
+    KEY_ID=$(jq -r '.keyId' "$MACHINEKEY_PATH")
+    USER_ID=$(jq -r '.userId' "$MACHINEKEY_PATH")
+    PRIVATE_KEY=$(jq -r '.key' "$MACHINEKEY_PATH")
+
+    echo "Using machine key: $KEY_ID"
+
+    # Generate JWT for authentication
+    generate_jwt() {
+      local now=$(date +%s)
+      local exp=$((now + 3600))
+
+      # JWT Header
+      local header=$(echo -n '{"alg":"RS256","typ":"JWT"}' | base64 -w0 | tr '+/' '-_' | tr -d '=')
+
+      # JWT Payload
+      local payload=$(echo -n "{\"iss\":\"$USER_ID\",\"sub\":\"$USER_ID\",\"aud\":\"$ZITADEL_URL\",\"iat\":$now,\"exp\":$exp}" | base64 -w0 | tr '+/' '-_' | tr -d '=')
+
+      # Sign with private key
+      local signature=$(echo -n "$header.$payload" | openssl dgst -sha256 -sign <(echo "$PRIVATE_KEY") | base64 -w0 | tr '+/' '-_' | tr -d '=')
+
+      echo "$header.$payload.$signature"
+    }
+
+    # Get access token using JWT
+    echo "Authenticating with Zitadel..."
+    JWT=$(generate_jwt)
+
+    TOKEN_RESPONSE=$(curl -sf -X POST "$ZITADEL_URL/oauth/v2/token" \
+      -H "Content-Type: application/x-www-form-urlencoded" \
+      -d "grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer" \
+      -d "scope=openid urn:zitadel:iam:org:project:id:zitadel:aud" \
+      -d "assertion=$JWT" 2>/dev/null) || {
+      echo "Failed to authenticate. Will retry on next scheduled run."
+      exit 0
+    }
+
+    ACCESS_TOKEN=$(echo "$TOKEN_RESPONSE" | jq -r '.access_token')
+
+    if [ -z "$ACCESS_TOKEN" ] || [ "$ACCESS_TOKEN" = "null" ]; then
+      echo "Failed to get access token. Will retry on next scheduled run."
+      exit 0
+    fi
+
+    echo "Successfully authenticated."
+
+    # Helper function to make authenticated API calls
+    zitadel_api() {
+      local method=$1
+      local endpoint=$2
+      local data=$3
+
+      curl -sf -X "$method" "$ZITADEL_URL$endpoint" \
+        -H "Authorization: Bearer $ACCESS_TOKEN" \
+        -H "Content-Type: application/json" \
+        ${data:+-d "$data"}
+    }
+
+    # Get organization ID
+    ORG_RESPONSE=$(zitadel_api GET "/management/v1/orgs/me")
+    ORG_ID=$(echo "$ORG_RESPONSE" | jq -r '.org.id')
+    echo "Organization ID: $ORG_ID"
+
+    # Create or get HOMELAB project
+    PROJECT_RESPONSE=$(zitadel_api POST "/management/v1/projects" '{"name":"HOMELAB"}' 2>/dev/null || true)
+
+    if [ -z "$PROJECT_RESPONSE" ]; then
+      # Project might already exist, search for it
+      PROJECTS=$(zitadel_api POST "/management/v1/projects/_search" '{"query":{"offset":"0","limit":100}}')
+      PROJECT_ID=$(echo "$PROJECTS" | jq -r '.result[] | select(.name=="HOMELAB") | .id')
+    else
+      PROJECT_ID=$(echo "$PROJECT_RESPONSE" | jq -r '.id')
+    fi
+
+    if [ -z "$PROJECT_ID" ] || [ "$PROJECT_ID" = "null" ]; then
+      echo "ERROR: Failed to create or find HOMELAB project"
+      exit 1
+    fi
+    echo "Project ID: $PROJECT_ID"
+
+    # Function to get existing app by name
+    get_app_by_name() {
+      local name=$1
+      local apps=$(zitadel_api GET "/management/v1/projects/$PROJECT_ID/apps")
+      echo "$apps" | jq -r ".result[] | select(.name==\"$name\")"
+    }
+
+    # Function to create or get OIDC application
+    ensure_oidc_app() {
+      local name=$1
+      local redirect_uri=$2
+      local post_logout_uri=$3
+      local auth_method=$4
+
+      # Check if app already exists
+      local existing_app=$(get_app_by_name "$name")
+      if [ -n "$existing_app" ] && [ "$existing_app" != "null" ]; then
+        local app_id=$(echo "$existing_app" | jq -r '.id')
+        echo "  App '$name' exists (ID: $app_id)"
+        # Get full app details including client ID
+        local app_details=$(zitadel_api GET "/management/v1/projects/$PROJECT_ID/apps/$app_id")
+        echo "$app_details"
+        return
+      fi
+
+      echo "  Creating app '$name'..."
+      local app_data=$(cat <<EOF
+    {
+      "name": "$name",
+      "redirectUris": ["$redirect_uri"],
+      "postLogoutRedirectUris": ["$post_logout_uri"],
+      "responseTypes": ["OIDC_RESPONSE_TYPE_CODE"],
+      "grantTypes": ["OIDC_GRANT_TYPE_AUTHORIZATION_CODE", "OIDC_GRANT_TYPE_REFRESH_TOKEN"],
+      "appType": "OIDC_APP_TYPE_WEB",
+      "authMethodType": "$auth_method",
+      "accessTokenType": "OIDC_TOKEN_TYPE_BEARER",
+      "version": "OIDC_VERSION_1_0"
+    }
+    EOF
+    )
+
+      local response=$(zitadel_api POST "/management/v1/projects/$PROJECT_ID/apps/oidc" "$app_data")
+      if [ -z "$response" ]; then
+        echo "  ERROR: Failed to create app '$name'"
+        return 1
+      fi
+      echo "  Created app '$name'"
+      echo "$response"
+    }
+
+    # Function to ensure Kubernetes secret exists with correct values
+    ensure_k8s_secret() {
+      local name=$1
+      local namespace=$2
+      local client_id=$3
+      local client_secret=$4
+
+      # Check if namespace exists
+      if ! kubectl get namespace "$namespace" > /dev/null 2>&1; then
+        echo "  Namespace '$namespace' doesn't exist, skipping secret '$name'"
+        return
+      fi
+
+      # Get existing secret
+      local existing_secret=$(kubectl get secret "$name" -n "$namespace" -o json 2>/dev/null || echo "")
+
+      if [ -n "$existing_secret" ]; then
+        # Compare values
+        local existing_client_id=$(echo "$existing_secret" | jq -r '.data["client-id"]' | base64 -d 2>/dev/null || echo "")
+
+        if [ "$existing_client_id" = "$client_id" ]; then
+          echo "  Secret '$name' in '$namespace' is up-to-date"
+          return
+        fi
+        echo "  Secret '$name' in '$namespace' needs update"
+      else
+        echo "  Creating secret '$name' in '$namespace'"
+      fi
+
+      # Delete and recreate secret
+      kubectl delete secret "$name" -n "$namespace" 2>/dev/null || true
+
+      if [ -n "$client_secret" ] && [ "$client_secret" != "null" ]; then
+        kubectl create secret generic "$name" -n "$namespace" \
+          --from-literal=client-id="$client_id" \
+          --from-literal=client-secret="$client_secret"
+      else
+        kubectl create secret generic "$name" -n "$namespace" \
+          --from-literal=client-id="$client_id"
+      fi
+
+      # Add labels
+      kubectl label secret "$name" -n "$namespace" \
+        app.kubernetes.io/managed-by=zitadel-oidc-setup \
+        app.kubernetes.io/part-of=zitadel-sso
+
+      SECRETS_CHANGED=true
+    }
+
+    # Process OIDC applications
+    echo ""
+    echo "=== Syncing OIDC Applications ==="
+
+    # Grafana (PKCE - no secret)
+    echo "Processing: grafana"
+    GRAFANA_RESPONSE=$(ensure_oidc_app "grafana" \
+      "https://grafana.home-infra.net/login/generic_oauth" \
+      "https://grafana.home-infra.net" \
+      "OIDC_APP_AUTH_METHOD_TYPE_NONE")
+    GRAFANA_CLIENT_ID=$(echo "$GRAFANA_RESPONSE" | jq -r '.clientId // .oidcConfig.clientId')
+    ensure_k8s_secret "grafana-oidc-secrets" "monitoring" "$GRAFANA_CLIENT_ID" ""
+
+    # Forgejo (PKCE - no secret)
+    echo "Processing: forgejo"
+    FORGEJO_RESPONSE=$(ensure_oidc_app "forgejo" \
+      "https://git.home-infra.net/user/oauth2/zitadel/callback" \
+      "https://git.home-infra.net" \
+      "OIDC_APP_AUTH_METHOD_TYPE_NONE")
+    FORGEJO_CLIENT_ID=$(echo "$FORGEJO_RESPONSE" | jq -r '.clientId // .oidcConfig.clientId')
+    ensure_k8s_secret "forgejo-oidc-secrets" "forgejo" "$FORGEJO_CLIENT_ID" ""
+
+    # Immich (with secret)
+    echo "Processing: immich"
+    IMMICH_RESPONSE=$(ensure_oidc_app "immich" \
+      "https://photos.reynoza.org/auth/login" \
+      "https://photos.reynoza.org" \
+      "OIDC_APP_AUTH_METHOD_TYPE_BASIC")
+    IMMICH_CLIENT_ID=$(echo "$IMMICH_RESPONSE" | jq -r '.clientId // .oidcConfig.clientId')
+    IMMICH_CLIENT_SECRET=$(echo "$IMMICH_RESPONSE" | jq -r '.clientSecret // .oidcConfig.clientSecret')
+    ensure_k8s_secret "immich-oidc-secrets" "media" "$IMMICH_CLIENT_ID" "$IMMICH_CLIENT_SECRET"
+
+    # Open WebUI (with secret)
+    echo "Processing: open-webui"
+    OPENWEBUI_RESPONSE=$(ensure_oidc_app "open-webui" \
+      "https://chat.home-infra.net/oauth/callback" \
+      "https://chat.home-infra.net" \
+      "OIDC_APP_AUTH_METHOD_TYPE_BASIC")
+    OPENWEBUI_CLIENT_ID=$(echo "$OPENWEBUI_RESPONSE" | jq -r '.clientId // .oidcConfig.clientId')
+    OPENWEBUI_CLIENT_SECRET=$(echo "$OPENWEBUI_RESPONSE" | jq -r '.clientSecret // .oidcConfig.clientSecret')
+    ensure_k8s_secret "open-webui-oidc-secrets" "ai" "$OPENWEBUI_CLIENT_ID" "$OPENWEBUI_CLIENT_SECRET"
+
+    # Paperless (with secret)
+    echo "Processing: paperless"
+    PAPERLESS_RESPONSE=$(ensure_oidc_app "paperless" \
+      "https://paperless.home-infra.net/accounts/oidc/zitadel/login/callback/" \
+      "https://paperless.home-infra.net" \
+      "OIDC_APP_AUTH_METHOD_TYPE_BASIC")
+    PAPERLESS_CLIENT_ID=$(echo "$PAPERLESS_RESPONSE" | jq -r '.clientId // .oidcConfig.clientId')
+    PAPERLESS_CLIENT_SECRET=$(echo "$PAPERLESS_RESPONSE" | jq -r '.clientSecret // .oidcConfig.clientSecret')
+    ensure_k8s_secret "paperless-oidc-secrets" "management" "$PAPERLESS_CLIENT_ID" "$PAPERLESS_CLIENT_SECRET"
+
+    # oauth2-proxy (with secret, for forward auth)
+    echo "Processing: oauth2-proxy"
+    OAUTH2PROXY_RESPONSE=$(ensure_oidc_app "oauth2-proxy" \
+      "https://auth.home-infra.net/oauth2/callback" \
+      "https://auth.home-infra.net" \
+      "OIDC_APP_AUTH_METHOD_TYPE_BASIC")
+    OAUTH2PROXY_CLIENT_ID=$(echo "$OAUTH2PROXY_RESPONSE" | jq -r '.clientId // .oidcConfig.clientId')
+    OAUTH2PROXY_CLIENT_SECRET=$(echo "$OAUTH2PROXY_RESPONSE" | jq -r '.clientSecret // .oidcConfig.clientSecret')
+    ensure_k8s_secret "oauth2-proxy-oidc-secrets" "auth" "$OAUTH2PROXY_CLIENT_ID" "$OAUTH2PROXY_CLIENT_SECRET"
+
+    # Only restart pods if secrets changed
+    if [ "$SECRETS_CHANGED" = "true" ]; then
+      echo ""
+      echo "=== Restarting Pods (secrets changed) ==="
+      kubectl rollout restart deployment grafana -n monitoring 2>/dev/null || echo "  Grafana not found"
+      kubectl rollout restart deployment immich-server -n media 2>/dev/null || echo "  Immich not found"
+      kubectl rollout restart deployment open-webui -n ai 2>/dev/null || echo "  Open WebUI not found"
+      kubectl rollout restart deployment paperless-server -n management 2>/dev/null || echo "  Paperless not found"
+      kubectl rollout restart deployment oauth2-proxy -n auth 2>/dev/null || echo "  oauth2-proxy not found"
+      kubectl rollout restart statefulset forgejo -n forgejo 2>/dev/null || echo "  Forgejo not found"
+    else
+      echo ""
+      echo "No secrets changed, skipping pod restarts."
+    fi
+
+    echo ""
+    echo "=== OIDC Sync Complete ==="
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: zitadel-oidc-sync
+  namespace: auth
+  labels:
+    app.kubernetes.io/name: zitadel-oidc-sync
+    app.kubernetes.io/component: setup
+    app.kubernetes.io/part-of: zitadel
+spec:
+  schedule: "*/15 * * * *"  # Every 15 minutes
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  startingDeadlineSeconds: 300
+  jobTemplate:
+    metadata:
+      labels:
+        app.kubernetes.io/name: zitadel-oidc-sync
+    spec:
+      ttlSecondsAfterFinished: 3600  # Keep completed jobs for 1 hour
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: zitadel-oidc-sync
+        spec:
+          serviceAccountName: zitadel-oidc-setup
+          restartPolicy: Never
+          containers:
+            - name: setup
+              image: alpine/k8s:1.32.11
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  apk add --no-cache bash curl jq openssl > /dev/null 2>&1
+                  /bin/bash /scripts/setup.sh
+              volumeMounts:
+                - name: machinekey
+                  mountPath: /machinekey
+                  readOnly: true
+                - name: scripts
+                  mountPath: /scripts
+                  readOnly: true
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 64Mi
+                limits:
+                  memory: 256Mi
+          volumes:
+            - name: machinekey
+              persistentVolumeClaim:
+                claimName: zitadel-machinekey
+            - name: scripts
+              configMap:
+                name: zitadel-oidc-setup-script
+                defaultMode: 0755
+---
+# One-time Job for initial setup (runs immediately on deploy)
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: zitadel-oidc-setup-initial
+  namespace: auth
+  labels:
+    app.kubernetes.io/name: zitadel-oidc-setup
+    app.kubernetes.io/component: setup
+    app.kubernetes.io/part-of: zitadel
+spec:
+  ttlSecondsAfterFinished: 86400  # Keep for 24 hours for debugging
+  backoffLimit: 5
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: zitadel-oidc-setup
+    spec:
+      serviceAccountName: zitadel-oidc-setup
+      restartPolicy: OnFailure
+      containers:
+        - name: setup
+          image: alpine/k8s:1.32.11
+          command:
+            - /bin/sh
+            - -c
+            - |
+              apk add --no-cache bash curl jq openssl > /dev/null 2>&1
+
+              # Wait longer for initial setup
+              MAX_RETRIES=60
+              RETRY_INTERVAL=10
+              MACHINEKEY_PATH="/machinekey/zitadel-admin-sa.json"
+              ZITADEL_URL="http://zitadel.auth.svc.cluster.local:8080"
+
+              echo "=== Initial OIDC Setup - Waiting for Zitadel ==="
+
+              # Wait for machine key
+              retries=0
+              while [ ! -f "$MACHINEKEY_PATH" ]; do
+                retries=$((retries + 1))
+                if [ $retries -ge $MAX_RETRIES ]; then
+                  echo "ERROR: Machine key not found after $MAX_RETRIES retries"
+                  exit 1
+                fi
+                echo "Waiting for machine key... ($retries/$MAX_RETRIES)"
+                sleep $RETRY_INTERVAL
+              done
+
+              # Wait for Zitadel health
+              retries=0
+              while ! curl -sf "$ZITADEL_URL/debug/healthz" > /dev/null 2>&1; do
+                retries=$((retries + 1))
+                if [ $retries -ge $MAX_RETRIES ]; then
+                  echo "ERROR: Zitadel not ready after $MAX_RETRIES retries"
+                  exit 1
+                fi
+                echo "Waiting for Zitadel... ($retries/$MAX_RETRIES)"
+                sleep $RETRY_INTERVAL
+              done
+
+              echo "Zitadel is ready, running setup..."
+              /bin/bash /scripts/setup.sh
+          volumeMounts:
+            - name: machinekey
+              mountPath: /machinekey
+              readOnly: true
+            - name: scripts
+              mountPath: /scripts
+              readOnly: true
+          resources:
+            requests:
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+      volumes:
+        - name: machinekey
+          persistentVolumeClaim:
+            claimName: zitadel-machinekey
+        - name: scripts
+          configMap:
+            name: zitadel-oidc-setup-script
+            defaultMode: 0755
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: zitadel-oidc-setup
+  namespace: auth
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: zitadel-oidc-setup
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["create", "delete", "get", "list", "patch", "update"]
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "statefulsets"]
+    verbs: ["get", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: zitadel-oidc-setup
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: zitadel-oidc-setup
+subjects:
+  - kind: ServiceAccount
+    name: zitadel-oidc-setup
+    namespace: auth
