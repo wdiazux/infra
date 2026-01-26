@@ -42,14 +42,6 @@ spec:
           env:
             - name: TZ
               value: "America/El_Salvador"
-            # GPU configuration
-            - name: NVIDIA_VISIBLE_DEVICES
-              value: "all"
-            - name: CUDA_VISIBLE_DEVICES
-              value: "all"
-            # Memory optimization for RTX 4000 (20GB VRAM)
-            - name: PYTORCH_CUDA_ALLOC_CONF
-              value: "garbage_collection_threshold:0.9,max_split_size_mb:512"
             # CLI arguments for ComfyUI
             - name: CLI_ARGS
               value: "--listen 0.0.0.0 --port 8188"
