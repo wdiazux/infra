@@ -33,67 +33,25 @@ data:
 
     echo "=== Zitadel OIDC Sync $(date -Iseconds) ==="
 
-    # Read machine key from K8s Secret (created by chart's machinekeyWriter)
-    MACHINEKEY_JSON=$(kubectl get secret iam-admin -n auth -o jsonpath='{.data.iam-admin\.json}' 2>/dev/null | base64 -d 2>/dev/null)
-    if [ -z "$MACHINEKEY_JSON" ]; then
-      echo "Machine key secret not found. Zitadel may not be initialized yet."
+    # Read PAT from K8s Secret (created by chart's machinekeyWriter sidecar)
+    ACCESS_TOKEN=$(kubectl get secret iam-admin-pat -n auth -o jsonpath='{.data.pat}' 2>/dev/null | base64 -d 2>/dev/null)
+    if [ -z "$ACCESS_TOKEN" ]; then
+      echo "PAT secret not found. Zitadel may not be initialized yet."
       echo "Will retry on next scheduled run."
       exit 0
     fi
-    echo "Machine key secret found."
+    echo "PAT secret found."
+
+    # Zitadel uses domain-based instance resolution, so all API requests
+    # must include the correct Host header matching ExternalDomain.
+    ZITADEL_HOST="auth.home-infra.net"
 
     # Check if Zitadel is ready
-    if ! curl -sf "$ZITADEL_URL/debug/healthz" > /dev/null 2>&1; then
+    if ! curl -sf -H "Host: $ZITADEL_HOST" "$ZITADEL_URL/debug/healthz" > /dev/null 2>&1; then
       echo "Zitadel not ready. Will retry on next scheduled run."
       exit 0
     fi
     echo "Zitadel is ready."
-
-    # Extract key info from machine key JSON
-    KEY_ID=$(echo "$MACHINEKEY_JSON" | jq -r '.keyId')
-    USER_ID=$(echo "$MACHINEKEY_JSON" | jq -r '.userId')
-    PRIVATE_KEY=$(echo "$MACHINEKEY_JSON" | jq -r '.key')
-
-    echo "Using machine key: $KEY_ID"
-
-    # Generate JWT for authentication
-    generate_jwt() {
-      local now=$(date +%s)
-      local exp=$((now + 3600))
-
-      # JWT Header
-      local header=$(echo -n '{"alg":"RS256","typ":"JWT"}' | base64 -w0 | tr '+/' '-_' | tr -d '=')
-
-      # JWT Payload
-      local payload=$(echo -n "{\"iss\":\"$USER_ID\",\"sub\":\"$USER_ID\",\"aud\":\"$ZITADEL_URL\",\"iat\":$now,\"exp\":$exp}" | base64 -w0 | tr '+/' '-_' | tr -d '=')
-
-      # Sign with private key
-      local signature=$(echo -n "$header.$payload" | openssl dgst -sha256 -sign <(echo "$PRIVATE_KEY") | base64 -w0 | tr '+/' '-_' | tr -d '=')
-
-      echo "$header.$payload.$signature"
-    }
-
-    # Get access token using JWT
-    echo "Authenticating with Zitadel..."
-    JWT=$(generate_jwt)
-
-    TOKEN_RESPONSE=$(curl -sf -X POST "$ZITADEL_URL/oauth/v2/token" \
-      -H "Content-Type: application/x-www-form-urlencoded" \
-      -d "grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer" \
-      -d "scope=openid urn:zitadel:iam:org:project:id:zitadel:aud" \
-      -d "assertion=$JWT" 2>/dev/null) || {
-      echo "Failed to authenticate. Will retry on next scheduled run."
-      exit 0
-    }
-
-    ACCESS_TOKEN=$(echo "$TOKEN_RESPONSE" | jq -r '.access_token')
-
-    if [ -z "$ACCESS_TOKEN" ] || [ "$ACCESS_TOKEN" = "null" ]; then
-      echo "Failed to get access token. Will retry on next scheduled run."
-      exit 0
-    fi
-
-    echo "Successfully authenticated."
 
     # Helper function to make authenticated API calls
     zitadel_api() {
@@ -102,6 +60,7 @@ data:
       local data=$3
 
       curl -sf -X "$method" "$ZITADEL_URL$endpoint" \
+        -H "Host: $ZITADEL_HOST" \
         -H "Authorization: Bearer $ACCESS_TOKEN" \
         -H "Content-Type: application/json" \
         ${data:+-d "$data"}
@@ -132,11 +91,12 @@ data:
     # Function to get existing app by name
     get_app_by_name() {
       local name=$1
-      local apps=$(zitadel_api GET "/management/v1/projects/$PROJECT_ID/apps")
-      echo "$apps" | jq -r ".result[] | select(.name==\"$name\")"
+      local apps=$(zitadel_api POST "/management/v1/projects/$PROJECT_ID/apps/_search" '{"queries":[]}')
+      echo "$apps" | jq -r "(.result // [])[] | select(.name==\"$name\")"
     }
 
     # Function to create or get OIDC application
+    # Returns JSON on stdout; log messages go to stderr
     ensure_oidc_app() {
       local name=$1
       local redirect_uri=$2
@@ -147,14 +107,13 @@ data:
       local existing_app=$(get_app_by_name "$name")
       if [ -n "$existing_app" ] && [ "$existing_app" != "null" ]; then
         local app_id=$(echo "$existing_app" | jq -r '.id')
-        echo "  App '$name' exists (ID: $app_id)"
+        echo "  App '$name' exists (ID: $app_id)" >&2
         # Get full app details including client ID
-        local app_details=$(zitadel_api GET "/management/v1/projects/$PROJECT_ID/apps/$app_id")
-        echo "$app_details"
+        zitadel_api GET "/management/v1/projects/$PROJECT_ID/apps/$app_id"
         return
       fi
 
-      echo "  Creating app '$name'..."
+      echo "  Creating app '$name'..." >&2
       local app_data=$(cat <<EOF
     {
       "name": "$name",
@@ -172,10 +131,10 @@ data:
 
       local response=$(zitadel_api POST "/management/v1/projects/$PROJECT_ID/apps/oidc" "$app_data")
       if [ -z "$response" ]; then
-        echo "  ERROR: Failed to create app '$name'"
+        echo "  ERROR: Failed to create app '$name'" >&2
         return 1
       fi
-      echo "  Created app '$name'"
+      echo "  Created app '$name'" >&2
       echo "$response"
     }
 
@@ -299,7 +258,7 @@ data:
       kubectl rollout restart deployment open-webui -n ai 2>/dev/null || echo "  Open WebUI not found"
       kubectl rollout restart deployment paperless-server -n management 2>/dev/null || echo "  Paperless not found"
       kubectl rollout restart deployment oauth2-proxy -n auth 2>/dev/null || echo "  oauth2-proxy not found"
-      kubectl rollout restart statefulset forgejo -n forgejo 2>/dev/null || echo "  Forgejo not found"
+      kubectl rollout restart deployment forgejo -n forgejo 2>/dev/null || echo "  Forgejo not found"
     else
       echo ""
       echo "No secrets changed, skipping pod restarts."
@@ -344,7 +303,7 @@ spec:
                 - /bin/sh
                 - -c
                 - |
-                  apk add --no-cache bash curl jq openssl > /dev/null 2>&1
+                  apk add --no-cache bash curl jq > /dev/null 2>&1
                   /bin/bash /scripts/setup.sh
               volumeMounts:
                 - name: scripts
@@ -361,83 +320,6 @@ spec:
               configMap:
                 name: zitadel-oidc-setup-script
                 defaultMode: 0755
----
-# One-time Job for initial setup (runs immediately on deploy)
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: zitadel-oidc-setup-initial
-  namespace: auth
-  labels:
-    app.kubernetes.io/name: zitadel-oidc-setup
-    app.kubernetes.io/component: setup
-    app.kubernetes.io/part-of: zitadel
-spec:
-  ttlSecondsAfterFinished: 86400  # Keep for 24 hours for debugging
-  backoffLimit: 5
-  template:
-    metadata:
-      labels:
-        app.kubernetes.io/name: zitadel-oidc-setup
-    spec:
-      serviceAccountName: zitadel-oidc-setup
-      restartPolicy: OnFailure
-      containers:
-        - name: setup
-          image: alpine/k8s:1.32.11
-          command:
-            - /bin/sh
-            - -c
-            - |
-              apk add --no-cache bash curl jq openssl > /dev/null 2>&1
-
-              # Wait longer for initial setup
-              MAX_RETRIES=60
-              RETRY_INTERVAL=10
-              ZITADEL_URL="http://zitadel.auth.svc.cluster.local:8080"
-
-              echo "=== Initial OIDC Setup - Waiting for Zitadel ==="
-
-              # Wait for machine key secret (created by chart's machinekeyWriter)
-              retries=0
-              while ! kubectl get secret iam-admin -n auth > /dev/null 2>&1; do
-                retries=$((retries + 1))
-                if [ $retries -ge $MAX_RETRIES ]; then
-                  echo "ERROR: Machine key secret not found after $MAX_RETRIES retries"
-                  exit 1
-                fi
-                echo "Waiting for machine key secret... ($retries/$MAX_RETRIES)"
-                sleep $RETRY_INTERVAL
-              done
-
-              # Wait for Zitadel health
-              retries=0
-              while ! curl -sf "$ZITADEL_URL/debug/healthz" > /dev/null 2>&1; do
-                retries=$((retries + 1))
-                if [ $retries -ge $MAX_RETRIES ]; then
-                  echo "ERROR: Zitadel not ready after $MAX_RETRIES retries"
-                  exit 1
-                fi
-                echo "Waiting for Zitadel... ($retries/$MAX_RETRIES)"
-                sleep $RETRY_INTERVAL
-              done
-
-              echo "Zitadel is ready, running setup..."
-              /bin/bash /scripts/setup.sh
-          volumeMounts:
-            - name: scripts
-              mountPath: /scripts
-              readOnly: true
-          resources:
-            requests:
-              memory: 64Mi
-            limits:
-              memory: 256Mi
-      volumes:
-        - name: scripts
-          configMap:
-            name: zitadel-oidc-setup-script
-            defaultMode: 0755
 ---
 apiVersion: v1
 kind: ServiceAccount
