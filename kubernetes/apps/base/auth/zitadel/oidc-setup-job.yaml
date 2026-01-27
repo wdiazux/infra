@@ -108,8 +108,8 @@ data:
       if [ -n "$existing_app" ] && [ "$existing_app" != "null" ]; then
         local app_id=$(echo "$existing_app" | jq -r '.id')
         echo "  App '$name' exists (ID: $app_id)" >&2
-        # Get full app details including client ID
-        zitadel_api GET "/management/v1/projects/$PROJECT_ID/apps/$app_id"
+        # Get full app details (GET wraps response in .app, unwrap it)
+        zitadel_api GET "/management/v1/projects/$PROJECT_ID/apps/$app_id" | jq '.app // .'
         return
       fi
 
@@ -191,14 +191,15 @@ data:
     echo ""
     echo "=== Syncing OIDC Applications ==="
 
-    # Grafana (PKCE - no secret)
+    # Grafana (with secret - Grafana's oauth2 library always sends client_secret)
     echo "Processing: grafana"
     GRAFANA_RESPONSE=$(ensure_oidc_app "grafana" \
       "https://grafana.home-infra.net/login/generic_oauth" \
       "https://grafana.home-infra.net" \
-      "OIDC_APP_AUTH_METHOD_TYPE_NONE")
+      "OIDC_APP_AUTH_METHOD_TYPE_BASIC")
     GRAFANA_CLIENT_ID=$(echo "$GRAFANA_RESPONSE" | jq -r '.clientId // .oidcConfig.clientId')
-    ensure_k8s_secret "grafana-oidc-secrets" "monitoring" "$GRAFANA_CLIENT_ID" ""
+    GRAFANA_CLIENT_SECRET=$(echo "$GRAFANA_RESPONSE" | jq -r '.clientSecret // .oidcConfig.clientSecret')
+    ensure_k8s_secret "grafana-oidc-secrets" "monitoring" "$GRAFANA_CLIENT_ID" "$GRAFANA_CLIENT_SECRET"
 
     # Forgejo (PKCE - no secret)
     echo "Processing: forgejo"

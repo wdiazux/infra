@@ -62,6 +62,12 @@ spec:
                   name: grafana-oidc-secrets
                   key: client-id
                   optional: true
+            - name: GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-oidc-secrets
+                  key: client-secret
+                  optional: true
             - name: GF_AUTH_GENERIC_OAUTH_SCOPES
               value: "openid profile email"
             - name: GF_AUTH_GENERIC_OAUTH_AUTH_URL
