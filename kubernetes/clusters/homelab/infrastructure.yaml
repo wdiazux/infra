@@ -27,6 +27,10 @@ spec:
       kind: Deployment
       name: cert-manager
       namespace: cert-manager
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: cnpg-cloudnative-pg
+      namespace: cnpg-system
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization

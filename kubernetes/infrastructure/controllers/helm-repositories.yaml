@@ -74,3 +74,22 @@ metadata:
 spec:
   interval: 1h
   url: https://oauth2-proxy.github.io/manifests
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: cnpg
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: https://cloudnative-pg.github.io/charts
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: immich
+  namespace: flux-system
+spec:
+  type: oci
+  interval: 1h
+  url: oci://ghcr.io/immich-app/immich-charts

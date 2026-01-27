@@ -1,0 +1,162 @@
+# Immich HelmRelease
+#
+# Self-hosted photo and video backup solution.
+# Uses the official immich Helm chart with CloudNative-PG for PostgreSQL.
+# https://immich.app/
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: immich
+  namespace: media
+spec:
+  interval: 30m
+  timeout: 15m
+  chart:
+    spec:
+      chart: immich
+      version: "0.10.3"
+      sourceRef:
+        kind: HelmRepository
+        name: immich
+        namespace: flux-system
+      interval: 12h
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    # Shared controller settings (applied to all components)
+    controllers:
+      main:
+        pod:
+          enableServiceLinks: false
+        containers:
+          main:
+            env:
+              TZ: "America/El_Salvador"
+              # Database (CloudNative-PG auto-generated credentials)
+              DB_HOSTNAME: immich-postgres-rw
+              DB_PORT: "5432"
+              DB_USERNAME:
+                valueFrom:
+                  secretKeyRef:
+                    name: immich-postgres-app
+                    key: username
+              DB_DATABASE_NAME: immich
+              DB_PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: immich-postgres-app
+                    key: password
+
+    # Immich configuration
+    immich:
+      persistence:
+        library:
+          existingClaim: immich-photos
+
+    # Valkey (Redis replacement, chart-managed)
+    valkey:
+      enabled: true
+      persistence:
+        data:
+          enabled: true
+          type: persistentVolumeClaim
+          size: 1Gi
+          storageClass: longhorn
+          accessMode: ReadWriteOnce
+
+    # Server component
+    server:
+      enabled: true
+      controllers:
+        main:
+          pod:
+            enableServiceLinks: false
+          initContainers:
+            # Generate Immich config file with OIDC credentials from K8s secret
+            generate-config:
+              image:
+                repository: busybox
+                tag: "1.37"
+              command:
+                - sh
+                - -c
+                - |
+                  cat > /config/immich.json << ENDOFCONFIG
+                  {
+                    "oauth": {
+                      "enabled": true,
+                      "issuerUrl": "https://auth.home-infra.net",
+                      "clientId": "$${OAUTH_CLIENT_ID}",
+                      "clientSecret": "$${OAUTH_CLIENT_SECRET}",
+                      "scope": "openid email profile",
+                      "autoRegister": true,
+                      "autoLaunch": false,
+                      "buttonText": "Login with Zitadel",
+                      "signingAlgorithm": "RS256",
+                      "profileSigningAlgorithm": "none",
+                      "storageLabelClaim": "email",
+                      "tokenEndpointAuthMethod": "client_secret_post"
+                    }
+                  }
+                  ENDOFCONFIG
+              env:
+                OAUTH_CLIENT_ID:
+                  valueFrom:
+                    secretKeyRef:
+                      name: immich-oidc-secrets
+                      key: client-id
+                      optional: true
+                OAUTH_CLIENT_SECRET:
+                  valueFrom:
+                    secretKeyRef:
+                      name: immich-oidc-secrets
+                      key: client-secret
+                      optional: true
+          containers:
+            main:
+              env:
+                IMMICH_CONFIG_FILE: "/config/immich.json"
+              resources:
+                requests:
+                  memory: 512Mi
+                limits:
+                  memory: 4Gi
+      persistence:
+        config:
+          enabled: true
+          type: emptyDir
+          globalMounts:
+            - path: /config
+
+    # Machine Learning component (NVIDIA GPU)
+    machine-learning:
+      enabled: true
+      controllers:
+        main:
+          pod:
+            runtimeClassName: nvidia
+            enableServiceLinks: false
+          containers:
+            main:
+              env:
+                MACHINE_LEARNING_WORKERS: "1"
+                NVIDIA_VISIBLE_DEVICES: "all"
+              resources:
+                requests:
+                  memory: 100Mi
+                  nvidia.com/gpu: "1"
+                limits:
+                  memory: 8Gi
+                  nvidia.com/gpu: "1"
+      persistence:
+        cache:
+          enabled: true
+          type: persistentVolumeClaim
+          existingClaim: immich-ml-cache
+          accessMode: ReadWriteOnce

@@ -32,5 +32,7 @@ resources:
   - cert-manager.yaml
   # Secret/ConfigMap replication across namespaces (for TLS cert distribution)
   - reflector.yaml
+  # PostgreSQL operator (CloudNative-PG)
+  - cnpg-operator.yaml
   # Gateway API infrastructure (Cilium Gateway for HTTPS routing)
   - ../gateway

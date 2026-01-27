@@ -1,0 +1,37 @@
+# Immich PostgreSQL Cluster (CloudNative-PG)
+#
+# PostgreSQL 16 with VectorChord extension for vector search.
+# Managed by the CloudNative-PG operator.
+# https://cloudnative-pg.io/
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: immich-postgres
+  namespace: media
+spec:
+  instances: 1
+  imageName: ghcr.io/tensorchord/cloudnative-vectorchord:16.11
+  postgresql:
+    shared_preload_libraries:
+      - "vchord.so"
+      - "vectors.so"
+    parameters:
+      max_wal_size: "2GB"
+      shared_buffers: "512MB"
+      wal_compression: "on"
+  bootstrap:
+    initdb:
+      database: immich
+      owner: immich
+      postInitSQL:
+        - CREATE EXTENSION IF NOT EXISTS vchord CASCADE;
+        - CREATE EXTENSION IF NOT EXISTS vector;
+  storage:
+    size: 10Gi
+    storageClass: longhorn
+  resources:
+    requests:
+      memory: 512Mi
+    limits:
+      memory: 2Gi
