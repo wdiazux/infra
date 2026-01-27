@@ -30,21 +30,5 @@
         ]
       }
     ]
-  },
-  "permissions": {
-    "allow": [
-      "Read",
-      "Glob",
-      "Grep",
-      "LS",
-      "WebFetch",
-      "WebSearch",
-      "Bash(wc:*)",
-      "Bash(kubectl get:*)",
-      "Bash(export KUBECONFIG=./kubeconfig:*)",
-      "Skill(context7-plugin:docs)",
-      "Skill(superpowers:brainstorming)",
-      "mcp__plugin_context7-plugin_context7__query-docs"
-    ]
   }
 }

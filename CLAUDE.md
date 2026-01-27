@@ -86,6 +86,11 @@ All web UIs use ClusterIP services and are accessed via Cilium Gateway API:
 - **Gateway IP**: 10.10.2.20 (HTTPS termination via HTTPRoute/GRPCRoute)
 - **Domain**: *.home-infra.net, *.reynoza.org → 10.10.2.20
 
+**Internal Service Communication Preference** (in priority order):
+1. **Direct hostname** (e.g., `http://zitadel.auth.svc.cluster.local:8080`) - preferred, avoids DNS/Gateway/L7 proxy issues
+2. **Internal DNS** (e.g., CoreDNS rewrite resolves `auth.home-infra.net` → Gateway ClusterIP) - works for services with CoreDNS rewrites
+3. **External DNS** (e.g., `https://auth.home-infra.net` → Gateway LoadBalancer IP 10.10.2.20) - last resort, requires port 443 egress + CiliumNetworkPolicy for Zitadel OIDC
+
 Only services requiring direct network access use LoadBalancer IPs:
 
 | Component | IP | Purpose |
