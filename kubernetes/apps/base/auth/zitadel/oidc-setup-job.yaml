@@ -223,7 +223,7 @@ data:
     # Open WebUI (with secret)
     echo "Processing: open-webui"
     OPENWEBUI_RESPONSE=$(ensure_oidc_app "open-webui" \
-      "https://chat.home-infra.net/oauth/callback" \
+      "https://chat.home-infra.net/oauth/oidc/callback" \
       "https://chat.home-infra.net" \
       "OIDC_APP_AUTH_METHOD_TYPE_BASIC")
     OPENWEBUI_CLIENT_ID=$(echo "$OPENWEBUI_RESPONSE" | jq -r '.clientId // .oidcConfig.clientId')
