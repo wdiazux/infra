@@ -109,17 +109,10 @@ data:
         local app_id=$(echo "$existing_app" | jq -r '.id')
         echo "  App '$name' exists (ID: $app_id)" >&2
 
-        # Check if auth method matches; if not, delete and recreate
-        # (Zitadel requires recreation to change auth method and generate new secret)
-        local current_auth=$(echo "$existing_app" | jq -r '.oidcConfig.authMethodType // "unknown"')
-        if [ "$current_auth" != "$auth_method" ]; then
-          echo "  Auth method mismatch: current=$current_auth, desired=$auth_method. Recreating..." >&2
-          zitadel_api DELETE "/management/v1/projects/$PROJECT_ID/apps/$app_id" >/dev/null 2>&1
-          echo "  Deleted app '$name' (ID: $app_id)" >&2
-          # Fall through to creation below
-        else
-          # Update OIDC config to ensure redirect URIs are current
-          local update_data=$(cat <<EOF
+        # Update OIDC config to ensure redirect URIs and auth method are current
+        # Note: Zitadel API does not return authMethodType in responses, so we
+        # always push the desired config via PUT instead of comparing
+        local update_data=$(cat <<EOF
     {
       "redirectUris": ["$redirect_uri"],
       "postLogoutRedirectUris": ["$post_logout_uri"],
@@ -132,13 +125,12 @@ data:
     }
     EOF
     )
-          zitadel_api PUT "/management/v1/projects/$PROJECT_ID/apps/$app_id/oidc_config" "$update_data" >/dev/null 2>&1 \
-            && echo "  Updated OIDC config for '$name'" >&2 \
-            || echo "  Warning: Failed to update OIDC config for '$name'" >&2
-          # Get full app details (GET wraps response in .app, unwrap it)
-          zitadel_api GET "/management/v1/projects/$PROJECT_ID/apps/$app_id" | jq '.app // .'
-          return
-        fi
+        zitadel_api PUT "/management/v1/projects/$PROJECT_ID/apps/$app_id/oidc_config" "$update_data" >/dev/null 2>&1 \
+          && echo "  Updated OIDC config for '$name'" >&2 \
+          || echo "  Warning: Failed to update OIDC config for '$name'" >&2
+        # Get full app details (GET wraps response in .app, unwrap it)
+        zitadel_api GET "/management/v1/projects/$PROJECT_ID/apps/$app_id" | jq '.app // .'
+        return
       fi
 
       echo "  Creating app '$name'..." >&2
