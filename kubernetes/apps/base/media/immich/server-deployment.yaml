@@ -74,7 +74,7 @@ spec:
               mountPath: /config
       containers:
         - name: immich-server
-          image: ghcr.io/immich-app/immich-server:v2.4.1 # {"$imagepolicy": "flux-system:immich-server"}
+          image: ghcr.io/immich-app/immich-server:v2.5.0 # {"$imagepolicy": "flux-system:immich-server"}
           ports:
             - name: http
               containerPort: 2283
