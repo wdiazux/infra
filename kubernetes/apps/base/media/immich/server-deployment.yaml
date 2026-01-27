@@ -43,8 +43,8 @@ spec:
                 "oauth": {
                   "enabled": true,
                   "issuerUrl": "https://auth.home-infra.net",
-                  "clientId": "${OAUTH_CLIENT_ID}",
-                  "clientSecret": "${OAUTH_CLIENT_SECRET}",
+                  "clientId": "$${OAUTH_CLIENT_ID}",
+                  "clientSecret": "$${OAUTH_CLIENT_SECRET}",
                   "scope": "openid email profile",
                   "autoRegister": true,
                   "autoLaunch": false,
