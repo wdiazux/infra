@@ -4,6 +4,17 @@ All notable changes to this project are documented here.
 
 ## 2026
 
+### 2026-01-27
+- Forgejo OIDC fixes
+  - Changed all Zitadel OIDC apps from PKCE to Client Secret (BASIC) auth method
+  - Fixed Forgejo Helm chart `existingSecret` usage (removed literal `key` field)
+  - Fixed redirect URI case mismatch (`Zitadel` vs `zitadel` in callback path)
+  - Added `SAME_SITE=lax` to Forgejo session config for cross-site OAuth2 redirects
+  - Added `USERNAME=email` to extract username from email claim
+- OIDC setup job improvements
+  - Added auth method mismatch detection (auto-deletes and recreates apps)
+  - Added OIDC config sync for existing apps (redirect URIs updated on every run)
+
 ### 2026-01-26
 - Terraform code organization and cleanup
   - Extracted 14 inline shell scripts (~600 lines) to `terraform/talos/scripts/` directory

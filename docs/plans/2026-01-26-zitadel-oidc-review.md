@@ -135,8 +135,8 @@ Both approaches must create identical OIDC applications:
 
 | Application | Auth Method | Namespace | Secret Name |
 |-------------|------------|-----------|-------------|
-| Grafana | PKCE | monitoring | grafana-oidc-secrets |
-| Forgejo | PKCE | forgejo | forgejo-oidc-secrets |
+| Grafana | Client Secret | monitoring | grafana-oidc-secrets |
+| Forgejo | Client Secret | forgejo | forgejo-oidc-secrets |
 | Immich | Client Secret | media | immich-oidc-secrets |
 | Open WebUI | Client Secret | ai | open-webui-oidc-secrets |
 | Paperless | Client Secret | management | paperless-oidc-secrets |

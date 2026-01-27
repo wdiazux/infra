@@ -22,9 +22,9 @@ Forgejo is deployed **automatically** via Terraform Helm release when `enable_fo
 
 | Service | URL | Port |
 |---------|-----|------|
-| Web UI | http://10.10.2.13 | 80 |
-| HTTP Clone | http://10.10.2.13 | 80 |
-| SSH Clone | ssh://git@10.10.2.14:22 | 22 |
+| Web UI | https://git.home-infra.net | 443 (via Gateway API) |
+| HTTP Clone | https://git.home-infra.net | 443 (via Gateway API) |
+| SSH Clone | ssh://git@10.10.2.14:22 | 22 (LoadBalancer) |
 
 ---
 
@@ -36,6 +36,45 @@ Admin credentials are in `secrets/git-creds.enc.yaml`:
 # View credentials
 sops -d secrets/git-creds.enc.yaml
 ```
+
+---
+
+## SSO / OIDC (Zitadel)
+
+Forgejo uses Zitadel as its OIDC provider for Single Sign-On. Configuration is automated via the `zitadel-oidc-sync` CronJob.
+
+### Key Configuration
+
+| Setting | Value | Reason |
+|---------|-------|--------|
+| Auth Method | Client Secret (BASIC) | Forgejo doesn't support PKCE |
+| Session SAME_SITE | lax | Required for cross-site OAuth2 redirects |
+| USERNAME | email | Extracts part before @ from email claim |
+| Callback URL | `/user/oauth2/Zitadel/callback` | Case-sensitive (capital Z) |
+
+### How It Works
+
+1. CronJob creates/maintains the OIDC app in Zitadel with `OIDC_APP_AUTH_METHOD_TYPE_BASIC`
+2. Client ID and secret are stored in `forgejo-oidc-secrets` (namespace: forgejo)
+3. Forgejo Helm chart reads the secret via `existingSecret` (no `key` field set in values)
+4. Init container configures the OAuth2 source via `gitea admin auth add-oauth`
+
+### Troubleshooting OIDC
+
+```bash
+# Check OIDC secret exists and has client-secret
+kubectl get secret forgejo-oidc-secrets -n forgejo -o json | \
+  jq '.data | keys'
+# Expected: ["client-id", "client-secret", "key", "secret"]
+
+# Check init container configured OAuth
+kubectl logs deploy/forgejo -n forgejo -c configure-gitea | grep oauth
+
+# Check Forgejo logs for OIDC errors
+kubectl logs deploy/forgejo -n forgejo | grep -i 'oauth\|oidc\|error'
+```
+
+See `docs/operations/zitadel-sso-setup.md` for full SSO documentation.
 
 ---
 
@@ -278,4 +317,4 @@ kubectl exec -it -n forgejo deploy/forgejo-forgejo -- \
 
 ---
 
-**Last Updated:** 2026-01-20
+**Last Updated:** 2026-01-27

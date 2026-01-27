@@ -25,7 +25,7 @@ The SSO implementation is **fully automated**. On fresh deployment:
            │                       │                       │
     ┌──────▼──────┐         ┌──────▼──────┐         ┌──────▼──────┐
     │ Native OIDC │         │ Native OIDC │         │Forward Auth │
-    │  (PKCE)     │         │  (Secret)   │         │(oauth2-proxy)│
+    │  (Secret)   │         │  (Secret)   │         │(oauth2-proxy)│
     └──────┬──────┘         └──────┬──────┘         └──────┬──────┘
            │                       │                       │
     ┌──────▼──────┐         ┌──────▼──────┐         ┌──────▼──────┐
@@ -42,8 +42,8 @@ The SSO implementation is **fully automated**. On fresh deployment:
 
 | Service | Namespace | URL | Auth Method |
 |---------|-----------|-----|-------------|
-| Grafana | monitoring | grafana.home-infra.net | PKCE |
-| Forgejo | forgejo | git.home-infra.net | PKCE |
+| Grafana | monitoring | grafana.home-infra.net | Client Secret |
+| Forgejo | forgejo | git.home-infra.net | Client Secret |
 | Immich | media | photos.reynoza.org | Client Secret |
 | Open WebUI | ai | chat.home-infra.net | Client Secret |
 | Paperless | management | paperless.home-infra.net | Client Secret |
@@ -81,6 +81,8 @@ Both use the same setup script that:
 ### Self-Healing Features
 
 - **Zitadel DB reset**: CronJob recreates apps and secrets automatically
+- **Auth method mismatch**: CronJob detects and recreates apps with correct auth method
+- **Redirect URI changes**: CronJob updates OIDC config for existing apps on every sync
 - **Deleted secrets**: CronJob recreates them within 15 minutes
 - **New app deployment**: CronJob creates secrets when namespace appears
 - **Idempotent**: Safe to run multiple times, no unnecessary restarts
@@ -101,8 +103,8 @@ The machine user automatically gets `IAM_OWNER` role, allowing it to create OIDC
 
 | Secret Name | Namespace | Contents |
 |-------------|-----------|----------|
-| grafana-oidc-secrets | monitoring | client-id |
-| forgejo-oidc-secrets | forgejo | client-id |
+| grafana-oidc-secrets | monitoring | client-id, client-secret |
+| forgejo-oidc-secrets | forgejo | client-id, client-secret |
 | immich-oidc-secrets | media | client-id, client-secret |
 | open-webui-oidc-secrets | ai | client-id, client-secret |
 | paperless-oidc-secrets | management | client-id, client-secret |
@@ -358,6 +360,18 @@ flux reconcile kustomization apps --with-source
 | `kubernetes/apps/base/auth/zitadel/oidc-setup-job.yaml` | CronJob + Initial Job for OIDC sync |
 | `kubernetes/apps/base/auth/oauth2-proxy/helmrelease.yaml` | Forward auth proxy |
 | `kubernetes/infrastructure/security/cilium-envoy-forward-auth.yaml` | Forward auth routing (CiliumEnvoyConfig) |
+
+## Service-Specific Notes
+
+### Forgejo
+
+Forgejo requires specific OIDC configuration:
+
+- **Auth Method**: Must use `Client Secret` (BASIC), not PKCE. Forgejo's OAuth2 client does not support PKCE.
+- **Session**: `SAME_SITE = lax` is required in `[session]` config. The default `strict` blocks cookies on cross-site redirects from Zitadel, causing login failures ([Forgejo #1205](https://codeberg.org/forgejo/forgejo/issues/1205)).
+- **Username**: `USERNAME = email` in `[oauth2_client]` config extracts the part before `@` from the email. Without this, Zitadel returns the full email as the nickname claim, which contains `@` and fails user creation.
+- **Redirect URI**: Case-sensitive. Forgejo generates the callback URL using the provider name as-is (e.g., `Zitadel` with capital Z → `/user/oauth2/Zitadel/callback`). The OIDC setup job must match this exactly.
+- **Helm Chart**: When using `existingSecret`, do NOT set the `key` field in the `oauth` values. The chart uses `key` literally as the `--key` CLI argument. Omitting it makes the chart use the `${GITEA_OAUTH_KEY_0}` env var populated from the secret.
 
 ## Design Decisions
 
