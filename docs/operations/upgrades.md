@@ -259,6 +259,12 @@ Kubernetes rollback is not straightforward. Options:
 1. Restore from backup
 2. Redeploy cluster
 
+### Application Rollback (Database Migration Failed)
+
+If a service upgrade ran a database migration that broke things, see the
+[Upgrade Rollback Guide](upgrade-rollback.md) for step-by-step procedures
+to restore volumes and pin image versions.
+
 ### Helm Rollback
 
 ```bash

@@ -1250,6 +1250,12 @@ kubectl exec -n backup deploy/minio -- df -h /data
 
 ---
 
+## Related Guides
+
+- [Upgrade Rollback](upgrade-rollback.md) — Step-by-step procedures for rolling back after a bad service upgrade (database migration failures, broken versions)
+
+---
+
 ## Best Practices
 
 1. **Test restores regularly** (monthly) - Use automated verification script

@@ -256,6 +256,7 @@ docs/
 
 ## Recent Changes
 
+- **2026-01-27**: Added upgrade rollback guide (`docs/operations/upgrade-rollback.md`) for recovering from bad service upgrades with database migrations
 - **2026-01-26**: Terraform code organization (14 scripts extracted to scripts/), dynamic Talos image factory schematic, talos_cluster_health, Kubernetes inline script extraction to ConfigMaps, removed Zitadel Terraform provider, documentation updates
 - **2026-01-25**: Migrated web UIs from LoadBalancer to ClusterIP (all via Gateway API), consolidated domains to home-infra.net, auto-generated Forgejo runner tokens, CiliumNetworkPolicies for K8s API access
 - **2026-01-24**: Zitadel SSO implementation (replaces Logto, CoreDNS rewrite for hairpin fix)
