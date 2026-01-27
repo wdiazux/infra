@@ -248,7 +248,7 @@ data:
     IMMICH_RESPONSE=$(ensure_oidc_app "immich" \
       "https://photos.reynoza.org/auth/login" \
       "https://photos.reynoza.org" \
-      "OIDC_APP_AUTH_METHOD_TYPE_BASIC")
+      "OIDC_APP_AUTH_METHOD_TYPE_POST")
     IMMICH_CLIENT_ID=$(echo "$IMMICH_RESPONSE" | jq -r '.clientId // .oidcConfig.clientId')
     IMMICH_CLIENT_SECRET=$(echo "$IMMICH_RESPONSE" | jq -r '.clientSecret // .oidcConfig.clientSecret')
     ensure_k8s_secret "immich-oidc-secrets" "media" "$IMMICH_CLIENT_ID" "$IMMICH_CLIENT_SECRET"
