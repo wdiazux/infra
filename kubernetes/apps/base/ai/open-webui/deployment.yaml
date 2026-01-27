@@ -75,6 +75,8 @@ spec:
                   optional: true
             - name: OAUTH_SCOPES
               value: "openid profile email"
+            - name: OAUTH_MERGE_ACCOUNTS_BY_EMAIL
+              value: "true"
           volumeMounts:
             - name: data
               mountPath: /app/backend/data
