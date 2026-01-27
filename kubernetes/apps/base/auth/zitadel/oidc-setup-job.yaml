@@ -208,7 +208,7 @@ data:
     # Forgejo (PKCE - no secret)
     echo "Processing: forgejo"
     FORGEJO_RESPONSE=$(ensure_oidc_app "forgejo" \
-      "https://git.home-infra.net/user/oauth2/zitadel/callback" \
+      "https://git.home-infra.net/user/oauth2/Zitadel/callback" \
       "https://git.home-infra.net" \
       "OIDC_APP_AUTH_METHOD_TYPE_NONE")
     FORGEJO_CLIENT_ID=$(echo "$FORGEJO_RESPONSE" | jq -r '.clientId // .oidcConfig.clientId')
