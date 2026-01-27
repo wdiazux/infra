@@ -33,7 +33,7 @@ spec:
         fsGroupChangePolicy: "OnRootMismatch"
       containers:
         - name: immich-machine-learning
-          image: ghcr.io/immich-app/immich-machine-learning:v2.4.1-cuda # {"$imagepolicy": "flux-system:immich-machine-learning"}
+          image: ghcr.io/immich-app/immich-machine-learning:v2.5.0-cuda # {"$imagepolicy": "flux-system:immich-machine-learning"}
           ports:
             - name: http
               containerPort: 3003
