@@ -225,6 +225,23 @@ spec:
       ports:
         - protocol: TCP
           port: 3003
+    # Allow HTTPS for OIDC authentication (auth.home-infra.net via Gateway)
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 443
+    # Allow Zitadel for OIDC authentication (direct pod access)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: auth
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: zitadel
+      ports:
+        - protocol: TCP
+          port: 8080
 
 ---
 apiVersion: networking.k8s.io/v1
@@ -347,6 +364,23 @@ spec:
       ports:
         - protocol: TCP
           port: 9998
+    # Allow HTTPS for OIDC authentication (auth.home-infra.net via Gateway)
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 443
+    # Allow Zitadel for OIDC authentication (direct pod access)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: auth
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: zitadel
+      ports:
+        - protocol: TCP
+          port: 8080
 
 ---
 apiVersion: networking.k8s.io/v1
@@ -991,6 +1025,12 @@ spec:
       ports:
         - protocol: TCP
           port: 8080
+    # Allow HTTPS for OIDC authentication (auth.home-infra.net via Gateway)
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 443
 
 ---
 apiVersion: networking.k8s.io/v1
