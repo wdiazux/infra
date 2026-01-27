@@ -72,6 +72,7 @@ gitea:
 
     session:
       PROVIDER: memory
+      SAME_SITE: lax
 
     log:
       MODE: console
@@ -112,7 +113,6 @@ gitea:
     - name: "Zitadel"
       provider: "openidConnect"
       existingSecret: forgejo-oidc-secrets
-      key: client-id
       autoDiscoverUrl: "https://auth.home-infra.net/.well-known/openid-configuration"
       scopes: "openid profile email"
 

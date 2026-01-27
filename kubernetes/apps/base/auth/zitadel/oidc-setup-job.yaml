@@ -108,8 +108,18 @@ data:
       if [ -n "$existing_app" ] && [ "$existing_app" != "null" ]; then
         local app_id=$(echo "$existing_app" | jq -r '.id')
         echo "  App '$name' exists (ID: $app_id)" >&2
-        # Update OIDC config to ensure redirect URIs are current
-        local update_data=$(cat <<EOF
+
+        # Check if auth method matches; if not, delete and recreate
+        # (Zitadel requires recreation to change auth method and generate new secret)
+        local current_auth=$(echo "$existing_app" | jq -r '.oidcConfig.authMethodType // "unknown"')
+        if [ "$current_auth" != "$auth_method" ]; then
+          echo "  Auth method mismatch: current=$current_auth, desired=$auth_method. Recreating..." >&2
+          zitadel_api DELETE "/management/v1/projects/$PROJECT_ID/apps/$app_id" >/dev/null 2>&1
+          echo "  Deleted app '$name' (ID: $app_id)" >&2
+          # Fall through to creation below
+        else
+          # Update OIDC config to ensure redirect URIs are current
+          local update_data=$(cat <<EOF
     {
       "redirectUris": ["$redirect_uri"],
       "postLogoutRedirectUris": ["$post_logout_uri"],
@@ -122,12 +132,13 @@ data:
     }
     EOF
     )
-        zitadel_api PUT "/management/v1/projects/$PROJECT_ID/apps/$app_id/oidc_config" "$update_data" >/dev/null 2>&1 \
-          && echo "  Updated OIDC config for '$name'" >&2 \
-          || echo "  Warning: Failed to update OIDC config for '$name'" >&2
-        # Get full app details (GET wraps response in .app, unwrap it)
-        zitadel_api GET "/management/v1/projects/$PROJECT_ID/apps/$app_id" | jq '.app // .'
-        return
+          zitadel_api PUT "/management/v1/projects/$PROJECT_ID/apps/$app_id/oidc_config" "$update_data" >/dev/null 2>&1 \
+            && echo "  Updated OIDC config for '$name'" >&2 \
+            || echo "  Warning: Failed to update OIDC config for '$name'" >&2
+          # Get full app details (GET wraps response in .app, unwrap it)
+          zitadel_api GET "/management/v1/projects/$PROJECT_ID/apps/$app_id" | jq '.app // .'
+          return
+        fi
       fi
 
       echo "  Creating app '$name'..." >&2
@@ -222,14 +233,15 @@ data:
     GRAFANA_CLIENT_SECRET=$(echo "$GRAFANA_RESPONSE" | jq -r '.clientSecret // .oidcConfig.clientSecret')
     ensure_k8s_secret "grafana-oidc-secrets" "monitoring" "$GRAFANA_CLIENT_ID" "$GRAFANA_CLIENT_SECRET"
 
-    # Forgejo (PKCE - no secret)
+    # Forgejo (with secret - Forgejo doesn't support PKCE, needs client_secret)
     echo "Processing: forgejo"
     FORGEJO_RESPONSE=$(ensure_oidc_app "forgejo" \
       "https://git.home-infra.net/user/oauth2/Zitadel/callback" \
       "https://git.home-infra.net" \
-      "OIDC_APP_AUTH_METHOD_TYPE_NONE")
+      "OIDC_APP_AUTH_METHOD_TYPE_BASIC")
     FORGEJO_CLIENT_ID=$(echo "$FORGEJO_RESPONSE" | jq -r '.clientId // .oidcConfig.clientId')
-    ensure_k8s_secret "forgejo-oidc-secrets" "forgejo" "$FORGEJO_CLIENT_ID" ""
+    FORGEJO_CLIENT_SECRET=$(echo "$FORGEJO_RESPONSE" | jq -r '.clientSecret // .oidcConfig.clientSecret')
+    ensure_k8s_secret "forgejo-oidc-secrets" "forgejo" "$FORGEJO_CLIENT_ID" "$FORGEJO_CLIENT_SECRET"
 
     # Immich (with secret)
     echo "Processing: immich"
