@@ -1,0 +1,32 @@
+# qBittorrent Host Validation Configuration Script
+#
+# Configures WebUI host header validation and CSRF settings in qBittorrent.conf.
+# Adds server domain entries for reverse proxy access via Gateway API.
+# Runs as an init container before the main qBittorrent container starts.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: qbittorrent-host-validation-script
+  namespace: arr-stack
+  labels:
+    app.kubernetes.io/name: qbittorrent
+    app.kubernetes.io/component: downloader
+    app.kubernetes.io/part-of: arr-stack
+data:
+  configure-host-validation.sh: |
+    #!/bin/sh
+    CONFIG_FILE="/config/config/qBittorrent.conf"
+    if [ -f "$CONFIG_FILE" ]; then
+      if ! grep -q "WebUI\\\\HostHeaderValidation" "$CONFIG_FILE"; then
+        echo "" >> "$CONFIG_FILE"
+        echo "[Preferences]" >> "$CONFIG_FILE"
+        echo "WebUI\\HostHeaderValidation=false" >> "$CONFIG_FILE"
+        echo "WebUI\\CSRFProtection=false" >> "$CONFIG_FILE"
+        echo "WebUI\\ServerDomains=qbittorrent.${DOMAIN_PRIMARY};${IP_QBITTORRENT}" >> "$CONFIG_FILE"
+        echo "Host validation settings added to qBittorrent.conf"
+      else
+        echo "Host validation settings already configured"
+      fi
+    else
+      echo "Config file not found, will be created on first run"
+    fi
