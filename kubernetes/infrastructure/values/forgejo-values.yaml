@@ -106,6 +106,7 @@ gitea:
       ENABLE_AUTO_REGISTRATION: true
       ACCOUNT_LINKING: auto
       UPDATE_AVATAR: true
+      USERNAME: email
       OPENID_CONNECT_SCOPES: "openid profile email"
 
   # OAuth2 providers (Zitadel)
