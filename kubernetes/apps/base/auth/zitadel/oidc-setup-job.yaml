@@ -173,10 +173,14 @@ data:
       if [ -n "$client_secret" ] && [ "$client_secret" != "null" ]; then
         kubectl create secret generic "$name" -n "$namespace" \
           --from-literal=client-id="$client_id" \
-          --from-literal=client-secret="$client_secret"
+          --from-literal=client-secret="$client_secret" \
+          --from-literal=key="$client_id" \
+          --from-literal=secret="$client_secret"
       else
         kubectl create secret generic "$name" -n "$namespace" \
-          --from-literal=client-id="$client_id"
+          --from-literal=client-id="$client_id" \
+          --from-literal=key="$client_id" \
+          --from-literal=secret=""
       fi
 
       # Add labels
