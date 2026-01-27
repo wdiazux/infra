@@ -108,6 +108,23 @@ data:
       if [ -n "$existing_app" ] && [ "$existing_app" != "null" ]; then
         local app_id=$(echo "$existing_app" | jq -r '.id')
         echo "  App '$name' exists (ID: $app_id)" >&2
+        # Update OIDC config to ensure redirect URIs are current
+        local update_data=$(cat <<EOF
+    {
+      "redirectUris": ["$redirect_uri"],
+      "postLogoutRedirectUris": ["$post_logout_uri"],
+      "responseTypes": ["OIDC_RESPONSE_TYPE_CODE"],
+      "grantTypes": ["OIDC_GRANT_TYPE_AUTHORIZATION_CODE", "OIDC_GRANT_TYPE_REFRESH_TOKEN"],
+      "appType": "OIDC_APP_TYPE_WEB",
+      "authMethodType": "$auth_method",
+      "accessTokenType": "OIDC_TOKEN_TYPE_BEARER",
+      "version": "OIDC_VERSION_1_0"
+    }
+    EOF
+    )
+        zitadel_api PUT "/management/v1/projects/$PROJECT_ID/apps/$app_id/oidc_config" "$update_data" >/dev/null 2>&1 \
+          && echo "  Updated OIDC config for '$name'" >&2 \
+          || echo "  Warning: Failed to update OIDC config for '$name'" >&2
         # Get full app details (GET wraps response in .app, unwrap it)
         zitadel_api GET "/management/v1/projects/$PROJECT_ID/apps/$app_id" | jq '.app // .'
         return
