@@ -30,6 +30,48 @@ spec:
       securityContext:
         fsGroup: 3001
         fsGroupChangePolicy: "OnRootMismatch"
+      initContainers:
+        # Generate Immich config file with OIDC credentials from K8s secret
+        - name: generate-config
+          image: busybox:1.37
+          command:
+            - sh
+            - -c
+            - |
+              cat > /config/immich.json << ENDOFCONFIG
+              {
+                "oauth": {
+                  "enabled": true,
+                  "issuerUrl": "https://auth.home-infra.net",
+                  "clientId": "${OAUTH_CLIENT_ID}",
+                  "clientSecret": "${OAUTH_CLIENT_SECRET}",
+                  "scope": "openid email profile",
+                  "autoRegister": true,
+                  "autoLaunch": false,
+                  "buttonText": "Login with Zitadel",
+                  "signingAlgorithm": "RS256",
+                  "profileSigningAlgorithm": "none",
+                  "storageLabelClaim": "preferred_username",
+                  "tokenEndpointAuthMethod": "client_secret_post"
+                }
+              }
+              ENDOFCONFIG
+          env:
+            - name: OAUTH_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: immich-oidc-secrets
+                  key: client-id
+                  optional: true
+            - name: OAUTH_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: immich-oidc-secrets
+                  key: client-secret
+                  optional: true
+          volumeMounts:
+            - name: config
+              mountPath: /config
       containers:
         - name: immich-server
           image: ghcr.io/immich-app/immich-server:v2.4.1 # {"$imagepolicy": "flux-system:immich-server"}
@@ -61,35 +103,18 @@ spec:
               value: "6379"
             - name: IMMICH_MACHINE_LEARNING_URL
               value: "http://immich-machine-learning:3003"
-            # Zitadel OIDC Authentication
-            - name: OAUTH_ENABLED
-              value: "true"
-            - name: OAUTH_ISSUER_URL
-              value: "https://auth.home-infra.net"
-            - name: OAUTH_CLIENT_ID
-              valueFrom:
-                secretKeyRef:
-                  name: immich-oidc-secrets
-                  key: client-id
-                  optional: true
-            - name: OAUTH_CLIENT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: immich-oidc-secrets
-                  key: client-secret
-                  optional: true
-            - name: OAUTH_SCOPE
-              value: "openid profile email"
-            - name: OAUTH_AUTO_REGISTER
-              value: "true"
-            - name: OAUTH_BUTTON_TEXT
-              value: "Login with Zitadel"
+            # Immich v2.x reads OAuth config from config file, not env vars
+            - name: IMMICH_CONFIG_FILE
+              value: "/config/immich.json"
           volumeMounts:
             - name: upload
               mountPath: /usr/src/app/upload
             - name: upload
               mountPath: /external-library
               subPath: upload
+            - name: config
+              mountPath: /config
+              readOnly: true
           startupProbe:
             httpGet:
               path: /api/server/ping
@@ -115,3 +140,5 @@ spec:
         - name: upload
           persistentVolumeClaim:
             claimName: immich-photos
+        - name: config
+          emptyDir: {}
