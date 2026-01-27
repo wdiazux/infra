@@ -16,7 +16,6 @@ Only the Gateway itself (10.10.2.20) needs a LoadBalancer IP for HTTPS terminati
 
 import argparse
 import difflib
-import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path

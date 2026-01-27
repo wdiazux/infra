@@ -51,7 +51,7 @@ resource "proxmox_virtual_environment_vm" "talos_node" {
   # Memory configuration
   memory {
     dedicated = var.node_memory
-    floating  = var.node_memory # Enable memory ballooning
+    floating  = var.node_memory # Fixed memory (floating = dedicated means no effective ballooning)
   }
 
   # Disk configuration
@@ -157,8 +157,4 @@ resource "proxmox_virtual_environment_vm" "talos_node" {
     ]
   }
 
-  # Depends on template existence
-  depends_on = [
-    data.proxmox_virtual_environment_vms.talos_template
-  ]
 }

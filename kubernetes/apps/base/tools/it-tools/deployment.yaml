@@ -29,8 +29,19 @@ spec:
         app.kubernetes.io/component: server
         app.kubernetes.io/part-of: tools
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: it-tools
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           image: corentinth/it-tools:latest
           ports:
             - name: http

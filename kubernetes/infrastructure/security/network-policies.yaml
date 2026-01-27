@@ -1707,6 +1707,532 @@ spec:
 
 ---
 # =============================================================================
+# Arr-Stack Namespace - Media Automation (Radarr, Sonarr, Prowlarr, Bazarr, SABnzbd, qBittorrent)
+# =============================================================================
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: arr-stack-default-deny-egress
+  namespace: arr-stack
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    # Allow DNS queries
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: arr-stack-radarr-allow
+  namespace: arr-stack
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: radarr
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from LoadBalancer (Cilium L2 - host network traffic)
+    - ports:
+        - protocol: TCP
+          port: 7878
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow Prowlarr (indexer queries)
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prowlarr
+      ports:
+        - protocol: TCP
+          port: 9696
+    # Allow SABnzbd (push NZB downloads)
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: sabnzbd
+      ports:
+        - protocol: TCP
+          port: 8080
+    # Allow qBittorrent (push torrent downloads)
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: qbittorrent
+      ports:
+        - protocol: TCP
+          port: 8080
+    # Allow HTTPS (indexer APIs, TMDB/IMDb metadata)
+    - ports:
+        - protocol: TCP
+          port: 443
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: arr-stack-sonarr-allow
+  namespace: arr-stack
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: sonarr
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from LoadBalancer (Cilium L2 - host network traffic)
+    - ports:
+        - protocol: TCP
+          port: 8989
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow Prowlarr (indexer queries)
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prowlarr
+      ports:
+        - protocol: TCP
+          port: 9696
+    # Allow SABnzbd (push NZB downloads)
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: sabnzbd
+      ports:
+        - protocol: TCP
+          port: 8080
+    # Allow qBittorrent (push torrent downloads)
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: qbittorrent
+      ports:
+        - protocol: TCP
+          port: 8080
+    # Allow HTTPS (indexer APIs, TVDB/TMDB metadata)
+    - ports:
+        - protocol: TCP
+          port: 443
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: arr-stack-prowlarr-allow
+  namespace: arr-stack
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: prowlarr
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from LoadBalancer (Cilium L2 - host network traffic)
+    - ports:
+        - protocol: TCP
+          port: 9696
+    # Allow from Radarr, Sonarr (indexer sync)
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: radarr
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: sonarr
+      ports:
+        - protocol: TCP
+          port: 9696
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow Radarr (push indexer results)
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: radarr
+      ports:
+        - protocol: TCP
+          port: 7878
+    # Allow Sonarr (push indexer results)
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: sonarr
+      ports:
+        - protocol: TCP
+          port: 8989
+    # Allow HTTPS (indexer sites, torrent trackers, NZB indexers)
+    - ports:
+        - protocol: TCP
+          port: 443
+    # Allow HTTP (some indexers use plain HTTP)
+    - ports:
+        - protocol: TCP
+          port: 80
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: arr-stack-bazarr-allow
+  namespace: arr-stack
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: bazarr
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from LoadBalancer (Cilium L2 - host network traffic)
+    - ports:
+        - protocol: TCP
+          port: 6767
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow Radarr (monitor movies)
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: radarr
+      ports:
+        - protocol: TCP
+          port: 7878
+    # Allow Sonarr (monitor TV series)
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: sonarr
+      ports:
+        - protocol: TCP
+          port: 8989
+    # Allow HTTPS (subtitle databases: OpenSubtitles, Addic7ed, etc.)
+    - ports:
+        - protocol: TCP
+          port: 443
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: arr-stack-sabnzbd-allow
+  namespace: arr-stack
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: sabnzbd
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from LoadBalancer (Cilium L2 - host network traffic)
+    - ports:
+        - protocol: TCP
+          port: 8080
+    # Allow from Radarr, Sonarr (push NZB jobs)
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: radarr
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: sonarr
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow HTTPS (SSL-secured usenet providers)
+    - ports:
+        - protocol: TCP
+          port: 443
+    # Allow Usenet NNTP (plaintext)
+    - ports:
+        - protocol: TCP
+          port: 119
+    # Allow Usenet NNTPS (SSL)
+    - ports:
+        - protocol: TCP
+          port: 563
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: arr-stack-qbittorrent-allow
+  namespace: arr-stack
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: qbittorrent
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from LoadBalancer - WebUI (Cilium L2 - host network traffic)
+    - ports:
+        - protocol: TCP
+          port: 8080
+    # Allow from LoadBalancer - BitTorrent protocol
+    - ports:
+        - protocol: TCP
+          port: 6881
+    # Allow from Radarr, Sonarr (push torrent jobs)
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: radarr
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: sonarr
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow all egress (torrent peers use dynamic IPs and ports)
+    # BitTorrent protocol requires unrestricted outbound connectivity
+    - {}
+
+---
+# =============================================================================
+# Printing Namespace - 3D Printer Monitoring (Obico)
+# =============================================================================
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: printing-default-deny-egress
+  namespace: printing
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    # Allow DNS queries
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: printing-obico-server-allow
+  namespace: printing
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: obico-server
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from LoadBalancer (Cilium L2 - host network traffic)
+    - ports:
+        - protocol: TCP
+          port: 3334
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow Redis (cache/sessions/celery)
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: obico-redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    # Allow ML API (failure detection)
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: obico-ml-api
+      ports:
+        - protocol: TCP
+          port: 3333
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: printing-obico-redis-allow
+  namespace: printing
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: obico-redis
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from Obico server
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: obico-server
+      ports:
+        - protocol: TCP
+          port: 6379
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: printing-obico-ml-api-allow
+  namespace: printing
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: obico-ml-api
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from Obico server (image analysis requests)
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: obico-server
+      ports:
+        - protocol: TCP
+          port: 3333
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+
+---
+# =============================================================================
+# Misc Namespace - Miscellaneous Services (Twitch Miner)
+# =============================================================================
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: misc-default-deny-egress
+  namespace: misc
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    # Allow DNS queries
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: misc-twitch-miner-allow
+  namespace: misc
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: twitch-miner
+  policyTypes:
+    - Egress
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow HTTPS (Twitch API, GQL endpoints)
+    - ports:
+        - protocol: TCP
+          port: 443
+
+---
+# =============================================================================
 # CiliumNetworkPolicies for Kubernetes API Access
 # =============================================================================
 # Standard NetworkPolicy cannot allow traffic to the API server because:

@@ -99,10 +99,12 @@ kubectl -n kube-system exec ds/cilium -- cilium policy get
 
 | Configuration | Usage | Rationale |
 |---------------|-------|-----------|
-| `runAsNonRoot: true` | 95% of apps | Prevent root exploits |
-| `fsGroup: 1000` | Apps with PVCs | Consistent file permissions |
+| `runAsNonRoot: true` | All Redis/cache pods | Prevent root exploits |
+| `fsGroup` | Apps with PVCs | Consistent file permissions |
 | `readOnlyRootFilesystem` | Not used | Breaks many apps (tmp writes) |
-| `capabilities: drop: [ALL]` | Not used | Overly restrictive for homelab |
+| `capabilities: drop: [ALL]` | Redis, IT-Tools, ntfy, copyparty, Grafana, VictoriaMetrics, VMAgent | Principle of least privilege |
+| `allowPrivilegeEscalation: false` | Same as above | Prevent privilege escalation |
+| `seccompProfile: RuntimeDefault` | All Redis/cache pods | Restrict syscalls |
 
 #### Privileged Containers ✅ JUSTIFIED
 

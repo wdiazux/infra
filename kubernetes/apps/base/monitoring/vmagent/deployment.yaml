@@ -29,6 +29,11 @@ spec:
         fsGroupChangePolicy: "OnRootMismatch"
       containers:
         - name: vmagent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           image: victoriametrics/vmagent:v1.134.0 # {"$imagepolicy": "flux-system:vmagent"}
           args:
             - --promscrape.config=/config/scrape.yml

@@ -1,39 +1,55 @@
 # Cilium CNI
 
-eBPF-based networking, L2 LoadBalancer, and network observability.
+eBPF-based networking, Gateway API, L2 LoadBalancer, and network observability.
 
 ---
 
 ## Overview
 
-Cilium is installed **automatically** via Talos inlineManifest during `terraform apply`. Manual installation is not required.
+Cilium is deployed in **two stages**:
 
-**What's Automatic:**
-- Cilium CNI deployment
-- L2 LoadBalancer IP pool (10.10.2.11-150)
-- L2 announcement policy
-- Hubble UI and Relay
+1. **Bootstrap** (Terraform inline manifest): Embedded in Talos machine config via `terraform/talos/cilium-inline.tf`. Applied during `terraform apply` to make nodes Ready immediately.
+2. **Ongoing** (FluxCD HelmRelease): `kubernetes/infrastructure/controllers/cilium.yaml` takes over management after bootstrap. FluxCD reconciles any drift.
 
-**Configuration:** `terraform/talos/cilium-inline.tf`
+Both configurations must stay synchronized. The Terraform inline is the initial config; FluxCD is the source of truth for ongoing changes.
 
----
-
-## Key Features
+**Key Features:**
 
 | Feature | Description |
 |---------|-------------|
 | eBPF-based | Kernel-level networking for best performance |
 | kube-proxy replacement | Eliminates iptables overhead |
-| L2 LoadBalancer | No MetalLB needed |
-| Network Policies | Built-in security enforcement |
+| Gateway API | Primary ingress via HTTPRoute/GRPCRoute |
+| L2 LoadBalancer | Cilium L2 announcements (no MetalLB) |
+| Network Policies | Kubernetes + CiliumNetworkPolicy enforcement |
 | Hubble | Network observability and flow visualization |
+
+---
+
+## Gateway API
+
+All web services are accessed via Cilium Gateway API with TLS termination:
+
+- **Gateway IP**: 10.10.2.20 (LoadBalancer via `io.cilium/lb-ipam-ips`)
+- **Protocol**: HTTPS only (TLS termination at Gateway)
+- **Routes**: HTTPRoute and GRPCRoute resources per service
+
+```bash
+# Verify Gateway
+kubectl get gateway -A
+kubectl get httproute -A
+kubectl get grpcroute -A
+
+# Check Cilium Gateway API status
+kubectl -n kube-system exec ds/cilium -- cilium status | grep GatewayAPI
+```
 
 ---
 
 ## LoadBalancer IP Pool
 
 ```yaml
-# Configured automatically
+# Configured automatically via Terraform inline
 apiVersion: cilium.io/v2alpha1
 kind: CiliumLoadBalancerIPPool
 metadata:
@@ -50,9 +66,10 @@ spec:
 
 ## Service URLs
 
-| Service | URL |
-|---------|-----|
-| Hubble UI | http://10.10.2.11 |
+| Service | URL | Access Method |
+|---------|-----|---------------|
+| Hubble UI | https://hubble.home-infra.net | Gateway API |
+| All web UIs | https://*.home-infra.net | Gateway API |
 
 ---
 
@@ -70,6 +87,10 @@ kubectl get ciliumloadbalancerippool
 
 # View L2 announcements
 kubectl get ciliuml2announcementpolicy
+
+# Check Gateway API
+kubectl get gateway -A
+kubectl get httproute -A
 ```
 
 ---
@@ -91,7 +112,7 @@ kubectl get ciliumnetworkpolicies -A
 
 ## Access Hubble UI
 
-The Hubble UI is exposed via LoadBalancer at **http://10.10.2.11**.
+Hubble UI is accessed via Gateway API at **https://hubble.home-infra.net**.
 
 Alternative access via port-forward:
 ```bash
@@ -139,43 +160,32 @@ kubectl -n kube-system exec ds/cilium -- cilium status | grep Masquerading
 talosctl -n 10.10.2.10 get routes
 ```
 
----
-
-## Advanced Configuration
-
-### Network Policies
-
-Cilium automatically enforces Kubernetes NetworkPolicies:
-
-```yaml
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-web
-spec:
-  podSelector:
-    matchLabels:
-      app: web
-  ingress:
-    - from:
-        - podSelector:
-            matchLabels:
-              app: frontend
-      ports:
-        - protocol: TCP
-          port: 80
-```
-
-### WireGuard Encryption
-
-Enable pod-to-pod encryption:
+### Gateway API Routes Not Working
 
 ```bash
-# Requires Talos upgrade
-# Add to Cilium config:
-# encryption.enabled: true
-# encryption.type: wireguard
+# Check Gateway status
+kubectl get gateway -A -o wide
+
+# Check HTTPRoute status
+kubectl get httproute -A -o wide
+
+# Check Cilium envoy logs
+kubectl -n kube-system logs -l app.kubernetes.io/name=cilium-envoy --tail=50
 ```
+
+---
+
+## Configuration Sync
+
+When modifying Cilium configuration, update **both** sources:
+
+| Setting | Terraform (`cilium-inline.tf`) | FluxCD (`cilium.yaml`) |
+|---------|-------------------------------|------------------------|
+| Purpose | Bootstrap (first boot) | Ongoing management |
+| Applied | `terraform apply` | `flux reconcile` |
+| Priority | Initial config only | Source of truth |
+
+**Changes should go to FluxCD first**, then sync to Terraform for new cluster bootstraps.
 
 ---
 
@@ -183,8 +193,9 @@ Enable pod-to-pod encryption:
 
 - [Cilium Documentation](https://docs.cilium.io/)
 - [Talos Cilium Guide](https://www.talos.dev/v1.12/kubernetes-guides/network/deploying-cilium/)
+- [Cilium Gateway API](https://docs.cilium.io/en/stable/network/servicemesh/gateway-api/)
 - [Cilium L2 Announcements](https://docs.cilium.io/en/stable/network/lb-ipam/)
 
 ---
 
-**Last Updated:** 2026-01-15
+**Last Updated:** 2026-01-27

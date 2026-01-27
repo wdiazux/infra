@@ -30,6 +30,11 @@ spec:
         fsGroupChangePolicy: "OnRootMismatch"
       containers:
         - name: grafana
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           image: grafana/grafana:12.3.2 # {"$imagepolicy": "flux-system:grafana"}
           ports:
             - name: http

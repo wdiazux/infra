@@ -174,7 +174,7 @@ variable "ip_configs" {
 variable "dns_servers" {
   type        = list(string)
   description = "DNS servers for cloud-init"
-  default     = ["8.8.8.8", "8.8.4.4"]
+  default     = ["10.10.2.1", "9.9.9.9"]
 }
 
 variable "dns_domain" {

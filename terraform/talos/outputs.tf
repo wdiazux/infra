@@ -69,7 +69,7 @@ output "talos_client_configuration" {
 
 output "kubeconfig" {
   description = "Kubeconfig content"
-  value       = var.auto_bootstrap ? talos_cluster_kubeconfig.cluster[0].kubeconfig_raw : ""
+  value       = var.generate_kubeconfig && var.auto_bootstrap ? talos_cluster_kubeconfig.cluster[0].kubeconfig_raw : ""
   sensitive   = true
 }
 

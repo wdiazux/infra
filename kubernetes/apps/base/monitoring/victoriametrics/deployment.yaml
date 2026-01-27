@@ -31,6 +31,11 @@ spec:
         fsGroupChangePolicy: "OnRootMismatch"
       containers:
         - name: victoriametrics
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           image: victoriametrics/victoria-metrics:v1.134.0 # {"$imagepolicy": "flux-system:victoria-metrics"}
           args:
             - --storageDataPath=/victoria-metrics-data

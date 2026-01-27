@@ -28,6 +28,11 @@ spec:
         fsGroupChangePolicy: "OnRootMismatch"
       containers:
         - name: ntfy
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           image: binwiederhier/ntfy:v2.16.0 # {"$imagepolicy": "flux-system:ntfy"}
           args:
             - serve
@@ -39,7 +44,7 @@ spec:
             - name: TZ
               value: America/El_Salvador
             - name: NTFY_BASE_URL
-              value: "http://ntfy.${DOMAIN_PRIMARY}"
+              value: "https://ntfy.${DOMAIN_PRIMARY}"
             - name: NTFY_CACHE_FILE
               value: "/var/lib/ntfy/cache.db"
             - name: NTFY_AUTH_FILE

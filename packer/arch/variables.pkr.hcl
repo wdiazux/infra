@@ -155,9 +155,14 @@ variable "ssh_username" {
 
 variable "ssh_password" {
   type        = string
-  description = "SSH password for provisioning"
-  default     = "arch"
+  description = "SSH password for Packer provisioning (must match cipassword in import-cloud-image.sh)"
   sensitive   = true
+  # No default: provide via PKR_VAR_ssh_password or .auto.pkrvars.hcl
+
+  validation {
+    condition     = length(var.ssh_password) > 0
+    error_message = "ssh_password must be set. Use: PKR_VAR_ssh_password=arch packer build ."
+  }
 }
 
 variable "ssh_timeout" {

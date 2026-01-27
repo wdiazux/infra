@@ -162,21 +162,25 @@ data "talos_machine_configuration" "node" {
         # Without ALL three components, Longhorn will fail to create volumes.
         # ═══════════════════════════════════════════════════════════════
 
-        # Kernel modules for Longhorn and NVIDIA GPU
+        # Kernel modules for Longhorn storage
         # NOTE: iscsi_generic doesn't exist in Talos kernel - removed
         # iscsi_tcp is sufficient for Longhorn iSCSI functionality
-        # NVIDIA GPU: All four modules required per official Talos docs
-        # https://docs.siderolabs.com/talos/v1.9/configure-your-talos-cluster/hardware-and-drivers/nvidia-gpu-proprietary
         kernel = {
-          modules = [
-            { name = "nbd" },
-            { name = "iscsi_tcp" },
-            { name = "configfs" },
-            { name = "nvidia" },
-            { name = "nvidia_uvm" },
-            { name = "nvidia_drm" },
-            { name = "nvidia_modeset" }
-          ]
+          modules = concat(
+            [
+              { name = "nbd" },
+              { name = "iscsi_tcp" },
+              { name = "configfs" },
+            ],
+            # NVIDIA GPU: All four modules required per official Talos docs
+            # https://docs.siderolabs.com/talos/v1.9/configure-your-talos-cluster/hardware-and-drivers/nvidia-gpu-proprietary
+            var.enable_gpu_passthrough ? [
+              { name = "nvidia" },
+              { name = "nvidia_uvm" },
+              { name = "nvidia_drm" },
+              { name = "nvidia_modeset" },
+            ] : []
+          )
         }
         kubelet = {
           nodeIP = {
@@ -216,12 +220,12 @@ data "talos_machine_configuration" "node" {
     }),
 
     # NVIDIA GPU sysctls (if GPU passthrough is enabled)
-    # NOTE: These sysctls work together with the hostpci configuration
-    # to enable GPU passthrough for AI/ML workloads
+    # Required per official Talos NVIDIA GPU docs:
+    # https://www.talos.dev/v1.11/talos-guides/configuration/nvidia-gpu-proprietary/
     var.enable_gpu_passthrough ? yamlencode({
       machine = {
         sysctls = {
-          "net.core.bpf_jit_harden" = "0"
+          "net.core.bpf_jit_harden" = "1"
         }
       }
     }) : "",

@@ -20,18 +20,22 @@ if [ -z "$SOPS_AGE_KEY_FILE" ]; then
     return 1
 fi
 
-# Decrypt and export Proxmox credentials
+# Decrypt SOPS file once and extract all fields
 echo "Loading Proxmox credentials from SOPS..."
+DECRYPTED=$(sops -d "$SECRETS_FILE")
 
-export PROXMOX_URL=$(sops -d "$SECRETS_FILE" | yq '.proxmox_url')
-export PROXMOX_TOKEN=$(sops -d "$SECRETS_FILE" | yq '.proxmox_token_secret')
-export PROXMOX_NODE=$(sops -d "$SECRETS_FILE" | yq '.proxmox_node')
-export PROXMOX_STORAGE_POOL=$(sops -d "$SECRETS_FILE" | yq '.proxmox_storage_pool')
+export PROXMOX_URL=$(echo "$DECRYPTED" | yq '.proxmox_url')
+export PROXMOX_TOKEN=$(echo "$DECRYPTED" | yq '.proxmox_token_secret')
+export PROXMOX_NODE=$(echo "$DECRYPTED" | yq '.proxmox_node')
+export PROXMOX_STORAGE_POOL=$(echo "$DECRYPTED" | yq '.proxmox_storage_pool')
 
 # Construct full token string for Terraform/Packer
-PROXMOX_USER=$(sops -d "$SECRETS_FILE" | yq '.proxmox_user')
-PROXMOX_TOKEN_ID=$(sops -d "$SECRETS_FILE" | yq '.proxmox_token_id')
+PROXMOX_USER=$(echo "$DECRYPTED" | yq '.proxmox_user')
+PROXMOX_TOKEN_ID=$(echo "$DECRYPTED" | yq '.proxmox_token_id')
 export PROXMOX_API_TOKEN="PVEAPIToken=${PROXMOX_USER}!${PROXMOX_TOKEN_ID}=${PROXMOX_TOKEN}"
+
+# Clear decrypted data from memory
+unset DECRYPTED
 
 echo "✓ Proxmox credentials loaded:"
 echo "  PROXMOX_URL: $PROXMOX_URL"

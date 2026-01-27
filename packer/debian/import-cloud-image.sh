@@ -4,10 +4,10 @@
 #
 # This is a ONE-TIME setup. After creating the base VM, use Packer to customize it.
 
-set -e
+set -euo pipefail
 
 # Configuration
-VM_ID=${1:-9110}
+VM_ID="${1:-9110}"
 VM_NAME="debian-13-cloud-base"
 DEBIAN_VERSION="13"
 DEBIAN_RELEASE="trixie"
@@ -18,10 +18,21 @@ BRIDGE="vmbr0"
 CLOUD_IMAGE_URL="https://cloud.debian.org/images/cloud/${DEBIAN_RELEASE}/latest/debian-${DEBIAN_VERSION}-genericcloud-amd64.qcow2"
 CLOUD_IMAGE_FILE="debian-${DEBIAN_VERSION}-genericcloud-amd64.qcow2"
 
+# Cleanup downloaded files on failure
+cleanup() { rm -f "${CLOUD_IMAGE_FILE}" SHA512SUMS; }
+trap cleanup ERR
+
 echo "==> Importing Debian ${DEBIAN_VERSION} (${DEBIAN_RELEASE}) Cloud Image to Proxmox"
 echo "    VM ID: ${VM_ID}"
 echo "    VM Name: ${VM_NAME}"
 echo "    Storage: ${STORAGE_POOL}"
+
+# Check if VM already exists
+if qm status "${VM_ID}" &>/dev/null; then
+    echo "ERROR: VM ${VM_ID} already exists. Please remove it first or use a different ID."
+    echo "       To remove: qm destroy ${VM_ID}"
+    exit 1
+fi
 
 # Download cloud image
 echo "==> Downloading cloud image..."
@@ -53,60 +64,63 @@ virt-customize -a "${CLOUD_IMAGE_FILE}" \
 
 # Create VM
 echo "==> Creating VM ${VM_ID}..."
-qm create ${VM_ID} \
+qm create "${VM_ID}" \
     --name "${VM_NAME}" \
     --memory 2048 \
     --cores 2 \
-    --net0 virtio,bridge=${BRIDGE}
+    --net0 "virtio,bridge=${BRIDGE}"
 
 # Import disk
 echo "==> Importing disk to VM..."
-qm importdisk ${VM_ID} "${CLOUD_IMAGE_FILE}" ${STORAGE_POOL}
+qm importdisk "${VM_ID}" "${CLOUD_IMAGE_FILE}" "${STORAGE_POOL}"
 
 # Attach disk to VM
 echo "==> Attaching disk to VM..."
-qm set ${VM_ID} --scsihw virtio-scsi-single --scsi0 ${STORAGE_POOL}:vm-${VM_ID}-disk-0
+qm set "${VM_ID}" --scsihw virtio-scsi-single --scsi0 "${STORAGE_POOL}:vm-${VM_ID}-disk-0"
 
 # Configure boot
 echo "==> Configuring boot order..."
-qm set ${VM_ID} --boot order=scsi0
+qm set "${VM_ID}" --boot order=scsi0
 
 # Add CloudInit drive
 echo "==> Adding CloudInit drive..."
-qm set ${VM_ID} --ide2 ${STORAGE_POOL}:cloudinit
+qm set "${VM_ID}" --ide2 "${STORAGE_POOL}:cloudinit"
 
 # Configure serial console
 echo "==> Configuring serial console..."
-qm set ${VM_ID} --serial0 socket --vga serial0
+qm set "${VM_ID}" --serial0 socket --vga serial0
 
 # Enable QEMU guest agent
 echo "==> Enabling QEMU guest agent..."
-qm set ${VM_ID} --agent enabled=1
+qm set "${VM_ID}" --agent enabled=1
 
 # Set default CloudInit user
 echo "==> Configuring default CloudInit user..."
-qm set ${VM_ID} --ciuser debian --cipassword debian
+qm set "${VM_ID}" --ciuser debian --cipassword debian
 
 # Configure network to use DHCP
 echo "==> Configuring network to use DHCP..."
-qm set ${VM_ID} --ipconfig0 ip=dhcp
+qm set "${VM_ID}" --ipconfig0 ip=dhcp
 
 # Add SSH public key if available
 echo "==> Adding SSH public key..."
-if [ -f "$HOME/.ssh/id_rsa.pub" ]; then
-    qm set ${VM_ID} --sshkeys "$HOME/.ssh/id_rsa.pub"
+if [ -f "$HOME/.ssh/id_ed25519.pub" ]; then
+    qm set "${VM_ID}" --sshkeys "$HOME/.ssh/id_ed25519.pub"
+    echo "    SSH key added from $HOME/.ssh/id_ed25519.pub"
+elif [ -f "$HOME/.ssh/id_rsa.pub" ]; then
+    qm set "${VM_ID}" --sshkeys "$HOME/.ssh/id_rsa.pub"
     echo "    SSH key added from $HOME/.ssh/id_rsa.pub"
 else
-    echo "    Warning: No SSH key found at $HOME/.ssh/id_rsa.pub - password auth only"
+    echo "    Warning: No SSH key found - password auth only"
 fi
 
 # Resize disk (optional, increases from ~2GB to specified size)
 echo "==> Resizing disk to 20GB..."
-qm resize ${VM_ID} scsi0 +18G
+qm resize "${VM_ID}" scsi0 +18G
 
 # Set CPU type to host (better performance)
 echo "==> Setting CPU type to host..."
-qm set ${VM_ID} --cpu host
+qm set "${VM_ID}" --cpu host
 
 echo ""
 echo "==> ✅ Debian ${DEBIAN_VERSION} (${DEBIAN_RELEASE}) cloud image imported successfully!"

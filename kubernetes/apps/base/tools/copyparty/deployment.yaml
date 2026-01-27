@@ -1,5 +1,8 @@
 # Copyparty - Web-based file browser for NFS storage
 #
+# IMAGE POLICY EXCEPTION: Uses :latest tag because upstream does not publish
+# semver-tagged releases. Monitor https://github.com/9001/copyparty/releases
+#
 # https://github.com/9001/copyparty
 # Provides browsing access to all NFS datasets in the cluster.
 apiVersion: apps/v1
@@ -30,6 +33,11 @@ spec:
         fsGroupChangePolicy: "OnRootMismatch"
       containers:
         - name: copyparty
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           image: copyparty/ac:latest
           args:
             # Volume definitions: -v /localpath:/urlpath:permissions

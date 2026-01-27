@@ -164,12 +164,15 @@ spec:
           envoy:
             - NET_ADMIN
             - SYS_ADMIN
-    # Ingress Controller
+    # Ingress Controller - DISABLED (replaced by Gateway API)
+    # Legacy Ingress resources migrated to HTTPRoute/GRPCRoute
     ingressController:
+      enabled: false
+    # Gateway API - Primary ingress method
+    # Handles all HTTP/HTTPS/gRPC traffic via HTTPRoute and GRPCRoute
+    gatewayAPI:
       enabled: true
-      default: true
-      loadbalancerMode: shared
-      service:
-        type: LoadBalancer
-        annotations:
-          io.cilium/lb-ipam-ips: "${IP_INGRESS}"
+      # Enable appProtocol for backend HTTP/2 selection (GEP-1911)
+      enableAppProtocol: true
+      # Enable ALPN for HTTP/2 negotiation
+      enableAlpn: true

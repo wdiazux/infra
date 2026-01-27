@@ -1,6 +1,6 @@
 # copyparty HTTPRoute (Gateway API)
 #
-# Parallel to existing Ingress for migration testing.
+# Routes traffic via Cilium Gateway API with TLS termination.
 # Uses shared Gateway at 10.10.2.20 for TLS termination.
 ---
 apiVersion: gateway.networking.k8s.io/v1

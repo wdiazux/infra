@@ -76,7 +76,7 @@ spec:
               value: "6379"
       containers:
         - name: affine
-          image: ghcr.io/toeverything/affine:2026.1.9-canary.907 # {"$imagepolicy": "flux-system:affine"}
+          image: ghcr.io/toeverything/affine:2026.1.21-canary.908 # {"$imagepolicy": "flux-system:affine"}
           ports:
             - name: http
               containerPort: 3010
@@ -87,7 +87,7 @@ spec:
             - name: NODE_ENV
               value: "production"
             - name: AFFINE_SERVER_EXTERNAL_URL
-              value: "http://affine.${DOMAIN_PRIMARY}"
+              value: "https://affine.${DOMAIN_PRIMARY}"
             - name: AFFINE_SERVER_HOST
               value: "0.0.0.0"
             - name: AFFINE_SERVER_PORT
