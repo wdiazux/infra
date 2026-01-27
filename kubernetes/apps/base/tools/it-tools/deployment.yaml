@@ -29,19 +29,10 @@ spec:
         app.kubernetes.io/component: server
         app.kubernetes.io/part-of: tools
     spec:
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 101
-        runAsGroup: 101
-        seccompProfile:
-          type: RuntimeDefault
+      # Note: it-tools uses nginx which requires root for cache dirs and port 80.
+      # Container-level hardening not applied (nginx needs write to /var/cache/nginx).
       containers:
         - name: it-tools
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
           image: corentinth/it-tools:latest
           ports:
             - name: http
