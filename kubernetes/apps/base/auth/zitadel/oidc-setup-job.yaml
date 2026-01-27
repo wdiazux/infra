@@ -9,8 +9,8 @@
 # - Automated pod restarts: only restarts pods when secrets change
 #
 # Applications managed:
-# - grafana (monitoring) - PKCE
-# - forgejo (forgejo) - PKCE
+# - grafana (monitoring) - Client Secret
+# - forgejo (forgejo) - Client Secret
 # - immich (media) - Client Secret
 # - open-webui (ai) - Client Secret
 # - paperless (management) - Client Secret

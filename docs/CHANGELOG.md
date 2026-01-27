@@ -5,15 +5,24 @@ All notable changes to this project are documented here.
 ## 2026
 
 ### 2026-01-27
+- Paperless OIDC fixes
+  - Fixed CSRF 403 on login (`PAPERLESS_URL` was `http://` instead of `https://`)
+  - Fixed env var ordering for Kubernetes `$(VAR)` substitution (OIDC credentials must be defined before `PAPERLESS_SOCIALACCOUNT_PROVIDERS`)
+  - Enabled social auto signup and email authentication for account linking
+  - Added `PAPERLESS_ADMIN_MAIL` to SOPS secrets (prevents email mismatch on fresh deploy)
+- Immich OIDC fixes
+  - Changed Zitadel OIDC app auth method from BASIC to POST (`client_secret_post`)
+  - Changed `storageLabelClaim` from `preferred_username` to `email`
+  - Cleared stale `oauthId` in database to allow re-linking by email
+- OIDC sync job fixes
+  - Fixed sync job recreating ALL apps every 15 minutes (Zitadel API does not return `authMethodType` in responses, causing constant mismatch detection)
+  - Replaced compare-and-recreate logic with always-update-via-PUT (idempotent, no credential rotation)
 - Forgejo OIDC fixes
   - Changed all Zitadel OIDC apps from PKCE to Client Secret (BASIC) auth method
   - Fixed Forgejo Helm chart `existingSecret` usage (removed literal `key` field)
   - Fixed redirect URI case mismatch (`Zitadel` vs `zitadel` in callback path)
   - Added `SAME_SITE=lax` to Forgejo session config for cross-site OAuth2 redirects
   - Added `USERNAME=email` to extract username from email claim
-- OIDC setup job improvements
-  - Added auth method mismatch detection (auto-deletes and recreates apps)
-  - Added OIDC config sync for existing apps (redirect URIs updated on every run)
 
 ### 2026-01-26
 - Terraform code organization and cleanup
