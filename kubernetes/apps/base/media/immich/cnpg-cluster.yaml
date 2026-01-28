@@ -15,7 +15,6 @@ spec:
   postgresql:
     shared_preload_libraries:
       - "vchord.so"
-      - "vectors.so"
     parameters:
       max_wal_size: "2GB"
       shared_buffers: "512MB"
@@ -26,7 +25,6 @@ spec:
       owner: immich
       postInitSQL:
         - CREATE EXTENSION IF NOT EXISTS vchord CASCADE;
-        - CREATE EXTENSION IF NOT EXISTS vector;
   storage:
     size: 10Gi
     storageClass: longhorn
