@@ -64,7 +64,7 @@ spec:
     ollamaUrls:
       - http://ollama:11434
 
-    # Image generation with ComfyUI
+    # Image generation with ComfyUI + OIDC via env vars
     extraEnvVars:
       - name: ENABLE_IMAGE_GENERATION
         value: "true"
@@ -77,19 +77,33 @@ spec:
           secretKeyRef:
             name: open-webui-secrets
             key: WEBUI_SECRET_KEY
+      # Zitadel OIDC Authentication
+      - name: ENABLE_OAUTH_SIGNUP
+        value: "true"
+      - name: OAUTH_PROVIDER_NAME
+        value: "Zitadel"
+      - name: OPENID_PROVIDER_URL
+        value: "https://auth.home-infra.net/.well-known/openid-configuration"
+      - name: OAUTH_CLIENT_ID
+        valueFrom:
+          secretKeyRef:
+            name: open-webui-oidc-secrets
+            key: client-id
+            optional: true
+      - name: OAUTH_CLIENT_SECRET
+        valueFrom:
+          secretKeyRef:
+            name: open-webui-oidc-secrets
+            key: client-secret
+            optional: true
+      - name: OAUTH_SCOPES
+        value: "openid profile email"
+      - name: OAUTH_MERGE_ACCOUNTS_BY_EMAIL
+        value: "true"
 
-    # Zitadel OIDC
+    # Disable chart's SSO (using extraEnvVars instead for flexible secret refs)
     sso:
-      enabled: true
-      oidc:
-        enabled: true
-        providerUrl: "https://auth.home-infra.net/.well-known/openid-configuration"
-        scopes: "openid profile email"
-        mergeAccountsByEmail: true
-        existingSecret: open-webui-oidc-secrets
-        secretKeys:
-          clientId: client-id
-          clientSecret: client-secret
+      enabled: false
 
     # Persistence
     persistence:
