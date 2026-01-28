@@ -32,12 +32,12 @@ spec:
       initContainers:
         # Wait for PostgreSQL to be ready
         - name: wait-for-db
-          image: pgvector/pgvector:pg17
+          image: ghcr.io/cloudnative-pg/postgresql:17.5
           command:
             - sh
             - -c
             - |
-              until pg_isready -h affine-postgres -p 5432 -U affine; do
+              until pg_isready -h affine-postgresql-rw -p 5432 -U affine; do
                 echo "Waiting for PostgreSQL..."
                 sleep 2
               done
@@ -66,10 +66,10 @@ spec:
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: affine-secrets
-                  key: POSTGRES_PASSWORD
+                  name: affine-postgresql-app
+                  key: password
             - name: DATABASE_URL
-              value: "postgresql://affine:$(POSTGRES_PASSWORD)@affine-postgres:5432/affine"
+              value: "postgresql://affine:$(POSTGRES_PASSWORD)@affine-postgresql-rw:5432/affine"
             - name: REDIS_SERVER_HOST
               value: "affine-redis"
             - name: REDIS_SERVER_PORT
@@ -92,14 +92,14 @@ spec:
               value: "0.0.0.0"
             - name: AFFINE_SERVER_PORT
               value: "3010"
-            # Database - construct URL with password from secret
+            # Database (CNPG PostgreSQL with pgvector)
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: affine-secrets
-                  key: POSTGRES_PASSWORD
+                  name: affine-postgresql-app
+                  key: password
             - name: DATABASE_URL
-              value: "postgresql://affine:$(POSTGRES_PASSWORD)@affine-postgres:5432/affine"
+              value: "postgresql://affine:$(POSTGRES_PASSWORD)@affine-postgresql-rw:5432/affine"
             # Redis
             - name: REDIS_SERVER_HOST
               value: "affine-redis"

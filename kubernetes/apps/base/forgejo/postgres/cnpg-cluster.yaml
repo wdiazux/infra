@@ -1,0 +1,56 @@
+# Forgejo PostgreSQL Cluster (CloudNative-PG)
+#
+# PostgreSQL 17 for Forgejo Git server.
+# Managed by the CloudNative-PG operator.
+# https://cloudnative-pg.io/
+#
+# Replaces Bitnami PostgreSQL Helm chart (terraform/talos/postgresql.tf)
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: forgejo-postgresql
+  namespace: forgejo
+spec:
+  instances: 1
+  imageName: ghcr.io/cloudnative-pg/postgresql:17.5
+
+  postgresql:
+    parameters:
+      max_wal_size: "1GB"
+      shared_buffers: "256MB"
+      wal_compression: "on"
+
+  bootstrap:
+    initdb:
+      database: forgejo
+      owner: forgejo
+      secret:
+        name: forgejo-postgresql-bootstrap
+
+  storage:
+    size: 5Gi
+    storageClass: longhorn
+
+  resources:
+    requests:
+      memory: 128Mi
+    limits:
+      memory: 512Mi
+
+  backup:
+    barmanObjectStore:
+      destinationPath: s3://cnpg-backups/forgejo/
+      endpointURL: http://minio.backup.svc.cluster.local:9000
+      s3Credentials:
+        accessKeyId:
+          name: cnpg-minio-credentials
+          key: ACCESS_KEY_ID
+        secretAccessKey:
+          name: cnpg-minio-credentials
+          key: ACCESS_SECRET_KEY
+      wal:
+        compression: gzip
+      data:
+        compression: gzip
+    retentionPolicy: "14d"

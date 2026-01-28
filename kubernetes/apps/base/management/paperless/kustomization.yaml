@@ -7,10 +7,18 @@ kind: Kustomization
 
 resources:
   - secret.enc.yaml
+  # Legacy PostgreSQL (keep for rollback, remove after migration verified)
   - postgres-statefulset.yaml
+  # CNPG PostgreSQL
+  - cnpg-bootstrap-credentials.enc.yaml
+  - cnpg-minio-credentials.enc.yaml
+  - cnpg-cluster.yaml
+  - cnpg-scheduled-backup.yaml
+  # Supporting services
   - redis-deployment.yaml
   - tika-deployment.yaml
   - gotenberg-deployment.yaml
+  # Application
   - server-deployment.yaml
   - services.yaml
   - pvc.yaml

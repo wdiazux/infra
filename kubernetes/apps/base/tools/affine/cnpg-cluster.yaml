@@ -1,0 +1,58 @@
+# Affine PostgreSQL Cluster (CloudNative-PG)
+#
+# PostgreSQL 17 with pgvector extension for Affine knowledge base.
+# Managed by the CloudNative-PG operator.
+# https://cloudnative-pg.io/
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: affine-postgresql
+  namespace: tools
+spec:
+  instances: 1
+  imageName: ghcr.io/cloudnative-pg/postgresql:17.5
+
+  postgresql:
+    shared_preload_libraries:
+      - "vector"
+    parameters:
+      max_wal_size: "1GB"
+      shared_buffers: "256MB"
+      wal_compression: "on"
+
+  bootstrap:
+    initdb:
+      database: affine
+      owner: affine
+      secret:
+        name: affine-postgresql-bootstrap
+      postInitSQL:
+        - CREATE EXTENSION IF NOT EXISTS vector;
+
+  storage:
+    size: 5Gi
+    storageClass: longhorn
+
+  resources:
+    requests:
+      memory: 128Mi
+    limits:
+      memory: 512Mi
+
+  backup:
+    barmanObjectStore:
+      destinationPath: s3://cnpg-backups/affine/
+      endpointURL: http://minio.backup.svc.cluster.local:9000
+      s3Credentials:
+        accessKeyId:
+          name: cnpg-minio-credentials
+          key: ACCESS_KEY_ID
+        secretAccessKey:
+          name: cnpg-minio-credentials
+          key: ACCESS_SECRET_KEY
+      wal:
+        compression: gzip
+      data:
+        compression: gzip
+    retentionPolicy: "14d"

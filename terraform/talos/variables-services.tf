@@ -106,8 +106,14 @@ variable "enable_forgejo" {
   default     = true
 }
 
+variable "enable_bitnami_postgresql" {
+  description = "Enable Bitnami PostgreSQL for Forgejo (set false when using CNPG)"
+  type        = bool
+  default     = false  # Using CNPG instead (kubernetes/apps/base/forgejo/postgres/)
+}
+
 variable "postgresql_version" {
-  description = "PostgreSQL Helm chart version (Bitnami)"
+  description = "PostgreSQL Helm chart version (Bitnami) - only used if enable_bitnami_postgresql=true"
   type        = string
   default     = "18.2.0"
 }

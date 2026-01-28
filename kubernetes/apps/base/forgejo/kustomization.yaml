@@ -8,3 +8,4 @@ kind: Kustomization
 resources:
   - httproute.yaml
   - runner
+  - postgres

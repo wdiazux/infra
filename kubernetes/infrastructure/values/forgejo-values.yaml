@@ -63,7 +63,8 @@ gitea:
 
     database:
       DB_TYPE: postgres
-      HOST: forgejo-postgres-postgresql.forgejo.svc.cluster.local:5432
+      # CNPG PostgreSQL (managed by CloudNative-PG operator)
+      HOST: forgejo-postgresql-rw.forgejo.svc.cluster.local:5432
       NAME: forgejo
       # USER and PASSWD are set via Terraform from SOPS secrets
 
@@ -173,9 +174,10 @@ resources:
     memory: 512Mi
 
 # ============================================================================
-# PostgreSQL (Disabled - using external Bitnami PostgreSQL)
+# PostgreSQL (Disabled - using CNPG)
 # ============================================================================
-# PostgreSQL is deployed separately via terraform/talos/postgresql.tf
+# PostgreSQL is managed by CloudNative-PG operator.
+# See: kubernetes/apps/base/forgejo/postgres/cnpg-cluster.yaml
 # Database connection configured above in gitea.config.database
 
 postgresql:

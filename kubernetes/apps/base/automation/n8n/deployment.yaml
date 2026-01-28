@@ -37,11 +37,11 @@ spec:
               containerPort: 5678
               protocol: TCP
           env:
-            # Database
+            # Database (CNPG PostgreSQL)
             - name: DB_TYPE
               value: postgresdb
             - name: DB_POSTGRESDB_HOST
-              value: n8n-postgres
+              value: n8n-postgresql-rw
             - name: DB_POSTGRESDB_PORT
               value: "5432"
             - name: DB_POSTGRESDB_DATABASE
@@ -51,8 +51,8 @@ spec:
             - name: DB_POSTGRESDB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: n8n-postgres-secrets
-                  key: POSTGRES_PASSWORD
+                  name: n8n-postgresql-app
+                  key: password
             # n8n Config
             - name: N8N_HOST
               value: "0.0.0.0"

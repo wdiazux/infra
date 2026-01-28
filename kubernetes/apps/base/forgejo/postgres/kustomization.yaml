@@ -1,13 +1,11 @@
-# PostgreSQL Kustomization
+# Forgejo PostgreSQL (CloudNative-PG)
+#
+# PostgreSQL database for Forgejo, managed by CloudNative-PG operator.
+# Replaces Bitnami PostgreSQL Helm chart (terraform/talos/postgresql.tf)
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  # Legacy PostgreSQL (keep for rollback, remove after migration verified)
-  - statefulset.yaml
-  - service.yaml
-  - secret.enc.yaml
-  # CNPG PostgreSQL
   - cnpg-bootstrap-credentials.enc.yaml
   - cnpg-minio-credentials.enc.yaml
   - cnpg-cluster.yaml

@@ -46,7 +46,8 @@ spec:
           Enabled: false  # TLS terminated at Ingress
         Database:
           Postgres:
-            Host: zitadel-postgres.auth.svc.cluster.local
+            # CNPG PostgreSQL (managed by CloudNative-PG operator)
+            Host: zitadel-postgresql-rw.auth.svc.cluster.local
             Port: 5432
             Database: zitadel
             User:
@@ -86,16 +87,17 @@ spec:
     env:
       - name: ZITADEL_FIRSTINSTANCE_ORG_NAME
         value: "HOMELAB"
+      # CNPG PostgreSQL password (from CNPG-generated secret)
       - name: ZITADEL_DATABASE_POSTGRES_USER_PASSWORD
         valueFrom:
           secretKeyRef:
-            name: zitadel-postgres-secrets
-            key: POSTGRES_PASSWORD
+            name: zitadel-postgresql-app
+            key: password
       - name: ZITADEL_DATABASE_POSTGRES_ADMIN_PASSWORD
         valueFrom:
           secretKeyRef:
-            name: zitadel-postgres-secrets
-            key: POSTGRES_PASSWORD
+            name: zitadel-postgresql-app
+            key: password
       - name: ZITADEL_CACHES_CONNECTOR_REDIS_PASSWORD
         valueFrom:
           secretKeyRef:

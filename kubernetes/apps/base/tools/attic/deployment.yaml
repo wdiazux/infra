@@ -36,12 +36,12 @@ spec:
       initContainers:
         # Wait for PostgreSQL to be ready
         - name: wait-for-db
-          image: postgres:16-alpine
+          image: ghcr.io/cloudnative-pg/postgresql:17.5
           command:
             - sh
             - -c
             - |
-              until pg_isready -h attic-db -p 5432 -U attic; do
+              until pg_isready -h attic-postgresql-rw -p 5432 -U attic; do
                 echo "Waiting for PostgreSQL..."
                 sleep 2
               done
@@ -60,10 +60,10 @@ spec:
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: attic-db-secrets
-                  key: POSTGRES_PASSWORD
+                  name: attic-postgresql-app
+                  key: password
             - name: ATTIC_SERVER_DATABASE_URL
-              value: "postgresql://attic:$(POSTGRES_PASSWORD)@attic-db:5432/attic"
+              value: "postgresql://attic:$(POSTGRES_PASSWORD)@attic-postgresql-rw:5432/attic"
             - name: ATTIC_SERVER_TOKEN_HS256_SECRET_BASE64
               valueFrom:
                 secretKeyRef:

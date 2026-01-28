@@ -1,0 +1,16 @@
+# n8n PostgreSQL Scheduled Backup
+#
+# Daily backups at 3:00 AM.
+# Backups are stored in MinIO (cnpg-backups bucket).
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: n8n-postgresql-daily
+  namespace: automation
+spec:
+  # Daily at 3:00 AM (cron format with seconds)
+  schedule: "0 0 3 * * *"
+  backupOwnerReference: self
+  cluster:
+    name: n8n-postgresql

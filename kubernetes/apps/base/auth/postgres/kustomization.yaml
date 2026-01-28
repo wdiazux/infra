@@ -1,10 +1,17 @@
 # Zitadel PostgreSQL Kustomization
 #
 # PostgreSQL 17 database for Zitadel identity provider.
+# Managed by CloudNative-PG operator.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
+  # Legacy PostgreSQL (keep for rollback, remove after migration verified)
   - secret.enc.yaml
   - statefulset.yaml
   - service.yaml
+  # CNPG PostgreSQL
+  - cnpg-bootstrap-credentials.enc.yaml
+  - cnpg-minio-credentials.enc.yaml
+  - cnpg-cluster.yaml
+  - cnpg-scheduled-backup.yaml

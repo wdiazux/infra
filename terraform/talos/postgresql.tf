@@ -1,7 +1,10 @@
-# PostgreSQL for Forgejo
+# PostgreSQL for Forgejo (Legacy - Bitnami Helm Chart)
 #
-# Deploys Bitnami PostgreSQL as a separate Helm release for Forgejo.
-# This provides better stability and allows independent lifecycle management.
+# DEPRECATED: Use CNPG instead (kubernetes/apps/base/forgejo/postgres/)
+# Set enable_bitnami_postgresql=false to use CNPG (default).
+#
+# This Bitnami PostgreSQL deployment is kept for migration purposes.
+# After migrating data to CNPG, this can be removed entirely.
 #
 # Prerequisites:
 # - Longhorn storage installed
@@ -12,7 +15,7 @@
 # ============================================================================
 
 resource "helm_release" "postgresql" {
-  count = var.enable_forgejo ? 1 : 0
+  count = var.enable_bitnami_postgresql ? 1 : 0
 
   name             = "forgejo-postgres"
   repository       = "oci://registry-1.docker.io/bitnamicharts"
@@ -90,7 +93,7 @@ resource "helm_release" "postgresql" {
 # ============================================================================
 
 resource "null_resource" "wait_for_postgresql" {
-  count = var.enable_forgejo ? 1 : 0
+  count = var.enable_bitnami_postgresql ? 1 : 0
 
   provisioner "local-exec" {
     command = <<-EOT

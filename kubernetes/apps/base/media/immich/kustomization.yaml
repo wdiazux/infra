@@ -8,7 +8,9 @@ kind: Kustomization
 
 resources:
   - secret.enc.yaml
+  - cnpg-minio-credentials.enc.yaml
   - cnpg-cluster.yaml
+  - cnpg-scheduled-backup.yaml
   - helmrelease.yaml
   - pvc.yaml
   - httproute.yaml

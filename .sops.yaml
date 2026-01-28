@@ -21,6 +21,18 @@ creation_rules:
     age: >-
       age18g78xp0aexuelev3wrj3uf2jgfnkdn9ajcc0uwq908a6pe3ewfus69mj20
 
+  # Encrypt CNPG credentials (only stringData/data values)
+  - path_regex: kubernetes/apps/.*/cnpg-.*-credentials\.yaml$
+    encrypted_regex: ^(data|stringData)$
+    age: >-
+      age18g78xp0aexuelev3wrj3uf2jgfnkdn9ajcc0uwq908a6pe3ewfus69mj20
+
+  # Encrypt CNPG bootstrap credentials (only stringData/data values)
+  - path_regex: kubernetes/apps/.*/cnpg-bootstrap-credentials\.yaml$
+    encrypted_regex: ^(data|stringData)$
+    age: >-
+      age18g78xp0aexuelev3wrj3uf2jgfnkdn9ajcc0uwq908a6pe3ewfus69mj20
+
   # Encrypt all files with .enc.yaml extension anywhere in the repo
   - path_regex: .*\.enc\.yaml$
     age: >-

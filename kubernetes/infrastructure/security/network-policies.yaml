@@ -420,7 +420,7 @@ spec:
           port: 443
 
 ---
-# CloudNative-PG PostgreSQL pods need DB ingress + operator status checks
+# CloudNative-PG PostgreSQL for Immich (VectorChord)
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -432,6 +432,7 @@ spec:
       cnpg.io/cluster: immich-postgres
   policyTypes:
     - Ingress
+    - Egress
   ingress:
     # Allow PostgreSQL connections from Immich server
     - from:
@@ -442,7 +443,7 @@ spec:
       ports:
         - protocol: TCP
           port: 5432
-    # Allow CNPG operator status checks (HTTP health endpoint)
+    # Allow CNPG operator health checks
     - from:
         - namespaceSelector:
             matchLabels:
@@ -450,6 +451,26 @@ spec:
       ports:
         - protocol: TCP
           port: 8000
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow MinIO for backups
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: backup
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: minio
+      ports:
+        - protocol: TCP
+          port: 9000
 
 ---
 # =============================================================================
@@ -502,11 +523,11 @@ spec:
       ports:
         - protocol: UDP
           port: 53
-    # Allow PostgreSQL
+    # Allow PostgreSQL (CloudNative-PG)
     - to:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: paperless-postgres
+              cnpg.io/cluster: paperless-postgresql
       ports:
         - protocol: TCP
           port: 5432
@@ -553,15 +574,16 @@ spec:
           port: 8080
 
 ---
+# CloudNative-PG PostgreSQL for Paperless
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: management-paperless-postgres-allow
+  name: management-paperless-postgresql-allow
   namespace: management
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: paperless-postgres
+      cnpg.io/cluster: paperless-postgresql
   policyTypes:
     - Ingress
     - Egress
@@ -574,8 +596,16 @@ spec:
       ports:
         - protocol: TCP
           port: 5432
+    # Allow CNPG operator health checks
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: TCP
+          port: 8000
   egress:
-    # Allow DNS (needed for resolving hostnames)
+    # Allow DNS
     - to:
         - namespaceSelector:
             matchLabels:
@@ -583,6 +613,17 @@ spec:
       ports:
         - protocol: UDP
           port: 53
+    # Allow MinIO for backups
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: backup
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: minio
+      ports:
+        - protocol: TCP
+          port: 9000
 
 ---
 apiVersion: networking.k8s.io/v1
@@ -720,6 +761,53 @@ spec:
       ports:
         - protocol: TCP
           port: 9000
+    # Allow from CloudNative-PG clusters (all namespaces) for backups
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: media
+          podSelector:
+            matchLabels:
+              cnpg.io/cluster: immich-postgres
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: auth
+          podSelector:
+            matchLabels:
+              cnpg.io/cluster: zitadel-postgresql
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: forgejo
+          podSelector:
+            matchLabels:
+              cnpg.io/cluster: forgejo-postgresql
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: management
+          podSelector:
+            matchLabels:
+              cnpg.io/cluster: paperless-postgresql
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: tools
+          podSelector:
+            matchLabels:
+              cnpg.io/cluster: attic-postgresql
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: tools
+          podSelector:
+            matchLabels:
+              cnpg.io/cluster: affine-postgresql
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: automation
+          podSelector:
+            matchLabels:
+              cnpg.io/cluster: n8n-postgresql
+      ports:
+        - protocol: TCP
+          port: 9000
     # Allow MinIO console access from LoadBalancer (Cilium L2 - host network traffic)
     - ports:
         - protocol: TCP
@@ -817,12 +905,11 @@ spec:
       ports:
         - protocol: UDP
           port: 53
-    # Allow PostgreSQL
+    # Allow PostgreSQL (CloudNative-PG)
     - to:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: postgresql
-              app.kubernetes.io/instance: forgejo-postgres
+              cnpg.io/cluster: forgejo-postgresql
       ports:
         - protocol: TCP
           port: 5432
@@ -832,6 +919,58 @@ spec:
       ports:
         - protocol: TCP
           port: 443
+
+---
+# CloudNative-PG PostgreSQL for Forgejo
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: forgejo-postgresql-allow
+  namespace: forgejo
+spec:
+  podSelector:
+    matchLabels:
+      cnpg.io/cluster: forgejo-postgresql
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from Forgejo server
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: forgejo
+      ports:
+        - protocol: TCP
+          port: 5432
+    # Allow CNPG operator health checks
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: TCP
+          port: 8000
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow MinIO for backups
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: backup
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: minio
+      ports:
+        - protocol: TCP
+          port: 9000
 
 ---
 apiVersion: networking.k8s.io/v1
@@ -916,6 +1055,58 @@ spec:
   egress:
     # Allow all egress (workflow automation needs external API access)
     - {}
+
+---
+# CloudNative-PG PostgreSQL for n8n
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: automation-n8n-postgresql-allow
+  namespace: automation
+spec:
+  podSelector:
+    matchLabels:
+      cnpg.io/cluster: n8n-postgresql
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from n8n
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: n8n
+      ports:
+        - protocol: TCP
+          port: 5432
+    # Allow CNPG operator health checks
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: TCP
+          port: 8000
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow MinIO for backups
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: backup
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: minio
+      ports:
+        - protocol: TCP
+          port: 9000
 
 ---
 # =============================================================================
@@ -1433,25 +1624,26 @@ spec:
       ports:
         - protocol: UDP
           port: 53
-    # Allow PostgreSQL
+    # Allow PostgreSQL (CloudNative-PG)
     - to:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: attic-db
+              cnpg.io/cluster: attic-postgresql
       ports:
         - protocol: TCP
           port: 5432
 
 ---
+# CloudNative-PG PostgreSQL for Attic
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: tools-attic-db-allow
+  name: tools-attic-postgresql-allow
   namespace: tools
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: attic-db
+      cnpg.io/cluster: attic-postgresql
   policyTypes:
     - Ingress
     - Egress
@@ -1464,6 +1656,14 @@ spec:
       ports:
         - protocol: TCP
           port: 5432
+    # Allow CNPG operator health checks
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: TCP
+          port: 8000
   egress:
     # Allow DNS
     - to:
@@ -1473,6 +1673,17 @@ spec:
       ports:
         - protocol: UDP
           port: 53
+    # Allow MinIO for backups
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: backup
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: minio
+      ports:
+        - protocol: TCP
+          port: 9000
 
 ---
 apiVersion: networking.k8s.io/v1
@@ -1501,11 +1712,11 @@ spec:
       ports:
         - protocol: UDP
           port: 53
-    # Allow PostgreSQL
+    # Allow PostgreSQL (CloudNative-PG)
     - to:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: affine-postgres
+              cnpg.io/cluster: affine-postgresql
       ports:
         - protocol: TCP
           port: 5432
@@ -1519,15 +1730,16 @@ spec:
           port: 6379
 
 ---
+# CloudNative-PG PostgreSQL for Affine (with pgvector)
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: tools-affine-postgres-allow
+  name: tools-affine-postgresql-allow
   namespace: tools
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: affine-postgres
+      cnpg.io/cluster: affine-postgresql
   policyTypes:
     - Ingress
     - Egress
@@ -1540,6 +1752,14 @@ spec:
       ports:
         - protocol: TCP
           port: 5432
+    # Allow CNPG operator health checks
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: TCP
+          port: 8000
   egress:
     # Allow DNS
     - to:
@@ -1549,6 +1769,17 @@ spec:
       ports:
         - protocol: UDP
           port: 53
+    # Allow MinIO for backups
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: backup
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: minio
+      ports:
+        - protocol: TCP
+          port: 9000
 
 ---
 apiVersion: networking.k8s.io/v1
@@ -1639,11 +1870,11 @@ spec:
       ports:
         - protocol: UDP
           port: 53
-    # Allow PostgreSQL
+    # Allow PostgreSQL (CloudNative-PG)
     - to:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: zitadel-postgres
+              cnpg.io/cluster: zitadel-postgresql
       ports:
         - protocol: TCP
           port: 5432
@@ -1683,15 +1914,16 @@ spec:
     # NetworkPolicy evaluation. CiliumNetworkPolicy with toEntities: kube-apiserver works.
 
 ---
+# CloudNative-PG PostgreSQL for Zitadel
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: auth-zitadel-postgres-allow
+  name: auth-zitadel-postgresql-allow
   namespace: auth
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: zitadel-postgres
+      cnpg.io/cluster: zitadel-postgresql
   policyTypes:
     - Ingress
     - Egress
@@ -1704,6 +1936,14 @@ spec:
       ports:
         - protocol: TCP
           port: 5432
+    # Allow CNPG operator health checks
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: TCP
+          port: 8000
   egress:
     # Allow DNS
     - to:
@@ -1713,6 +1953,17 @@ spec:
       ports:
         - protocol: UDP
           port: 53
+    # Allow MinIO for backups
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: backup
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: minio
+      ports:
+        - protocol: TCP
+          port: 9000
 
 ---
 apiVersion: networking.k8s.io/v1

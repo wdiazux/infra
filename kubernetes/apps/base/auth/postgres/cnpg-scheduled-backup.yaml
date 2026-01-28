@@ -1,0 +1,18 @@
+# Zitadel PostgreSQL Scheduled Backup
+#
+# Daily backups at 3:00 AM.
+# Backups are stored in MinIO (cnpg-backups bucket).
+#
+# CRITICAL SERVICE: Verify backups regularly.
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: zitadel-postgresql-daily
+  namespace: auth
+spec:
+  # Daily at 3:00 AM (cron format with seconds)
+  schedule: "0 0 3 * * *"
+  backupOwnerReference: self
+  cluster:
+    name: zitadel-postgresql

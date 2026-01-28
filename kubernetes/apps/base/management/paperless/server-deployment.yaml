@@ -33,12 +33,12 @@ spec:
       initContainers:
         # Wait for PostgreSQL to be ready
         - name: wait-for-db
-          image: docker.io/library/postgres:18
+          image: ghcr.io/cloudnative-pg/postgresql:17.5
           command:
             - sh
             - -c
             - |
-              until pg_isready -h paperless-postgres -p 5432 -U paperless; do
+              until pg_isready -h paperless-postgresql-rw -p 5432 -U paperless; do
                 echo "Waiting for PostgreSQL..."
                 sleep 2
               done
@@ -69,11 +69,11 @@ spec:
               value: "1000"
             - name: USERMAP_GID
               value: "1000"
-            # Database
+            # Database (CNPG PostgreSQL)
             - name: PAPERLESS_DBENGINE
               value: "postgresql"
             - name: PAPERLESS_DBHOST
-              value: "paperless-postgres"
+              value: "paperless-postgresql-rw"
             - name: PAPERLESS_DBPORT
               value: "5432"
             - name: PAPERLESS_DBNAME
@@ -83,8 +83,8 @@ spec:
             - name: PAPERLESS_DBPASS
               valueFrom:
                 secretKeyRef:
-                  name: paperless-secrets
-                  key: POSTGRES_PASSWORD
+                  name: paperless-postgresql-app
+                  key: password
             # Redis
             - name: PAPERLESS_REDIS
               value: "redis://paperless-redis:6379"

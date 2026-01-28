@@ -1,6 +1,6 @@
 # MinIO Bucket Initialization Job
 #
-# Creates the 'velero' bucket if it doesn't exist.
+# Creates the 'velero' and 'cnpg-backups' buckets if they don't exist.
 # Runs once after MinIO deployment is ready.
 apiVersion: batch/v1
 kind: Job
@@ -34,12 +34,21 @@ spec:
                 sleep 5
               done
               echo "MinIO is ready, checking bucket..."
+              # Create velero bucket
               if mc ls myminio/velero 2>/dev/null; then
                 echo "Bucket 'velero' already exists"
               else
                 echo "Creating bucket 'velero'..."
                 mc mb myminio/velero
-                echo "Bucket created successfully"
+                echo "Bucket 'velero' created successfully"
+              fi
+              # Create cnpg-backups bucket for CloudNative-PG
+              if mc ls myminio/cnpg-backups 2>/dev/null; then
+                echo "Bucket 'cnpg-backups' already exists"
+              else
+                echo "Creating bucket 'cnpg-backups'..."
+                mc mb myminio/cnpg-backups
+                echo "Bucket 'cnpg-backups' created successfully"
               fi
           env:
             - name: MINIO_ROOT_USER

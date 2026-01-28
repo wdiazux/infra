@@ -108,7 +108,8 @@ resource "helm_release" "forgejo" {
   depends_on = [
     helm_release.longhorn,
     kubernetes_namespace.forgejo,
-    null_resource.wait_for_postgresql, # Wait for PostgreSQL to be ready
+    # Only wait for Bitnami PostgreSQL if enabled (otherwise using CNPG via FluxCD)
+    null_resource.wait_for_postgresql,
     terraform_data.forgejo_pre_destroy # Pre-destroy runs cleanup before uninstall
   ]
 }
