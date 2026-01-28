@@ -68,14 +68,16 @@ spec:
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: ai-open-webui-oidc-allow
+  name: ai-open-webui-egress-allow
   namespace: ai
 spec:
-  description: "Allow Open WebUI to access Zitadel for OIDC authentication"
+  description: "Allow Open WebUI to access Zitadel OIDC and internal services (Redis, Pipelines, Tika)"
   endpointSelector:
     matchLabels:
       app.kubernetes.io/name: open-webui
+      app.kubernetes.io/component: open-webui
   egress:
+    # Zitadel for OIDC authentication
     - toEndpoints:
         - matchLabels:
             io.kubernetes.pod.namespace: auth
@@ -83,6 +85,49 @@ spec:
       toPorts:
         - ports:
             - port: "8080"
+              protocol: TCP
+    # Redis for websocket/session management
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/component: open-webui-redis
+            app.kubernetes.io/instance: open-webui
+      toPorts:
+        - ports:
+            - port: "6379"
+              protocol: TCP
+    # Pipelines for extensibility
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/component: open-webui-pipelines
+            app.kubernetes.io/instance: open-webui
+      toPorts:
+        - ports:
+            - port: "9099"
+              protocol: TCP
+    # Tika for document processing
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/instance: open-webui
+            app.kubernetes.io/name: tika
+      toPorts:
+        - ports:
+            - port: "9998"
+              protocol: TCP
+    # Ollama for LLM inference
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: ollama
+      toPorts:
+        - ports:
+            - port: "11434"
+              protocol: TCP
+    # ComfyUI for image generation
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: comfyui
+      toPorts:
+        - ports:
+            - port: "80"
               protocol: TCP
 
 ---
