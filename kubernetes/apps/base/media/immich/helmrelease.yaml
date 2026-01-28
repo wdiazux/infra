@@ -122,6 +122,9 @@ spec:
             main:
               image:
                 tag: "v2.5.0"
+              securityContext:
+                runAsUser: 1000
+                runAsGroup: 3001
               env:
                 IMMICH_CONFIG_FILE: "/config/immich.json"
               resources:
