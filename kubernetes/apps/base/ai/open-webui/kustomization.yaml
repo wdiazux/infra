@@ -1,9 +1,11 @@
 # Open WebUI Kustomization
+#
+# Managed by Helm chart: open-webui/open-webui
+# HTTPRoute and secrets remain as Kustomize resources
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  - deployment.yaml
-  - service.yaml
+  - helmrelease.yaml
   - httproute.yaml
   - secret.enc.yaml

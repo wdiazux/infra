@@ -1,0 +1,122 @@
+# Open WebUI HelmRelease
+#
+# Web interface for LLMs with Redis, Pipelines, and Tika support.
+# Chart: https://github.com/open-webui/helm-charts
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: open-webui
+  namespace: ai
+spec:
+  interval: 30m
+  timeout: 10m
+  chart:
+    spec:
+      chart: open-webui
+      version: "10.2.1"
+      sourceRef:
+        kind: HelmRepository
+        name: open-webui
+        namespace: flux-system
+      interval: 12h
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    # Disable bundled Ollama (we manage separately)
+    ollama:
+      enabled: false
+
+    # Enable Pipelines for extensibility
+    pipelines:
+      enabled: true
+      persistence:
+        enabled: true
+        size: 2Gi
+        storageClass: longhorn
+      resources:
+        requests:
+          memory: 128Mi
+        limits:
+          memory: 1Gi
+
+    # Enable Tika for document processing
+    tika:
+      enabled: true
+
+    # Enable Redis for websocket support
+    websocket:
+      enabled: true
+      redis:
+        enabled: true
+        resources:
+          requests:
+            memory: 32Mi
+          limits:
+            memory: 128Mi
+
+    # Ollama connection
+    ollamaUrls:
+      - http://ollama:11434
+
+    # Image generation with ComfyUI
+    extraEnvVars:
+      - name: ENABLE_IMAGE_GENERATION
+        value: "true"
+      - name: COMFYUI_BASE_URL
+        value: "http://comfyui:80/"
+      - name: ENABLE_IMAGE_PROMPT_GENERATION
+        value: "true"
+      - name: WEBUI_SECRET_KEY
+        valueFrom:
+          secretKeyRef:
+            name: open-webui-secrets
+            key: WEBUI_SECRET_KEY
+
+    # Zitadel OIDC
+    sso:
+      enabled: true
+      oidc:
+        enabled: true
+        providerUrl: "https://auth.home-infra.net/.well-known/openid-configuration"
+        scopes: "openid profile email"
+        mergeAccountsByEmail: true
+        existingSecret: open-webui-oidc-secrets
+        secretKeys:
+          clientId: client-id
+          clientSecret: client-secret
+
+    # Persistence
+    persistence:
+      enabled: true
+      size: 10Gi
+      storageClass: longhorn
+      accessModes:
+        - ReadWriteOnce
+
+    # Service (ClusterIP, HTTPRoute handles ingress)
+    service:
+      type: ClusterIP
+      port: 80
+      containerPort: 8080
+
+    # Ingress disabled (using Gateway API HTTPRoute)
+    ingress:
+      enabled: false
+
+    # Resources
+    resources:
+      requests:
+        memory: 256Mi
+      limits:
+        memory: 2Gi
+
+    # Pod security
+    podSecurityContext:
+      fsGroup: 1000
+      fsGroupChangePolicy: "OnRootMismatch"
