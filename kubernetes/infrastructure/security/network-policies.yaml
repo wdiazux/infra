@@ -287,7 +287,7 @@ spec:
           port: 443
 
 ---
-# CloudNative-PG PostgreSQL pods need K8s API access for cluster management
+# CloudNative-PG PostgreSQL pods need K8s API + DB ingress
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -299,7 +299,6 @@ spec:
       cnpg.io/cluster: immich-postgres
   policyTypes:
     - Ingress
-    - Egress
   ingress:
     # Allow PostgreSQL connections from Immich server
     - from:
@@ -310,23 +309,6 @@ spec:
       ports:
         - protocol: TCP
           port: 5432
-  egress:
-    # Allow DNS
-    - to:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: kube-system
-      ports:
-        - protocol: UDP
-          port: 53
-    # Allow K8s API server (required by CNPG operator)
-    - to:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: default
-      ports:
-        - protocol: TCP
-          port: 443
 
 ---
 # =============================================================================

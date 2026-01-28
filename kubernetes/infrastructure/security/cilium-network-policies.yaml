@@ -86,6 +86,30 @@ spec:
               protocol: TCP
 
 ---
+# CNPG PostgreSQL pods need K8s API access for operator management and DNS
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: media-immich-postgres-api-allow
+  namespace: media
+spec:
+  description: "Allow CNPG PostgreSQL to access K8s API server"
+  endpointSelector:
+    matchLabels:
+      cnpg.io/cluster: immich-postgres
+  egress:
+    - toEntities:
+        - kube-apiserver
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+
+---
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
