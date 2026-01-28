@@ -111,10 +111,143 @@ spec:
       ports:
         - protocol: TCP
           port: 11434
+    # Allow Redis (websocket/session management)
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: open-webui-redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    # Allow Pipelines (extensibility)
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: pipelines
+      ports:
+        - protocol: TCP
+          port: 9099
+    # Allow Tika (document processing)
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: tika
+      ports:
+        - protocol: TCP
+          port: 9998
+    # Allow ComfyUI (image generation)
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: comfyui
+      ports:
+        - protocol: TCP
+          port: 8188
     # Allow external HTTPS (HuggingFace, model downloads, OIDC endpoints)
     - ports:
         - protocol: TCP
           port: 443
+
+---
+# Open WebUI sub-components deployed by Helm chart
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ai-open-webui-redis-allow
+  namespace: ai
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: open-webui-redis
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from Open WebUI
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: open-webui
+      ports:
+        - protocol: TCP
+          port: 6379
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ai-open-webui-pipelines-allow
+  namespace: ai
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: pipelines
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from Open WebUI
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: open-webui
+      ports:
+        - protocol: TCP
+          port: 9099
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow external HTTPS (pipelines may need external APIs)
+    - ports:
+        - protocol: TCP
+          port: 443
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ai-open-webui-tika-allow
+  namespace: ai
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: tika
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from Open WebUI
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: open-webui
+      ports:
+        - protocol: TCP
+          port: 9998
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
 
 ---
 apiVersion: networking.k8s.io/v1
