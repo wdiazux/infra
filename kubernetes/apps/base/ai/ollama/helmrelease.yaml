@@ -40,6 +40,10 @@ spec:
 
     runtimeClassName: nvidia
 
+    podSecurityContext:
+      fsGroup: 3001
+      fsGroupChangePolicy: "OnRootMismatch"
+
     extraEnv:
       - name: TZ
         value: "America/El_Salvador"
