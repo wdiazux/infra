@@ -2865,3 +2865,122 @@ spec:
         - ports:
             - port: "6443"
               protocol: TCP
+
+# =============================================================================
+# CNPG (CloudNative-PG) Kubernetes API Access
+# =============================================================================
+# CNPG pods need to access the Kubernetes API for cluster coordination,
+# leader election, and configuration management.
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: auth-cnpg-kube-api-allow
+  namespace: auth
+spec:
+  description: Allow CNPG PostgreSQL pods to access Kubernetes API
+  endpointSelector:
+    matchLabels:
+      cnpg.io/cluster: zitadel-postgresql
+  egress:
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: "6443"
+              protocol: TCP
+
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: automation-cnpg-kube-api-allow
+  namespace: automation
+spec:
+  description: Allow CNPG PostgreSQL pods to access Kubernetes API
+  endpointSelector:
+    matchLabels:
+      cnpg.io/cluster: n8n-postgresql
+  egress:
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: "6443"
+              protocol: TCP
+
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: forgejo-cnpg-kube-api-allow
+  namespace: forgejo
+spec:
+  description: Allow CNPG PostgreSQL pods to access Kubernetes API
+  endpointSelector:
+    matchLabels:
+      cnpg.io/cluster: forgejo-postgresql
+  egress:
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: "6443"
+              protocol: TCP
+
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: management-cnpg-kube-api-allow
+  namespace: management
+spec:
+  description: Allow CNPG PostgreSQL pods to access Kubernetes API
+  endpointSelector:
+    matchLabels:
+      cnpg.io/cluster: paperless-postgresql
+  egress:
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: "6443"
+              protocol: TCP
+
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: tools-affine-cnpg-kube-api-allow
+  namespace: tools
+spec:
+  description: Allow CNPG PostgreSQL pods to access Kubernetes API
+  endpointSelector:
+    matchLabels:
+      cnpg.io/cluster: affine-postgresql
+  egress:
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: "6443"
+              protocol: TCP
+
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: tools-attic-cnpg-kube-api-allow
+  namespace: tools
+spec:
+  description: Allow CNPG PostgreSQL pods to access Kubernetes API
+  endpointSelector:
+    matchLabels:
+      cnpg.io/cluster: attic-postgresql
+  egress:
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: "6443"
+              protocol: TCP
