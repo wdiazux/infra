@@ -32,7 +32,7 @@ spec:
 
   resources:
     requests:
-      memory: 64Mi
+      memory: 192Mi
     limits:
       memory: 256Mi
 
