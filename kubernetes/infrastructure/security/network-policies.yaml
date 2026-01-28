@@ -183,7 +183,8 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: immich-server
+      app.kubernetes.io/name: server
+      app.kubernetes.io/instance: immich
   policyTypes:
     - Ingress
     - Egress
@@ -201,19 +202,20 @@ spec:
       ports:
         - protocol: UDP
           port: 53
-    # Allow PostgreSQL connection
+    # Allow PostgreSQL connection (CloudNative-PG)
     - to:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: immich-postgres
+              cnpg.io/cluster: immich-postgres
       ports:
         - protocol: TCP
           port: 5432
-    # Allow Redis connection
+    # Allow Valkey (Redis) connection
     - to:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: immich-redis
+              app.kubernetes.io/name: valkey
+              app.kubernetes.io/instance: immich
       ports:
         - protocol: TCP
           port: 6379
@@ -221,7 +223,8 @@ spec:
     - to:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: immich-machine-learning
+              app.kubernetes.io/name: machine-learning
+              app.kubernetes.io/instance: immich
       ports:
         - protocol: TCP
           port: 3003
@@ -252,7 +255,8 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: immich-machine-learning
+      app.kubernetes.io/name: machine-learning
+      app.kubernetes.io/instance: immich
   policyTypes:
     - Ingress
     - Egress
@@ -261,7 +265,8 @@ spec:
     - from:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: immich-server
+              app.kubernetes.io/name: server
+              app.kubernetes.io/instance: immich
       ports:
         - protocol: TCP
           port: 3003
@@ -277,6 +282,48 @@ spec:
     # Allow model downloads
     - to:
         - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 443
+
+---
+# CloudNative-PG PostgreSQL pods need K8s API access for cluster management
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: media-immich-postgres-allow
+  namespace: media
+spec:
+  podSelector:
+    matchLabels:
+      cnpg.io/cluster: immich-postgres
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow PostgreSQL connections from Immich server
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: server
+              app.kubernetes.io/instance: immich
+      ports:
+        - protocol: TCP
+          port: 5432
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow K8s API server (required by CNPG operator)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: default
       ports:
         - protocol: TCP
           port: 443

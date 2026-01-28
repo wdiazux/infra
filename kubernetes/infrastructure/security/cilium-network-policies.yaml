@@ -95,7 +95,8 @@ spec:
   description: "Allow Immich to access Zitadel for OIDC authentication"
   endpointSelector:
     matchLabels:
-      app.kubernetes.io/name: immich-server
+      app.kubernetes.io/name: server
+      app.kubernetes.io/instance: immich
   egress:
     - toEndpoints:
         - matchLabels:
