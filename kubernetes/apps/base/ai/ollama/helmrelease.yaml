@@ -68,5 +68,7 @@ spec:
         memory: 32Gi
 
     service:
-      type: ClusterIP
+      type: LoadBalancer
       port: 11434
+      annotations:
+        lbipam.cilium.io/ips: "10.10.2.50"
