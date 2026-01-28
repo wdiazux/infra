@@ -110,6 +110,46 @@ spec:
               protocol: UDP
 
 ---
+# Allow Immich server to access CNPG PostgreSQL via direct endpoint route.
+# Standard NetworkPolicy podSelector doesn't work reliably with Cilium's
+# socket-level LB (bpf-lb-sock: true) for ClusterIP service connections.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: media-immich-server-postgres-allow
+  namespace: media
+spec:
+  description: "Allow Immich server to access PostgreSQL, Valkey, and ML"
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: server
+      app.kubernetes.io/instance: immich
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            cnpg.io/cluster: immich-postgres
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: valkey
+            app.kubernetes.io/instance: immich
+      toPorts:
+        - ports:
+            - port: "6379"
+              protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: machine-learning
+            app.kubernetes.io/instance: immich
+      toPorts:
+        - ports:
+            - port: "3003"
+              protocol: TCP
+
+---
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
