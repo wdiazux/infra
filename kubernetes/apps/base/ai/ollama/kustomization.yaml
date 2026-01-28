@@ -1,7 +1,8 @@
 # Ollama Kustomization
+#
+# Managed by Helm chart: otwld/ollama-helm
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  - statefulset.yaml
-  - service.yaml
+  - helmrelease.yaml
