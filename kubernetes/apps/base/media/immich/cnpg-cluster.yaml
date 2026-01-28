@@ -24,6 +24,7 @@ spec:
       database: immich
       owner: immich
       postInitSQL:
+        - CREATE EXTENSION IF NOT EXISTS vector;
         - CREATE EXTENSION IF NOT EXISTS vchord CASCADE;
   storage:
     size: 10Gi
