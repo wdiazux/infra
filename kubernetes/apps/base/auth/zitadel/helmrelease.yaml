@@ -55,7 +55,7 @@ spec:
               SSL:
                 Mode: disable
             Admin:
-              Username: zitadel
+              Username: postgres  # CNPG superuser for init job
               SSL:
                 Mode: disable
             MaxOpenConns: 20
@@ -96,7 +96,7 @@ spec:
       - name: ZITADEL_DATABASE_POSTGRES_ADMIN_PASSWORD
         valueFrom:
           secretKeyRef:
-            name: zitadel-postgresql-app
+            name: zitadel-postgresql-superuser  # CNPG superuser for init
             key: password
       - name: ZITADEL_CACHES_CONNECTOR_REDIS_PASSWORD
         valueFrom:
