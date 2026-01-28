@@ -1,7 +1,15 @@
 # CloudNative-PG Operator
 #
 # Manages PostgreSQL clusters declaratively via Kubernetes CRDs.
-# Used by Immich for database management with VectorChord extensions.
+# Handles all PostgreSQL databases across the homelab:
+#   - Immich (media) - VectorChord for semantic search
+#   - Zitadel (auth) - SSO identity provider
+#   - Forgejo (forgejo) - Git server
+#   - Paperless (management) - Document management
+#   - Attic (tools) - Nix binary cache
+#   - Affine (tools) - Notes with pgvector
+#   - n8n (automation) - Workflow automation
+#
 # https://cloudnative-pg.io/
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2
