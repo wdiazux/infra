@@ -287,7 +287,7 @@ spec:
           port: 443
 
 ---
-# CloudNative-PG PostgreSQL pods need K8s API + DB ingress
+# CloudNative-PG PostgreSQL pods need DB ingress + operator status checks
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -309,6 +309,14 @@ spec:
       ports:
         - protocol: TCP
           port: 5432
+    # Allow CNPG operator status checks (HTTP health endpoint)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: TCP
+          port: 8000
 
 ---
 # =============================================================================
