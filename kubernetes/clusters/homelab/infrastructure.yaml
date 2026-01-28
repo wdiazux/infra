@@ -30,7 +30,7 @@ spec:
     - apiVersion: apps/v1
       kind: Deployment
       name: cnpg-cloudnative-pg
-      namespace: cnpg-system
+      namespace: kube-system
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
