@@ -531,6 +531,14 @@ spec:
       ports:
         - protocol: TCP
           port: 5432
+    # Allow PostgreSQL (Legacy StatefulSet - kept for rollback during CNPG migration)
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: paperless-postgres
+      ports:
+        - protocol: TCP
+          port: 5432
     # Allow Redis
     - to:
         - podSelector:
@@ -624,6 +632,39 @@ spec:
       ports:
         - protocol: TCP
           port: 9000
+
+---
+# Legacy PostgreSQL for Paperless (kept for rollback during CNPG migration)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: management-paperless-postgres-legacy-allow
+  namespace: management
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: paperless-postgres
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow connections from paperless-server
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: paperless-server
+      ports:
+        - protocol: TCP
+          port: 5432
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
 
 ---
 apiVersion: networking.k8s.io/v1
@@ -913,12 +954,55 @@ spec:
       ports:
         - protocol: TCP
           port: 5432
+    # Allow PostgreSQL (Helm Bitnami - kept for rollback during CNPG migration)
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: postgresql
+              app.kubernetes.io/instance: forgejo-postgres
+      ports:
+        - protocol: TCP
+          port: 5432
     # Allow outbound HTTPS for external integrations
     - to:
         - namespaceSelector: {}
       ports:
         - protocol: TCP
           port: 443
+
+---
+# Helm Bitnami PostgreSQL for Forgejo (kept for rollback during CNPG migration)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: forgejo-postgres-helm-allow
+  namespace: forgejo
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: postgresql
+      app.kubernetes.io/instance: forgejo-postgres
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from Forgejo server
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: forgejo
+      ports:
+        - protocol: TCP
+          port: 5432
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
 
 ---
 # CloudNative-PG PostgreSQL for Forgejo
@@ -1878,6 +1962,14 @@ spec:
       ports:
         - protocol: TCP
           port: 5432
+    # Allow PostgreSQL (Legacy StatefulSet - kept for rollback during CNPG migration)
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: zitadel-postgres
+      ports:
+        - protocol: TCP
+          port: 5432
     # Allow Redis
     - to:
         - podSelector:
@@ -1964,6 +2056,40 @@ spec:
       ports:
         - protocol: TCP
           port: 9000
+
+---
+# Legacy PostgreSQL for Zitadel (Helm-deployed StatefulSet)
+# Kept for rollback during CNPG migration. Remove after migration verified.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: auth-zitadel-postgres-legacy-allow
+  namespace: auth
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: zitadel-postgres
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from Zitadel
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: zitadel
+      ports:
+        - protocol: TCP
+          port: 5432
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
 
 ---
 apiVersion: networking.k8s.io/v1

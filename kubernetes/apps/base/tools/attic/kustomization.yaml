@@ -11,7 +11,7 @@ resources:
   - postgres-service.yaml
   # CNPG PostgreSQL
   - cnpg-bootstrap-credentials.enc.yaml
-  - cnpg-minio-credentials.enc.yaml
+  - attic-cnpg-minio-credentials.enc.yaml
   - cnpg-cluster.yaml
   - cnpg-scheduled-backup.yaml
   # Application

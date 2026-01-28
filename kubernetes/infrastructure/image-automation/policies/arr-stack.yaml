@@ -2,33 +2,39 @@
 #
 # Hotio tagging varies by app:
 # - bazarr, qbittorrent, sabnzbd: release-X.Y.Z format
-# - radarr: zeus-X.Y.Z.BUILD format (changed ~Jan 2026)
-# - sonarr, prowlarr: No version tags (commit-based only)
----
-apiVersion: image.toolkit.fluxcd.io/v1
-kind: ImageRepository
-metadata:
-  name: radarr
-  namespace: flux-system
-spec:
-  image: ghcr.io/hotio/radarr
-  interval: 12h
----
-apiVersion: image.toolkit.fluxcd.io/v1
-kind: ImagePolicy
-metadata:
-  name: radarr
-  namespace: flux-system
-spec:
-  imageRepositoryRef:
-    name: radarr
-  filterTags:
-    # Radarr v6+ uses zeus-X.Y.Z.BUILD format
-    pattern: '^zeus-(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)\.(?P<build>\d+)$'
-    extract: '$major.$minor.$patch-$build'
-  policy:
-    semver:
-      range: ">=6.0.0 <8.0.0"
+# - radarr, sonarr, prowlarr: No version tags (commit-based only)
+#
+# NOTE: Radarr, Sonarr, and Prowlarr ImagePolicies are DISABLED because
+# Hotio switched to commit-based tags (e.g., zeus-<hash>-<build>).
+# Updates for these apps are managed by Renovate instead.
+
+# Radarr - ImagePolicy DISABLED
+# Reason: Hotio switched to commit-based tags (zeus-<hash>-<build>).
+# Updates managed by Renovate instead.
+# ---
+# apiVersion: image.toolkit.fluxcd.io/v1
+# kind: ImageRepository
+# metadata:
+#   name: radarr
+#   namespace: flux-system
+# spec:
+#   image: ghcr.io/hotio/radarr
+#   interval: 12h
+# ---
+# apiVersion: image.toolkit.fluxcd.io/v1
+# kind: ImagePolicy
+# metadata:
+#   name: radarr
+#   namespace: flux-system
+# spec:
+#   imageRepositoryRef:
+#     name: radarr
+#   filterTags:
+#     pattern: '^zeus-(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)\.(?P<build>\d+)$'
+#     extract: '$major.$minor.$patch-$build'
+#   policy:
+#     semver:
+#       range: ">=6.0.0 <8.0.0"
 # Sonarr - ImagePolicy DISABLED
 # Reason: Hotio switched to commit-based tags (v4-<hash>) without version info.
 # Updates managed by Renovate instead.
@@ -81,31 +87,33 @@ spec:
   policy:
     semver:
       range: ">=1.0.0 <3.0.0"
----
-apiVersion: image.toolkit.fluxcd.io/v1
-kind: ImageRepository
-metadata:
-  name: prowlarr
-  namespace: flux-system
-spec:
-  image: ghcr.io/hotio/prowlarr
-  interval: 12h
----
-apiVersion: image.toolkit.fluxcd.io/v1
-kind: ImagePolicy
-metadata:
-  name: prowlarr
-  namespace: flux-system
-spec:
-  imageRepositoryRef:
-    name: prowlarr
-  filterTags:
-    # Extract semver from release-X.Y.Z.BUILD format
-    pattern: '^release-(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)\.(?P<build>\d+)$'
-    extract: '$major.$minor.$patch-$build'
-  policy:
-    semver:
-      range: ">=2.0.0 <4.0.0"
+# Prowlarr - ImagePolicy DISABLED
+# Reason: Hotio switched to commit-based tags (testing-<hash>-<build>).
+# Updates managed by Renovate instead.
+# ---
+# apiVersion: image.toolkit.fluxcd.io/v1
+# kind: ImageRepository
+# metadata:
+#   name: prowlarr
+#   namespace: flux-system
+# spec:
+#   image: ghcr.io/hotio/prowlarr
+#   interval: 12h
+# ---
+# apiVersion: image.toolkit.fluxcd.io/v1
+# kind: ImagePolicy
+# metadata:
+#   name: prowlarr
+#   namespace: flux-system
+# spec:
+#   imageRepositoryRef:
+#     name: prowlarr
+#   filterTags:
+#     pattern: '^release-(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)\.(?P<build>\d+)$'
+#     extract: '$major.$minor.$patch-$build'
+#   policy:
+#     semver:
+#       range: ">=2.0.0 <4.0.0"
 ---
 apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageRepository

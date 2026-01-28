@@ -11,7 +11,7 @@ resources:
   - postgres-statefulset.yaml
   # CNPG PostgreSQL (with pgvector)
   - cnpg-bootstrap-credentials.enc.yaml
-  - cnpg-minio-credentials.enc.yaml
+  - affine-cnpg-minio-credentials.enc.yaml
   - cnpg-cluster.yaml
   - cnpg-scheduled-backup.yaml
   # Supporting services
