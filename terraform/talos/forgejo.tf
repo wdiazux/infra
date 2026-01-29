@@ -81,7 +81,12 @@ resource "helm_release" "forgejo" {
       name  = "gitea.config.server.ROOT_URL"
       value = "https://${var.git_hostname}/"
     },
-    # PostgreSQL database credentials
+    # PostgreSQL database - CNPG (CloudNative-PG)
+    # Host must be set explicitly to use CNPG instead of Bitnami subchart
+    {
+      name  = "gitea.config.database.HOST"
+      value = "forgejo-postgresql-rw.forgejo.svc.cluster.local:5432"
+    },
     {
       name  = "gitea.config.database.USER"
       value = local.git_secrets.postgresql_username
@@ -108,8 +113,6 @@ resource "helm_release" "forgejo" {
   depends_on = [
     helm_release.longhorn,
     kubernetes_namespace.forgejo,
-    # Only wait for Bitnami PostgreSQL if enabled (otherwise using CNPG via FluxCD)
-    null_resource.wait_for_postgresql,
     terraform_data.forgejo_pre_destroy # Pre-destroy runs cleanup before uninstall
   ]
 }
